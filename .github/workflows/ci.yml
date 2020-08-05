@@ -1,0 +1,29 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        python-version: [3.8]
+        platform: [ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip poetry
+        poetry install
+
+    - name: Lint
+      run: |
+        poetry run pre-commit run --all-files
+        poetry run cz check --rev-range c8054a8acb312d3166d046f47ca14617b7f547d..HEAD
