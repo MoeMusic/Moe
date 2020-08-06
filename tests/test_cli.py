@@ -2,7 +2,7 @@
 
 import pytest
 
-from fili import cli
+from moe import cli
 
 
 class TestArgParse:

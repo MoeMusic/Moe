@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "fili"
+name = "moe"
 version = "0.1.0"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.scripts]
-fili = 'fili.cli:main'
+moe = 'moe.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.6.1"
