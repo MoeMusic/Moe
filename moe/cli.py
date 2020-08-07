@@ -9,18 +9,55 @@ from typing import List
 import pkg_resources
 import pluggy
 
-from moe.lib import hooks
+import moe
 from moe.plugins import hello
 
-pm = pluggy.PluginManager("moe")
-pm.add_hookspecs(hooks)
+
+def main():
+    """Runs the CLI."""
+    pm = pluggy.PluginManager("moe")
+    pm.add_hookspecs(Hooks)
+
+    _parse_args(sys.argv[1:], pm)
 
 
-def _parse_args(args: List[str] = None):
+class Hooks:
+    """CLI hooks."""
+
+    @staticmethod
+    @moe.hookspec
+    def addcommand(cmd_parsers: argparse.ArgumentParser):
+        """Add a sub-command to moe.
+
+        Args:
+            cmd_parsers: parent parser for the sub-commands
+
+        Note:
+            The sub-command should be added as an argparse parser to cmd_parsers.
+
+        Example:
+            >>> my_parser = cmd_parsers.add_parser('<command_name>', help='')
+            >>> my_parser.add_argument('bar', type=int)
+            >>> my_parser.set_defaults(func=my_function)
+
+        Note:
+            To specify a function to run when your command is passed, you need to define
+            the `func` key using `set_defaults` as shown above. This function will be
+            passed all of the parsed commandline arguments with the `args` key.
+
+        Example:
+            >>> my_function(args):
+            ...    print("Welcome to my plugin!")
+        """
+        pass
+
+
+def _parse_args(args: List[str], pm: pluggy.PluginManager):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse.
+        pm: Global PluginManager
 
     Returns:
         Parsed arguments
@@ -44,11 +81,6 @@ def _parse_args(args: List[str] = None):
 
     parsed_args = moe_parser.parse_args(args)
     parsed_args.func(args=args)
-
-
-def main():
-    """Runs the CLI."""
-    _parse_args(sys.argv[1:])
 
 
 if __name__ == "__main__":
