@@ -3,6 +3,7 @@
 """Entry point for the CLI."""
 
 import argparse
+import importlib
 import sys
 from typing import List
 
@@ -10,15 +11,7 @@ import pkg_resources
 import pluggy
 
 import moe
-from moe.plugins import hello
-
-
-def main():
-    """Runs the CLI."""
-    pm = pluggy.PluginManager("moe")
-    pm.add_hookspecs(Hooks)
-
-    _parse_args(sys.argv[1:], pm)
+from moe import plugins
 
 
 class Hooks:
@@ -26,11 +19,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def addcommand(cmd_parsers: argparse.ArgumentParser):
+    def addcommand(cmd_parsers: argparse._SubParsersAction):
         """Add a sub-command to moe.
 
         Args:
-            cmd_parsers: parent parser for the sub-commands
+            cmd_parsers: contains all the sub-command parsers
 
         Note:
             The sub-command should be added as an argparse parser to cmd_parsers.
@@ -52,12 +45,32 @@ class Hooks:
         pass
 
 
+def main():
+    """Runs the CLI."""
+    plugin_manager = _get_plugin_manager()
+    _parse_args(sys.argv[1:], plugin_manager)
+
+
+def _get_plugin_manager() -> pluggy.PluginManager:
+    """Gets the plugin manager.
+
+    This manages and registers all the specified plugins and hooks.
+    """
+    pm = pluggy.PluginManager("moe")
+    pm.add_hookspecs(Hooks)
+
+    for plugin in plugins.DEFAULT_PLUGINS:
+        pm.register(importlib.import_module("moe.plugins." + plugin))
+
+    return pm
+
+
 def _parse_args(args: List[str], pm: pluggy.PluginManager):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse.
-        pm: Global PluginManager
+        pm: Global plugin manager
 
     Returns:
         Parsed arguments
@@ -70,17 +83,15 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager):
     )
 
     # load all sub-commands
-    pm.register(hello)
     cmd_parsers = moe_parser.add_subparsers(help="command to run")
     pm.hook.addcommand(cmd_parsers=cmd_parsers)
 
-    # print help and exit if no arguments given
     if not args:
         moe_parser.print_help(sys.stderr)
         sys.exit(1)
 
     parsed_args = moe_parser.parse_args(args)
-    parsed_args.func(args=args)
+    parsed_args.func(args=parsed_args)  # calls the sub-command's handler
 
 
 if __name__ == "__main__":
