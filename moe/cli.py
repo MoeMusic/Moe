@@ -11,7 +11,7 @@ import pkg_resources
 import pluggy
 
 import moe
-from moe import plugins
+from moe import config, plugins
 from moe.lib import library
 
 
@@ -21,7 +21,7 @@ class Hooks:
     @staticmethod
     @moe.hookspec
     def addcommand(cmd_parsers: argparse._SubParsersAction):
-        """Add a sub-command to moe.
+        """Adds a sub-command to moe.
 
         Args:
             cmd_parsers: contains all the sub-command parsers
@@ -36,12 +36,18 @@ class Hooks:
 
         Note:
             To specify a function to run when your command is passed, you need to define
-            the `func` key using `set_defaults` as shown above. This function will be
-            passed all of the parsed commandline arguments with the `args` key and the
-            current sqlalchemy session in the `session` key.
+            the `func` key using `set_defaults` as shown above.
+            The function call will be called like
+            ```
+            func(
+                config: moe.config.Config,  # user config
+                session: sqlalchemy.orm.session.Session,  # database session
+                args: argparse.Namespace,  # parsed commandline arguments
+            )
+            ```
 
         Example:
-            >>> my_function(args, session):
+            >>> my_function(config, session, args):
             ...    print("Welcome to my plugin!")
         """
         pass
@@ -93,10 +99,11 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager):
         sys.exit(1)
 
     parsed_args = moe_parser.parse_args(args)
+    user_config = config.Config()
 
     # call the sub-command's handler within a single session
     with library.session_scope() as session:
-        parsed_args.func(args=parsed_args, session=session)
+        parsed_args.func(config=user_config, session=session, args=parsed_args)
 
 
 if __name__ == "__main__":
