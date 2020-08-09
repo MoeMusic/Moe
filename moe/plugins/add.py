@@ -15,7 +15,7 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(args, session):
+def parse_args(config, session, args):
     """Parse the given commandline arguments."""
     track = library.Track(path=pathlib.Path(args.path))
 

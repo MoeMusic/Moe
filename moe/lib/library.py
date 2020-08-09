@@ -1,6 +1,9 @@
 """Describes all the information available in the library.
 
 A high-level model of the database.
+
+Note:
+    The database will be initialized once the user configuration is read.
 """
 
 import pathlib
@@ -17,8 +20,7 @@ db_path = config_path / "library.db"
 if not config_path.exists():
     config_path.mkdir(parents=True, exist_ok=True)
 
-engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
-Session = sessionmaker(bind=engine)
+Session = sessionmaker()
 Base = declarative_base()
 
 
@@ -61,7 +63,3 @@ def session_scope():
         raise
     finally:
         session.close()
-
-
-# create tables if they don't exist
-Base.metadata.create_all(engine)
