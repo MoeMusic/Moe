@@ -12,6 +12,7 @@ import pluggy
 
 import moe
 from moe import plugins
+from moe.lib import library
 
 
 class Hooks:
@@ -36,10 +37,11 @@ class Hooks:
         Note:
             To specify a function to run when your command is passed, you need to define
             the `func` key using `set_defaults` as shown above. This function will be
-            passed all of the parsed commandline arguments with the `args` key.
+            passed all of the parsed commandline arguments with the `args` key and the
+            current sqlalchemy session in the `session` key.
 
         Example:
-            >>> my_function(args):
+            >>> my_function(args, session):
             ...    print("Welcome to my plugin!")
         """
         pass
@@ -91,7 +93,10 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager):
         sys.exit(1)
 
     parsed_args = moe_parser.parse_args(args)
-    parsed_args.func(args=parsed_args)  # calls the sub-command's handler
+
+    # call the sub-command's handler within a single session
+    with library.session_scope() as session:
+        parsed_args.func(args=parsed_args, session=session)
 
 
 if __name__ == "__main__":
