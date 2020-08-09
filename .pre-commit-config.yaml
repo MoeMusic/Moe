@@ -17,6 +17,7 @@ repos:
     rev: master
     hooks:
       - id: mypy
+        additional_dependencies: [sqlalchemy-stubs]
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: master
