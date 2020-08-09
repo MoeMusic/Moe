@@ -1,8 +1,10 @@
 """Adds music to the library."""
 
 import argparse
+import pathlib
 
 import moe
+from moe.lib import library
 
 
 @moe.hookimpl
@@ -13,6 +15,8 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(args):
+def parse_args(args, session):
     """Parse the given commandline arguments."""
-    print("Add: {0}".format(args.path))
+    track = library.Track(path=pathlib.Path(args.path))
+
+    session.add(track)
