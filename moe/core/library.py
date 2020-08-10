@@ -42,6 +42,13 @@ class Track(Base):
     Attributes:
         id (int): database id
         path (pathlib.Path): path of the track file
+
+    Note:
+        Can be instantiated as normal using keyword arguments.
+
+    Example:
+        >>> track = Track(path=pathlib.Path('mycoolpath'))
+
     """
 
     __tablename__ = "tracks"

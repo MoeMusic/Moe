@@ -11,8 +11,8 @@ import pkg_resources
 import pluggy
 
 import moe
-from moe import config, plugins
-from moe.lib import library
+from moe.core import library
+from moe.core.config import Config
 
 
 class Hooks:
@@ -40,7 +40,7 @@ class Hooks:
             The function call will be called like
             ```
             func(
-                config: moe.config.Config,  # user config
+                config: moe.Config,  # user config
                 session: sqlalchemy.orm.session.Session,  # database session
                 args: argparse.Namespace,  # parsed commandline arguments
             )
@@ -55,30 +55,36 @@ class Hooks:
 
 def main():
     """Runs the CLI."""
-    plugin_manager = _get_plugin_manager()
-    _parse_args(sys.argv[1:], plugin_manager)
+    config = Config()
+    pm = _get_plugin_manager(config)
+
+    _parse_args(sys.argv[1:], pm, config)
 
 
-def _get_plugin_manager() -> pluggy.PluginManager:
+def _get_plugin_manager(config: Config) -> pluggy.PluginManager:
     """Gets the plugin manager.
 
     This manages and registers all the specified plugins and hooks.
+
+    Args:
+        config: User configuration for moe.
     """
     pm = pluggy.PluginManager("moe")
     pm.add_hookspecs(Hooks)
 
-    for plugin in plugins.DEFAULT_PLUGINS:
+    for plugin in config.plugins:
         pm.register(importlib.import_module("moe.plugins." + plugin))
 
     return pm
 
 
-def _parse_args(args: List[str], pm: pluggy.PluginManager):
+def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse.
         pm: Global plugin manager
+        config: User configuration for moe.
 
     Returns:
         Parsed arguments
@@ -89,7 +95,6 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager):
     moe_parser.add_argument(
         "--version", action="version", version="%(prog)s v{0}".format(VERSION)
     )
-
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run")
     pm.hook.addcommand(cmd_parsers=cmd_parsers)
@@ -99,11 +104,10 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager):
         sys.exit(1)
 
     parsed_args = moe_parser.parse_args(args)
-    user_config = config.Config()
 
     # call the sub-command's handler within a single session
     with library.session_scope() as session:
-        parsed_args.func(config=user_config, session=session, args=parsed_args)
+        parsed_args.func(config=config, session=session, args=parsed_args)
 
 
 if __name__ == "__main__":

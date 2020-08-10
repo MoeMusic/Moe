@@ -1,6 +1,6 @@
 """Test configuration."""
 
-import moe.config
+from moe.core.config import Config
 
 
 class TestInit:
@@ -11,7 +11,7 @@ class TestInit:
         fake_path = tmp_path / "this_definitely_doesnt_exist"
         fake_path2 = tmp_path / "this_definitely_doesnt_exist2"
 
-        moe.config.Config(config_dir=fake_path, db_dir=fake_path2, engine=mocker.Mock())
+        Config(config_dir=fake_path, db_dir=fake_path2, engine=mocker.Mock())
 
         assert fake_path.exists()
         assert fake_path2.exists()

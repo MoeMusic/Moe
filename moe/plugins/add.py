@@ -6,8 +6,8 @@ import pathlib
 import sqlalchemy
 
 import moe
-import moe.config
-from moe.lib import library
+from moe.core import library
+from moe.core.config import Config
 
 
 @moe.hookimpl
@@ -19,9 +19,7 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
 
 
 def parse_args(
-    config: moe.config.Config,
-    session: sqlalchemy.orm.session.Session,
-    args: argparse.Namespace,
+    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace,
 ):
     """Parse the given commandline arguments."""
     track = library.Track(path=pathlib.Path(args.path))

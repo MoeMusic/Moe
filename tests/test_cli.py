@@ -1,5 +1,7 @@
 """Test the CLI."""
 
+from unittest.mock import Mock
+
 import pytest
 
 from moe import cli
@@ -11,6 +13,6 @@ class TestArgParse:
     def test_no_args(self, mocker):
         """Test exit if 0 arguments given."""
         with pytest.raises(SystemExit) as pytest_e:
-            cli._parse_args([], mocker.Mock())
+            cli._parse_args([], Mock(), Mock())
 
         assert pytest_e.value.code != 0

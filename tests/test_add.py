@@ -3,7 +3,7 @@
 import argparse
 import pathlib
 
-from moe.lib import library
+from moe.core import library
 from moe.plugins import add
 
 
