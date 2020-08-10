@@ -3,7 +3,10 @@
 import argparse
 import pathlib
 
+import sqlalchemy
+
 import moe
+import moe.config
 from moe.lib import library
 
 
@@ -15,7 +18,11 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(config, session, args):
+def parse_args(
+    config: moe.config.Config,
+    session: sqlalchemy.orm.session.Session,
+    args: argparse.Namespace,
+):
     """Parse the given commandline arguments."""
     track = library.Track(path=pathlib.Path(args.path))
 
