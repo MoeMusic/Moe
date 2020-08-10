@@ -35,8 +35,8 @@ class Hooks:
             >>> my_parser.set_defaults(func=my_function)
 
         Note:
-            To specify a function to run when your command is passed, you need to define
-            the `func` key using `set_defaults` as shown above.
+            To specify a function to run when your command is passed, you need to
+            define the `func` key using `set_defaults` as shown above.
             The function call will be called like
             ```
             func(
