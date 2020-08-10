@@ -11,7 +11,7 @@ class TestArgParse:
     """Test the argument parser."""
 
     def test_no_args(self, mocker):
-        """Test exit if 0 arguments given."""
+        """Test exit if 0 subcommands given."""
         with pytest.raises(SystemExit) as pytest_e:
             cli._parse_args([], Mock(), Mock())
 

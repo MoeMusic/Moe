@@ -4,6 +4,7 @@
 
 import argparse
 import importlib
+import logging
 import sys
 from typing import List
 
@@ -13,6 +14,8 @@ import pluggy
 import moe
 from moe.core import library
 from moe.core.config import Config
+
+log = logging.getLogger(__name__)
 
 
 class Hooks:
@@ -95,6 +98,20 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
     moe_parser.add_argument(
         "--version", action="version", version="%(prog)s v{0}".format(VERSION)
     )
+    moe_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="count",
+        help="Increase logging verbosity. Use -vv to enable debug logging.",
+    )
+    moe_parser.add_argument(
+        "--quiet",
+        "-q",
+        action="count",
+        help="Decrease logging verbosity."
+        " Use -qq to limit logging to critical errors.",
+    )
+
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run")
     pm.hook.addcommand(cmd_parsers=cmd_parsers)
@@ -105,9 +122,24 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
 
     parsed_args = moe_parser.parse_args(args)
 
+    if parsed_args.verbose == 1:
+        logging.basicConfig(level="INFO")
+    elif parsed_args.verbose == 2:
+        logging.basicConfig(level="DEBUG")
+    elif parsed_args.quiet == 1:
+        logging.basicConfig(level="ERROR")
+    elif parsed_args.quiet == 2:
+        logging.basicConfig(level="CRITICAL")
+    else:
+        logging.basicConfig(level="WARNING")
+
     # call the sub-command's handler within a single session
     with library.session_scope() as session:
-        parsed_args.func(config=config, session=session, args=parsed_args)
+        try:
+            parsed_args.func(config=config, session=session, args=parsed_args)
+        except AttributeError:
+            moe_parser.print_help(sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
