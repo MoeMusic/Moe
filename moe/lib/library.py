@@ -14,12 +14,6 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-config_path = pathlib.Path.home() / ".config" / "moe"
-db_path = config_path / "library.db"
-
-if not config_path.exists():
-    config_path.mkdir(parents=True, exist_ok=True)
-
 Session = sessionmaker()
 Base = declarative_base()
 
@@ -43,7 +37,12 @@ class _PathType(sqlalchemy.types.TypeDecorator):
 
 
 class Track(Base):
-    """A single track."""
+    """A single track.
+
+    Attributes:
+        id (int): database id
+        path (pathlib.Path): path of the track file
+    """
 
     __tablename__ = "tracks"
 
