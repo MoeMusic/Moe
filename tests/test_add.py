@@ -19,4 +19,4 @@ class TestParseArgs:
 
         path = session.query(library.Track.path).scalar()
 
-        assert path == pathlib.PurePath("testpath")
+        assert path == pathlib.Path("testpath").resolve()

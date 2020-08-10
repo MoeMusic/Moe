@@ -28,8 +28,8 @@ class _PathType(sqlalchemy.types.TypeDecorator):
     impl = sqlalchemy.types.String  # sql type
 
     def process_bind_param(self, value, dialect):
-        """Convert the path to a string on the way in."""
-        return str(value)
+        """Convert to a string of the absolue path on the way in."""
+        return str(value.resolve())
 
     def process_result_value(self, value, dialect):
         """Convert the path back to pathlib.Path on the way out."""
@@ -47,7 +47,7 @@ class Track(Base):
     __tablename__ = "tracks"
 
     id = Column(Integer, primary_key=True)
-    path = Column(_PathType)
+    path = Column(_PathType, nullable=False, unique=True)
 
 
 @contextmanager
