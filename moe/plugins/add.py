@@ -1,6 +1,7 @@
 """Adds music to the library."""
 
 import argparse
+import logging
 import pathlib
 
 import sqlalchemy
@@ -8,6 +9,8 @@ import sqlalchemy
 import moe
 from moe.core import library
 from moe.core.config import Config
+
+log = logging.getLogger(__name__)
 
 
 @moe.hookimpl
@@ -24,4 +27,5 @@ def parse_args(
     """Parse the given commandline arguments."""
     track = library.Track(path=pathlib.Path(args.path))
 
+    log.info("Adding track '%s' to the library.", track)
     session.add(track)

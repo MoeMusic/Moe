@@ -56,6 +56,10 @@ class Track(Base):
     id = Column(Integer, primary_key=True)
     path = Column(_PathType, nullable=False, unique=True)
 
+    def __str__(self):
+        """String representation of a track."""
+        return str(self.path)
+
 
 @contextmanager
 def session_scope():
