@@ -33,25 +33,22 @@ class Hooks:
             The sub-command should be added as an argparse parser to cmd_parsers.
 
         Example:
-            >>> my_parser = cmd_parsers.add_parser('<command_name>', help='')
-            >>> my_parser.add_argument('bar', type=int)
-            >>> my_parser.set_defaults(func=my_function)
+            Inside of your hook implementation, write::
+
+                my_parser = cmd_parsers.add_parser('<command_name>', help='')
+                my_parser.add_argument('bar', type=int)
+                my_parser.set_defaults(func=my_function)
 
         Note:
             To specify a function to run when your command is passed, you need to
             define the `func` key using `set_defaults` as shown above.
-            The function call will be called like
-            ```
-            func(
-                config: moe.Config,  # user config
-                session: sqlalchemy.orm.session.Session,  # database session
-                args: argparse.Namespace,  # parsed commandline arguments
-            )
-            ```
+            The function will be called like::
 
-        Example:
-            >>> my_function(config, session, args):
-            ...    print("Welcome to my plugin!")
+                func(
+                    config: moe.Config,  # user config
+                    session: sqlalchemy.orm.session.Session,  # database session
+                    args: argparse.Namespace,  # parsed commandline arguments
+                )
         """
         pass
 
@@ -102,26 +99,28 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         "--verbose",
         "-v",
         action="count",
-        help="Increase logging verbosity. Use -vv to enable debug logging.",
+        help="increase logging verbosity; use -vv to enable debug logging",
     )
     moe_parser.add_argument(
         "--quiet",
         "-q",
         action="count",
-        help="Decrease logging verbosity."
-        " Use -qq to limit logging to critical errors.",
+        help="decrease logging verbosity;"
+        " use -qq to limit logging to critical errors",
     )
 
     # load all sub-commands
-    cmd_parsers = moe_parser.add_subparsers(help="command to run")
+    cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
     pm.hook.addcommand(cmd_parsers=cmd_parsers)
-
-    if not args:
-        moe_parser.print_help(sys.stderr)
-        sys.exit(1)
 
     parsed_args = moe_parser.parse_args(args)
 
+    # no sub-command given
+    if not parsed_args.command:
+        moe_parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    # set root log level
     if parsed_args.verbose == 1:
         logging.basicConfig(level="INFO")
     elif parsed_args.verbose == 2:
@@ -135,11 +134,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
 
     # call the sub-command's handler within a single session
     with library.session_scope() as session:
-        try:
-            parsed_args.func(config=config, session=session, args=parsed_args)
-        except AttributeError:
-            moe_parser.print_help(sys.stderr)
-            sys.exit(1)
+        parsed_args.func(config=config, session=session, args=parsed_args)
 
 
 if __name__ == "__main__":
