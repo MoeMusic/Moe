@@ -10,7 +10,7 @@ import pathlib
 from contextlib import contextmanager
 
 import sqlalchemy
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -34,6 +34,11 @@ class _PathType(sqlalchemy.types.TypeDecorator):
     def process_result_value(self, value, dialect):
         """Convert the path back to pathlib.Path on the way out."""
         return pathlib.Path(value)
+
+    def coerce_compared_value(self, op, value):
+        """Define path comparisons for different types."""
+        if isinstance(value, str):
+            return String()
 
 
 class Track(Base):

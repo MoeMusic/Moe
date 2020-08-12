@@ -8,6 +8,8 @@ typical usage of this module should just import the Config class directly.
 """
 
 import pathlib
+import re
+import sqlite3
 from typing import List
 
 import sqlalchemy
@@ -16,7 +18,7 @@ from moe.core import library
 
 DEFAULT_PLUGINS = [
     "add",
-    "list",
+    "ls",
 ]
 """Plugins that are enabled by default.
 
@@ -45,7 +47,7 @@ class Config:
         engine: sqlalchemy.engine.base.Engine = None,
         default_plugins: List[str] = DEFAULT_PLUGINS,
     ):
-        """Read configuration.
+        """Reads the configuration and initializes the database.
 
         Args:
             config_dir: Path of the configuration directory.
@@ -66,8 +68,39 @@ class Config:
         if not db_dir.exists():
             db_dir.mkdir(parents=True)
 
-        # initialize db
+        self._db_init(engine)
+
+    def _db_init(self, engine: sqlalchemy.engine.base.Engine = None):
+        """Initializes the database.
+
+        Args:
+            engine: Database engine to create.
+        """
         if not engine:
             engine = sqlalchemy.create_engine("sqlite:///" + str(self.db_path))
+
         library.Session.configure(bind=engine)
         library.Base.metadata.create_all(engine)  # create tables if they don't exist
+
+        # create regular expression function for sqlite queries
+        @sqlalchemy.event.listens_for(engine, "begin")
+        def sqlite_engine_connect(conn):
+            try:
+                conn.connection.create_function(
+                    "regexp", 2, _regexp, deterministic=True
+                )
+            except sqlite3.NotSupportedError:
+                # determinstic flag is only supported by SQLite>=3.8.3
+                conn.connection.create_function("regexp", 2, _regexp)
+
+        def _regexp(pattern: str, value: str) -> bool:
+            """Use the python re module for sqlite regular expression functionality.
+
+            Args:
+                pattern: Regular expression pattern.
+                value: Value to match against.
+
+            Returns:
+                Whether or not the match was successful.
+            """
+            return re.search(pattern, value) is not None

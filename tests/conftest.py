@@ -1,6 +1,6 @@
 """Shared pytest configuration."""
 
-from typing import Iterator, Tuple
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,16 +11,16 @@ from moe.core.config import Config
 
 
 @pytest.fixture
-def temp_config_session() -> Iterator[Tuple[Config, sqlalchemy.orm.session.Session]]:
-    """Creates temporary Config and Session instances.
+def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
+    """Creates temporary Session instance for database interaction.
 
-    This should be used for database interaction.
+    The database is a temporary sqlite instance created in memory.
 
     Yields:
-        config, session (Tuple): temp Config and Session instances
+        session: temp Session instance
     """
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
-    config = Config(config_dir=MagicMock(), engine=engine)
+    Config(config_dir=MagicMock(), engine=engine)
 
     with library.session_scope() as session:
-        yield config, session
+        yield session
