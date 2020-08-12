@@ -9,7 +9,7 @@ from moe.plugins import add
 
 
 class TestParseArgs:
-    """Test music is added to the database when invoked."""
+    """Test music is added to the database when the `add` command is invoked."""
 
     def test_track(self, tmp_session):
         """Tracks are added to the database."""
