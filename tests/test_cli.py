@@ -10,7 +10,7 @@ from moe import cli
 class TestArgParse:
     """Test the argument parser."""
 
-    def test_no_args(self, mocker):
+    def test_no_args(self):
         """Test exit if 0 subcommands given."""
         with pytest.raises(SystemExit) as pytest_e:
             cli._parse_args([], Mock(), Mock())

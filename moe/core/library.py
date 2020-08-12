@@ -47,6 +47,7 @@ class Track(Base):
     Attributes:
         id (int): database id
         path (pathlib.Path): path of the track file
+        title (str): track title
 
     Note:
         Can be instantiated as normal using keyword arguments.
@@ -60,6 +61,12 @@ class Track(Base):
 
     id = Column(Integer, primary_key=True)
     path = Column(_PathType, nullable=False, unique=True)
+    title = Column(String, nullable=False)
+
+    def __init__(self, path: pathlib.Path, title: str = None):
+        """Create a track."""
+        self.path = path
+        self.title = title if title else "tmp_title"
 
     def __str__(self):
         """String representation of a track."""

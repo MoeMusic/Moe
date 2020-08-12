@@ -91,17 +91,17 @@ class TestQuery:
 
     def test_valid_query(self, tmp_session):
         """Simplest query."""
-        tmp_session.add(library.Track(path=pathlib.Path("/path")))
+        tmp_session.add(library.Track(path=Mock(), title="tmp"))
 
-        tracks = query.query("path:/path", tmp_session)
+        tracks = query.query(r"title:tmp", tmp_session)
 
         assert tracks
 
     def test_case_insensitive(self, tmp_session):
         """Queries should be case-insensitive."""
-        tmp_session.add(library.Track(path=pathlib.Path("/PATH")))
+        tmp_session.add(library.Track(path=Mock(), title="TMP"))
 
-        tracks = query.query("path:/path", tmp_session)
+        tracks = query.query(r"title:tmp", tmp_session)
 
         assert tracks
 
