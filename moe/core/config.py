@@ -35,8 +35,8 @@ class Config:
 
     Attributes:
         config_dir (pathlib.Path): Configuration directory.
-        db_path (pathlib.Path): Path of the database file.
         plugins (List[str]): Enabled plugins.
+        engine (sqlalchemy.engine.base.Engine): Database engine in use.
     """
 
     def __init__(
@@ -60,7 +60,7 @@ class Config:
         """
         self.config_dir = config_dir
         db_dir = db_dir if db_dir else config_dir
-        self.db_path = db_dir / db_filename
+        db_path = db_dir / db_filename
         self.plugins = default_plugins
 
         if not self.config_dir.exists():
@@ -68,16 +68,21 @@ class Config:
         if not db_dir.exists():
             db_dir.mkdir(parents=True)
 
+        if not engine:
+            engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
         self._db_init(engine)
 
-    def _db_init(self, engine: sqlalchemy.engine.base.Engine = None):
+    def _db_init(self, engine: sqlalchemy.engine.base.Engine):
         """Initializes the database.
+
+        Moe uses sqlite by default. Current (known) limitations with using other dbs:
+            1. Track and album fields aren't defined with character limits.
+            2. Support for the `regexp` operator used for regex queries.
 
         Args:
             engine: Database engine to create.
         """
-        if not engine:
-            engine = sqlalchemy.create_engine("sqlite:///" + str(self.db_path))
+        self.engine = engine
 
         library.Session.configure(bind=engine)
         library.Base.metadata.create_all(engine)  # create tables if they don't exist
