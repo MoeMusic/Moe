@@ -12,6 +12,7 @@ moe = 'moe.cli:main'
 python = "^3.6.1"
 pluggy = "^0.13.1"
 sqlalchemy = "^1.3.18"
+alembic = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
