@@ -12,10 +12,10 @@ from moe.plugins import ls
 
 
 class TestParseArgs:
-    """Test music is listed from the database when invoked."""
+    """Test the plugin argument parser."""
 
     def test_track(self, capsys, tmp_session):
-        """Tracks are printed to stdout."""
+        """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="id:1")
 
         tmp_session.add(library.Track(path=pathlib.Path("/tmp_path")))

@@ -15,7 +15,7 @@ class TestParseArgs:
     """Test the plugin argument parser."""
 
     def test_track(self, tmp_session):
-        """Tracks are removed from the database."""
+        """Tracks are removed from the database with valid query."""
         args = argparse.Namespace(query="id:1")
 
         tmp_session.add(library.Track(path=pathlib.Path("/tmp_path")))
@@ -30,7 +30,7 @@ class TestParseArgs:
 
 @pytest.mark.integration
 class TestCommand:
-    """Test cli integration with the add command."""
+    """Test cli integration with the rm command."""
 
     def test_parse_args(self, tmp_live):
         """Music is removed from the library when the `rm` command is invoked."""
