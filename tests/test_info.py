@@ -14,11 +14,11 @@ from moe.plugins import info
 class TestParseArgs:
     """Test the plugin argument parser."""
 
-    def test_track(self, capsys, tmp_session, make_track):
+    def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="id:1")
 
-        tmp_session.add(make_track(1))
+        tmp_session.add(mock_track)
         tmp_session.commit()
 
         info.parse_args(Mock(), tmp_session, args)
@@ -31,13 +31,13 @@ class TestParseArgs:
 class TestPrintInfos:
     """Test how multiple items get printed together."""
 
-    def test_newline_between(self, capsys, make_track):
+    def test_newline_between(self, capsys, mock_track_factory):
         """Items should be *separated* by newlines.
 
         There should not be a newline after the last item.
         """
-        track1 = make_track(1)
-        track2 = make_track(2)
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
 
         info.print_infos([track1, track2])
 
@@ -51,22 +51,18 @@ class TestPrintInfos:
 class TestPrintInfo:
     """Test how an individual item gets printed."""
 
-    def test_no_private_fields(self, capsys, make_track):
+    def test_no_private_fields(self, capsys, mock_track):
         """Private attributes should not be printed."""
-        track = make_track(1)
-
-        info.print_info(track)
+        info.print_info(mock_track)
 
         captured_out = capsys.readouterr().out
 
         # assumes each field and it's value is printed on a single line
         assert not re.search(r"(\n|^)_", captured_out)
 
-    def test_no_id(self, capsys, make_track):
+    def test_no_id(self, capsys, mock_track):
         """Primary ID key should not be printed."""
-        track = make_track(1)
-
-        info.print_info(track)
+        info.print_info(mock_track)
 
         captured_out = capsys.readouterr().out
 
@@ -78,11 +74,11 @@ class TestPrintInfo:
 class TestCommand:
     """Test cli integration with the info command."""
 
-    def test_parse_args(self, capsys, tmp_live, make_track):
+    def test_parse_args(self, capsys, tmp_live, tmp_path):
         """A track's info is printed when the `info` command is invoked."""
         config, pm = tmp_live
         with library.session_scope() as session:
-            session.add(make_track(1))
+            session.add(library.Track(path=tmp_path))
 
         args = ["info", "id:1"]
         cli._parse_args(args, pm, config)
