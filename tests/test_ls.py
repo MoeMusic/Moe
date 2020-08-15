@@ -32,9 +32,11 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the ls command."""
 
-    def test_parse_args(self, capsys, tmp_live, add_track):
+    def test_parse_args(self, capsys, tmp_live, make_track):
         """Music is listed from the library when the `ls` command is invoked."""
         config, pm = tmp_live
+        with library.session_scope() as session:
+            session.add(make_track(1))
 
         args = ["ls", "id:1"]
         cli._parse_args(args, pm, config)

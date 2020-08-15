@@ -42,10 +42,20 @@ def tmp_live(tmp_path) -> Tuple[Config, pluggy.PluginManager]:
     return config, pm
 
 
-@pytest.fixture
-def add_track(tmp_live):
-    """Adds a track a `tmp_live` instance."""
-    track = library.Track(path=pathlib.Path("testpath"))
+@pytest.fixture(scope="session")
+def make_track():
+    """Factory for a temporary Track object.
 
-    with library.session_scope() as session:
-        session.add(track)
+    Call with arguments specified in _make_track.
+
+    Example:
+        `track = make_track(1)`
+    """
+
+    def _make_track(track_id: int):
+        track = library.Track(pathlib.Path("track_" + str(track_id)))
+        track.id = track_id
+
+        return track
+
+    return _make_track
