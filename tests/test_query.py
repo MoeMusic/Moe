@@ -1,6 +1,5 @@
 """Test the core query module."""
 
-import pathlib
 from unittest.mock import Mock
 
 from moe.core import library, query
@@ -105,10 +104,10 @@ class TestQuery:
 
         assert tracks
 
-    def test_regex(self, tmp_session):
+    def test_regex(self, tmp_session, mock_track):
         """Queries can use regular expression matching."""
-        tmp_session.add(library.Track(path=pathlib.Path("/path")))
+        tmp_session.add(mock_track)
 
-        tracks = query.query("path::path", tmp_session)
+        tracks = query.query("id::.*", tmp_session)
 
         assert tracks

@@ -1,8 +1,7 @@
 """Shared pytest configuration."""
 
-import pathlib
-from typing import Iterator, Tuple
-from unittest.mock import MagicMock
+from typing import Callable, Iterator, Tuple
+from unittest.mock import MagicMock, Mock
 
 import pluggy
 import pytest
@@ -42,20 +41,23 @@ def tmp_live(tmp_path) -> Tuple[Config, pluggy.PluginManager]:
     return config, pm
 
 
-@pytest.fixture(scope="session")
-def make_track():
-    """Factory for a temporary Track object.
+@pytest.fixture
+def mock_track() -> library.Track:
+    """Creates a mock Track object.
 
-    Call with arguments specified in _make_track.
+    In particular, the path is mocked so the Track doesn't need to exist.
+    """
+    return library.Track(path=Mock())
 
-    Example:
-        `track = make_track(1)`
+
+@pytest.fixture
+def mock_track_factory() -> Callable[[], library.Track]:
+    """Factory for mock Tracks.
+
+    In particular, the path is mocked so the Track doesn't need to exist.
     """
 
-    def _make_track(track_id: int):
-        track = library.Track(pathlib.Path("track_" + str(track_id)))
-        track.id = track_id
+    def _mock_track():
+        return library.Track(path=Mock())
 
-        return track
-
-    return _make_track
+    return _mock_track

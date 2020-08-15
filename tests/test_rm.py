@@ -1,7 +1,6 @@
 """Test the remove plugin."""
 
 import argparse
-import pathlib
 from unittest.mock import Mock
 
 import pytest
@@ -14,11 +13,11 @@ from moe.plugins import rm
 class TestParseArgs:
     """Test the plugin argument parser."""
 
-    def test_track(self, tmp_session):
+    def test_track(self, tmp_session, mock_track):
         """Tracks are removed from the database with valid query."""
         args = argparse.Namespace(query="id:1")
 
-        tmp_session.add(library.Track(path=pathlib.Path("/tmp_path")))
+        tmp_session.add(mock_track)
         tmp_session.commit()
 
         rm.parse_args(Mock(), tmp_session, args)
