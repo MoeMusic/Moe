@@ -19,6 +19,7 @@ from moe.core import library
 DEFAULT_PLUGINS = [
     "add",
     "ls",
+    "rm",
 ]
 """Plugins that are enabled by default.
 
