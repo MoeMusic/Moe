@@ -18,6 +18,7 @@ from moe.core import library
 
 DEFAULT_PLUGINS = [
     "add",
+    "info",
     "ls",
     "rm",
 ]
