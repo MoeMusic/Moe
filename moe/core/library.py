@@ -66,7 +66,7 @@ class Track(Base):
     def __init__(self, path: pathlib.Path, title: str = None):
         """Create a track."""
         if not path.exists():
-            raise AttributeError
+            raise FileNotFoundError
 
         self.path = path
         self.title = title if title else "tmp_title"

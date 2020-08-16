@@ -27,7 +27,18 @@ def parse_args(
     config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace,
 ):
     """Parse the given commandline arguments."""
-    track = library.Track(path=pathlib.Path(args.path))
-
-    log.info("Adding track '%s' to the library.", track)
-    session.add(track)
+    try:
+        track = library.Track(path=pathlib.Path(args.path))
+    except FileNotFoundError:
+        log.error("Unable to add '%s' to the library; file does not exist.", args.path)
+    else:
+        # create our own session so we can do proper error handling
+        session.close()
+        try:
+            with library.session_scope() as session:
+                log.info("Adding track '%s' to the library.", track)
+                session.add(track)
+        except sqlalchemy.exc.IntegrityError:
+            log.error(
+                "Unable to add '%s'; file already exists in the library.", args.path
+            )
