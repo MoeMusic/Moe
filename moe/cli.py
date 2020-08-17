@@ -57,7 +57,7 @@ def main():
     config = Config()
     pm = _get_plugin_manager(config)
 
-    _parse_args(sys.argv, pm, config)
+    _parse_args(sys.argv[1:], pm, config)
 
 
 def _get_plugin_manager(config: Config) -> pluggy.PluginManager:
