@@ -5,28 +5,28 @@ typical usage of this module should just import the Config class directly.
 
     >>> from moe.core.config import Config
     >>> config = Config()
+
+Attributes:
+    DEFAULT_PLUGINS: Plugins that are enabled by default.
+
+    This list should only contain plugins that are a net positive in the vast majority
+    of use cases.
 """
 
 import pathlib
 import re
 import sqlite3
-from typing import List
 
 import sqlalchemy
 
 from moe.core import library
 
-DEFAULT_PLUGINS = [
+DEFAULT_PLUGINS = (
     "add",
     "info",
     "ls",
     "rm",
-]
-"""Plugins that are enabled by default.
-
-This list should only contain plugins that are a net positive in the vast majority
-of use cases.
-"""
+)
 
 
 class Config:
@@ -41,13 +41,14 @@ class Config:
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
     """
 
+    _default_config_dir = pathlib.Path().home() / ".config" / "moe"
+
     def __init__(
         self,
-        config_dir: pathlib.Path = pathlib.Path().home() / ".config" / "moe",
+        config_dir: pathlib.Path = _default_config_dir,
         db_dir: pathlib.Path = None,
         db_filename: str = "library.db",
         engine: sqlalchemy.engine.base.Engine = None,
-        default_plugins: List[str] = DEFAULT_PLUGINS,
     ):
         """Reads the configuration and initializes the database.
 
@@ -55,15 +56,13 @@ class Config:
             config_dir: Path of the configuration directory.
             db_dir: Path of the database directory. Defaults to config_dir.
             db_filename: Name of the database file.
-            engine: sqlalchemy database engine to use. Defaults to sqlite
-                located at db_dir / db_filename.
-            default_plugins: Default plugins to enable. These will be enabled
-                in addition to any plugins specified by the config file.
+            engine: sqlalchemy database engine to use.
+                Defaults to sqlite located at db_dir / db_filename.
         """
         self.config_dir = config_dir
         db_dir = db_dir if db_dir else config_dir
         db_path = db_dir / db_filename
-        self.plugins = default_plugins
+        self.plugins = DEFAULT_PLUGINS
 
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True)
@@ -91,7 +90,7 @@ class Config:
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(engine, "begin")
-        def sqlite_engine_connect(conn):
+        def sqlite_engine_connect(conn):  # noqa: WPS430
             try:
                 conn.connection.create_function(
                     "regexp", 2, _regexp, deterministic=True
@@ -100,14 +99,14 @@ class Config:
                 # determinstic flag is only supported by SQLite>=3.8.3
                 conn.connection.create_function("regexp", 2, _regexp)
 
-        def _regexp(pattern: str, value: str) -> bool:
+        def _regexp(pattern: str, col_value: str) -> bool:  # noqa: WPS430
             """Use the python re module for sqlite regular expression functionality.
 
             Args:
                 pattern: Regular expression pattern.
-                value: Value to match against.
+                col_value: Column value to match against.
 
             Returns:
                 Whether or not the match was successful.
             """
-            return re.search(pattern, value) is not None
+            return re.search(pattern, col_value) is not None

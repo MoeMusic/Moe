@@ -15,7 +15,7 @@ class TestParseArgs:
 
     def test_track(self, tmp_session, mock_track):
         """Tracks are removed from the database with valid query."""
-        args = argparse.Namespace(query="id:1")
+        args = argparse.Namespace(query="_id:1")
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -35,9 +35,9 @@ class TestCommand:
         """Music is removed from the library when the `rm` command is invoked."""
         config, pm = tmp_live
 
-        args = ["rm", "id:1"]
+        args = ["rm", "_id:1"]
         cli._parse_args(args, pm, config)
 
-        query = library.Session().query(library.Track.id).scalar()
+        query = library.Session().query(library.Track._id).scalar()
 
         assert not query

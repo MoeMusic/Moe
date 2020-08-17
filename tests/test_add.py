@@ -36,6 +36,6 @@ class TestCommand:
         args = ["add", str(tmp_path)]
         cli._parse_args(args, pm, config)
 
-        query = library.Session().query(library.Track.id).scalar()
+        query = library.Session().query(library.Track._id).scalar()
 
         assert query

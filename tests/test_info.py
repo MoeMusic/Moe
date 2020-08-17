@@ -16,7 +16,7 @@ class TestParseArgs:
 
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="id:1")
+        args = argparse.Namespace(query="_id:1")
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -48,26 +48,15 @@ class TestPrintInfos:
         assert len(sep_out) == 2
 
 
-class TestPrintInfo:
-    """Test how an individual item gets printed."""
+class TestGetInfo:
+    """Test how an individual item is represented for our plugin."""
 
     def test_no_private_fields(self, capsys, mock_track):
-        """Private attributes should not be printed."""
-        info.print_info(mock_track)
-
-        captured_out = capsys.readouterr().out
+        """Private attributes should not be included."""
+        track_info = info.get_info(mock_track)
 
         # assumes each field and it's value is printed on a single line
-        assert not re.search(r"(\n|^)_", captured_out)
-
-    def test_no_id(self, capsys, mock_track):
-        """Primary ID key should not be printed."""
-        info.print_info(mock_track)
-
-        captured_out = capsys.readouterr().out
-
-        # assumes each field and it's value is printed on a single line
-        assert not re.search(r"(\n|^)id", captured_out)
+        assert not re.search(r"(\n|^)_", track_info)
 
 
 @pytest.mark.integration
@@ -80,7 +69,7 @@ class TestCommand:
         with library.session_scope() as session:
             session.add(library.Track(path=tmp_path))
 
-        args = ["info", "id:1"]
+        args = ["info", "_id:1"]
         cli._parse_args(args, pm, config)
 
         captured_text = capsys.readouterr()

@@ -24,7 +24,7 @@ from moe.core import library
 log = logging.getLogger(__name__)
 
 query_parser = argparse.ArgumentParser(
-    add_help=False, formatter_class=argparse.RawTextHelpFormatter
+    add_help=False, formatter_class=argparse.RawTextHelpFormatter,
 )
 query_parser.add_argument("query", help="query the library")
 
@@ -47,6 +47,11 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 Note that multiple field:value expressions are joined together using AND logic.
 """
 
+# each query will be split into these groups
+FIELD_GROUP = "field"
+SEPARATOR_GROUP = "separator"
+VALUE_GROUP = "value"
+
 
 def _parse_query(query_str: str) -> List[Dict[str, str]]:
     """Parse the given database query string.
@@ -55,29 +60,33 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
         query_str: Query string to parse.
 
     Returns:
-       A list of dictionaries containing each named group and its value.
-       The named groups are field, separator, and value.
+        A list of dictionaries containing each named group and its value.
+        The named groups are field, separator, and value.
 
     Example:
         >>> parse_query('artist:name')
         [{"field": "artist", "separator": ":", "value": "name"}]
+
+    Note:
+        The fields are meant to be programatically accessed with the respective
+        group constant e.g. `expression[FIELD_GROUP] == "artist"`
     """
-    QUERY_REGEX = re.compile(
-        r"""
-        (?P<field>\S+?)
-        (?P<separator>::?)
-        (?P<value>\S.*?)
+    query_re = re.compile(
+        rf"""
+        (?P<{FIELD_GROUP}>\S+?)
+        (?P<{SEPARATOR_GROUP}>::?)
+        (?P<{VALUE_GROUP}>\S.*?)
         (?=\s\S+(?<!\\):\S|$)  # don't match next field if it exists
         """,
         re.VERBOSE,
     )
 
-    matches = re.finditer(QUERY_REGEX, query_str)
+    matches = re.finditer(query_re, query_str)
 
     match_dicts = []
     for match in matches:
         match_dict = match.groupdict()
-        match_dict["value"] = match_dict["value"].replace("\\:", ":")
+        match_dict[VALUE_GROUP] = match_dict[VALUE_GROUP].replace(r"\:", ":")
 
         match_dicts.append(match_dict)
 
@@ -85,40 +94,42 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
 
 
 def query(
-    query_str: str, session: sqlalchemy.orm.session.Session
+    query_str: str, session: sqlalchemy.orm.session.Session,
 ) -> List[library.Track]:
-    r"""Queries the database for the given query string.
+    """Queries the database for the given query string.
 
     Args:
         query_str: Query string to parse. See HELP_STR for more info.
+        session: current db session
 
     Returns:
-       All tracks matching the query.
+        empty tracks
+        All tracks matching the query.
     """
     expressions = _parse_query(query_str)
 
     if not expressions:
-        log.warning("Invalid query '%s'\n%s", query_str, HELP_STR)
+        log.warning(f"Invalid query '{query_str}'\n{HELP_STR}")
         return []
 
     filters = []
     for expression in expressions:
-        field = sqlalchemy.func.lower(getattr(library.Track, expression["field"]))
-        if expression["separator"] == "::":
+        field = sqlalchemy.func.lower(getattr(library.Track, expression[FIELD_GROUP]))
+        if expression[SEPARATOR_GROUP] == "::":
             # Regular expression
             # Note, this is a custom sqlite function created in config.py
-            value = expression["value"]
+            value = expression[VALUE_GROUP]
 
             try:
                 re.compile(value)
             except re.error:
-                log.warning("'%s' is not a valid regular expression.", value)
+                log.warning(f"'{value}' is not a valid regular expression.")
                 return []
 
             filters.append(field.op("regexp")(value))
         else:
             # Normal expression
-            value = sqlalchemy.func.lower(expression["value"])
+            value = sqlalchemy.func.lower(expression[VALUE_GROUP])
             filters.append(field == value)
 
     return session.query(library.Track).filter(*filters).all()

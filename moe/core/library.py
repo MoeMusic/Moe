@@ -27,17 +27,17 @@ class _PathType(sqlalchemy.types.TypeDecorator):
 
     impl = sqlalchemy.types.String  # sql type
 
-    def process_bind_param(self, value, dialect):
-        """Convert to a string of the absolue path on the way in."""
-        return str(value.resolve())
+    def process_bind_param(self, pathlib_path, dialect):
+        """Convert the path to a string prior to enterting in the database."""
+        return str(pathlib_path.resolve())
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, path_str, dialect):
         """Convert the path back to pathlib.Path on the way out."""
-        return pathlib.Path(value)
+        return pathlib.Path(path_str)
 
-    def coerce_compared_value(self, op, value):
+    def coerce_compared_value(self, op, path):
         """Define path comparisons for different types."""
-        if isinstance(value, str):
+        if isinstance(path, str):
             return String()
 
 
@@ -45,7 +45,6 @@ class Track(Base):
     """A single track.
 
     Attributes:
-        id (int): database id
         path (pathlib.Path): path of the track file
         title (str): track title
 
@@ -54,36 +53,56 @@ class Track(Base):
 
     Example:
         >>> track = Track(path=pathlib.Path('mycoolpath'))
-
     """
 
     __tablename__ = "tracks"
 
-    id = Column(Integer, primary_key=True)
+    _id = Column(Integer, primary_key=True)
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False)
 
-    def __init__(self, path: pathlib.Path, title: str = None):
-        """Create a track."""
+    def __init__(self, path: pathlib.Path):
+        """Create a track.
+
+        Populates the tags by reading the file.
+
+        Args:
+            path: Path to the track to add.
+
+        Raises:
+            FileNotFoundError: Given path doesn't exit.
+        """
         if not path.exists():
             raise FileNotFoundError
 
         self.path = path
-        self.title = title if title else "tmp_title"
+        self.title = "tmp_title"
 
     def __str__(self):
-        """String representation of a track."""
+        """A track is represented by its path.
+
+        Returns:
+            string represenation of the path
+        """
         return str(self.path)
 
 
 @contextmanager
 def session_scope():
-    """Provides a transactional scope around a series of operations."""
+    """Provides a transactional scope around a series of operations.
+
+    Yields:
+        A database session to use.
+
+    Raises:
+        BaseException: Any exceptions occured during while committing to
+            the database will be re-raised.
+    """
     session = Session()
+    yield session
     try:
-        yield session
         session.commit()
-    except BaseException:
+    except BaseException:  # noqa: WPS424
         session.rollback()
         raise
     finally:

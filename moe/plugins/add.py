@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 
 @moe.hookimpl
-def addcommand(cmd_parsers: argparse._SubParsersAction):
+def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `add` command to moe."""
     add_parser = cmd_parsers.add_parser(
         "add", description="Adds music to the library.", help="add music to the library"
@@ -26,19 +26,24 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
 def parse_args(
     config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace,
 ):
-    """Parse the given commandline arguments."""
+    """Parse the given commandline arguments.
+
+    Args:
+        config: configuration in use
+        session: current session
+        args: commandline arguments to parse
+    """
     try:
         track = library.Track(path=pathlib.Path(args.path))
     except FileNotFoundError:
-        log.error("Unable to add '%s' to the library; file does not exist.", args.path)
-    else:
-        # create our own session so we can do proper error handling
-        session.close()
-        try:
-            with library.session_scope() as session:
-                log.info("Adding track '%s' to the library.", track)
-                session.add(track)
-        except sqlalchemy.exc.IntegrityError:
-            log.error(
-                "Unable to add '%s'; file already exists in the library.", args.path
-            )
+        log.error(f"Unable to add '{args.path}' to the library; file does not exist.")
+        return
+
+    # create our own session so we can do proper error handling
+    session.close()
+    log.info(f"Adding track '{track}' to the library.")
+    try:
+        with library.session_scope() as new_session:
+            new_session.add(track)
+    except sqlalchemy.exc.IntegrityError:
+        log.error(f"Unable to add '{track.path}'; file already exists in the library.")
