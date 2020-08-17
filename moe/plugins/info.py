@@ -38,26 +38,27 @@ def parse_args(
     """
     tracks = query.query(args.query, session)
 
-    print_infos(tracks)
+    print(get_infos(tracks), end="")  # noqa: WPS421
 
 
-def print_infos(tracks: List[library.Track]):
-    """Print information for a list of tracks."""
+def get_infos(tracks: List[library.Track]):
+    """Get information for a list of tracks."""
+    out_str = ""
     for track in tracks:
-        out_str = get_info(track)
-        # print newline after each track except the last
-        if track is not tracks[-1]:
-            out_str = f"{out_str}\n"
+        out_str += get_info(track)
 
-        print(out_str, end="")  # noqa: WPS421
+        if track is not tracks[-1]:
+            out_str += "\n"
+
+    return out_str
 
 
 def get_info(track: library.Track) -> str:
     """Returns information about a track."""
     track_info = ""
+    private_field_re = "^_.*"
     for field, value in vars(track).items():  # noqa: WPS421
-        # don't include private fields
-        if not re.match(r"^_.*", field):
+        if not re.match(private_field_re, field):
             track_info += f"{field}: {value}\n"
 
     return track_info

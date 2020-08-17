@@ -28,8 +28,8 @@ class TestParseArgs:
         assert captured_text.out
 
 
-class TestPrintInfos:
-    """Test how multiple items get printed together."""
+class TestGetInfos:
+    """Test how multiple items are represented together."""
 
     def test_newline_between(self, capsys, mock_track_factory):
         """Items should be *separated* by newlines.
@@ -39,13 +39,13 @@ class TestPrintInfos:
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
-        info.print_infos([track1, track2])
+        track_infos = info.get_infos([track1, track2])
 
-        captured_out = capsys.readouterr().out
+        sep_infos = track_infos.split("\n\n")
 
-        sep_out = captured_out.split("\n\n")
-
-        assert len(sep_out) == 2
+        assert len(sep_infos) == 2
+        assert sep_infos[0].strip() == info.get_info(track1).strip()
+        assert sep_infos[1].strip() == info.get_info(track2).strip()
 
 
 class TestGetInfo:
