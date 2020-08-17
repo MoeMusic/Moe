@@ -23,7 +23,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def addcommand(cmd_parsers: argparse._SubParsersAction):
+    def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         """Adds a sub-command to moe.
 
         Args:
@@ -50,7 +50,6 @@ class Hooks:
                     args: argparse.Namespace,  # parsed commandline arguments
                 )
         """
-        pass
 
 
 def main():
@@ -58,7 +57,7 @@ def main():
     config = Config()
     pm = _get_plugin_manager(config)
 
-    _parse_args(sys.argv[1:], pm, config)
+    _parse_args(sys.argv, pm, config)
 
 
 def _get_plugin_manager(config: Config) -> pluggy.PluginManager:
@@ -68,12 +67,15 @@ def _get_plugin_manager(config: Config) -> pluggy.PluginManager:
 
     Args:
         config: User configuration for moe.
+
+    Returns:
+        global plugin manager
     """
     pm = pluggy.PluginManager("moe")
     pm.add_hookspecs(Hooks)
 
     for plugin in config.plugins:
-        pm.register(importlib.import_module("moe.plugins." + plugin))
+        pm.register(importlib.import_module(f"moe.plugins.{plugin}"))
 
     return pm
 
@@ -82,18 +84,15 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
     """Parses the commandline arguments.
 
     Args:
-        args: Arguments to parse.
+        args: Arguments to parse. Should not include 'moe'.
         pm: Global plugin manager
         config: User configuration for moe.
-
-    Returns:
-        Parsed arguments
     """
-    VERSION = pkg_resources.get_distribution("moe").version
+    version = pkg_resources.get_distribution("moe").version
 
     moe_parser = argparse.ArgumentParser(description="Run moe.")
     moe_parser.add_argument(
-        "--version", action="version", version="%(prog)s v{0}".format(VERSION)
+        "--version", action="version", version=f"%(prog)s v{version}",  # noqa: WPS323
     )
     moe_parser.add_argument(
         "--verbose",
@@ -105,8 +104,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         "--quiet",
         "-q",
         action="count",
-        help="decrease logging verbosity;"
-        " use -qq to limit logging to critical errors",
+        help="decrease logging verbosity; use -qq to limit logging to critical errors",
     )
 
     # load all sub-commands
@@ -120,21 +118,29 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         moe_parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # set root log level
-    if parsed_args.verbose == 1:
-        logging.basicConfig(level="INFO")
-    elif parsed_args.verbose == 2:
-        logging.basicConfig(level="DEBUG")
-    elif parsed_args.quiet == 1:
-        logging.basicConfig(level="ERROR")
-    elif parsed_args.quiet == 2:
-        logging.basicConfig(level="CRITICAL")
-    else:
-        logging.basicConfig(level="WARNING")
+    _set_root_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
     with library.session_scope() as session:
         parsed_args.func(config=config, session=session, args=parsed_args)
+
+
+def _set_root_log_lvl(args):
+    """Sets the root logger level based on cli arguments.
+
+    Args:
+        args: parsed arguments to process
+    """
+    if args.verbose == 1:
+        logging.basicConfig(level="INFO")
+    elif args.verbose == 2:
+        logging.basicConfig(level="DEBUG")
+    elif args.quiet == 1:
+        logging.basicConfig(level="ERROR")
+    elif args.quiet == 2:
+        logging.basicConfig(level="CRITICAL")
+    else:
+        logging.basicConfig(level="WARNING")
 
 
 if __name__ == "__main__":

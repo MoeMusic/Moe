@@ -42,22 +42,28 @@ def tmp_live(tmp_path) -> Tuple[Config, pluggy.PluginManager]:
 
 
 @pytest.fixture
-def mock_track() -> library.Track:
-    """Creates a mock Track object.
-
-    In particular, the path is mocked so the Track doesn't need to exist.
-    """
-    return library.Track(path=Mock())
-
-
-@pytest.fixture
 def mock_track_factory() -> Callable[[], library.Track]:
     """Factory for mock Tracks.
 
     In particular, the path is mocked so the Track doesn't need to exist.
+
+    Returns:
+        Unique Track object with each call.
     """
 
-    def _mock_track():
+    def _mock_track():  # noqa: WPS430
         return library.Track(path=Mock())
 
     return _mock_track
+
+
+@pytest.fixture
+def mock_track(mock_track_factory) -> library.Track:
+    """Creates a single mock Track object.
+
+    Uses `mock_track_factory`.
+
+    Returns:
+        Track object.
+    """
+    return mock_track_factory()

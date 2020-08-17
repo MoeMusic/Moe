@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock
 
-from moe.core import library, query
+from moe.core import query
 
 
 class TestParseQuery:
@@ -86,19 +86,20 @@ class TestQuery:
         """Invalid queries should return an empty list."""
         matches = query.query(r"invalid", Mock())
 
-        assert matches == []
+        assert not matches
 
-    def test_valid_query(self, tmp_session):
+    def test_valid_query(self, tmp_session, mock_track):
         """Simplest query."""
-        tmp_session.add(library.Track(path=Mock(), title="tmp"))
+        tmp_session.add(mock_track)
 
-        tracks = query.query(r"title:tmp", tmp_session)
+        tracks = query.query("_id:1", tmp_session)
 
         assert tracks
 
-    def test_case_insensitive(self, tmp_session):
+    def test_case_insensitive(self, tmp_session, mock_track):
         """Queries should be case-insensitive."""
-        tmp_session.add(library.Track(path=Mock(), title="TMP"))
+        mock_track.title = "TMP"
+        tmp_session.add(mock_track)
 
         tracks = query.query(r"title:tmp", tmp_session)
 
@@ -108,6 +109,6 @@ class TestQuery:
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
 
-        tracks = query.query("id::.*", tmp_session)
+        tracks = query.query("_id::.*", tmp_session)
 
         assert tracks

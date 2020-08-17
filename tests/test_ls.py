@@ -15,7 +15,7 @@ class TestParseArgs:
 
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="id:1")
+        args = argparse.Namespace(query="_id:1")
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -37,7 +37,7 @@ class TestCommand:
         with library.session_scope() as session:
             session.add(library.Track(path=tmp_path))
 
-        args = ["ls", "id:1"]
+        args = ["ls", "_id:1"]
         cli._parse_args(args, pm, config)
 
         captured_text = capsys.readouterr()

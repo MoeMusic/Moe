@@ -13,8 +13,12 @@ log = logging.getLogger(__name__)
 
 
 @moe.hookimpl
-def addcommand(cmd_parsers: argparse._SubParsersAction):
-    """Adds a new `add` command to moe."""
+def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+    """Adds a new `rm` command to moe.
+
+    Args:
+        cmd_parsers: contains all the sub-command parsers
+    """
     add_parser = cmd_parsers.add_parser(
         "rm",
         aliases=["remove"],
@@ -28,9 +32,15 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):
 def parse_args(
     config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace,
 ):
-    """Parse the given commandline arguments."""
+    """Parse the given commandline arguments.
+
+    Args:
+        config: configuration in use
+        session: current session
+        args: given commandline arguments
+    """
     tracks = query.query(args.query, session)
 
     for track in tracks:
-        log.info("Removing track '%s' from the library.", track)
+        log.info(f"Removing track '{track}' from the library.")
         session.delete(track)
