@@ -15,7 +15,7 @@ to get a list of Tracks matching the query from the library.
 import argparse
 import logging
 import re
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import sqlalchemy
 
@@ -63,6 +63,10 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
         A list of dictionaries containing each named group and its value.
         The named groups are field, separator, and value.
 
+        Each dictionary can be referred to as an "expression".
+        E.g. for the query `artist:name title:my_title`, `artist:name` and
+        `title:my_title` are two distinct expressions.
+
     Example:
         >>> parse_query('artist:name')
         [{"field": "artist", "separator": ":", "value": "name"}]
@@ -93,6 +97,40 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
     return match_dicts
 
 
+def _create_filter(
+    expression: Dict[str, str]
+) -> Union[sqlalchemy.sql.elements.BinaryExpression, str]:
+    """Maps a user-given query expression to a filter for the database query.
+
+    Args:
+        expression: A single query expression defined by `_parse_query()`.
+
+    Returns:
+        A list of the filters to filter the database query against.
+
+        A "filter" is anything accepted by a sqlalchemy `Query.filter()`.
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
+    """
+    field = sqlalchemy.func.lower(getattr(library.Track, expression[FIELD_GROUP]))
+
+    if expression[SEPARATOR_GROUP] == "::":
+        # Regular expression
+        # Note, this is a custom sqlite function created in config.py
+        value = expression[VALUE_GROUP]
+
+        try:
+            re.compile(value)
+        except re.error:
+            log.warning(f"'{value}' is not a valid regular expression.")
+            return ""
+
+        return field.op("regexp")(value)
+
+    # Normal expression
+    value = sqlalchemy.func.lower(expression[VALUE_GROUP])
+    return field == value
+
+
 def query(
     query_str: str, session: sqlalchemy.orm.session.Session,
 ) -> List[library.Track]:
@@ -103,7 +141,6 @@ def query(
         session: current db session
 
     Returns:
-        empty tracks
         All tracks matching the query.
     """
     expressions = _parse_query(query_str)
@@ -114,22 +151,11 @@ def query(
 
     filters = []
     for expression in expressions:
-        field = sqlalchemy.func.lower(getattr(library.Track, expression[FIELD_GROUP]))
-        if expression[SEPARATOR_GROUP] == "::":
-            # Regular expression
-            # Note, this is a custom sqlite function created in config.py
-            value = expression[VALUE_GROUP]
+        filters.append(_create_filter(expression))
 
-            try:
-                re.compile(value)
-            except re.error:
-                log.warning(f"'{value}' is not a valid regular expression.")
-                return []
+    tracks = session.query(library.Track).filter(*filters).all()
 
-            filters.append(field.op("regexp")(value))
-        else:
-            # Normal expression
-            value = sqlalchemy.func.lower(expression[VALUE_GROUP])
-            filters.append(field == value)
+    if not tracks:
+        log.warning(f"No tracks found for the query '{query_str}'.")
 
-    return session.query(library.Track).filter(*filters).all()
+    return tracks
