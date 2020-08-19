@@ -27,6 +27,15 @@ class TestParseArgs:
 
         assert captured_text.out
 
+    def test_exit_code(self, capsys, tmp_session, mock_track):
+        """If no track infos are printed, we should return a non-zero exit code."""
+        args = argparse.Namespace(query="_id:1")
+
+        with pytest.raises(SystemExit) as pytest_e:
+            info.parse_args(Mock(), tmp_session, args)
+
+            assert pytest_e.value.code != 0
+
 
 class TestGetInfos:
     """Test how multiple items are represented together."""

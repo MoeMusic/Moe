@@ -26,14 +26,26 @@ class TestParseArgs:
 
         assert not query
 
+    def test_exit_code(self, capsys, tmp_session, mock_track):
+        """If no tracks are printed, we should return a non-zero exit code."""
+        args = argparse.Namespace(query="_id:1")
+
+        with pytest.raises(SystemExit) as pytest_e:
+            rm.parse_args(Mock(), tmp_session, args)
+
+            assert pytest_e.value.code != 0
+
 
 @pytest.mark.integration
 class TestCommand:
     """Test cli integration with the rm command."""
 
-    def test_parse_args(self, tmp_live):
+    def test_parse_args(self, tmp_path, tmp_live):
         """Music is removed from the library when the `rm` command is invoked."""
         config, pm = tmp_live
+
+        with library.session_scope() as session:
+            session.add(library.Track(path=tmp_path))
 
         args = ["rm", "_id:1"]
         cli._parse_args(args, pm, config)

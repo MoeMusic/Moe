@@ -38,8 +38,14 @@ def parse_args(
         config: configuration in use
         session: current session
         args: given commandline arguments
+
+    Raises:
+        SystemExit: Query returned no tracks.
     """
     tracks = query.query(args.query, session)
+
+    if not tracks:
+        raise SystemExit(1)
 
     for track in tracks:
         log.info(f"Removing track '{track}' from the library.")

@@ -35,8 +35,14 @@ def parse_args(
         config: configuration in use
         session: current session
         args: commandline arguments to parse
+
+    Raises:
+        SystemExit: Query returned no tracks.
     """
     tracks = query.query(args.query, session)
+
+    if not tracks:
+        raise SystemExit(1)
 
     print(get_infos(tracks), end="")  # noqa: WPS421
 
