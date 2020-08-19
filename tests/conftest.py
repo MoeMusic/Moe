@@ -1,15 +1,12 @@
 """Shared pytest configuration."""
 
-from typing import Callable, Iterator, Tuple
+from typing import Callable, Iterator
 from unittest.mock import MagicMock, Mock
 
-import pluggy
 import pytest
 import sqlalchemy
 
-from moe import cli
-from moe.core import library
-from moe.core.config import Config
+from moe.core import config, library
 
 
 @pytest.fixture
@@ -22,23 +19,22 @@ def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
         session: temp Session instance
     """
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
-    Config(config_dir=MagicMock(), engine=engine)
+    config.Config(config_dir=MagicMock(), engine=engine)
 
     with library.session_scope() as session:
         yield session
 
 
 @pytest.fixture
-def tmp_live(tmp_path) -> Tuple[Config, pluggy.PluginManager]:
-    """Instantiates an actual configuration and pluginmanager under a tmp path.
+def tmp_config(tmp_path) -> config.Config:
+    """Instantiates a temporary configuration.
+
+    This is for use with integration tests.
 
     Returns:
-        A tuple containing the config and pluginmanager
+        The configuration instance.
     """
-    config = Config(config_dir=tmp_path)
-    pm = cli._get_plugin_manager(config)
-
-    return config, pm
+    return config.Config(config_dir=tmp_path)
 
 
 @pytest.fixture

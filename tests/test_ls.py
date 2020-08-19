@@ -1,7 +1,7 @@
 """Test the list plugin."""
 
 import argparse
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -38,14 +38,16 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the ls command."""
 
-    def test_parse_args(self, capsys, tmp_path, tmp_live):
+    def test_parse_args(self, capsys, tmp_config, mock_track):
         """Music is listed from the library when the `ls` command is invoked."""
-        config, pm = tmp_live
-        with library.session_scope() as session:
-            session.add(library.Track(path=tmp_path))
+        args = ["moe", "ls", "_id:1"]
 
-        args = ["ls", "_id:1"]
-        cli._parse_args(args, pm, config)
+        with library.session_scope() as session:
+            session.add(mock_track)
+
+        with patch("sys.argv", args):
+            with patch("moe.cli.Config", return_value=tmp_config):
+                cli.main()
 
         captured_text = capsys.readouterr()
 

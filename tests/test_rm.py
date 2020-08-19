@@ -1,7 +1,7 @@
 """Test the remove plugin."""
 
 import argparse
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -38,15 +38,16 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the rm command."""
 
-    def test_parse_args(self, tmp_path, tmp_live):
+    def test_parse_args(self, tmp_path, tmp_config, mock_track):
         """Music is removed from the library when the `rm` command is invoked."""
-        config, pm = tmp_live
+        args = ["moe", "rm", "_id:1"]
 
         with library.session_scope() as session:
-            session.add(library.Track(path=tmp_path))
+            session.add(mock_track)
 
-        args = ["rm", "_id:1"]
-        cli._parse_args(args, pm, config)
+        with patch("sys.argv", args):
+            with patch("moe.cli.Config", return_value=tmp_config):
+                cli.main()
 
         query = library.Session().query(library.Track._id).scalar()
 

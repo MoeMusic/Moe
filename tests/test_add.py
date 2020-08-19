@@ -2,7 +2,7 @@
 
 import argparse
 import pathlib
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -45,12 +45,13 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the add command."""
 
-    def test_parse_args(self, tmp_path, tmp_live):
+    def test_basic(self, tmp_path, tmp_config):
         """Music is added to the library when the `add` command is invoked."""
-        config, pm = tmp_live
+        args = ["moe", "add", str(tmp_path)]
 
-        args = ["add", str(tmp_path)]
-        cli._parse_args(args, pm, config)
+        with patch("sys.argv", args):
+            with patch("moe.cli.Config", return_value=tmp_config):
+                cli.main()
 
         query = library.Session().query(library.Track._id).scalar()
 
