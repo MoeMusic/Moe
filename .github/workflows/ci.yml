@@ -53,3 +53,37 @@ jobs:
     - name: Test
       run: |
         poetry run pytest
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip poetry
+        poetry install
+
+    - name: Create unittest coverage report
+      run: |
+        poetry run pytest -v -m "not integration" --cov=. --cov-report=xml
+
+    - name: Upload unittest coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        flags: unittests
+
+    - name: Create integration test coverage report
+      run: |
+        poetry run pytest -v -m integration --cov=. --cov-report=xml
+
+    - name: Upload integration test coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        flags: integration
