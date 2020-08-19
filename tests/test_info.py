@@ -2,7 +2,7 @@
 
 import argparse
 import re
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -70,14 +70,16 @@ class TestGetInfo:
 class TestCommand:
     """Test cli integration with the info command."""
 
-    def test_parse_args(self, capsys, tmp_live, tmp_path):
+    def test_parse_args(self, capsys, tmp_config, mock_track):
         """A track's info is printed when the `info` command is invoked."""
-        config, pm = tmp_live
-        with library.session_scope() as session:
-            session.add(library.Track(path=tmp_path))
+        args = ["moe", "info", "_id:1"]
 
-        args = ["info", "_id:1"]
-        cli._parse_args(args, pm, config)
+        with library.session_scope() as session:
+            session.add(mock_track)
+
+        with patch("sys.argv", args):
+            with patch("moe.cli.Config", return_value=tmp_config):
+                cli.main()
 
         captured_text = capsys.readouterr()
 
