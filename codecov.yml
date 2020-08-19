@@ -1,0 +1,5 @@
+# codecov configuration
+# https://docs.codecov.io/docs/codecov-yaml
+
+comment:
+  layout: "diff, flags"

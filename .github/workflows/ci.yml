@@ -77,7 +77,7 @@ jobs:
     - name: Upload unittest coverage report
       uses: codecov/codecov-action@v1
       with:
-        flags: unittests
+        flags: unit
 
     - name: Create integration test coverage report
       run: |
