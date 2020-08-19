@@ -35,11 +35,6 @@ class _PathType(sqlalchemy.types.TypeDecorator):
         """Convert the path back to pathlib.Path on the way out."""
         return pathlib.Path(path_str)
 
-    def coerce_compared_value(self, op, path):
-        """Define path comparisons for different types."""
-        if isinstance(path, str):
-            return String()
-
 
 class Track(Base):
     """A single track.
