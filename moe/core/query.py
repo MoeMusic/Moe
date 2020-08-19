@@ -15,7 +15,7 @@ to get a list of Tracks matching the query from the library.
 import argparse
 import logging
 import re
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import sqlalchemy
 
@@ -90,6 +90,7 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
     match_dicts = []
     for match in matches:
         match_dict = match.groupdict()
+        match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
         match_dict[VALUE_GROUP] = match_dict[VALUE_GROUP].replace(r"\:", ":")
 
         match_dicts.append(match_dict)
@@ -99,7 +100,7 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
 
 def _create_filter(
     expression: Dict[str, str]
-) -> Union[sqlalchemy.sql.elements.BinaryExpression, str]:
+) -> sqlalchemy.sql.elements.BinaryExpression:
     """Maps a user-given query expression to a filter for the database query.
 
     Args:
@@ -110,6 +111,9 @@ def _create_filter(
 
         A "filter" is anything accepted by a sqlalchemy `Query.filter()`.
         https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
+
+    Raises:
+        ValueError: Invalid query value given.
     """
     field = sqlalchemy.func.lower(getattr(library.Track, expression[FIELD_GROUP]))
 
@@ -122,7 +126,7 @@ def _create_filter(
             re.compile(value)
         except re.error:
             log.warning(f"'{value}' is not a valid regular expression.")
-            return ""
+            raise ValueError
 
         return field.op("regexp")(value)
 
@@ -149,11 +153,16 @@ def query(
         log.warning(f"Invalid query '{query_str}'\n{HELP_STR}")
         return []
 
-    filters = []
+    query_filters = []
     for expression in expressions:
-        filters.append(_create_filter(expression))
+        try:
+            query_filter = _create_filter(expression)
+        except ValueError:
+            return []
 
-    tracks = session.query(library.Track).filter(*filters).all()
+        query_filters.append(query_filter)
+
+    tracks = session.query(library.Track).filter(*query_filters).all()
 
     if not tracks:
         log.warning(f"No tracks found for the query '{query_str}'.")
