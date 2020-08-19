@@ -32,12 +32,15 @@ def parse_args(
         config: configuration in use
         session: current session
         args: commandline arguments to parse
+
+    Raises:
+        SystemExit: Could not add the given track to the library.
     """
     try:
         track = library.Track(path=pathlib.Path(args.path))
     except FileNotFoundError:
         log.error(f"Unable to add '{args.path}' to the library; file does not exist.")
-        return
+        raise SystemExit(1)
 
     # create our own session so we can do proper error handling
     session.close()
@@ -47,3 +50,4 @@ def parse_args(
             new_session.add(track)
     except sqlalchemy.exc.IntegrityError:
         log.error(f"Unable to add '{track.path}'; file already exists in the library.")
+        raise SystemExit(1)

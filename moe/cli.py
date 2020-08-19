@@ -87,6 +87,10 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         args: Arguments to parse. Should not include 'moe'.
         pm: Global plugin manager
         config: User configuration for moe.
+
+    Raises:
+        SystemExit: No sub-commands given.
+            Does not include root commands such as `--version` or `--help`.
     """
     version = pkg_resources.get_distribution("moe").version
 
@@ -116,7 +120,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
     # no sub-command given
     if not parsed_args.command:
         moe_parser.print_help(sys.stderr)
-        sys.exit(1)
+        raise SystemExit(1)
 
     _set_root_log_lvl(parsed_args)
 
