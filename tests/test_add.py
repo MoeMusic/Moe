@@ -24,6 +24,22 @@ class TestParseArgs:
 
         assert test_path == pathlib.Path(tmp_path).resolve()
 
+    def test_file_not_found(self, tmp_session):
+        """We should raise SystemExit if we can't find the file to add."""
+        args = argparse.Namespace(path="does not exist")
+
+        with pytest.raises(SystemExit):
+            add.parse_args(Mock(), Mock(), args)
+
+    def test_duplicate_file(self, tmp_path, tmp_session):
+        """We should raise SystemExit if the file already exists in the library."""
+        args = argparse.Namespace(path=tmp_path)
+
+        add.parse_args(Mock(), tmp_session, args)
+
+        with pytest.raises(SystemExit):
+            add.parse_args(Mock(), tmp_session, args)
+
 
 @pytest.mark.integration
 class TestCommand:
