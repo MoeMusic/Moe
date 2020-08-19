@@ -15,7 +15,6 @@ Attributes:
 
 import pathlib
 import re
-import sqlite3
 
 import sqlalchemy
 
@@ -91,13 +90,7 @@ class Config:
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(engine, "begin")
         def sqlite_engine_connect(conn):  # noqa: WPS430
-            try:
-                conn.connection.create_function(
-                    "regexp", 2, _regexp, deterministic=True
-                )
-            except sqlite3.NotSupportedError:
-                # determinstic flag is only supported by SQLite>=3.8.3
-                conn.connection.create_function("regexp", 2, _regexp)
+            conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
 
         def _regexp(pattern: str, col_value: str) -> bool:  # noqa: WPS430
             """Use the python re module for sqlite regular expression functionality.
