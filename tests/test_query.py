@@ -84,9 +84,9 @@ class TestQuery:
 
     def test_invalid_query(self):
         """Invalid queries should return an empty list."""
-        matches = query.query(r"invalid", Mock())
+        tracks = query.query(r"invalid", Mock())
 
-        assert not matches
+        assert not tracks
 
     def test_valid_query(self, tmp_session, mock_track):
         """Simplest query."""
@@ -96,12 +96,21 @@ class TestQuery:
 
         assert tracks
 
-    def test_case_insensitive(self, tmp_session, mock_track):
-        """Queries should be case-insensitive."""
+    def test_case_insensitive_value(self, tmp_session, mock_track):
+        """Normal queries should be case-insensitive."""
         mock_track.title = "TMP"
         tmp_session.add(mock_track)
 
         tracks = query.query(r"title:tmp", tmp_session)
+
+        assert tracks
+
+    def test_case_insensitive_field(self, tmp_session, mock_track):
+        """Normal queries should be case-insensitive."""
+        mock_track.title = "tmp"
+        tmp_session.add(mock_track)
+
+        tracks = query.query(r"Title:tmp", tmp_session)
 
         assert tracks
 
@@ -110,5 +119,22 @@ class TestQuery:
         tmp_session.add(mock_track)
 
         tracks = query.query("_id::.*", tmp_session)
+
+        assert tracks
+
+    def test_invalid_regex(self, tmp_session, mock_track):
+        """Invalid regex queries should return an empty list."""
+        tmp_session.add(mock_track)
+
+        tracks = query.query("_id::[", tmp_session)
+
+        assert not tracks
+
+    def test_regex_case_insensitive(self, tmp_session, mock_track):
+        """Regex queries should be case-insensitive."""
+        mock_track.title = "TMP"
+        tmp_session.add(mock_track)
+
+        tracks = query.query(r"title::tmp", tmp_session)
 
         assert tracks
