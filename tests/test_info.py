@@ -31,10 +31,8 @@ class TestParseArgs:
         """If no track infos are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="_id:1")
 
-        with pytest.raises(SystemExit) as pytest_e:
+        with pytest.raises(SystemExit):
             info.parse_args(Mock(), tmp_session, args)
-
-            assert pytest_e.value.code != 0
 
 
 class TestGetInfos:
