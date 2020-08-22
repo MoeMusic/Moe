@@ -2,7 +2,10 @@
 
 from unittest.mock import Mock
 
+import pytest
+
 from moe.core import query
+from moe.core.library import Album, Track
 
 
 class TestParseQuery:
@@ -155,3 +158,28 @@ class TestQuery:
 
         tracks = query.query(r"albumartist:2Pac", tmp_session)
         assert tracks
+
+    def test_track_query(self, tmp_session, mock_track):
+        """A track query should return track objects."""
+        tmp_session.add(mock_track)
+
+        tracks = query.query("_id:1", tmp_session, album_query=False)
+
+        for track in tracks:
+            assert isinstance(track, Track)
+
+    def test_album_query(self, tmp_session, mock_track):
+        """An album query should return album objects."""
+        tmp_session.add(mock_track)
+
+        albums = query.query("_id:1", tmp_session, album_query=True)
+
+        for album in albums:
+            assert isinstance(album, Album)
+
+    def test_album_query_track_field(self, tmp_session, mock_track):
+        """An album query should not match against track fields."""
+        tmp_session.add(mock_track)
+
+        with pytest.raises(AttributeError):
+            query.query("_album_id:1", tmp_session, album_query=True)
