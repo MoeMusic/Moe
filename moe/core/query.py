@@ -125,7 +125,7 @@ def _create_filter(
         try:
             re.compile(value)
         except re.error:
-            log.warning(f"'{value}' is not a valid regular expression.")
+            log.error(f"'{value}' is not a valid regular expression.")
             raise ValueError
 
         return field.op("regexp")(value)
@@ -150,7 +150,7 @@ def query(
     expressions = _parse_query(query_str)
 
     if not expressions:
-        log.warning(f"Invalid query '{query_str}'\n{HELP_STR}")
+        log.error(f"Invalid query '{query_str}'\n{HELP_STR}")
         return []
 
     query_filters = []
