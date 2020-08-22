@@ -1,7 +1,7 @@
 """Shared pytest configuration."""
 
 from typing import Callable, Iterator
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy
@@ -48,7 +48,7 @@ def mock_track_factory() -> Callable[[], library.Track]:
     """
 
     def _mock_track():  # noqa: WPS430
-        return library.Track(path=Mock())
+        return library.Track(path=MagicMock(), read_tags=False)
 
     return _mock_track
 

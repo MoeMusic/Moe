@@ -14,15 +14,16 @@ from moe.plugins import add
 class TestParseArgs:
     """Test the plugin argument parser."""
 
-    def test_track(self, tmp_path, tmp_session):
+    def test_track(self, tmp_session):
         """Tracks are added to the database."""
-        args = argparse.Namespace(path=tmp_path)
+        music_file = pathlib.Path("tests/resources/audio_files/full.mp3")
+        args = argparse.Namespace(path=str(music_file))
 
         add.parse_args(Mock(), tmp_session, args)
 
         test_path = tmp_session.query(library.Track.path).scalar()
 
-        assert test_path == pathlib.Path(tmp_path).resolve()
+        assert test_path == music_file.resolve()
 
     def test_file_not_found(self, tmp_session):
         """We should raise SystemExit if we can't find the file to add."""
@@ -31,9 +32,9 @@ class TestParseArgs:
         with pytest.raises(SystemExit):
             add.parse_args(Mock(), Mock(), args)
 
-    def test_duplicate_file(self, tmp_path, tmp_session):
+    def test_duplicate_file(self, tmp_session):
         """We should raise SystemExit if the file already exists in the library."""
-        args = argparse.Namespace(path=tmp_path)
+        args = argparse.Namespace(path="tests/resources/audio_files/full.mp3")
 
         add.parse_args(Mock(), tmp_session, args)
 
@@ -45,9 +46,9 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the add command."""
 
-    def test_basic(self, tmp_path, tmp_config):
+    def test_basic(self, tmp_config):
         """Music is added to the library when the `add` command is invoked."""
-        args = ["moe", "add", str(tmp_path)]
+        args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=tmp_config):
