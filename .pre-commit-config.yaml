@@ -11,7 +11,11 @@ repos:
     rev: master
     hooks:
       - id: flake8
-        additional_dependencies: [flake8-bugbear, flake8-docstrings]
+        additional_dependencies: [
+        flake8-use-fstring,
+        flake8-docstrings,
+        wemake-python-styleguide,
+        ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: master
