@@ -39,10 +39,10 @@ def parse_args(
     Raises:
         SystemExit: Query returned no tracks.
     """
-    tracks = query.query(args.query, session)
+    items = query.query(args.query, session, args.album)
 
-    if not tracks:
+    if not items:
         raise SystemExit(1)
 
-    for track in tracks:
-        print(track)  # noqa: WPS421
+    for item in items:
+        print(item)  # noqa: WPS421

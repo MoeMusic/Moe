@@ -15,7 +15,7 @@ class TestParseArgs:
 
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="_id:1")
+        args = argparse.Namespace(query="_id:1", album=False)
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -24,11 +24,24 @@ class TestParseArgs:
 
         captured_text = capsys.readouterr()
 
-        assert captured_text.out
+        assert captured_text.out.strip() == str(mock_track).strip()
+
+    def test_album(self, capsys, tmp_session, mock_track):
+        """Albums are printed to stdout with valid query."""
+        args = argparse.Namespace(query="_id:1", album=True)
+
+        tmp_session.add(mock_track)
+        tmp_session.commit()
+
+        ls.parse_args(Mock(), tmp_session, args)
+
+        captured_text = capsys.readouterr()
+
+        assert captured_text.out.strip() == str(mock_track.album).strip()
 
     def test_exit_code(self, capsys, tmp_session, mock_track):
         """If no tracks are printed, we should return a non-zero exit code."""
-        args = argparse.Namespace(query="_id:1")
+        args = argparse.Namespace(query="_id:1", album=False)
 
         with pytest.raises(SystemExit):
             ls.parse_args(Mock(), tmp_session, args)
