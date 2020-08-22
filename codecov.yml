@@ -3,3 +3,9 @@
 
 comment:
   layout: "diff, flags"
+
+# disable CI builds
+coverage:
+  status:
+    project: off
+    patch: off
