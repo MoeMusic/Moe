@@ -13,7 +13,8 @@ import sqlalchemy
 from mediafile import MediaFile
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.schema import ForeignKey
 
 Session = sessionmaker()
 Base = declarative_base()
@@ -37,14 +38,34 @@ class _PathType(sqlalchemy.types.TypeDecorator):
         return pathlib.Path(path_str)
 
 
+class Album(Base):
+    """An album is a collection of tracks.
+
+    Albums also house any attributes that are shared by tracks e.g. albumartist.
+
+    Attributes:
+        artist (str): AKA a track's albumartist.
+        title (str)
+        tracks (List[Track]): All the album's corresponding tracks.
+    """
+
+    __tablename__ = "albums"
+
+    _id = Column(Integer, primary_key=True)
+    artist = Column(String, nullable=False, default="")
+    title = Column(String, nullable=False, default="")
+
+    tracks = relationship("Track", back_populates="album", cascade="all, delete")
+
+
 class Track(Base):
     """A single track.
 
     Attributes:
-        path (pathlib.Path): Path of the track file.
-        album (str)
-        albumartist (str)
+        album (library.Album): Album object.
+            Access album-related attributes through the object e.g. `track.album.title`.
         artist (str)
+        path (pathlib.Path): Path of the track file.
         title (str)
 
     Note:
@@ -57,11 +78,12 @@ class Track(Base):
     __tablename__ = "tracks"
 
     _id = Column(Integer, primary_key=True)
+    _album_id = Column(Integer, ForeignKey("albums._id"))
+    artist = Column(String, nullable=False, default="")
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
-    artist = Column(String, nullable=False, default="")
-    albumartist = Column(String, nullable=False, default="")
-    album = Column(String, nullable=False, default="")
+
+    album = relationship("Album", back_populates="tracks")
 
     def __init__(self, path: pathlib.Path, read_tags: bool = True):
         """Create a track.
@@ -91,10 +113,11 @@ class Track(Base):
         """Reads any tags from the music file and sets them to the Track."""
         self._audio_file = MediaFile(self.path)
 
-        self.album = self._audio_file.album
-        self.albumartist = self._audio_file.albumartist
         self.artist = self._audio_file.artist
         self.title = self._audio_file.title
+
+        self.album = Album(title=self._audio_file.album)
+        self.album.artist = self._audio_file.albumartist
 
 
 @contextmanager
