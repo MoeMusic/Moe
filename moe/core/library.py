@@ -10,6 +10,7 @@ import pathlib
 from contextlib import contextmanager
 
 import sqlalchemy
+from mediafile import MediaFile
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -40,8 +41,11 @@ class Track(Base):
     """A single track.
 
     Attributes:
-        path (pathlib.Path): path of the track file
-        title (str): track title
+        path (pathlib.Path): Path of the track file.
+        album (str)
+        albumartist (str)
+        artist (str)
+        title (str)
 
     Note:
         Can be instantiated as normal using keyword arguments.
@@ -54,15 +58,18 @@ class Track(Base):
 
     _id = Column(Integer, primary_key=True)
     path = Column(_PathType, nullable=False, unique=True)
-    title = Column(String, nullable=False)
+    title = Column(String, nullable=False, default="")
+    artist = Column(String, nullable=False, default="")
+    albumartist = Column(String, nullable=False, default="")
+    album = Column(String, nullable=False, default="")
 
-    def __init__(self, path: pathlib.Path):
+    def __init__(self, path: pathlib.Path, read_tags: bool = True):
         """Create a track.
-
-        Populates the tags by reading the file.
 
         Args:
             path: Path to the track to add.
+            read_tags: Whether or not to read tags from the given file.
+                If read, the tags will be set to the track.
 
         Raises:
             FileNotFoundError: Given path doesn't exit.
@@ -73,13 +80,21 @@ class Track(Base):
         self.path = path
         self.title = "tmp_title"
 
-    def __str__(self):
-        """A track is represented by its path.
+        if read_tags:
+            self._set_fields_from_file()
 
-        Returns:
-            string represenation of the path
-        """
-        return str(self.path)
+    def __str__(self):
+        """String representation of a track."""
+        return f"{self.artist} - {self.title}"
+
+    def _set_fields_from_file(self):
+        """Reads any tags from the music file and sets them to the Track."""
+        self._audio_file = MediaFile(self.path)
+
+        self.album = self._audio_file.album
+        self.albumartist = self._audio_file.albumartist
+        self.artist = self._audio_file.artist
+        self.title = self._audio_file.title
 
 
 @contextmanager
