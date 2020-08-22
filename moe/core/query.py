@@ -15,22 +15,25 @@ to get a list of Tracks matching the query from the library.
 import argparse
 import logging
 import re
-from typing import Dict, List
+from typing import Dict, List, Type, Union
 
 import sqlalchemy
 
-from moe.core import library
+from moe.core.library import Album, Item, Track
 
 log = logging.getLogger(__name__)
 
 query_parser = argparse.ArgumentParser(
     add_help=False, formatter_class=argparse.RawTextHelpFormatter,
 )
-query_parser.add_argument("query", help="query the library")
+query_parser.add_argument("query", help="query the library for matching tracks")
+query_parser.add_argument(
+    "-a", "--album", action="store_true", help="match albums instead of tracks"
+)
 
 
 HELP_STR = r"""
-The query must be in the format 'field:value' where field is a track's field to
+The query must be in the format 'field:value' where field is a track or album's field to
 match and value is that field's value. The match is case-insensitive.
 
 The value can also be a regular expression. To enforce this, use two colons
@@ -45,6 +48,9 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 'artist:wu-tang clan title::A.*'
 
 Note that multiple field:value expressions are joined together using AND logic.
+
+If doing a track query, you can specify any track field + album and albumartist.
+If doing an album query, you can only specify album fields.
 """
 
 # each query will be split into these groups
@@ -99,12 +105,14 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
 
 
 def _create_filter(
-    expression: Dict[str, str]
+    expression: Dict[str, str], query_cls: Union[Type[Album], Type[Track]],
 ) -> sqlalchemy.sql.elements.BinaryExpression:
     """Maps a user-given query expression to a filter for the database query.
 
     Args:
         expression: A single query expression defined by `_parse_query()`.
+        query_cls: Library class to query for. Should be either `Album`
+            or `Track`
 
     Returns:
         A list of the filters to filter the database query against.
@@ -117,12 +125,12 @@ def _create_filter(
     """
     field = expression[FIELD_GROUP]
 
-    if field == "album":
-        attr = library.Album.title
-    elif field == "albumartist":
-        attr = library.Album.artist
+    if field == "album" and query_cls == Track:
+        attr = Album.title
+    elif field == "albumartist" and query_cls == Track:
+        attr = Album.artist
     else:
-        attr = getattr(library.Track, field)
+        attr = getattr(query_cls, field)
 
     attr = sqlalchemy.func.lower(attr)
 
@@ -145,12 +153,13 @@ def _create_filter(
 
 
 def query(
-    query_str: str, session: sqlalchemy.orm.session.Session,
-) -> List[library.Track]:
+    query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
+) -> List[Item]:
     """Queries the database for the given query string.
 
     Args:
         query_str: Query string to parse. See HELP_STR for more info.
+        album_query: Whether or not to match albums instead of tracks.
         session: current db session
 
     Returns:
@@ -162,20 +171,21 @@ def query(
         log.error(f"Invalid query '{query_str}'\n{HELP_STR}")
         return []
 
+    if album_query:
+        query_cls = Album
+    else:
+        query_cls = Track  # type: ignore
+
     query_filters = []
     for expression in expressions:
         try:
-            query_filter = _create_filter(expression)
+            query_filters.append(_create_filter(expression, query_cls))
         except ValueError:
             return []
 
-        query_filters.append(query_filter)
+    items = session.query(query_cls).filter(*query_filters).all()
 
-    tracks = (
-        session.query(library.Track).join(library.Album).filter(*query_filters).all()
-    )
+    if not items:
+        log.warning(f"No items found for the query '{query_str}'.")
 
-    if not tracks:
-        log.warning(f"No tracks found for the query '{query_str}'.")
-
-    return tracks
+    return items

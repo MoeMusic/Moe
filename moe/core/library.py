@@ -38,7 +38,11 @@ class _PathType(sqlalchemy.types.TypeDecorator):
         return pathlib.Path(path_str)
 
 
-class Album(Base):
+class Item:
+    """An abstract base class for both albums and tracks."""
+
+
+class Album(Item, Base):
     """An album is a collection of tracks.
 
     Albums also house any attributes that are shared by tracks e.g. albumartist.
@@ -57,8 +61,12 @@ class Album(Base):
 
     tracks = relationship("Track", back_populates="album", cascade="all, delete")
 
+    def __str__(self):
+        """String representation of an album."""
+        return f"{self.artist} - {self.title}"
 
-class Track(Base):
+
+class Track(Item, Base):
     """A single track.
 
     Attributes:
