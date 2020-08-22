@@ -1,0 +1,1 @@
+"""Test an Album object."""

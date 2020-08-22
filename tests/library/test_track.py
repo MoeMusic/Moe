@@ -20,8 +20,8 @@ class TestInit:
         track = Track(path=pathlib.Path("tests/resources/audio_files/full.mp3"))
 
         assert track.artist == "Wu-Tang Clan"
-        assert track.albumartist == "Wu-Tang Clan"
-        assert track.album == "The Lost Album"
+        assert track.album.artist == "Wu-Tang Clan"
+        assert track.album.title == "The Lost Album"
         assert track.title == "Full"
 
     def test_empty_track(self):
