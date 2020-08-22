@@ -47,8 +47,8 @@ def run_migrations_online():
     In this scenario we need to create an Engine and associate a connection
     with the context.
     """
-    config = Config()
-    engine = config.engine
+    moe_config = Config()
+    engine = moe_config.engine
 
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
