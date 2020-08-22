@@ -138,3 +138,20 @@ class TestQuery:
         tracks = query.query(r"title::tmp", tmp_session)
 
         assert tracks
+
+    def test_track_album_field_query(self, tmp_session, mock_track):
+        """We should be able to query track's that match album-related fields.
+
+        For example, `Track.album` is an album object whose title lives under
+        `album.title`. However, this should be exposed in a query by simply specifying
+        the album field. Similarly, an album's artist is exposed via `albumartist`.
+        """
+        mock_track.album.artist = "2Pac"
+        mock_track.album.title = "All Eyez on Me"
+        tmp_session.add(mock_track)
+
+        tracks = query.query(r"album:All Eyez on Me", tmp_session)
+        assert tracks
+
+        tracks = query.query(r"albumartist:2Pac", tmp_session)
+        assert tracks

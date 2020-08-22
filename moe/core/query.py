@@ -115,7 +115,16 @@ def _create_filter(
     Raises:
         ValueError: Invalid query value given.
     """
-    field = sqlalchemy.func.lower(getattr(library.Track, expression[FIELD_GROUP]))
+    field = expression[FIELD_GROUP]
+
+    if field == "album":
+        attr = library.Album.title
+    elif field == "albumartist":
+        attr = library.Album.artist
+    else:
+        attr = getattr(library.Track, field)
+
+    attr = sqlalchemy.func.lower(attr)
 
     if expression[SEPARATOR_GROUP] == "::":
         # Regular expression
@@ -128,11 +137,11 @@ def _create_filter(
             log.error(f"'{value}' is not a valid regular expression.")
             raise ValueError
 
-        return field.op("regexp")(value)
+        return attr.op("regexp")(value)
 
     # Normal expression
     value = sqlalchemy.func.lower(expression[VALUE_GROUP])
-    return field == value
+    return attr == value
 
 
 def query(
@@ -162,7 +171,9 @@ def query(
 
         query_filters.append(query_filter)
 
-    tracks = session.query(library.Track).filter(*query_filters).all()
+    tracks = (
+        session.query(library.Track).join(library.Album).filter(*query_filters).all()
+    )
 
     if not tracks:
         log.warning(f"No tracks found for the query '{query_str}'.")

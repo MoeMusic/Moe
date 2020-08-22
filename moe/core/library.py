@@ -44,7 +44,7 @@ class Album(Base):
     Albums also house any attributes that are shared by tracks e.g. albumartist.
 
     Attributes:
-        artist (str): AKA a track's albumartist.
+        artist (str): AKA albumartist.
         title (str)
         tracks (List[Track]): All the album's corresponding tracks.
     """
@@ -52,8 +52,8 @@ class Album(Base):
     __tablename__ = "albums"
 
     _id = Column(Integer, primary_key=True)
-    artist = Column(String, nullable=False, default="")
-    title = Column(String, nullable=False, default="")
+    artist = Column(String)
+    title = Column(String)
 
     tracks = relationship("Track", back_populates="album", cascade="all, delete")
 
@@ -79,9 +79,9 @@ class Track(Base):
 
     _id = Column(Integer, primary_key=True)
     _album_id = Column(Integer, ForeignKey("albums._id"))
-    artist = Column(String, nullable=False, default="")
+    artist = Column(String)
     path = Column(_PathType, nullable=False, unique=True)
-    title = Column(String, nullable=False, default="")
+    title = Column(String)
 
     album = relationship("Album", back_populates="tracks")
 
@@ -102,6 +102,8 @@ class Track(Base):
         self.path = path
         self.title = "tmp_title"
 
+        self.album = Album()
+
         if read_tags:
             self._set_fields_from_file()
 
@@ -116,7 +118,7 @@ class Track(Base):
         self.artist = self._audio_file.artist
         self.title = self._audio_file.title
 
-        self.album = Album(title=self._audio_file.album)
+        self.album.title = self._audio_file.album
         self.album.artist = self._audio_file.albumartist
 
 
