@@ -19,7 +19,7 @@ from typing import Dict, List, Type, Union
 
 import sqlalchemy
 
-from moe.core.library import Album, Item, Track
+from moe.core.library import Album, MusicItem, Track
 
 log = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ def _create_filter(
 
 def query(
     query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
-) -> List[Item]:
+) -> List[MusicItem]:
     """Queries the database for the given query string.
 
     Args:
