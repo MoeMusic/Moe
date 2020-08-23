@@ -4,7 +4,6 @@ All fields and their values should be printed to stdout for any music queried.
 """
 
 import argparse
-import re
 from typing import List
 
 import sqlalchemy
@@ -39,32 +38,40 @@ def parse_args(
     Raises:
         SystemExit: Query returned no tracks.
     """
-    tracks = query.query(args.query, session)
+    items = query.query(args.query, session, args.album)
 
-    if not tracks:
+    if not items:
         raise SystemExit(1)
 
-    print(get_infos(tracks), end="")  # noqa: WPS421
+    print(get_infos(items), end="")  # noqa: WPS421
 
 
-def get_infos(tracks: List[library.Track]):
-    """Get information for a list of tracks."""
+def get_infos(items: List[library.MusicItem]):
+    """Get information for a list of items."""
     out_str = ""
-    for track in tracks:
-        out_str += get_info(track)
+    for item in items:
+        out_str += get_info(item)
 
-        if track is not tracks[-1]:
+        if item is not items[-1]:
             out_str += "\n"
 
     return out_str
 
 
-def get_info(track: library.Track) -> str:
-    """Returns information about a track."""
-    track_info = ""
-    private_field_re = "^_.*"
-    for field, value in vars(track).items():  # noqa: WPS421
-        if not re.match(private_field_re, field):
-            track_info += f"{field}: {value}\n"
+def get_info(item: library.MusicItem) -> str:
+    """Returns information about an item."""
+    info_fields = dict(vars(item))  # noqa: WPS421
 
-    return track_info
+    if isinstance(item, library.Track):
+        info_fields["album"] = item.album.title
+        info_fields["albumartist"] = item.album.artist
+
+    info_fields = dict(sorted(info_fields.items()))  # sort by field
+
+    item_info = ""
+    for field, value in info_fields.items():  # noqa: WPS421
+        # don't print private fields or empty fields
+        if value and not field.startswith("_"):
+            item_info += f"{field}: {value}\n"
+
+    return item_info
