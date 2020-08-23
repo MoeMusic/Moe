@@ -42,11 +42,11 @@ def parse_args(
     Raises:
         SystemExit: Query returned no tracks.
     """
-    tracks = query.query(args.query, session)
+    items = query.query(args.query, session, args.album)
 
-    if not tracks:
+    if not items:
         raise SystemExit(1)
 
-    for track in tracks:
-        log.info(f"Removing track '{track}' from the library.")
-        session.delete(track)
+    for item in items:
+        log.info(f"Removing '{item}' from the library.")
+        session.delete(item)
