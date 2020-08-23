@@ -16,7 +16,21 @@ class TestParseArgs:
 
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="_id:1")
+        args = argparse.Namespace(query="_id:1", album=False)
+
+        tmp_session.add(mock_track)
+        tmp_session.commit()
+
+        info.parse_args(Mock(), tmp_session, args)
+
+        captured_text = capsys.readouterr()
+
+        assert captured_text.out
+
+    def test_album(self, capsys, tmp_session, mock_track):
+        """Albums are printed to stdout with valid query."""
+        args = argparse.Namespace(query="_id:1", album=True)
+        mock_track.album.title = "album title"
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -29,7 +43,7 @@ class TestParseArgs:
 
     def test_exit_code(self, capsys, tmp_session, mock_track):
         """If no track infos are printed, we should return a non-zero exit code."""
-        args = argparse.Namespace(query="_id:1")
+        args = argparse.Namespace(query="_id:1", album=False)
 
         with pytest.raises(SystemExit):
             info.parse_args(Mock(), tmp_session, args)
@@ -64,6 +78,13 @@ class TestGetInfo:
 
         # assumes each field and it's value is printed on a single line
         assert not re.search(r"(\n|^)_", track_info)
+
+    def test_no_empty_values(self, capsys, mock_track):
+        """Empty values and their respective fields should not be printed."""
+        track_info = info.get_info(mock_track)
+
+        # assumes each field and it's value is printed on a single line
+        assert not re.search(r"(\n|^)\w+:\sNone", track_info)
 
 
 @pytest.mark.integration
