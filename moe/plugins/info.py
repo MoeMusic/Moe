@@ -43,14 +43,14 @@ def parse_args(
     if not items:
         raise SystemExit(1)
 
-    print(get_infos(items), end="")  # noqa: WPS421
+    print(fmt_infos(items), end="")  # noqa: WPS421
 
 
-def get_infos(items: List[library.MusicItem]):
-    """Get information for a list of items."""
+def fmt_infos(items: List[library.MusicItem]):
+    """Formats information for multiple items together."""
     out_str = ""
     for item in items:
-        out_str += get_info(item)
+        out_str += fmt_info(item)
 
         if item is not items[-1]:
             out_str += "\n"
@@ -58,20 +58,6 @@ def get_infos(items: List[library.MusicItem]):
     return out_str
 
 
-def get_info(item: library.MusicItem) -> str:
-    """Returns information about an item."""
-    info_fields = dict(vars(item))  # noqa: WPS421
-
-    if isinstance(item, library.Track):
-        info_fields["album"] = item.album.title
-        info_fields["albumartist"] = item.album.artist
-
-    info_fields = dict(sorted(info_fields.items()))  # sort by field
-
-    item_info = ""
-    for field, value in info_fields.items():  # noqa: WPS421
-        # don't print private fields or empty fields
-        if value and not field.startswith("_"):
-            item_info += f"{field}: {value}\n"
-
-    return item_info
+def fmt_info(item: library.MusicItem) -> str:
+    """Formats the attribute/value pairs of an item into a str."""
+    return "".join(f"{field}: {value}\n" for field, value in item.to_dict().items())

@@ -18,6 +18,7 @@ class TestParseArgs:
         """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="_id:1", album=False)
 
+        mock_track.albumartist = "test"
         tmp_session.add(mock_track)
         tmp_session.commit()
 
@@ -30,7 +31,7 @@ class TestParseArgs:
     def test_album(self, capsys, tmp_session, mock_track):
         """Albums are printed to stdout with valid query."""
         args = argparse.Namespace(query="_id:1", album=True)
-        mock_track.album.title = "album title"
+        mock_track.album = "album title"
 
         tmp_session.add(mock_track)
         tmp_session.commit()
@@ -49,7 +50,7 @@ class TestParseArgs:
             info.parse_args(Mock(), tmp_session, args)
 
 
-class TestGetInfos:
+class TestFmtInfos:
     """Test how multiple items are represented together."""
 
     def test_newline_between(self, capsys, mock_track_factory):
@@ -60,31 +61,23 @@ class TestGetInfos:
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
-        track_infos = info.get_infos([track1, track2])
+        track_infos = info.fmt_infos([track1, track2])
 
         sep_infos = track_infos.split("\n\n")
 
         assert len(sep_infos) == 2
-        assert sep_infos[0].strip() == info.get_info(track1).strip()
-        assert sep_infos[1].strip() == info.get_info(track2).strip()
+        assert sep_infos[0].strip() == info.fmt_info(track1).strip()
+        assert sep_infos[1].strip() == info.fmt_info(track2).strip()
 
 
-class TestGetInfo:
+class TestFmtInfo:
     """Test how an individual item is represented for our plugin."""
 
-    def test_no_private_fields(self, capsys, mock_track):
-        """Private attributes should not be included."""
-        track_info = info.get_info(mock_track)
+    def test_format(self, capsys, mock_track):
+        """Should format as attribute: value. One pair per line."""
+        mock_track.path.__str__.return_value = "test path"
 
-        # assumes each field and it's value is printed on a single line
-        assert not re.search(r"(\n|^)_", track_info)
-
-    def test_no_empty_values(self, capsys, mock_track):
-        """Empty values and their respective fields should not be printed."""
-        track_info = info.get_info(mock_track)
-
-        # assumes each field and it's value is printed on a single line
-        assert not re.search(r"(\n|^)\w+:\sNone", track_info)
+        assert re.match(r"(\w+:\s.+\n)+", info.fmt_info(mock_track))
 
 
 @pytest.mark.integration
