@@ -7,7 +7,10 @@ Note:
 """
 
 import pathlib
+import types
+from collections import OrderedDict
 from contextlib import contextmanager
+from typing import Any
 
 import sqlalchemy
 from mediafile import MediaFile
@@ -42,6 +45,16 @@ class _PathType(sqlalchemy.types.TypeDecorator):
 class MusicItem:
     """An abstract base class for both albums and tracks."""
 
+    def to_dict(self) -> "OrderedDict[str, Any]":
+        """Represents the MusicItem as a dictionary.
+
+        The dictionary should be sorted alphabetically.
+
+        Raises:
+            NotImplementedError: Not implemented by subclasses.
+        """
+        raise NotImplementedError
+
 
 class Album(MusicItem, Base):
     """An album is a collection of tracks.
@@ -65,6 +78,25 @@ class Album(MusicItem, Base):
     def __str__(self):
         """String representation of an album."""
         return f"{self.artist} - {self.title}"
+
+    def to_dict(self) -> "OrderedDict[str, Any]":
+        """Represents the Album as a dictionary.
+
+        An albums representation is just the merged dictionary of all its tracks.
+        If different values are present for any given attribute among tracks, then
+        the value becomes "Various".
+
+        Returns:
+            Returns a dict representation of an Album.
+            It will be in the form { attribute: value } and is sorted by attribute.
+        """
+        album_dict = self.tracks[0].to_dict()  # type: ignore
+        for track in self.tracks[1:]:  # type: ignore
+            for key, value in track.to_dict().items():
+                if key not in album_dict or album_dict[key] != value:
+                    album_dict[key] = "Various"
+
+        return album_dict
 
 
 class Track(MusicItem, Base):
@@ -117,6 +149,24 @@ class Track(MusicItem, Base):
 
         if read_tags:
             self._set_fields_from_file()
+
+    def to_dict(self) -> "OrderedDict[str, Any]":
+        """Represents the Track as a dictionary.
+
+        Only public attributes that are not empty will be included.
+
+        Returns:
+            Returns a dict representation of a Track.
+            It will be in the form { attribute: value } and is sorted by attribute.
+        """
+        track_dict = OrderedDict()
+        for attr in dir(self):  # noqa: WPS421
+            if not attr.startswith("_") and attr != "metadata":
+                value = getattr(self, attr)
+                if value and not isinstance(value, types.MethodType):
+                    track_dict[attr] = value
+
+        return track_dict
 
     def __str__(self):
         """String representation of a track."""

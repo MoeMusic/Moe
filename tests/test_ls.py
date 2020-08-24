@@ -37,7 +37,7 @@ class TestParseArgs:
 
         captured_text = capsys.readouterr()
 
-        assert captured_text.out.strip() == str(mock_track.album).strip()
+        assert captured_text.out.strip() == str(mock_track._album_obj).strip()
 
     def test_exit_code(self, capsys, tmp_session, mock_track):
         """If no tracks are printed, we should return a non-zero exit code."""
