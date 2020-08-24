@@ -125,14 +125,14 @@ def _create_filter(
     """
     field = expression[FIELD_GROUP]
 
-    if field == "album" and query_cls == Track:
-        attr = Album.title
-    elif field == "albumartist" and query_cls == Track:
-        attr = Album.artist
-    else:
-        attr = getattr(query_cls, field)
+    attr = getattr(Track, field)
 
-    attr = sqlalchemy.func.lower(attr)
+    # FIXME: Case-insensitive queries aren't working for association proxy attributes
+    if not isinstance(
+        attr,
+        sqlalchemy.ext.associationproxy.ColumnAssociationProxyInstance,  # type: ignore
+    ):
+        attr = sqlalchemy.func.lower(attr)
 
     if expression[SEPARATOR_GROUP] == "::":
         # Regular expression
@@ -148,7 +148,8 @@ def _create_filter(
         return attr.op("regexp")(value)
 
     # Normal expression
-    value = sqlalchemy.func.lower(expression[VALUE_GROUP])
+    value = expression[VALUE_GROUP]
+
     return attr == value
 
 
