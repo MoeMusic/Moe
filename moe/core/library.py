@@ -12,6 +12,7 @@ from contextlib import contextmanager
 import sqlalchemy
 from mediafile import MediaFile
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.schema import ForeignKey
@@ -59,7 +60,7 @@ class Album(MusicItem, Base):
     artist = Column(String, nullable=False, default="")
     title = Column(String, nullable=False, default="")
 
-    tracks = relationship("Track", back_populates="album", cascade="all, delete")
+    tracks = relationship("Track", back_populates="_album_obj", cascade="all, delete")
 
     def __str__(self):
         """String representation of an album."""
@@ -70,17 +71,16 @@ class Track(MusicItem, Base):
     """A single track.
 
     Attributes:
-        album (library.Album): Album object.
-            Access album-related attributes through the object e.g. `track.album.title`.
+        album (str)
+        albumartist (str)
         artist (str)
         path (pathlib.Path): Path of the track file.
         title (str)
 
     Note:
-        Can be instantiated as normal using keyword arguments.
-
-    Example:
-        >>> track = Track(path=pathlib.Path('mycoolpath'))
+        Any album-related attributes are exposed from the related album object
+        via hybrid-properties. This means that altering any of these attributes will
+        also alter any other tracks in that album.
     """
 
     __tablename__ = "tracks"
@@ -91,7 +91,10 @@ class Track(MusicItem, Base):
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
 
-    album = relationship("Album", back_populates="tracks")
+    _album_obj = relationship("Album", back_populates="tracks")
+
+    album = association_proxy("_album_obj", "title")
+    albumartist = association_proxy("_album_obj", "artist")
 
     def __init__(self, path: pathlib.Path, read_tags: bool = True):
         """Create a track.
@@ -110,7 +113,7 @@ class Track(MusicItem, Base):
         self.path = path
         self.title = "tmp_title"
 
-        self.album = Album()
+        self._album_obj = Album()
 
         if read_tags:
             self._set_fields_from_file()
@@ -123,11 +126,10 @@ class Track(MusicItem, Base):
         """Reads any tags from the music file and sets them to the Track."""
         self._audio_file = MediaFile(self.path)
 
+        self.album = self._audio_file.album
+        self.albumartist = self._audio_file.albumartist
         self.artist = self._audio_file.artist
         self.title = self._audio_file.title
-
-        self.album.title = self._audio_file.album
-        self.album.artist = self._audio_file.albumartist
 
 
 @contextmanager
