@@ -1,12 +1,13 @@
 """Shared pytest configuration."""
 
 from typing import Callable, Iterator
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy
 
-from moe.core import config, library
+from moe.core import library
+from moe.core.config import Config
 
 
 @pytest.fixture
@@ -20,15 +21,15 @@ def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
     """
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
 
-    with patch.object(config.Config, "_read_config"):
-        config.Config(config_dir=MagicMock(), engine=engine)
+    config = Config(config_dir=MagicMock())
+    config.init_db(engine=engine)
 
     with library.session_scope() as session:
         yield session
 
 
 @pytest.fixture
-def tmp_config(tmp_path) -> config.Config:
+def tmp_config(tmp_path) -> Config:
     """Instantiates a temporary configuration.
 
     This is for use with integration tests.
@@ -36,7 +37,12 @@ def tmp_config(tmp_path) -> config.Config:
     Returns:
         The configuration instance.
     """
-    return config.Config(config_dir=tmp_path)
+    config = Config(config_dir=tmp_path)
+
+    config_file = config.config_dir / "config.yaml"
+    config_file.touch()
+
+    return config
 
 
 @pytest.fixture

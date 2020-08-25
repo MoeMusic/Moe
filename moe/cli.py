@@ -92,6 +92,31 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         SystemExit: No sub-commands given.
             Does not include root commands such as `--version` or `--help`.
     """
+    moe_parser = _create_arg_parser()
+
+    # load all sub-commands
+    cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
+    pm.hook.addcommand(cmd_parsers=cmd_parsers)
+
+    parsed_args = moe_parser.parse_args(args)
+
+    # no sub-command given
+    if not parsed_args.command:
+        moe_parser.print_help(sys.stderr)
+        raise SystemExit(1)
+
+    _set_root_log_lvl(parsed_args)
+
+    config.read_config()
+    config.init_db()
+
+    # call the sub-command's handler within a single session
+    with library.session_scope() as session:
+        parsed_args.func(config=config, session=session, args=parsed_args)
+
+
+def _create_arg_parser() -> argparse.ArgumentParser:
+    """Creates the root argument parser."""
     version = pkg_resources.get_distribution("moe").version
 
     moe_parser = argparse.ArgumentParser(description="Run moe.")
@@ -111,22 +136,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
         help="decrease logging verbosity; use -qq to limit logging to critical errors",
     )
 
-    # load all sub-commands
-    cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    pm.hook.addcommand(cmd_parsers=cmd_parsers)
-
-    parsed_args = moe_parser.parse_args(args)
-
-    # no sub-command given
-    if not parsed_args.command:
-        moe_parser.print_help(sys.stderr)
-        raise SystemExit(1)
-
-    _set_root_log_lvl(parsed_args)
-
-    # call the sub-command's handler within a single session
-    with library.session_scope() as session:
-        parsed_args.func(config=config, session=session, args=parsed_args)
+    return moe_parser
 
 
 def _set_root_log_lvl(args):

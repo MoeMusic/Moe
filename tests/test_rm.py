@@ -70,6 +70,7 @@ class TestCommand:
         """Music is removed from the library when the `rm` command is invoked."""
         args = ["moe", "rm", "_id:1"]
 
+        tmp_config.init_db()
         with library.session_scope() as session:
             session.add(mock_track)
 

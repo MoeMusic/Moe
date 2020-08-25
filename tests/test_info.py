@@ -90,6 +90,7 @@ class TestCommand:
         """A track's info is printed when the `info` command is invoked."""
         args = ["moe", "info", "_id:1"]
 
+        tmp_config.init_db()
         with library.session_scope() as session:
             session.add(mock_track)
 
