@@ -45,50 +45,46 @@ class Config:
     def __init__(
         self,
         config_dir: pathlib.Path = _default_config_dir,
-        db_dir: pathlib.Path = None,
-        db_filename: str = "library.db",
+        config_path: str = "config.yaml",
+        db_path: pathlib.Path = None,
         engine: sqlalchemy.engine.base.Engine = None,
     ):
         """Reads the configuration and initializes the database.
 
         Args:
             config_dir: Path of the configuration directory.
-            db_dir: Path of the database directory. Defaults to config_dir.
-            db_filename: Name of the database file.
+            config_path: Path of the config file.
+                Defaults to config_dir / "config.yaml".
+            db_path: Path of the database file.
+                Defaults to config_dir / "library.db".
             engine: sqlalchemy database engine to use.
                 Defaults to sqlite located at db_dir / db_filename.
         """
         self.config_dir = config_dir
-        db_dir = db_dir if db_dir else config_dir
-        db_path = db_dir / db_filename
+        db_path = db_path if db_path else config_dir / "library.db"
         self.plugins = DEFAULT_PLUGINS
 
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True)
-        if not db_dir.exists():
-            db_dir.mkdir(parents=True)
 
-        if not engine:
-            engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
-        self._db_init(engine)
+        if engine:
+            self.engine = engine
+        else:
+            self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
+        self._db_init()
 
-    def _db_init(self, engine: sqlalchemy.engine.base.Engine):
+    def _db_init(self):
         """Initializes the database.
 
         Moe uses sqlite by default. Current (known) limitations with using other dbs:
             1. Track and album fields aren't defined with character limits.
             2. Support for the `regexp` operator used for regex queries.
-
-        Args:
-            engine: Database engine to create.
         """
-        self.engine = engine
-
-        library.Session.configure(bind=engine)
-        library.Base.metadata.create_all(engine)  # create tables if they don't exist
+        library.Session.configure(bind=self.engine)
+        library.Base.metadata.create_all(self.engine)  # creates tables
 
         # create regular expression function for sqlite queries
-        @sqlalchemy.event.listens_for(engine, "begin")
+        @sqlalchemy.event.listens_for(self.engine, "begin")
         def sqlite_engine_connect(conn):  # noqa: WPS430
             conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
 
