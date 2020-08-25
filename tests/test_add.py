@@ -29,8 +29,10 @@ class TestParseArgs:
         """We should raise SystemExit if we can't find the file to add."""
         args = argparse.Namespace(path="does not exist")
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), Mock(), args)
+
+        assert error.value.code != 0
 
     def test_duplicate_file(self, tmp_session):
         """We should raise SystemExit if the file already exists in the library."""
@@ -38,8 +40,10 @@ class TestParseArgs:
 
         add.parse_args(Mock(), tmp_session, args)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
 
 
 @pytest.mark.integration
