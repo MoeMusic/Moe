@@ -13,6 +13,7 @@ Attributes:
     of use cases.
 """
 
+import logging
 import pathlib
 import re
 
@@ -20,6 +21,8 @@ import sqlalchemy
 import yaml
 
 from moe.core import library
+
+log = logging.getLogger(__name__)
 
 DEFAULT_PLUGINS = (
     "add",
@@ -32,72 +35,79 @@ DEFAULT_PLUGINS = (
 class Config:
     """Reads and/or defines all the necessary configuration options for moe.
 
-    Also initializes the database and will be passed to various hooks
-    throughout a single run of moe.
+    The database and config file will not be read on init. `read_config` and
+    `init_db` must be explicitly called.
 
+    TODO: determine type of config object once we have a sample config
     Attributes:
+        config: User configuration in use.
         config_dir (pathlib.Path): Configuration directory.
-        config_path (pathlib.Path): Configuration file.
-        plugins (List[str]): Enabled plugins.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
+        plugins (List[str]): Enabled plugins.
     """
 
     _default_config_dir = pathlib.Path().home() / ".config" / "moe"
 
     def __init__(
-        self,
-        config_dir: pathlib.Path = _default_config_dir,
-        config_path: pathlib.Path = None,
-        db_path: pathlib.Path = None,
-        engine: sqlalchemy.engine.base.Engine = None,
+        self, config_dir: pathlib.Path = _default_config_dir,
     ):
         """Reads the configuration and initializes the database.
 
         Args:
             config_dir: Path of the configuration directory.
-            config_path: Path of the config file.
-                Defaults to config_dir / "config.yaml".
-            db_path: Path of the database file.
-                Defaults to config_dir / "library.db".
-            engine: sqlalchemy database engine to use.
-                Defaults to sqlite located at db_dir / db_filename.
         """
         self.config_dir = config_dir
-        self.config_path = config_path if config_path else config_dir / "config.yaml"
-        db_path = db_path if db_path else config_dir / "library.db"
         self.plugins = DEFAULT_PLUGINS
 
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True)
-        if not self.config_path.exists():
-            self.config_path.touch()
 
-        self._read_config(self.config_path.read_text())
-
-        if engine:
-            self.engine = engine
-        else:
-            self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
-        self._db_init()
-
-    def _read_config(self, config_stream=None):
-        """Read the user configuration file.
+    def read_config(self, config_stream=None):
+        """Reads a given yaml configuration.
 
         Args:
-            config_stream: Configuration stream to read. Can be anything
-                read by `yaml.load()`.
-                Defaults to reading the configuration file at `self.config_path`.
-        """
-        config_stream = config_stream if config_stream else self.config_path.read_text()
-        self.yaml = yaml.safe_load(config_stream)
+            config_stream: Configuration stream to read.
+                Can be anything read by `yaml.load()`.
+                Defaults to reading a config file at `config_dir / "config.yaml"`.
 
-    def _db_init(self):
+        Raises:
+            SystemExit: Couldn't read the default configuration file.
+        """
+        if not config_stream:
+            config_file = self.config_dir / "config.yaml"
+
+            try:
+                config_stream = config_file.read_text()
+            except FileNotFoundError:
+                log.error(f"Configuration file '{config_file}' does not exist.")
+                raise SystemExit(1)
+
+        self.config = yaml.safe_load(config_stream)
+
+    def init_db(
+        self,
+        db_path: pathlib.Path = None,
+        engine: sqlalchemy.engine.base.Engine = None,
+    ):
         """Initializes the database.
 
         Moe uses sqlite by default. Current (known) limitations with using other dbs:
             1. Track and album fields aren't defined with character limits.
             2. Support for the `regexp` operator used for regex queries.
+
+        Args:
+            db_path: Path of the database file.
+                Defaults to config_dir / "library.db".
+            engine: sqlalchemy database engine to use.
+                Defaults to sqlite located at db_dir / db_path.
         """
+        db_path = db_path if db_path else self.config_dir / "library.db"
+
+        if engine:
+            self.engine = engine
+        else:
+            self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
+
         library.Session.configure(bind=self.engine)
         library.Base.metadata.create_all(self.engine)  # creates tables
 

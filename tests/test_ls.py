@@ -57,6 +57,7 @@ class TestCommand:
         """Music is listed from the library when the `ls` command is invoked."""
         args = ["moe", "ls", "_id:1"]
 
+        tmp_config.init_db()
         with library.session_scope() as session:
             session.add(mock_track)
 

@@ -48,6 +48,7 @@ def run_migrations_online():
     with the context.
     """
     moe_config = Config()
+    moe_config.init_db()
     engine = moe_config.engine
 
     with engine.connect() as connection:
