@@ -1,7 +1,7 @@
 """Shared pytest configuration."""
 
 from typing import Callable, Iterator
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy
@@ -19,7 +19,9 @@ def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
         session: temp Session instance
     """
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
-    config.Config(config_dir=MagicMock(), engine=engine)
+
+    with patch.object(config.Config, "_read_config"):
+        config.Config(config_dir=MagicMock(), engine=engine)
 
     with library.session_scope() as session:
         yield session
