@@ -1,9 +1,22 @@
 """Test configuration."""
 
+from typing import Iterator
+from unittest.mock import Mock, patch
 
-from unittest.mock import patch
+import pytest
 
 from moe.core.config import Config
+
+
+@pytest.fixture
+def mock_config(tmp_path) -> Iterator[Config]:
+    """Instantiates a mock configuration.
+
+    Yields:
+        The configuration instance.
+    """
+    with patch.object(Config, "_db_init"):
+        yield Config(config_dir=tmp_path, engine=Mock())
 
 
 class TestInit:
@@ -17,3 +30,18 @@ class TestInit:
             Config(config_dir=fake_path)
 
         assert fake_path.exists()
+
+    def test_config_file_dne(self, mock_config):
+        """Should create the config file if it doesn't exist."""
+        assert mock_config.config_path.exists()
+
+
+class TestReadConfig:
+    """Test reading the actual configuration file."""
+
+    def test_load_file(self, mock_config):
+        """Ensure we can load a configuration file."""
+        with mock_config.config_path.open("w+") as config_file:
+            config_file.write("test yaml")
+
+        mock_config._read_config()

@@ -17,6 +17,7 @@ import pathlib
 import re
 
 import sqlalchemy
+import yaml
 
 from moe.core import library
 
@@ -36,6 +37,7 @@ class Config:
 
     Attributes:
         config_dir (pathlib.Path): Configuration directory.
+        config_path (pathlib.Path): Configuration file.
         plugins (List[str]): Enabled plugins.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
     """
@@ -45,7 +47,7 @@ class Config:
     def __init__(
         self,
         config_dir: pathlib.Path = _default_config_dir,
-        config_path: str = "config.yaml",
+        config_path: pathlib.Path = None,
         db_path: pathlib.Path = None,
         engine: sqlalchemy.engine.base.Engine = None,
     ):
@@ -61,17 +63,33 @@ class Config:
                 Defaults to sqlite located at db_dir / db_filename.
         """
         self.config_dir = config_dir
+        self.config_path = config_path if config_path else config_dir / "config.yaml"
         db_path = db_path if db_path else config_dir / "library.db"
         self.plugins = DEFAULT_PLUGINS
 
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True)
+        if not self.config_path.exists():
+            self.config_path.touch()
+
+        self._read_config(self.config_path.read_text())
 
         if engine:
             self.engine = engine
         else:
             self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
         self._db_init()
+
+    def _read_config(self, config_stream=None):
+        """Read the user configuration file.
+
+        Args:
+            config_stream: Configuration stream to read. Can be anything
+                read by `yaml.load()`.
+                Defaults to reading the configuration file at `self.config_path`.
+        """
+        config_stream = config_stream if config_stream else self.config_path.read_text()
+        self.yaml = yaml.safe_load(config_stream)
 
     def _db_init(self):
         """Initializes the database.
