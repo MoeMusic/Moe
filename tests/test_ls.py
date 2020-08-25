@@ -43,8 +43,10 @@ class TestParseArgs:
         """If no tracks are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="_id:1", album=False)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as error:
             ls.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
 
 
 @pytest.mark.integration
