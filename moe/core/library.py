@@ -6,11 +6,12 @@ Note:
     The database will be initialized once the user configuration is read.
 """
 
+import logging
 import pathlib
 import types
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Type, TypeVar
 
 import sqlalchemy
 from mediafile import MediaFile
@@ -18,7 +19,9 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
+
+log = logging.getLogger(__name__)
 
 Session = sessionmaker()
 Base = declarative_base()
@@ -56,6 +59,10 @@ class MusicItem:
         raise NotImplementedError
 
 
+# Album generic, used for typing classmethod
+A = TypeVar("A", bound="Album")  # noqa: WPS111
+
+
 class Album(MusicItem, Base):
     """An album is a collection of tracks.
 
@@ -65,15 +72,30 @@ class Album(MusicItem, Base):
         artist (str): AKA albumartist.
         title (str)
         tracks (List[Track]): All the album's corresponding tracks.
+        year (str)
     """
 
     __tablename__ = "albums"
+    __table_args__ = (UniqueConstraint("artist", "title", "year"),)
 
     _id = Column(Integer, primary_key=True)
-    artist = Column(String, nullable=False, default="")
-    title = Column(String, nullable=False, default="")
+    artist = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    year = Column(Integer, nullable=False)
 
     tracks = relationship("Track", back_populates="_album_obj", cascade="all, delete")
+
+    def __init__(self, artist: str, title: str, year: int):
+        """Creates an album.
+
+        Args:
+            artist: Album artist.
+            title: Album title.
+            year: Album release year.
+        """
+        self.artist = artist
+        self.title = title
+        self.year = year
 
     def __str__(self):
         """String representation of an album."""
@@ -98,8 +120,31 @@ class Album(MusicItem, Base):
 
         return album_dict
 
+    @classmethod
+    def get_or_create(
+        cls: Type[A],
+        session: sqlalchemy.orm.session.Session,
+        artist: str,
+        title: str,
+        year: int,
+    ) -> A:
+        """Fetches the matching album or creates a new one if it doesn't exist."""
+        album = (
+            session.query(Album)
+            .filter(Album.artist == artist)
+            .filter(Album.title == title)
+            .filter(Album.year == year)
+            .scalar()
+        )
 
-class Track(MusicItem, Base):
+        return album if album else Album(artist=artist, title=title, year=year)
+
+
+# Track generic, used for typing classmethod
+T = TypeVar("T", bound="Track")  # noqa: WPS111
+
+
+class Track(MusicItem, Base):  # noqa: WPS230
     """A single track.
 
     Attributes:
@@ -108,47 +153,113 @@ class Track(MusicItem, Base):
         artist (str)
         path (pathlib.Path): Path of the track file.
         title (str)
+        track_num (int)
+        year (int): Album release year.
 
     Note:
-        Any album-related attributes are exposed from the related album object
-        via hybrid-properties. This means that altering any of these attributes will
-        also alter any other tracks in that album.
+        Alterting any album-related properties (all association_proxy) attributes,
+        will result in changing the album field and thus all other tracks in the
+        album as well.
     """
 
     __tablename__ = "tracks"
+    __table_args__ = (UniqueConstraint("_album_id", "track_num"),)
 
     _id = Column(Integer, primary_key=True)
     _album_id = Column(Integer, ForeignKey("albums._id"))
     artist = Column(String, nullable=False, default="")
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
+    track_num = Column(Integer, nullable=False)
 
     _album_obj = relationship("Album", back_populates="tracks")
 
     album = association_proxy("_album_obj", "title")
     albumartist = association_proxy("_album_obj", "artist")
+    year = association_proxy("_album_obj", "year")
 
-    def __init__(self, path: pathlib.Path, read_tags: bool = True):
+    def __init__(  # noqa: WPS211
+        self,
+        path: pathlib.Path,
+        session: sqlalchemy.orm.session.Session,
+        album: str,
+        albumartist: str,
+        track_num: int,
+        year: int,
+        **kwargs,
+    ):
         """Create a track.
+
+        If `read_tags` is `False`, then `album`, `albumartist`, `track_num`,
+        and `year` must be set.
 
         Args:
             path: Path to the track to add.
-            read_tags: Whether or not to read tags from the given file.
-                If read, the tags will be set to the track.
+            session: sqlalchemy session to use to query for a matching album.
+            album: Album title.
+            albumartist: Album artist.
+            track_num: Track number.
+            year: Album release year.
+            **kwargs: Any other fields to assign to the Track.
+
+        Raises:
+            FileNotFoundError: Given path doesn't exit.
+            ValueError: Given path already exists in the library.
+        """
+        if not path.exists():
+            log.error(f"{path}' does not exist.")
+            raise FileNotFoundError
+        self.path = path
+
+        existing_track = (
+            session.query(Track.path).filter(Track.path == self.path).first()
+        )
+        if existing_track:
+            log.error(f"{path}' already exists in the library.")
+            raise ValueError
+
+        self._album_obj = Album.get_or_create(
+            session, artist=albumartist, title=album, year=year
+        )
+
+        self.track_num = track_num
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    @classmethod
+    def from_tags(
+        cls: Type[T], path: pathlib.Path, session: sqlalchemy.orm.session.Session
+    ) -> T:
+        """Alternate initializer that creates a Track from it's tags.
+
+        Will read any tags from the file at path and save them to the Track.
+
+        Args:
+            path: Path to the track to add.
+            session: sqlalchemy session to use to query for a matching album.
+
+        Returns:
+            Track instance.
 
         Raises:
             FileNotFoundError: Given path doesn't exit.
         """
         if not path.exists():
+            log.error(f"{path}' does not exist.")
             raise FileNotFoundError
 
-        self.path = path
-        self.title = "tmp_title"
+        audio_file = MediaFile(path)
 
-        self._album_obj = Album()
-
-        if read_tags:
-            self._set_fields_from_file()
+        return cls(
+            path=path,
+            session=session,
+            album=audio_file.album,
+            albumartist=audio_file.albumartist,
+            track_num=audio_file.track,
+            year=audio_file.year,
+            artist=audio_file.artist,
+            title=audio_file.title,
+        )
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Track as a dictionary.
@@ -172,15 +283,6 @@ class Track(MusicItem, Base):
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
 
-    def _set_fields_from_file(self):
-        """Reads any tags from the music file and sets them to the Track."""
-        self._audio_file = MediaFile(self.path)
-
-        self.album = self._audio_file.album
-        self.albumartist = self._audio_file.albumartist
-        self.artist = self._audio_file.artist
-        self.title = self._audio_file.title
-
 
 @contextmanager
 def session_scope():
@@ -188,16 +290,12 @@ def session_scope():
 
     Yields:
         A database session to use.
-
-    Raises:
-        BaseException: Any exceptions occured during while committing to
-            the database will be re-raised.
     """
     session = Session()
     yield session
     try:
         session.commit()
-    except BaseException:  # noqa: WPS424
+    except:  # noqa: E722
         session.rollback()
         raise
     finally:
