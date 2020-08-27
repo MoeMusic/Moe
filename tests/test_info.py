@@ -20,7 +20,6 @@ class TestParseArgs:
 
         mock_track.albumartist = "test"
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         info.parse_args(Mock(), tmp_session, args)
 
@@ -34,7 +33,6 @@ class TestParseArgs:
         mock_track.album = "album title"
 
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         info.parse_args(Mock(), tmp_session, args)
 

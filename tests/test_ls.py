@@ -16,9 +16,7 @@ class TestParseArgs:
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="_id:1", album=False)
-
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         ls.parse_args(Mock(), tmp_session, args)
 
@@ -29,9 +27,7 @@ class TestParseArgs:
     def test_album(self, capsys, tmp_session, mock_track):
         """Albums are printed to stdout with valid query."""
         args = argparse.Namespace(query="_id:1", album=True)
-
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         ls.parse_args(Mock(), tmp_session, args)
 

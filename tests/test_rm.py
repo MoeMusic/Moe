@@ -16,9 +16,7 @@ class TestParseArgs:
     def test_track(self, tmp_session, mock_track):
         """Tracks are removed from the database with valid query."""
         args = argparse.Namespace(query="_id:1", album=False)
-
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         rm.parse_args(Mock(), tmp_session, args)
 
@@ -29,9 +27,7 @@ class TestParseArgs:
     def test_album(self, tmp_session, mock_track):
         """Albums are removed from the database with valid query."""
         args = argparse.Namespace(query="_id:1", album=True)
-
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         rm.parse_args(Mock(), tmp_session, args)
 
@@ -42,9 +38,7 @@ class TestParseArgs:
     def test_album_tracks(self, tmp_session, mock_track):
         """Respective tracks should also be removed if an album is removed."""
         args = argparse.Namespace(query="_id:1", album=True)
-
         tmp_session.add(mock_track)
-        tmp_session.commit()
 
         rm.parse_args(Mock(), tmp_session, args)
 
