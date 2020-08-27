@@ -1,5 +1,6 @@
 """Shared pytest configuration."""
 
+import random
 from typing import Callable, Iterator
 from unittest.mock import MagicMock
 
@@ -46,7 +47,7 @@ def tmp_config(tmp_path) -> Config:
 
 
 @pytest.fixture
-def mock_track_factory() -> Callable[[], library.Track]:
+def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
     """Factory for mock Tracks.
 
     In particular, the path is mocked so the Track doesn't need to exist.
@@ -56,7 +57,14 @@ def mock_track_factory() -> Callable[[], library.Track]:
     """
 
     def _mock_track():  # noqa: WPS430
-        return library.Track(path=MagicMock(), read_tags=False)
+        return library.Track(
+            path=MagicMock(),
+            session=tmp_session,
+            album="Illmatic",
+            albumartist="Nas",
+            track_num=1,
+            year=random.randint(1000, 9999),
+        )
 
     return _mock_track
 

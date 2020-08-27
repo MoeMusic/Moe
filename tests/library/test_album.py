@@ -1,5 +1,7 @@
 """Test an Album object."""
 
+from moe.core.library import Album
+
 
 class TestToDict:
     """Test dict representation of an album."""
@@ -33,3 +35,29 @@ class TestToDict:
         track1._album_obj = track2._album_obj
 
         assert track1._album_obj.to_dict()["title"] == "Various"
+
+
+class TestGetOrCreate:
+    """Test `get_or_create()`."""
+
+    def test_album_dne(self, tmp_session):
+        """We should return a new Album() if a match doesn't exist."""
+        album = Album.get_or_create(
+            tmp_session, artist="this doesnt", title="exist", year=1
+        )
+
+        assert isinstance(album, Album)
+
+    def test_album_exists(self, tmp_session):
+        """Return the matching album if it exists in the database."""
+        artist = "this does"
+        title = "exist"
+        year = 1
+
+        old_album = Album(artist=artist, title=title, year=year)
+        tmp_session.add(old_album)
+
+        new_album = Album.get_or_create(
+            tmp_session, artist=artist, title=title, year=year
+        )
+        assert new_album is old_album

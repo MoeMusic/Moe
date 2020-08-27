@@ -39,20 +39,10 @@ def parse_args(
     path = pathlib.Path(args.path)
 
     try:
-        track = library.Track(path=path)
-    except FileNotFoundError:
-        log.error(
-            f"Unable to add '{path.resolve()}' to the library; file does not exist."
-        )
+        track = library.Track.from_tags(path=path, session=session)
+    except (FileNotFoundError, ValueError):
+        log.error(f"Unable to add '{path}' to the library.")
         raise SystemExit(1)
 
-    existing_track = (
-        session.query(library.Track.path).filter(library.Track.path == path).all()
-    )
-    if existing_track:
-        log.error(f"Unable to add '{path}'; file already exists in the library.")
-        raise SystemExit(1)
-
-    log.info(f"Adding track '{track}' to the library.")
-    with library.session_scope() as new_session:
-        new_session.add(track)
+    log.info(f"Adding '{path}' to the library.")
+    session.add(track)
