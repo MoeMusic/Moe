@@ -52,6 +52,10 @@ def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
 
     In particular, the path is mocked so the Track doesn't need to exist.
 
+    Note:
+        Each track will share the same album attributes, and thus will
+        belong to the same album if a mock_track already exists in the database.
+
     Returns:
         Unique Track object with each call.
     """
@@ -62,8 +66,8 @@ def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
             session=tmp_session,
             album="Illmatic",
             albumartist="Nas",
-            track_num=1,
-            year=random.randint(1000, 9999),
+            track_num=random.randint(1, 1000),
+            year=1994,
         )
 
     return _mock_track
