@@ -13,12 +13,12 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from typing import Any, Type, TypeVar
 
+import mediafile
 import sqlalchemy
-from mediafile import MediaFile
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import events, relationship, sessionmaker
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 log = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class _PathType(sqlalchemy.types.TypeDecorator):
     impl = sqlalchemy.types.String  # sql type
 
     def process_bind_param(self, pathlib_path, dialect):
-        """Convert the path to a string prior to enterting in the database."""
+        """Convert the absolute path to a string prior to enterting in the database."""
         return str(pathlib_path.resolve())
 
     def process_result_value(self, path_str, dialect):
@@ -205,27 +205,12 @@ class Track(MusicItem, Base):  # noqa: WPS230
         Note:
            If you wish to add several tracks to the same album,
             ensure the album already exists in the database.
-
-        Raises:
-            FileNotFoundError: Given path doesn't exit.
-            ValueError: Given path already exists in the library.
         """
-        if not path.exists():
-            log.error(f"{path}' does not exist.")
-            raise FileNotFoundError
-        self.path = path
-
-        existing_track = (
-            session.query(Track.path).filter(Track.path == self.path).first()
-        )
-        if existing_track:
-            log.error(f"{path}' already exists in the library.")
-            raise ValueError
-
         self._album_obj = Album.get_or_create(
             session, artist=albumartist, title=album, year=year
         )
 
+        self.path = path
         self.track_num = track_num
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -246,13 +231,13 @@ class Track(MusicItem, Base):  # noqa: WPS230
             Track instance.
 
         Raises:
-            FileNotFoundError: Given path doesn't exit.
+            mediafile.UnreadableFileError: Unable to read tags from `path`.
         """
-        if not path.exists():
-            log.error(f"{path}' does not exist.")
-            raise FileNotFoundError
-
-        audio_file = MediaFile(path)
+        try:
+            audio_file = mediafile.MediaFile(path)
+        except mediafile.UnreadableFileError as exc:
+            log.error(exc)
+            raise
 
         return cls(
             path=path,
@@ -288,13 +273,22 @@ class Track(MusicItem, Base):  # noqa: WPS230
         return f"{self.artist} - {self.title}"
 
 
+@sqlalchemy.event.listens_for(Track.path, "set")
+def track_path_set(
+    target: Track,
+    value: pathlib.Path,
+    oldvalue: pathlib.Path,
+    initiator: events.AttributeEvents,
+):
+    """Only allow paths that exist."""
+    if not value.is_file():
+        log.warning(f"File not found: {value.resolve()}")
+        raise FileNotFoundError
+
+
 @contextmanager
 def session_scope():
-    """Provides a transactional scope around a series of operations.
-
-    Yields:
-        A database session to use.
-    """
+    """Yields a transactional scope around a series of operations."""
     session = Session()
     yield session
     try:

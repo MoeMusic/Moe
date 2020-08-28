@@ -75,11 +75,5 @@ def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
 
 @pytest.fixture
 def mock_track(mock_track_factory) -> library.Track:
-    """Creates a single mock Track object.
-
-    Uses `mock_track_factory`.
-
-    Returns:
-        Track object.
-    """
+    """Creates a single mock Track object."""
     return mock_track_factory()

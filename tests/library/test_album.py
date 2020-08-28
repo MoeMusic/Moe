@@ -9,7 +9,8 @@ from moe.core.library import Album
 class TestInit:
     """Test Album intitialization."""
 
-    # TODO: we should have better checking so we don't hit the integrity error
+    # TODO: handle integrity error
+    # https://groups.google.com/g/sqlalchemy/c/G6eb_1gpn1s
     def test_dup(self, mock_track_factory, tmp_session):
         """Duplicate albums should not be added to the database.
 
