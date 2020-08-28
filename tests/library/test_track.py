@@ -35,6 +35,7 @@ class TestInit:
         track1 = mock_track_factory()
         track2 = mock_track_factory()
         track2._album_obj = track1._album_obj
+        track2.track_num = track1.track_num
 
         tmp_session.add(track1)
         tmp_session.add(track2)
