@@ -45,6 +45,19 @@ class TestInit:
 
         tmp_session.rollback()
 
+    def test_add_to_album(self, mock_track_factory, tmp_session):
+        """Tracks with the same album attributes should be added to the same album."""
+        # first add the album to the db
+        tmp_session.add(mock_track_factory()._album_obj)
+
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+
+        tmp_session.add(track1)
+        tmp_session.add(track2)
+
+        assert track1._album_obj is track2._album_obj
+
 
 class TestFromTags:
     """Test initialization from tags."""

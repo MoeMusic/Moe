@@ -202,6 +202,10 @@ class Track(MusicItem, Base):  # noqa: WPS230
             year: Album release year.
             **kwargs: Any other fields to assign to the Track.
 
+        Note:
+           If you wish to add several tracks to the same album,
+            ensure the album already exists in the database.
+
         Raises:
             FileNotFoundError: Given path doesn't exit.
             ValueError: Given path already exists in the library.
