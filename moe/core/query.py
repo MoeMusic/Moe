@@ -24,7 +24,7 @@ from moe.core.library import Album, MusicItem, Track
 log = logging.getLogger(__name__)
 
 query_parser = argparse.ArgumentParser(
-    add_help=False, formatter_class=argparse.RawTextHelpFormatter,
+    add_help=False, formatter_class=argparse.RawTextHelpFormatter
 )
 query_parser.add_argument("query", help="query the library for matching tracks")
 query_parser.add_argument(
@@ -105,7 +105,7 @@ def _parse_query(query_str: str) -> List[Dict[str, str]]:
 
 
 def _create_filter(
-    expression: Dict[str, str], query_cls: Union[Type[Album], Type[Track]],
+    expression: Dict[str, str], query_cls: Union[Type[Album], Type[Track]]
 ) -> sqlalchemy.sql.elements.BinaryExpression:
     """Maps a user-given query expression to a filter for the database query.
 

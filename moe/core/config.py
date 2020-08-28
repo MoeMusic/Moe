@@ -48,9 +48,7 @@ class Config:
 
     _default_config_dir = pathlib.Path().home() / ".config" / "moe"
 
-    def __init__(
-        self, config_dir: pathlib.Path = _default_config_dir,
-    ):
+    def __init__(self, config_dir: pathlib.Path = _default_config_dir):
         """Reads the configuration and initializes the database.
 
         Args:
