@@ -1,6 +1,34 @@
 """Test an Album object."""
 
+import pytest
+from sqlalchemy import exc
+
 from moe.core.library import Album
+
+
+class TestInit:
+    """Test Album intitialization."""
+
+    # TODO: we should have better checking so we don't hit the integrity error
+    def test_dup(self, mock_track_factory, tmp_session):
+        """Duplicate albums should not be added to the database.
+
+        A duplicate is defined as a combination of the album's artist, title, and year.
+        """
+        artist = "Dup"
+        title = "licate"
+        year = 9999
+
+        album1 = Album(artist=artist, title=title, year=year)
+        album2 = Album(artist=artist, title=title, year=year)
+
+        tmp_session.add(album1)
+        tmp_session.add(album2)
+
+        with pytest.raises(exc.IntegrityError):
+            tmp_session.commit()
+
+        tmp_session.rollback()
 
 
 class TestToDict:
