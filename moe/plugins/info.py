@@ -26,7 +26,7 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
 
 
 def parse_args(
-    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace,
+    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
 ):
     """Parses the given commandline arguments.
 

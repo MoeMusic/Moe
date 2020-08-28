@@ -121,7 +121,7 @@ def _create_arg_parser() -> argparse.ArgumentParser:
 
     moe_parser = argparse.ArgumentParser(description="Run moe.")
     moe_parser.add_argument(
-        "--version", action="version", version=f"%(prog)s v{version}",  # noqa: WPS323
+        "--version", action="version", version=f"%(prog)s v{version}"  # noqa: WPS323
     )
     moe_parser.add_argument(
         "--verbose",
