@@ -4,6 +4,7 @@ import argparse
 import logging
 import pathlib
 
+import mediafile
 import sqlalchemy
 
 import moe
@@ -40,7 +41,7 @@ def parse_args(
 
     try:
         track = library.Track.from_tags(path=path, session=session)
-    except (FileNotFoundError, ValueError):
+    except mediafile.UnreadableFileError:
         log.error(f"Unable to add '{path}' to the library.")
         raise SystemExit(1)
 

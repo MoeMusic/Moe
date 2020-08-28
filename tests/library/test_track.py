@@ -3,7 +3,6 @@
 import pathlib
 import re
 import types
-from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import exc
@@ -14,19 +13,8 @@ from moe.core.library import Track
 class TestInit:
     """Test Track initialization."""
 
-    def test_path_dne(self):
-        """Raise an error if the path used to create the Track does not exist."""
-        with pytest.raises(FileNotFoundError):
-            Track(
-                path=pathlib.Path("this_doesnt_exist"),
-                session=Mock(),
-                album="tmp",
-                albumartist="tmp",
-                track_num=1,
-                year=1,
-            )
-
-    # TODO: we should have better checking so we don't hit the integrity error
+    # TODO: handle integrity error
+    # https://groups.google.com/g/sqlalchemy/c/G6eb_1gpn1s
     def test_dup(self, mock_track_factory, tmp_session):
         """Duplicate tracks should not be added to the database.
 
@@ -94,3 +82,12 @@ class TestToDict:
     def test_no_metadata(self, mock_track):
         """Metadata is a sqlalchemy-ism and should not be included."""
         assert "metadata" not in mock_track.to_dict().keys()
+
+
+class TestPathSet:
+    """Test path set event."""
+
+    def test_path_dne(self, mock_track):
+        """Raise an error if setting a path that doesn't exist."""
+        with pytest.raises(FileNotFoundError):
+            mock_track.path = pathlib.Path("also doesnt exist")
