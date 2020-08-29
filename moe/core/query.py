@@ -121,36 +121,34 @@ def _create_filter(
         https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
 
     Raises:
-        ValueError: Invalid query value given.
+        ValueError: Invalid query given.
     """
-    field = expression[FIELD_GROUP]
+    field = expression[FIELD_GROUP].lower()
+    separator = expression[SEPARATOR_GROUP]
+    value = expression[VALUE_GROUP]
+    try:
+        attr = getattr(Track, field)
+    except AttributeError:
+        log.error(f"Invalid Track field: {field}")
+        raise ValueError
 
-    attr = getattr(Track, field)
+    if separator == ":":
+        # Normal string match query - should be case insensitive.
+        return attr.ilike(value)
 
-    # FIXME: Case-insensitive queries aren't working for association proxy attributes
-    if not isinstance(
-        attr,
-        sqlalchemy.ext.associationproxy.ColumnAssociationProxyInstance,  # type: ignore
-    ):
-        attr = sqlalchemy.func.lower(attr)
-
-    if expression[SEPARATOR_GROUP] == "::":
-        # Regular expression
+    elif separator == "::":
+        # Regular expression query.
         # Note, this is a custom sqlite function created in config.py
-        value = expression[VALUE_GROUP]
-
         try:
             re.compile(value)
         except re.error:
-            log.error(f"'{value}' is not a valid regular expression.")
+            log.error(f"Invalid regular expression: {value}")
             raise ValueError
 
         return attr.op("regexp")(value)
 
-    # Normal expression
-    value = expression[VALUE_GROUP]
-
-    return attr == value
+    log.error(f"Invalid query type: {separator}")
+    raise ValueError
 
 
 def query(
@@ -172,11 +170,7 @@ def query(
         log.error(f"Invalid query '{query_str}'\n{HELP_STR}")
         return []
 
-    if album_query:
-        query_cls = Album
-    else:
-        query_cls = Track  # type: ignore
-
+    query_cls = Album if album_query else Track
     query_filters = []
     for expression in expressions:
         try:
