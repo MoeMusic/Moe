@@ -114,14 +114,15 @@ class Config:
         def sqlite_engine_connect(conn):  # noqa: WPS430
             conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
 
-        def _regexp(pattern: str, col_value: str) -> bool:  # noqa: WPS430
+        def _regexp(pattern: str, col_value) -> bool:  # noqa: WPS430
             """Use the python re module for sqlite regular expression functionality.
 
             Args:
                 pattern: Regular expression pattern.
-                col_value: Column value to match against.
+                col_value: Column value to match against. The match will be against
+                    the str of the value.
 
             Returns:
                 Whether or not the match was successful.
             """
-            return re.search(pattern, col_value) is not None
+            return re.search(pattern, str(col_value), re.IGNORECASE) is not None
