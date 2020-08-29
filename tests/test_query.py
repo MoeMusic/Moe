@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
 from moe.core import query
 from moe.core.library import Album, Track
 
@@ -85,18 +83,19 @@ class TestParseQuery:
 class TestQuery:
     """Test actual query."""
 
-    def test_invalid_query(self):
+    def test_invalid_query_str(self):
         """Invalid queries should return an empty list."""
-        tracks = query.query(r"invalid", Mock())
+        assert not query.query(r"invalid", Mock())  # invalid pattern
 
-        assert not tracks
+    def test_invalid_query_field(self):
+        """Invalid queries should return an empty list."""
+        assert not query.query(r"invalid:a", Mock())  # invalid field
 
     def test_valid_query(self, tmp_session, mock_track):
         """Simplest query."""
         tmp_session.add(mock_track)
 
-        tracks = query.query("_id:1", tmp_session)
-        assert tracks
+        assert query.query("_id:1", tmp_session)
 
     def test_track_album_field_query(self, tmp_session, mock_track):
         """We should be able to query tracks that match album-related fields.
@@ -108,72 +107,55 @@ class TestQuery:
         mock_track.album = "All Eyez on Me"
         tmp_session.add(mock_track)
 
-        tracks = query.query(r"album:All Eyez on Me", tmp_session)
-        assert tracks
+        assert query.query("album:All Eyez on Me", tmp_session)
+        assert query.query("albumartist:2Pac", tmp_session)  # Album field
 
-        tracks = query.query(r"albumartist:2Pac", tmp_session)
-        assert tracks
-
-    @pytest.mark.skip(reason="case insensitive queries for album fields broken")
     def test_case_insensitive_value(self, tmp_session, mock_track):
         """Query values should be case-insensitive."""
         mock_track.title = "TMP"
         mock_track.album = "TMP"
         tmp_session.add(mock_track)
 
-        tracks = query.query(r"title:tmp", tmp_session)
-        assert tracks
+        assert query.query("title:tmp", tmp_session)
+        assert query.query("album:tmp", tmp_session)  # Album field
 
-        # test Album class field
-        tracks = query.query(r"album:tmp", tmp_session)
-        assert tracks
-
-    @pytest.mark.skip(reason="case insensitive queries for album fields broken")
     def test_case_insensitive_field(self, tmp_session, mock_track):
         """Fields should be able to be specified case-insensitive."""
         mock_track.title = "tmp"
-        mock_track.albumartist = "tmp"
+        mock_track.album = "tmp"
         tmp_session.add(mock_track)
 
-        tracks = query.query(r"Title:tmp", tmp_session)
-        assert tracks
-
-        # test Album class field
-        tracks = query.query(r"Album:tmp", tmp_session)
-        assert tracks
+        assert query.query("Title:tmp", tmp_session)
+        assert query.query("Album:tmp", tmp_session)  # Album field
 
     def test_regex(self, tmp_session, mock_track):
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
 
-        tracks = query.query("_id::.*", tmp_session)
-        assert tracks
+        assert query.query(r"title::.*", tmp_session)
+        assert query.query(r"album::.*", tmp_session)  # Album field
 
-        # test Album class field
-        tracks = query.query(r"album::.*", tmp_session)
-        assert tracks
+    def test_regex_non_str(self, tmp_session, mock_track):
+        """Non string fields should be converted to strings for matching."""
+        tmp_session.add(mock_track)
+
+        assert query.query(r"track_num::.*", tmp_session)
+        assert query.query(r"year::.*", tmp_session)  # Album field
 
     def test_invalid_regex(self, tmp_session, mock_track):
         """Invalid regex queries should return an empty list."""
         tmp_session.add(mock_track)
 
-        tracks = query.query("_id::[", tmp_session)
+        assert not query.query(r"_id::[", tmp_session)
 
-        assert not tracks
-
-    @pytest.mark.skip(reason="case insensitive queries for album fields broken")
     def test_regex_case_insensitive(self, tmp_session, mock_track):
         """Regex queries should be case-insensitive."""
         mock_track.title = "TMP"
         mock_track.album = "TMP"
         tmp_session.add(mock_track)
 
-        tracks = query.query(r"title::tmp", tmp_session)
-        assert tracks
-
-        # test Album class field
-        tracks = query.query(r"album::tmp", tmp_session)
-        assert tracks
+        assert query.query(r"title::tmp", tmp_session)
+        assert query.query(r"album::tmp", tmp_session)  # Album field
 
     def test_track_query(self, tmp_session, mock_track):
         """A track query should return track objects."""
