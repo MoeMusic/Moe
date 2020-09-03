@@ -89,9 +89,7 @@ class Config:
     ):
         """Initializes the database.
 
-        Moe uses sqlite by default. Current (known) limitations with using other dbs:
-            1. Track and album fields aren't defined with character limits.
-            2. Support for the `regexp` operator used for regex queries.
+        Moe uses sqlite by default.
 
         Args:
             db_path: Path of the database file.
