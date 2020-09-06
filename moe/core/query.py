@@ -38,21 +38,32 @@ HELP_STR = r"""
 The query must be in the format 'field:value' where field is a track or album's field to
 match and value is that field's value. The match is case-insensitive.
 
+SQL LIKE query syntax is used for normal queries, which means
+the '_'  and '%' characters have special meaning:
+% - The percent sign represents zero, one, or multiple characters.
+_ - The underscore represents a single character.
+
 The value can also be a regular expression. To enforce this, use two colons
 e.g. 'field::value.*'
 
-If you need to use the ':' character in a value, that would otherwise look like another
-field:value reference, you can escape it with '\'.
-e.g. 'album:Vol 1: Wow' is fine, but 'album: Vol 1\:Wow' needs the escape character.
-
 Finally, you can specify any number of field/value pairs.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
-'artist:wu-tang clan title::A.*'
+'artist:wu-tang clan title:a%'
 
-Note that multiple field:value expressions are joined together using AND logic.
+There are a few special meaning characters that need to be escaped if you would like
+to match them normally. These include '%', '_', and ':'. To escape any of these
+characters, prepend it with a '\'. Note that ':' is only disallowed if it would
+otherwise cause the query to look like another field:value pair.
+e.g. 'album:Vol 1: Wow' is fine, but 'album: Vol 1\:Wow' needs the escape character.
 
-If doing a track query, you can specify any track field + album and albumartist.
-If doing an album query, you can only specify album fields.
+Multiple field:value expressions are joined together using AND logic.
+
+If doing an album query, you still specify track fields, but it will match albums
+instead of tracks.
+
+Tip: Normal queries may be faster when compared to regex queries. If you
+are experiencing performance issues with regex queries, see if you can make an
+equivalent normal query using the LIKE wildcard characters.
 """
 
 # each query will be split into these groups
