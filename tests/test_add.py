@@ -7,7 +7,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from moe import cli
-from moe.core import library
+from moe.core.library.session import session_scope
+from moe.core.library.track import Track
 from moe.plugins import add
 
 
@@ -21,7 +22,7 @@ class TestParseArgs:
 
         add.parse_args(Mock(), tmp_session, args)
 
-        test_path = tmp_session.query(library.Track.path).scalar()
+        test_path = tmp_session.query(Track.path).scalar()
 
         assert test_path == music_file.resolve()
 
@@ -34,8 +35,6 @@ class TestParseArgs:
 
         assert error.value.code != 0
 
-    # FIXME: Once integrity errors properly handled, fix this.
-    @pytest.mark.skip
     def test_duplicate_file(self, tmp_session):
         """We should raise SystemExit if the file already exists in the library."""
         args = argparse.Namespace(path="tests/resources/audio_files/full.mp3")
@@ -60,6 +59,5 @@ class TestCommand:
             with patch("moe.cli.Config", return_value=tmp_config):
                 cli.main()
 
-        query = library.Session().query(library.Track._id).scalar()
-
-        assert query
+        with session_scope() as session:
+            assert session.query(Track._id).scalar()

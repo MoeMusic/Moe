@@ -1,35 +1,9 @@
 """Test an Album object."""
 
 import pytest
-from sqlalchemy import exc
 
-from moe.core.library import Album
-
-
-class TestInit:
-    """Test Album intitialization."""
-
-    # TODO: handle integrity error
-    # https://groups.google.com/g/sqlalchemy/c/G6eb_1gpn1s
-    def test_dup(self, mock_track_factory, tmp_session):
-        """Duplicate albums should not be added to the database.
-
-        A duplicate is defined as a combination of the album's artist, title, and year.
-        """
-        artist = "Dup"
-        title = "licate"
-        year = 9999
-
-        album1 = Album(artist=artist, title=title, year=year)
-        album2 = Album(artist=artist, title=title, year=year)
-
-        tmp_session.add(album1)
-        tmp_session.add(album2)
-
-        with pytest.raises(exc.IntegrityError):
-            tmp_session.commit()
-
-        tmp_session.rollback()
+from moe.core.library.album import Album
+from moe.core.library.session import DbDupAlbumError, session_scope
 
 
 class TestToDict:
@@ -90,3 +64,32 @@ class TestGetOrCreate:
             tmp_session, artist=artist, title=title, year=year
         )
         assert new_album is old_album
+
+
+class TestDuplicate:
+    """Test behavior when there is an attempt to add a duplicate Album to the db.
+
+    A duplicate Album is defined as a combination of the artist, title, and year.
+    If a duplicate is found when committing to the database, we should raise a
+    DbDupAlbumError.
+
+    Note:
+        This error will only occur upon the session being flushed or committed.
+        If you wish to catch this error, then you should use a new session scope
+        as shown in `test_dup()`. This will allow you to catch the error by wrapping
+        the `with` statement with a `try/except`.
+    """
+
+    def test_dup(self, mock_track_factory):
+        """Duplicate albums should raise a DbDupAlbumError."""
+        artist = "Dup"
+        title = "licate"
+        year = 9999
+
+        album1 = Album(artist=artist, title=title, year=year)
+        album2 = Album(artist=artist, title=title, year=year)
+
+        with pytest.raises(DbDupAlbumError):
+            with session_scope() as session:
+                session.add(album1)
+                session.add(album2)

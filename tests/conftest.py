@@ -6,13 +6,15 @@ from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy
+from sqlalchemy.orm.session import Session
 
-from moe.core import library
 from moe.core.config import Config
+from moe.core.library.session import session_scope
+from moe.core.library.track import Track
 
 
 @pytest.fixture
-def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
+def tmp_session() -> Iterator[Session]:
     """Creates temporary Session instance for database interaction.
 
     The database is a temporary sqlite instance created in memory.
@@ -25,7 +27,7 @@ def tmp_session() -> Iterator[sqlalchemy.orm.session.Session]:
     config = Config(config_dir=MagicMock())
     config.init_db(engine=engine)
 
-    with library.session_scope() as session:
+    with session_scope() as session:
         yield session
 
 
@@ -47,7 +49,7 @@ def tmp_config(tmp_path) -> Config:
 
 
 @pytest.fixture
-def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
+def mock_track_factory(tmp_session) -> Callable[[], Track]:
     """Factory for mock Tracks.
 
     In particular, the path is mocked so the Track doesn't need to exist.
@@ -60,10 +62,10 @@ def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
         Unique Track object with each call.
     """
 
-    def _mock_track():  # noqa: WPS430
-        return library.Track(
+    def _mock_track(session: Session = tmp_session):  # noqa: WPS430
+        return Track(
             path=MagicMock(),
-            session=tmp_session,
+            session=session,
             album="Illmatic",
             albumartist="Nas",
             track_num=random.randint(1, 1000),
@@ -74,6 +76,6 @@ def mock_track_factory(tmp_session) -> Callable[[], library.Track]:
 
 
 @pytest.fixture
-def mock_track(mock_track_factory) -> library.Track:
+def mock_track(mock_track_factory) -> Track:
     """Creates a single mock Track object."""
     return mock_track_factory()

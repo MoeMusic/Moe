@@ -1,1 +1,1 @@
-"""Library for moe."""
+"""Core functionality for moe."""

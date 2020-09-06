@@ -35,9 +35,9 @@ def parse_args(
     """Parses the given commandline arguments.
 
     Args:
-        config: configuration in use
-        session: current session
-        args: given commandline arguments
+        config: Configuration in use.
+        session: Current session.
+        args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Query returned no tracks.

@@ -12,8 +12,8 @@ import pkg_resources
 import pluggy
 
 import moe
-from moe.core import library
 from moe.core.config import Config
+from moe.core.library.session import session_scope
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
     config.init_db()
 
     # call the sub-command's handler within a single session
-    with library.session_scope() as session:
+    with session_scope() as session:
         parsed_args.func(config=config, session=session, args=parsed_args)
 
 

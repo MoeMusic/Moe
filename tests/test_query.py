@@ -3,7 +3,8 @@
 from unittest.mock import Mock
 
 from moe.core import query
-from moe.core.library import Album, Track
+from moe.core.library.album import Album
+from moe.core.library.track import Track
 
 
 class TestParseQuery:
