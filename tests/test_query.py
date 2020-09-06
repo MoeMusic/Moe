@@ -188,3 +188,18 @@ class TestQuery:
         assert albums
         for album in albums:
             assert isinstance(album, Album)
+
+    def test_like_query(self, tmp_session, mock_track):
+        """Test sql LIKE queries. '%' and '_' are wildcard characters."""
+        tmp_session.add(mock_track)
+
+        assert query.query("_id:_", tmp_session)
+        assert query.query("_id:%", tmp_session)
+
+    def test_like_escape_query(self, tmp_session, mock_track):
+        r"""We should be able to escape the LIKE wildcard characters with '\'."""
+        mock_track.title = "\a"
+        tmp_session.add(mock_track)
+
+        assert not query.query(r"title:\_", tmp_session)
+        assert not query.query(r"title:\%", tmp_session)
