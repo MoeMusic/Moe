@@ -6,7 +6,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from moe import cli
-from moe.core import library
+from moe.core.library.album import Album
+from moe.core.library.session import session_scope
+from moe.core.library.track import Track
 from moe.plugins import rm
 
 
@@ -20,7 +22,7 @@ class TestParseArgs:
 
         rm.parse_args(Mock(), tmp_session, args)
 
-        query = tmp_session.query(library.Track.path).scalar()
+        query = tmp_session.query(Track.path).scalar()
 
         assert not query
 
@@ -31,7 +33,7 @@ class TestParseArgs:
 
         rm.parse_args(Mock(), tmp_session, args)
 
-        query = tmp_session.query(library.Album).scalar()
+        query = tmp_session.query(Album).scalar()
 
         assert not query
 
@@ -42,7 +44,7 @@ class TestParseArgs:
 
         rm.parse_args(Mock(), tmp_session, args)
 
-        query = tmp_session.query(library.Track).scalar()
+        query = tmp_session.query(Track).scalar()
 
         assert not query
 
@@ -65,13 +67,12 @@ class TestCommand:
         args = ["moe", "rm", "_id:1"]
 
         tmp_config.init_db()
-        with library.session_scope() as session:
+        with session_scope() as session:
             session.add(mock_track)
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=tmp_config):
                 cli.main()
 
-        query = library.Session().query(library.Track._id).scalar()
-
-        assert not query
+        with session_scope() as session2:
+            assert not session2.query(Track._id).scalar()

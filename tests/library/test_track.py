@@ -5,33 +5,13 @@ import re
 import types
 
 import pytest
-from sqlalchemy import exc
 
-from moe.core.library import Track
+from moe.core.library.session import DbDupTrackError, session_scope
+from moe.core.library.track import Track
 
 
 class TestInit:
     """Test Track initialization."""
-
-    # TODO: handle integrity error
-    # https://groups.google.com/g/sqlalchemy/c/G6eb_1gpn1s
-    def test_dup(self, mock_track_factory, tmp_session):
-        """Duplicate tracks should not be added to the database.
-
-        A duplicate is defined as a combination of it's album (obj) and track number.
-        """
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-        track2._album_obj = track1._album_obj
-        track2.track_num = track1.track_num
-
-        tmp_session.add(track1)
-        tmp_session.add(track2)
-
-        with pytest.raises(exc.IntegrityError):
-            tmp_session.commit()
-
-        tmp_session.rollback()
 
     def test_add_to_album(self, mock_track_factory, tmp_session):
         """Tracks with the same album attributes should be added to the same album."""
@@ -91,3 +71,51 @@ class TestPathSet:
         """Raise an error if setting a path that doesn't exist."""
         with pytest.raises(FileNotFoundError):
             mock_track.path = pathlib.Path("also doesnt exist")
+
+
+class TestDuplicate:
+    """Test behavior when there is an attempt to add a duplicate Track to the db.
+
+    A duplicate Track is defined as a combination of it's album (obj) and track number.
+    If a duplicate is found when committing to the database, we should raise a
+    DbDupTrackError.
+
+    Note:
+        This error will only occur upon the session being flushed or committed.
+        If you wish to catch this error, then you should use a new session scope
+        as shown in the test methods. This will allow you to catch the error by wrapping
+        the `with` statement with a `try/except`.
+
+        Also, if adding multiple Tracks at a time, ensure the album already exists
+        in the database prior to adding subsequent Tracks after the first to avoid
+        a DbDupAlbumError. This can be done most easily by flushing or committing
+        the session after the first Track. See `test_dup_path()` for an example.
+    """
+
+    def test_dup_fields(self, mock_track_factory):
+        """Duplicate tracks by fields shuold raise a DbDupTrackError."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        track2._album_obj = track1._album_obj
+        track2.track_num = track1.track_num
+
+        with pytest.raises(DbDupTrackError):
+            with session_scope() as session:
+                session.add(track1)
+                session.add(track2)
+
+    def test_dup_path(self, mock_track_factory):
+        """Duplicate tracks can also be defined as having the same path.
+
+        These should also raise the same DbDupTrackError.
+        """
+        with pytest.raises(DbDupTrackError):
+            with session_scope() as session:
+                session.add(mock_track_factory(session)._album_obj)
+
+                track1 = mock_track_factory(session)
+                track2 = mock_track_factory(session)
+                track2.path = track1.path
+
+                session.add(track1)
+                session.add(track2)

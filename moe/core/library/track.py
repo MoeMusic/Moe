@@ -1,30 +1,23 @@
-"""Describes all the information available in the library.
-
-A high-level model of the database.
-
-Note:
-    The database will be initialized once the user configuration is read.
-"""
+"""A Track in the database and any related logic."""
 
 import logging
 import pathlib
 import types
 from collections import OrderedDict
-from contextlib import contextmanager
 from typing import Any, Type, TypeVar
 
 import mediafile
 import sqlalchemy
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import events, relationship, sessionmaker
+from sqlalchemy.orm import events, relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
-log = logging.getLogger(__name__)
+from moe.core.library.album import Album
+from moe.core.library.music_item import MusicItem
+from moe.core.library.session import Base
 
-Session = sessionmaker()
-Base = declarative_base()
+log = logging.getLogger(__name__)
 
 
 class _PathType(sqlalchemy.types.TypeDecorator):
@@ -43,101 +36,6 @@ class _PathType(sqlalchemy.types.TypeDecorator):
     def process_result_value(self, path_str, dialect):
         """Convert the path back to pathlib.Path on the way out."""
         return pathlib.Path(path_str)
-
-
-class MusicItem:
-    """An abstract base class for both albums and tracks."""
-
-    def to_dict(self) -> "OrderedDict[str, Any]":
-        """Represents the MusicItem as a dictionary.
-
-        The dictionary should be sorted alphabetically.
-
-        Raises:
-            NotImplementedError: Not implemented by subclasses.
-        """
-        raise NotImplementedError
-
-
-# Album generic, used for typing classmethod
-A = TypeVar("A", bound="Album")  # noqa: WPS111
-
-
-class Album(MusicItem, Base):
-    """An album is a collection of tracks.
-
-    Albums also house any attributes that are shared by tracks e.g. albumartist.
-
-    Attributes:
-        artist (str): AKA albumartist.
-        title (str)
-        tracks (List[Track]): All the album's corresponding tracks.
-        year (str)
-    """
-
-    __tablename__ = "albums"
-    __table_args__ = (UniqueConstraint("artist", "title", "year"),)
-
-    _id = Column(Integer, primary_key=True)
-    artist = Column(String, nullable=False)
-    title = Column(String, nullable=False)
-    year = Column(Integer, nullable=False)
-
-    tracks = relationship("Track", back_populates="_album_obj", cascade="all, delete")
-
-    def __init__(self, artist: str, title: str, year: int):
-        """Creates an album.
-
-        Args:
-            artist: Album artist.
-            title: Album title.
-            year: Album release year.
-        """
-        self.artist = artist
-        self.title = title
-        self.year = year
-
-    def __str__(self):
-        """String representation of an album."""
-        return f"{self.artist} - {self.title}"
-
-    def to_dict(self) -> "OrderedDict[str, Any]":
-        """Represents the Album as a dictionary.
-
-        An albums representation is just the merged dictionary of all its tracks.
-        If different values are present for any given attribute among tracks, then
-        the value becomes "Various".
-
-        Returns:
-            Returns a dict representation of an Album.
-            It will be in the form { attribute: value } and is sorted by attribute.
-        """
-        album_dict = self.tracks[0].to_dict()  # type: ignore
-        for track in self.tracks[1:]:  # type: ignore
-            for key, value in track.to_dict().items():
-                if key not in album_dict or album_dict[key] != value:
-                    album_dict[key] = "Various"
-
-        return album_dict
-
-    @classmethod
-    def get_or_create(
-        cls: Type[A],
-        session: sqlalchemy.orm.session.Session,
-        artist: str,
-        title: str,
-        year: int,
-    ) -> A:
-        """Fetches the matching album or creates a new one if it doesn't exist."""
-        album = (
-            session.query(Album)
-            .filter(Album.artist == artist)
-            .filter(Album.title == title)
-            .filter(Album.year == year)
-            .scalar()
-        )
-
-        return album if album else Album(artist=artist, title=title, year=year)
 
 
 # Track generic, used for typing classmethod
@@ -284,17 +182,3 @@ def track_path_set(
     if not value.is_file():
         log.warning(f"File not found: {value.resolve()}")
         raise FileNotFoundError
-
-
-@contextmanager
-def session_scope():
-    """Yields a transactional scope around a series of operations."""
-    session = Session()
-    yield session
-    try:
-        session.commit()
-    except:  # noqa: E722
-        session.rollback()
-        raise
-    finally:
-        session.close()

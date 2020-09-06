@@ -9,8 +9,9 @@ from typing import List
 import sqlalchemy
 
 import moe
-from moe.core import library, query
+from moe.core import query
 from moe.core.config import Config
+from moe.core.library.music_item import MusicItem
 
 
 @moe.hookimpl
@@ -31,9 +32,9 @@ def parse_args(
     """Parses the given commandline arguments.
 
     Args:
-        config: configuration in use
-        session: current session
-        args: commandline arguments to parse
+        config: Configuration in use.
+        session: Current session.
+        args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Query returned no tracks.
@@ -46,7 +47,7 @@ def parse_args(
     print(fmt_infos(items), end="")  # noqa: WPS421
 
 
-def fmt_infos(items: List[library.MusicItem]):
+def fmt_infos(items: List[MusicItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
@@ -58,6 +59,6 @@ def fmt_infos(items: List[library.MusicItem]):
     return out_str
 
 
-def fmt_info(item: library.MusicItem) -> str:
+def fmt_info(item: MusicItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
     return "".join(f"{field}: {value}\n" for field, value in item.to_dict().items())

@@ -19,7 +19,9 @@ from typing import Dict, List, Type, Union
 
 import sqlalchemy
 
-from moe.core.library import Album, MusicItem, Track
+from moe.core.library.album import Album
+from moe.core.library.music_item import MusicItem
+from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
 

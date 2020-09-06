@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from moe import cli
-from moe.core import library
+from moe.core.library.session import session_scope
 from moe.plugins import info
 
 
@@ -89,7 +89,7 @@ class TestCommand:
         args = ["moe", "info", "_id:1"]
 
         tmp_config.init_db()
-        with library.session_scope() as session:
+        with session_scope() as session:
             session.add(mock_track)
 
         with patch("sys.argv", args):

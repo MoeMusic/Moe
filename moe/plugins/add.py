@@ -5,11 +5,12 @@ import logging
 import pathlib
 
 import mediafile
-import sqlalchemy
+from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core import library
 from moe.core.config import Config
+from moe.core.library.session import DbDupTrackError, session_scope
+from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
 
@@ -24,15 +25,13 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(
-    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
-):
+def parse_args(config: Config, session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
-        config: configuration in use
-        session: current session
-        args: commandline arguments to parse
+        config: Configuration in use.
+        session: Current session.
+        args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Could not add the given track to the library.
@@ -40,10 +39,14 @@ def parse_args(
     path = pathlib.Path(args.path)
 
     try:
-        track = library.Track.from_tags(path=path, session=session)
-    except mediafile.UnreadableFileError:
-        log.error(f"Unable to add '{path}' to the library.")
-        raise SystemExit(1)
+        with session_scope() as add_session:
+            track = Track.from_tags(path=path, session=add_session)
 
-    log.info(f"Adding '{path}' to the library.")
-    session.add(track)
+            log.info(f"Adding '{path}' to the library.")
+            add_session.add(track)
+    except mediafile.UnreadableFileError:
+        log.error(f"Could not read '{path}'.")
+        raise SystemExit(1)
+    except DbDupTrackError:
+        log.error(f"Track already exists in library: {track}")
+        raise SystemExit(1)

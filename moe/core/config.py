@@ -20,7 +20,7 @@ import re
 import sqlalchemy
 import yaml
 
-from moe.core import library
+from moe.core.library.session import Base, Session
 
 log = logging.getLogger(__name__)
 
@@ -104,8 +104,8 @@ class Config:
         else:
             self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
 
-        library.Session.configure(bind=self.engine)
-        library.Base.metadata.create_all(self.engine)  # creates tables
+        Session.configure(bind=self.engine)
+        Base.metadata.create_all(self.engine)  # creates tables
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")

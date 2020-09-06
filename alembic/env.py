@@ -18,8 +18,8 @@ of env.py for different use cases.
 from logging.config import fileConfig
 
 from alembic import context
-from moe.core import library
 from moe.core.config import Config
+from moe.core.library.session import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,7 +33,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = library.Base.metadata
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
