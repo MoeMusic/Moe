@@ -47,6 +47,10 @@ class TestParseTerm:
 class TestQuery:
     """Test actual query."""
 
+    def test_empty_query_str(self):
+        """Empty queries should return an empty list."""
+        assert not query.query(r"", Mock())
+
     def test_invalid_query_str(self):
         """Invalid queries should return an empty list."""
         assert not query.query(r"invalid", Mock())  # invalid pattern

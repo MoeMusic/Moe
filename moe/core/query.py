@@ -178,7 +178,7 @@ def query(
     terms = shlex.split(query_str)
 
     if not terms:
-        log.error(f"Invalid query: {query_str}\n{HELP_STR}")
+        log.error(f"No query given.\n{HELP_STR}")
         return []
 
     library_query = session.query(query_cls)
