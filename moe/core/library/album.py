@@ -93,4 +93,8 @@ class Album(MusicItem, Base):
             .scalar()
         )
 
-        return album if album else Album(artist=artist, title=title, year=year)
+        if not album:
+            album = Album(artist=artist, title=title, year=year)
+            session.add(album)
+
+        return album

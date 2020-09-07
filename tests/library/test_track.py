@@ -15,9 +15,6 @@ class TestInit:
 
     def test_add_to_album(self, mock_track_factory, tmp_session):
         """Tracks with the same album attributes should be added to the same album."""
-        # first add the album to the db
-        tmp_session.add(mock_track_factory()._album_obj)
-
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
@@ -84,23 +81,21 @@ class TestDuplicate:
         This error will only occur upon the session being flushed or committed.
         If you wish to catch this error, then you should use a new session scope
         as shown in the test methods. This will allow you to catch the error by wrapping
-        the `with` statement with a `try/except`.
-
-        Also, if adding multiple Tracks at a time, ensure the album already exists
-        in the database prior to creating subsequent Tracks after the first to avoid
-        a DbDupAlbumError. This can be done most easily by flushing or committing
-        the session after the first Track. See `test_dup_path()` for an example.
+        the `with` statement with a `try/except`. In this case, be sure not to create
+        the Track with one session, and then attempt to add it with a different
+        session. The same session should be used throughout as shown in the tests
+        below.
     """
 
     def test_dup_fields(self, mock_track_factory):
-        """Duplicate tracks by fields shuold raise a DbDupTrackError."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-        track2._album_obj = track1._album_obj
-        track2.track_num = track1.track_num
-
+        """Duplicate tracks by fields should raise a DbDupTrackError."""
         with pytest.raises(DbDupTrackError):
             with session_scope() as session:
+                track1 = mock_track_factory(session)
+                track2 = mock_track_factory(session)
+                track2._album_obj = track1._album_obj
+                track2.track_num = track1.track_num
+
                 session.add(track1)
                 session.add(track2)
 
@@ -111,8 +106,6 @@ class TestDuplicate:
         """
         with pytest.raises(DbDupTrackError):
             with session_scope() as session:
-                session.add(mock_track_factory(session)._album_obj)
-
                 track1 = mock_track_factory(session)
                 track2 = mock_track_factory(session)
                 track2.path = track1.path
