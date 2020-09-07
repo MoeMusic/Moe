@@ -191,3 +191,13 @@ class TestQuery:
         tmp_session.add(track2)
 
         assert len(query.query(r"title:/_", tmp_session)) == 1
+
+    def test_genres_query(self, tmp_session, mock_track):
+        """We should be able to query genres transparently.
+
+        `genres` is a list of genres for a Track.
+        """
+        mock_track.genres = ["hip hop", "rock"]
+
+        assert query.query("'genre:hip hop'", tmp_session)
+        assert query.query("genre:rock", tmp_session)
