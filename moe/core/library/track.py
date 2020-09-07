@@ -44,10 +44,10 @@ class _Genre(Base):
     __tablename__ = "genres"
 
     _id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
+    name = Column(String, nullable=False)
 
-    def __init__(self, title):
-        self.title = title
+    def __init__(self, name):
+        self.name = name
 
 
 track_genres = Table(
@@ -97,7 +97,7 @@ class Track(MusicItem, Base):  # noqa: WPS230
     year = association_proxy("_album_obj", "year")
 
     _genre_obj = relationship("_Genre", secondary=track_genres)
-    genre = association_proxy("_genre_obj", "title")
+    genre = association_proxy("_genre_obj", "name")
 
     def __init__(  # noqa: WPS211
         self,
