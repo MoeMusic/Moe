@@ -40,23 +40,22 @@ The query must be in the format 'field:value' where field is a track or album's 
 match and value is that field's value. Internally, this 'field:value' pair is referred
 to as a single term. The match is case-insensitive.
 
+If you would like to specify a value with whitespace or multiple words, enclose the
+term in quotes.
+
 SQL LIKE query syntax is used for normal queries, which means
 the '_'  and '%' characters have special meaning:
 % - The percent sign represents zero, one, or multiple characters.
 _ - The underscore represents a single character.
+
+To match these special characters as normal, use '/' as an escape character.
 
 The value can also be a regular expression. To enforce this, use two colons
 e.g. 'field::value.*'
 
 Finally, you can specify any number of terms.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
-'artist:wu-tang clan title:a%'
-
-There are a few special meaning characters that need to be escaped if you would like
-to match them normally. These include '%', '_', and ':'. To escape any of these
-characters, prepend it with a '\'. Note that ':' is only disallowed if it would
-otherwise cause the query to look like another field:value pair.
-e.g. 'album:Vol 1: Wow' is fine, but 'album: Vol 1\:Wow' needs the escape character.
+'"artist:wu-tang clan" title:a%'
 
 Multiple field:value expressions are joined together using AND logic.
 
