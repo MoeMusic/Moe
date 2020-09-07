@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock
 
+import pytest
+
 from moe.core import query
 from moe.core.library.album import Album
 from moe.core.library.track import Track
@@ -17,13 +19,6 @@ class TestParseTerm:
         assert match["field"] == "field"
         assert match["separator"] == ":"
         assert match["value"] == "value"
-
-    def test_escaped_colon(self):
-        """Values can contain escaped colons."""
-        match = query._parse_term(r"field:val\:ue")
-
-        assert match["field"] == "field"
-        assert match["value"] == "val:ue"
 
     def test_value_spaces(self):
         """Values can contain arbitrary whitespace.
@@ -42,6 +37,11 @@ class TestParseTerm:
         assert match["field"] == "field"
         assert match["separator"] == "::"
         assert match["value"] == "A.*"
+
+    def test_invalid(self):
+        """Invalid terms should raise a ValueError."""
+        with pytest.raises(ValueError):
+            query._parse_term(r"invalid")
 
 
 class TestQuery:
@@ -180,12 +180,10 @@ class TestQuery:
         some reason it doesn't work.
         """
         track1 = mock_track_factory()
-        track1.title = "_"
-        tmp_session.add(track1)
-        tmp_session.commit()
-
         track2 = mock_track_factory()
+        track1.title = "_"
         track2.title = "b"
+        tmp_session.add(track1)
         tmp_session.add(track2)
 
         assert len(query.query(r"title:/_", tmp_session)) == 1

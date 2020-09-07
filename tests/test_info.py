@@ -40,7 +40,7 @@ class TestParseArgs:
 
         assert captured_text.out
 
-    def test_exit_code(self, capsys, tmp_session, mock_track):
+    def test_exit_code(self, capsys, tmp_session):
         """If no track infos are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="_id:1", album=False)
 
@@ -84,13 +84,13 @@ class TestFmtInfo:
 class TestCommand:
     """Test cli integration with the info command."""
 
-    def test_parse_args(self, capsys, tmp_config, mock_track):
+    def test_parse_args(self, capsys, tmp_config, mock_track_factory):
         """A track's info is printed when the `info` command is invoked."""
         args = ["moe", "info", "_id:1"]
 
         tmp_config.init_db()
         with session_scope() as session:
-            session.add(mock_track)
+            session.add(mock_track_factory(session))
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=tmp_config):

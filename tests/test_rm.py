@@ -48,7 +48,7 @@ class TestParseArgs:
 
         assert not query
 
-    def test_exit_code(self, capsys, tmp_session, mock_track):
+    def test_exit_code(self, capsys, tmp_session):
         """If no tracks are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="_id:1", album=False)
 
@@ -62,13 +62,13 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the rm command."""
 
-    def test_parse_args(self, tmp_path, tmp_config, mock_track):
+    def test_parse_args(self, tmp_path, tmp_config, mock_track_factory):
         """Music is removed from the library when the `rm` command is invoked."""
         args = ["moe", "rm", "_id:1"]
 
         tmp_config.init_db()
         with session_scope() as session:
-            session.add(mock_track)
+            session.add(mock_track_factory(session))
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=tmp_config):
