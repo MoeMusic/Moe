@@ -15,7 +15,8 @@ to get a list of Tracks matching the query from the library.
 import argparse
 import logging
 import re
-from typing import Dict, List, Type, Union
+import shlex
+from typing import Dict, List
 
 import sqlalchemy
 
@@ -36,7 +37,8 @@ query_parser.add_argument(
 
 HELP_STR = r"""
 The query must be in the format 'field:value' where field is a track or album's field to
-match and value is that field's value. The match is case-insensitive.
+match and value is that field's value. Internally, this 'field:value' pair is referred
+to as a single term. The match is case-insensitive.
 
 SQL LIKE query syntax is used for normal queries, which means
 the '_'  and '%' characters have special meaning:
@@ -46,7 +48,7 @@ _ - The underscore represents a single character.
 The value can also be a regular expression. To enforce this, use two colons
 e.g. 'field::value.*'
 
-Finally, you can specify any number of field/value pairs.
+Finally, you can specify any number of terms.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
 'artist:wu-tang clan title:a%'
 
@@ -72,63 +74,59 @@ SEPARATOR_GROUP = "separator"
 VALUE_GROUP = "value"
 
 
-def _parse_query(query_str: str) -> List[Dict[str, str]]:
-    """Parse the given database query string.
+def _parse_term(term: str) -> Dict[str, str]:
+    """Parse the given database query term.
+
+    A term is a single field:value declaration.
 
     Args:
-        query_str: Query string to parse.
+        term: Query string to parse.
 
     Returns:
-        A list of dictionaries containing each named group and its value.
+        A dictionary containing each named group and its value.
         The named groups are field, separator, and value.
 
-        Each dictionary can be referred to as an "expression".
-        E.g. for the query `artist:name title:my_title`, `artist:name` and
-        `title:my_title` are two distinct expressions.
-
     Example:
-        >>> parse_query('artist:name')
-        [{"field": "artist", "separator": ":", "value": "name"}]
+        >>> parse_term('artist:name')
+        {"field": "artist", "separator": ":", "value": "name"
 
     Note:
         The fields are meant to be programatically accessed with the respective
         group constant e.g. `expression[FIELD_GROUP] == "artist"`
+
+    Raises:
+        ValueError: Invalid query term.
     """
     query_re = re.compile(
         rf"""
         (?P<{FIELD_GROUP}>\S+?)
         (?P<{SEPARATOR_GROUP}>::?)
-        (?P<{VALUE_GROUP}>\S.*?)
-        (?=\s\S+(?<!\\):\S|$)  # don't match next field if it exists
+        (?P<{VALUE_GROUP}>\S.*)
         """,
         re.VERBOSE,
     )
 
-    matches = re.finditer(query_re, query_str)
+    match = re.match(query_re, term)
+    if not match:
+        log.error(f"Invalid query term: {term}\n{HELP_STR}")
+        raise ValueError
 
-    match_dicts = []
-    for match in matches:
-        match_dict = match.groupdict()
-        match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
-        match_dict[VALUE_GROUP] = match_dict[VALUE_GROUP].replace(r"\:", ":")
+    match_dict = match.groupdict()
+    match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
 
-        match_dicts.append(match_dict)
-
-    return match_dicts
+    return match_dict
 
 
-def _create_filter(
-    expression: Dict[str, str], query_cls: Union[Type[Album], Type[Track]]
+def _create_expression(
+    term: Dict[str, str]
 ) -> sqlalchemy.sql.elements.BinaryExpression:
-    """Maps a user-given query expression to a filter for the database query.
+    """Maps a user-given query term to a filter expression for the database query.
 
     Args:
-        expression: A single query expression defined by `_parse_query()`.
-        query_cls: Library class to query for. Should be either `Album`
-            or `Track`
+        term: A parsed query term defined by `_parse_term()`.
 
     Returns:
-        A list of the filters to filter the database query against.
+        A filter for the database query.
 
         A "filter" is anything accepted by a sqlalchemy `Query.filter()`.
         https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
@@ -136,9 +134,9 @@ def _create_filter(
     Raises:
         ValueError: Invalid query given.
     """
-    field = expression[FIELD_GROUP].lower()
-    separator = expression[SEPARATOR_GROUP]
-    value = expression[VALUE_GROUP]
+    field = term[FIELD_GROUP].lower()
+    separator = term[SEPARATOR_GROUP]
+    value = term[VALUE_GROUP]
     try:
         attr = getattr(Track, field)
     except AttributeError:
@@ -147,7 +145,7 @@ def _create_filter(
 
     if separator == ":":
         # Normal string match query - should be case insensitive.
-        return attr.ilike(value)
+        return attr.ilike(value, escape="/")
 
     elif separator == "::":
         # Regular expression query.
@@ -177,21 +175,21 @@ def query(
     Returns:
         All tracks matching the query.
     """
-    expressions = _parse_query(query_str)
+    query_cls = Album if album_query else Track
+    terms = shlex.split(query_str)
 
-    if not expressions:
-        log.error(f"Invalid query '{query_str}'\n{HELP_STR}")
+    if not terms:
+        log.error(f"Invalid query: {query_str}\n{HELP_STR}")
         return []
 
-    query_cls = Album if album_query else Track
-    query_filters = []
-    for expression in expressions:
+    library_query = session.query(query_cls)
+    for term in terms:
         try:
-            query_filters.append(_create_filter(expression, query_cls))
+            library_query = library_query.filter(_create_expression(_parse_term(term)))
         except ValueError:
             return []
 
-    items = session.query(query_cls).filter(*query_filters).all()
+    items = library_query.all()
 
     if not items:
         log.warning(f"No items found for the query '{query_str}'.")
