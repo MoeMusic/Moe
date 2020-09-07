@@ -197,7 +197,7 @@ class TestQuery:
 
         `genres` is a list of genres for a Track.
         """
-        mock_track.genres = ["hip hop", "rock"]
+        mock_track.genre = ["hip hop", "rock"]
 
         assert query.query("'genre:hip hop'", tmp_session)
         assert query.query("genre:rock", tmp_session)
