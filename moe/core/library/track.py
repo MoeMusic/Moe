@@ -69,7 +69,7 @@ class Track(MusicItem, Base):  # noqa: WPS230
         album (str)
         albumartist (str)
         artist (str)
-        genres (List[str])
+        genre (List[str])
         path (pathlib.Path): Path of the track file.
         title (str)
         track_num (int)
@@ -97,7 +97,7 @@ class Track(MusicItem, Base):  # noqa: WPS230
     year = association_proxy("_album_obj", "year")
 
     _genre_obj = relationship("_Genre", secondary=track_genres)
-    genres = association_proxy("_genre_obj", "title")
+    genre = association_proxy("_genre_obj", "title")
 
     def __init__(  # noqa: WPS211
         self,
@@ -169,6 +169,7 @@ class Track(MusicItem, Base):  # noqa: WPS230
             year=audio_file.year,
             artist=audio_file.artist,
             title=audio_file.title,
+            genre=audio_file.genres,
         )
 
     def to_dict(self) -> "OrderedDict[str, Any]":
