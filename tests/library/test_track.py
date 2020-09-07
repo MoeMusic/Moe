@@ -87,7 +87,7 @@ class TestDuplicate:
         the `with` statement with a `try/except`.
 
         Also, if adding multiple Tracks at a time, ensure the album already exists
-        in the database prior to adding subsequent Tracks after the first to avoid
+        in the database prior to creating subsequent Tracks after the first to avoid
         a DbDupAlbumError. This can be done most easily by flushing or committing
         the session after the first Track. See `test_dup_path()` for an example.
     """

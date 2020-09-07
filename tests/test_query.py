@@ -7,78 +7,41 @@ from moe.core.library.album import Album
 from moe.core.library.track import Track
 
 
-class TestParseQuery:
-    """Test the query string parsing _parse_query()."""
+class TestParseTerm:
+    """Test the query term parsing _parse_term()."""
 
     def test_basic(self):
         """Simplest case field:value test."""
-        matches = query._parse_query("field:value")
+        match = query._parse_term("field:value")
 
-        assert matches[0]["field"] == "field"
-        assert matches[0]["separator"] == ":"
-        assert matches[0]["value"] == "value"
-        assert len(matches) == 1
+        assert match["field"] == "field"
+        assert match["separator"] == ":"
+        assert match["value"] == "value"
 
     def test_escaped_colon(self):
         """Values can contain escaped colons."""
-        matches = query._parse_query(r"field:val\:ue")
+        match = query._parse_term(r"field:val\:ue")
 
-        assert matches[0]["field"] == "field"
-        assert matches[0]["value"] == "val:ue"
-        assert len(matches) == 1
-
-    def test_multiple(self):
-        """Queries can contain more than one field:value."""
-        matches = query._parse_query(r"field:value field2:value2")
-
-        assert matches[0]["field"] == "field"
-        assert matches[0]["value"] == "value"
-        assert matches[1]["field"] == "field2"
-        assert matches[1]["value"] == "value2"
-        assert len(matches) == 2
+        assert match["field"] == "field"
+        assert match["value"] == "val:ue"
 
     def test_value_spaces(self):
         """Values can contain arbitrary whitespace.
 
         The only exception is immediately after the colon.
         """
-        matches = query._parse_query(r"field:val u e")
+        match = query._parse_term(r"field:val u e")
 
-        assert matches[0]["field"] == "field"
-        assert matches[0]["value"] == "val u e"
-        assert len(matches) == 1
-
-    def test_value_spaces_multiple(self):
-        """Values shouldn't match the next field if it exists.
-
-        This can become tricky to match if the value also contains whitespace.
-        """
-        matches = query._parse_query(r"field:val u e field2:value2")
-
-        assert matches[0]["field"] == "field"
-        assert matches[0]["value"] == "val u e"
-        assert matches[1]["field"] == "field2"
-        assert matches[1]["value"] == "value2"
-        assert len(matches) == 2
-
-    def test_unescaped_colons(self):
-        """Unescaped colons are fine as long as they don't look like 'field:value'."""
-        matches = query._parse_query(r"field:Vol 1: field2:Vol: 1")
-
-        assert matches[0]["field"] == "field"
-        assert matches[0]["value"] == "Vol 1:"
-        assert matches[1]["field"] == "field2"
-        assert matches[1]["value"] == "Vol: 1"
-        assert len(matches) == 2
+        assert match["field"] == "field"
+        assert match["value"] == "val u e"
 
     def test_regex_value(self):
         """Regular expression values are indicated by a '::' separator."""
-        matches = query._parse_query(r"field::A.*")
+        match = query._parse_term(r"field::A.*")
 
-        assert matches[0]["field"] == "field"
-        assert matches[0]["separator"] == "::"
-        assert matches[0]["value"] == "A.*"
-        assert len(matches) == 1
+        assert match["field"] == "field"
+        assert match["separator"] == "::"
+        assert match["value"] == "A.*"
 
 
 class TestQuery:
@@ -98,6 +61,20 @@ class TestQuery:
 
         assert query.query("_id:1", tmp_session)
 
+    def test_space_value(self, tmp_session, mock_track):
+        """If a value has whitespace, it must be encolsed by quotes."""
+        mock_track.title = "Holy cow"
+        tmp_session.add(mock_track)
+
+        assert query.query("'title:Holy cow'", tmp_session)
+
+    def test_multiple_terms(self, tmp_session, mock_track):
+        """We should be able to query for multiple terms at once."""
+        mock_track.title = "C.R.E.A.M."
+        tmp_session.add(mock_track)
+
+        assert query.query("_id:1 title:C.R.E.A.M.", tmp_session)
+
     def test_track_album_field_query(self, tmp_session, mock_track):
         """We should be able to query tracks that match album-related fields.
 
@@ -108,7 +85,7 @@ class TestQuery:
         mock_track.album = "All Eyez on Me"
         tmp_session.add(mock_track)
 
-        assert query.query("album:All Eyez on Me", tmp_session)
+        assert query.query("'album:All Eyez on Me'", tmp_session)
         assert query.query("albumartist:2Pac", tmp_session)  # Album field
 
     def test_case_insensitive_value(self, tmp_session, mock_track):
@@ -196,10 +173,19 @@ class TestQuery:
         assert query.query("_id:_", tmp_session)
         assert query.query("_id:%", tmp_session)
 
-    def test_like_escape_query(self, tmp_session, mock_track):
-        r"""We should be able to escape the LIKE wildcard characters with '\'."""
-        mock_track.title = "\a"
-        tmp_session.add(mock_track)
+    def test_like_escape_query(self, tmp_session, mock_track_factory):
+        r"""We should be able to escape the LIKE wildcard characters with '/'.
 
-        assert not query.query(r"title:\_", tmp_session)
-        assert not query.query(r"title:\%", tmp_session)
+        Note, I think '\' would be the preferred backslash character, but for
+        some reason it doesn't work.
+        """
+        track1 = mock_track_factory()
+        track1.title = "_"
+        tmp_session.add(track1)
+        tmp_session.commit()
+
+        track2 = mock_track_factory()
+        track2.title = "b"
+        tmp_session.add(track2)
+
+        assert len(query.query(r"title:/_", tmp_session)) == 1
