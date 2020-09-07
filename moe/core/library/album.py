@@ -70,8 +70,9 @@ class Album(MusicItem, Base):
         """
         album_dict = self.tracks[0].to_dict()  # type: ignore
         for track in self.tracks[1:]:  # type: ignore
-            for key, value in track.to_dict().items():
-                if key not in album_dict or album_dict[key] != value:
+            track_dict = track.to_dict()
+            for key in {**track_dict, **album_dict}.keys():
+                if album_dict.get(key) != track_dict.get(key):
                     album_dict[key] = "Various"
 
         return album_dict
