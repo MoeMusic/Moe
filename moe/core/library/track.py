@@ -11,7 +11,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import events, relationship
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
@@ -38,6 +38,26 @@ class _PathType(sqlalchemy.types.TypeDecorator):
         return pathlib.Path(path_str)
 
 
+class _Genre(Base):
+    """A track can have multiple genres."""
+
+    __tablename__ = "genres"
+
+    _id = Column(Integer, primary_key=True)
+    title = Column(String, nullable=False)
+
+    def __init__(self, title):
+        self.title = title
+
+
+track_genres = Table(
+    "association",
+    Base.metadata,
+    Column("genre_id", Integer, ForeignKey("genres._id")),
+    Column("track_id", Integer, ForeignKey("tracks._id")),
+)
+
+
 # Track generic, used for typing classmethod
 T = TypeVar("T", bound="Track")  # noqa: WPS111
 
@@ -49,13 +69,14 @@ class Track(MusicItem, Base):  # noqa: WPS230
         album (str)
         albumartist (str)
         artist (str)
+        genres (List[str])
         path (pathlib.Path): Path of the track file.
         title (str)
         track_num (int)
         year (int): Album release year.
 
     Note:
-        Alterting any album-related properties (all association_proxy) attributes,
+        Altering any album-related properties (all association_proxy) attributes,
         will result in changing the album field and thus all other tracks in the
         album as well.
     """
@@ -71,10 +92,12 @@ class Track(MusicItem, Base):  # noqa: WPS230
     track_num = Column(Integer, nullable=False)
 
     _album_obj = relationship("Album", back_populates="tracks")
-
     album = association_proxy("_album_obj", "title")
     albumartist = association_proxy("_album_obj", "artist")
     year = association_proxy("_album_obj", "year")
+
+    _genre_obj = relationship("_Genre", secondary=track_genres)
+    genres = association_proxy("_genre_obj", "title")
 
     def __init__(  # noqa: WPS211
         self,
