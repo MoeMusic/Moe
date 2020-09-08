@@ -81,4 +81,10 @@ def add_album(dir_path: pathlib.Path):
         dir_path: Path of the album directory.
     """
     for path in dir_path.rglob("*"):
-        add_track(path)
+        # Ignore non-media files.
+        try:
+            mediafile.MediaFile(path)
+        except mediafile.UnreadableFileError:
+            pass  # noqa: WPS420
+        else:
+            add_track(path)
