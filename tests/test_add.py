@@ -58,6 +58,15 @@ class TestAddTrack:
 
         assert error.value.code != 0
 
+    def test_empty_file(self, tmp_session):
+        """Raise SystemExit if the file does not contain the required tags."""
+        music_file = pathlib.Path("tests/resources/audio_files/empty.mp3")
+
+        with pytest.raises(SystemExit) as error:
+            add.add_track(music_file)
+
+        assert error.value.code != 0
+
 
 class TestAddAlbum:
     """Test adding an album."""
