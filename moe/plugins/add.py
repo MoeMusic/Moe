@@ -34,10 +34,29 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Could not add the given track to the library.
+        SystemExit: Path given does not exist.
     """
     path = pathlib.Path(args.path)
 
+    if not path.exists():
+        log.error(f"Path not found: {path}")
+        raise SystemExit(1)
+
+    if path.is_file():
+        add_track(path)
+    else:
+        add_album(path)
+
+
+def add_track(path: pathlib.Path):
+    """Add a track to the library.
+
+    Args:
+        path: Path of track to add.
+
+    Raises:
+        SystemExit: Could not add the given track to the library.
+    """
     try:
         with session_scope() as add_session:
             track = Track.from_tags(path=path, session=add_session)
@@ -47,6 +66,19 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     except mediafile.UnreadableFileError:
         log.error(f"Could not read '{path}'.")
         raise SystemExit(1)
+    except TypeError:
+        log.error(f"Required tags not found in '{path}'.")
+        raise SystemExit(1)
     except DbDupTrackError:
         log.error(f"Track already exists in library: {track}")
         raise SystemExit(1)
+
+
+def add_album(dir_path: pathlib.Path):
+    """Add an album to the library.
+
+    Args:
+        dir_path: Path of the album directory.
+    """
+    for path in dir_path.rglob("*"):
+        add_track(path)
