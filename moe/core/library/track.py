@@ -102,31 +102,34 @@ class Track(MusicItem, Base):  # noqa: WPS230
     def __init__(  # noqa: WPS211
         self,
         path: pathlib.Path,
-        session: sqlalchemy.orm.session.Session,
         album: str,
         albumartist: str,
         track_num: int,
         year: int,
+        session: sqlalchemy.orm.session.Session,
         **kwargs,
     ):
         """Create a track.
 
-        If `read_tags` is `False`, then `album`, `albumartist`, `track_num`,
-        and `year` must be set.
-
         Args:
             path: Path to the track to add.
-            session: sqlalchemy session to use to query for a matching album.
             album: Album title.
             albumartist: Album artist.
             track_num: Track number.
             year: Album release year.
+            session: sqlalchemy session to use to query for a matching album.
             **kwargs: Any other fields to assign to the Track.
 
         Note:
            If you wish to add several tracks to the same album,
             ensure the album already exists in the database.
+
+        Raises:
+            TypeError: None value found in arguments.
         """
+        if album is None or albumartist is None or track_num is None or year is None:
+            raise TypeError
+
         self._album_obj = Album.get_or_create(
             session, artist=albumartist, title=album, year=year
         )
