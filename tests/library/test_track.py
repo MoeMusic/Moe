@@ -23,6 +23,18 @@ class TestInit:
 
         assert track1._album_obj is track2._album_obj
 
+    def test_empty(self, tmp_session):
+        """Raise TypeError if None value given in argument."""
+        with pytest.raises(TypeError):
+            Track(
+                path=None,
+                album=None,
+                albumartist=None,
+                track_num=None,
+                year=None,
+                session=None,
+            )
+
 
 class TestFromTags:
     """Test initialization from tags."""
