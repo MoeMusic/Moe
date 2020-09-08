@@ -57,11 +57,11 @@ def add_track(path: pathlib.Path):
     Raises:
         SystemExit: Could not add the given track to the library.
     """
+    log.info(f"Adding '{path}' to the library.")
     try:
         with session_scope() as add_session:
             track = Track.from_tags(path=path, session=add_session)
 
-            log.info(f"Adding '{path}' to the library.")
             add_session.add(track)
     except mediafile.UnreadableFileError:
         log.error(f"Could not read '{path}'.")
@@ -80,11 +80,12 @@ def add_album(dir_path: pathlib.Path):
     Args:
         dir_path: Path of the album directory.
     """
+    log.info(f"Searching '{dir_path}' for tracks.")
     for path in dir_path.rglob("*"):
-        # Ignore non-media files.
-        try:
-            mediafile.MediaFile(path)
-        except mediafile.UnreadableFileError:
-            pass  # noqa: WPS420
-        else:
-            add_track(path)
+        if path.is_file():
+            try:
+                mediafile.MediaFile(path)
+            except mediafile.UnreadableFileError:
+                pass  # noqa: WPS420
+            else:
+                add_track(path)
