@@ -4,7 +4,7 @@ import logging
 import pathlib
 import types
 from collections import OrderedDict
-from typing import Any, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 import mediafile
 import sqlalchemy
@@ -127,7 +127,17 @@ class Track(MusicItem, Base):  # noqa: WPS230
         Raises:
             TypeError: None value found in arguments.
         """
-        if album is None or albumartist is None or track_num is None or year is None:
+        missing_tags: List[str] = []
+        if album is None:
+            missing_tags.append("album")
+        if albumartist is None:
+            missing_tags.append("albumartist")
+        if track_num is None:
+            missing_tags.append("track_num")
+        if year is None:
+            missing_tags.append("year")
+        if missing_tags:
+            log.error(f"'{path}' is missing required tag(s): {', '.join(missing_tags)}")
             raise TypeError
 
         self._album_obj = Album.get_or_create(
