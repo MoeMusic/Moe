@@ -51,6 +51,25 @@ class TestParseArgs:
             .scalar()
         )
 
+    def test_multiple_files_exit_error(self, tmp_session):
+        """Don't exit after the first failed track if more to be added.
+
+        Still exit with non-zero code if any failures occured.
+        """
+        file1 = "bad file"
+        file2 = "tests/resources/audio_files/full.mp3"
+        args = argparse.Namespace(paths=[file1, file2])
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
+        assert (
+            tmp_session.query(Track.path)
+            .filter_by(path=pathlib.Path(file2).resolve())
+            .scalar()
+        )
+
     def test_non_track_file(self, tmp_session):
         """Raise SystemExit if the file given is not a valid track."""
         args = argparse.Namespace(paths=["tests/resources/album/log.txt"])
