@@ -43,49 +43,34 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
         raise SystemExit(1)
 
     if path.is_file():
-        add_track(path)
-    else:
-        add_album(path)
+        try:
+            _add_track(path)
+        except (TypeError, mediafile.UnreadableFileError, DbDupTrackError):
+            raise SystemExit(1)
 
 
-def add_track(path: pathlib.Path):
+def _add_track(track_path: pathlib.Path):
     """Add a track to the library.
 
+    The Track's attributes are populated from the tags read at `track_path`.
+
     Args:
-        path: Path of track to add.
+        track_path: Path of track to add.
 
     Raises:
-        SystemExit: Could not add the given track to the library.
+        TypeError: Required tags missing.
+        mediafile.UnreadableFileError: `track_path` is not a valid track.
+        DbDupTrackError: Duplicate track found in library.
     """
-    log.info(f"Adding '{path}' to the library.")
+    log.info(f"Adding '{track_path}' to the library.")
     try:
         with session_scope() as add_session:
-            track = Track.from_tags(path=path, session=add_session)
+            track = Track.from_tags(path=track_path, session=add_session)
 
             add_session.add(track)
-    except mediafile.UnreadableFileError:
-        log.error(f"Could not read '{path}'.")
-        raise SystemExit(1)
-    except TypeError:
-        log.error(f"Required tags not found in '{path}'.")
-        raise SystemExit(1)
+    except (TypeError, mediafile.UnreadableFileError) as exc:
+        log.error(exc)
+        raise
     except DbDupTrackError:
         log.error(f"Track already exists in library: {track}")
-        raise SystemExit(1)
-
-
-def add_album(dir_path: pathlib.Path):
-    """Add an album to the library.
-
-    Args:
-        dir_path: Path of the album directory.
-    """
-    log.info(f"Searching '{dir_path}' for tracks.")
-    for path in dir_path.rglob("*"):
-        if path.is_file():
-            try:
-                mediafile.MediaFile(path)
-            except mediafile.UnreadableFileError:
-                pass  # noqa: WPS420
-            else:
-                add_track(path)
+        raise

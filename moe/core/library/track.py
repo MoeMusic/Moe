@@ -1,6 +1,7 @@
 """A Track in the database and any related logic."""
 
-import logging
+import errno
+import os
 import pathlib
 import types
 from collections import OrderedDict
@@ -16,8 +17,6 @@ from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
 from moe.core.library.session import Base
-
-log = logging.getLogger(__name__)
 
 
 class _PathType(sqlalchemy.types.TypeDecorator):
@@ -137,8 +136,9 @@ class Track(MusicItem, Base):  # noqa: WPS230
         if year is None:
             missing_tags.append("year")
         if missing_tags:
-            log.error(f"'{path}' is missing required tag(s): {', '.join(missing_tags)}")
-            raise TypeError
+            raise TypeError(
+                f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
+            )
 
         self._album_obj = Album.get_or_create(
             session, artist=albumartist, title=album, year=year
@@ -163,15 +163,8 @@ class Track(MusicItem, Base):  # noqa: WPS230
 
         Returns:
             Track instance.
-
-        Raises:
-            mediafile.UnreadableFileError: Unable to read tags from `path`.
         """
-        try:
-            audio_file = mediafile.MediaFile(path)
-        except mediafile.UnreadableFileError as exc:
-            log.error(exc)
-            raise
+        audio_file = mediafile.MediaFile(path)
 
         return cls(
             path=path,
@@ -217,5 +210,6 @@ def track_path_set(
 ):
     """Only allow paths that exist."""
     if not value.is_file():
-        log.warning(f"File not found: {value.resolve()}")
-        raise FileNotFoundError
+        raise FileNotFoundError(
+            errno.ENOENT, os.strerror(errno.ENOENT), str(value.resolve())
+        )
