@@ -41,17 +41,21 @@ class Album(MusicItem, Base):
 
     tracks = relationship("Track", back_populates="_album_obj", cascade="all, delete")
 
-    def __init__(self, artist: str, title: str, year: int):
+    def __init__(self, artist: str, title: str, year: int, **kwargs):
         """Creates an album.
 
         Args:
             artist: Album artist.
             title: Album title.
             year: Album release year.
+            **kwargs: Any other fields to assign to the Album.
         """
         self.artist = artist
         self.title = title
         self.year = year
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __str__(self):
         """String representation of an album."""
