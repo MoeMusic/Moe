@@ -17,7 +17,7 @@ class TestParseArgs:
 
     def test_path_not_found(self):
         """Raise SystemExit if the path to add does not exist."""
-        args = argparse.Namespace(path="does not exist")
+        args = argparse.Namespace(paths=["does not exist"])
 
         with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), Mock(), args)
@@ -32,9 +32,28 @@ class TestParseArgs:
 
         assert tmp_session.query(Track.path).scalar() == music_file.resolve()
 
+    def test_multiple_files(self, tmp_session):
+        """Add all files given."""
+        file1 = "tests/resources/album/01.mp3"
+        file2 = "tests/resources/album/02.mp3"
+        args = argparse.Namespace(paths=[file1, file2])
+
+        add.parse_args(Mock(), Mock(), args)
+
+        assert (
+            tmp_session.query(Track.path)
+            .filter_by(path=pathlib.Path(file1).resolve())
+            .scalar()
+        )
+        assert (
+            tmp_session.query(Track.path)
+            .filter_by(path=pathlib.Path(file2).resolve())
+            .scalar()
+        )
+
     def test_non_track_file(self, tmp_session):
         """Raise SystemExit if the file given is not a valid track."""
-        args = argparse.Namespace(path="tests/resources/album/log.txt")
+        args = argparse.Namespace(paths=["tests/resources/album/log.txt"])
 
         with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), tmp_session, args)
@@ -43,7 +62,7 @@ class TestParseArgs:
 
     def test_track_missing_reqd_tags(self, tmp_session):
         """Raise SystemExit if the track doesn't have all the required tags."""
-        args = argparse.Namespace(path="tests/resources/audio_files/empty.mp3")
+        args = argparse.Namespace(paths=["tests/resources/audio_files/empty.mp3"])
 
         with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), tmp_session, args)
@@ -52,7 +71,7 @@ class TestParseArgs:
 
     def test_duplicate_track(self, tmp_session):
         """Raise SystemExit if the track already exists in the library."""
-        args = argparse.Namespace(path="tests/resources/audio_files/full.mp3")
+        args = argparse.Namespace(paths=["tests/resources/audio_files/full.mp3"])
 
         add.parse_args(Mock(), tmp_session, args)
 
