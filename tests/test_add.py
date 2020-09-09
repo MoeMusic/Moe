@@ -24,60 +24,54 @@ class TestParseArgs:
 
         assert error.value.code != 0
 
+    def test_file(self, tmp_session):
+        """If a file given, add to library as a Track."""
+        music_file = pathlib.Path("tests/resources/audio_files/full.mp3")
+
+        add._add_track(music_file)
+
+        assert tmp_session.query(Track.path).scalar() == music_file.resolve()
+
+    def test_non_track_file(self, tmp_session):
+        """Raise SystemExit if the file given is not a valid track."""
+        args = argparse.Namespace(path="tests/resources/album/log.txt")
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
+
+    def test_track_missing_reqd_tags(self, tmp_session):
+        """Raise SystemExit if the track doesn't have all the required tags."""
+        args = argparse.Namespace(path="tests/resources/audio_files/empty.mp3")
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
+
+    def test_duplicate_track(self, tmp_session):
+        """Raise SystemExit if the track already exists in the library."""
+        args = argparse.Namespace(path="tests/resources/audio_files/full.mp3")
+
+        add.parse_args(Mock(), tmp_session, args)
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
+
 
 class TestAddTrack:
-    """Test adding a track."""
+    """Test `_add_track()`."""
 
     def test_track(self, tmp_session):
         """Tracks are added to the database."""
         music_file = pathlib.Path("tests/resources/audio_files/full.mp3")
 
-        add.add_track(music_file)
+        add._add_track(music_file)
 
-        test_path = tmp_session.query(Track.path).scalar()
-
-        assert test_path == music_file.resolve()
-
-    def test_bad_music_file(self, tmp_path):
-        """Raise SystemExit if the file given is not a valid music file."""
-        bad_file = tmp_path / "a"
-        bad_file.touch()
-
-        with pytest.raises(SystemExit) as error:
-            add.add_track(bad_file)
-
-        assert error.value.code != 0
-
-    def test_duplicate_file(self, tmp_session):
-        """Raise SystemExit if the file already exists in the library."""
-        music_file = pathlib.Path("tests/resources/audio_files/full.mp3")
-        add.add_track(music_file)
-
-        with pytest.raises(SystemExit) as error:
-            add.add_track(music_file)
-
-        assert error.value.code != 0
-
-    def test_empty_file(self, tmp_session):
-        """Raise SystemExit if the file does not contain the required tags."""
-        music_file = pathlib.Path("tests/resources/audio_files/empty.mp3")
-
-        with pytest.raises(SystemExit) as error:
-            add.add_track(music_file)
-
-        assert error.value.code != 0
-
-
-class TestAddAlbum:
-    """Test adding an album."""
-
-    def test_album(self, tmp_session):
-        """Test we can add all tracks in a directory."""
-        album_path = pathlib.Path("tests/resources/album")
-        add.add_album(album_path)
-
-        for track in album_path.rglob("*.mp3"):
-            assert tmp_session.query(Track.path).filter_by(path=track.resolve())
+        assert tmp_session.query(Track.path).scalar() == music_file.resolve()
 
 
 @pytest.mark.integration
@@ -94,16 +88,3 @@ class TestCommand:
 
         with session_scope() as session:
             assert session.query(Track._id).scalar()
-
-    def test_dir(self, tmp_config):
-        """Directories are recursively searched for tracks when passed to `add`."""
-        album_path = "tests/resources/album"
-        args = ["moe", "add", album_path]
-
-        with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
-                cli.main()
-
-        with session_scope() as session:
-            for track in pathlib.Path(album_path).rglob("*.mp3"):
-                assert session.query(Track.path).filter_by(path=track.resolve())
