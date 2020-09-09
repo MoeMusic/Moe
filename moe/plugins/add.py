@@ -15,6 +15,10 @@ from moe.core.library.track import Track
 log = logging.getLogger(__name__)
 
 
+class AddTrackError(Exception):
+    """Error adding a Track to the library."""
+
+
 @moe.hookimpl
 def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `add` command to moe."""
@@ -40,30 +44,21 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     """
     paths = [pathlib.Path(arg_path) for arg_path in args.paths]
 
+    error_count = 0
     for path in paths:
         if not path.exists():
             log.error(f"Path not found: {path}")
-            raise SystemExit(1)
+            error_count += 1
 
-        _add_path(path)
+        if path.is_file():
+            try:
+                _add_track(path)
+            except AddTrackError as exc:
+                log.error(exc)
+                error_count += 1
 
-
-def _add_path(path: pathlib.Path):
-    """Add a given path to the library.
-
-    Args:
-        path: Path of the music to add. If a file, add as a track,
-            if a directory, add as an album.
-
-    Raises:
-        SystemExit: Unable to add the given path to the library.
-    """
-    if path.is_file():
-        try:
-            _add_track(path)
-        except (TypeError, mediafile.UnreadableFileError, DbDupTrackError):
-            log.error(f"Unable to add track: {path}")
-            raise SystemExit(1)
+    if error_count:
+        raise SystemExit(1)
 
 
 def _add_track(track_path: pathlib.Path):
@@ -75,9 +70,7 @@ def _add_track(track_path: pathlib.Path):
         track_path: Path of track to add.
 
     Raises:
-        TypeError: Required tags missing.
-        mediafile.UnreadableFileError: `track_path` is not a valid track.
-        DbDupTrackError: Duplicate track found in library.
+        AddTrackError: Unable to add Track to the library.
     """
     log.info(f"Adding '{track_path}' to the library.")
     try:
@@ -86,8 +79,6 @@ def _add_track(track_path: pathlib.Path):
 
             add_session.add(track)
     except (TypeError, mediafile.UnreadableFileError) as exc:
-        log.error(exc)
-        raise
+        raise AddTrackError(exc) from exc
     except DbDupTrackError:
-        log.error(f"Track already exists in library: {track}")
-        raise
+        raise AddTrackError(f"Track already exists in library: {track}")
