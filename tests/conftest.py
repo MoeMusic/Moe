@@ -49,7 +49,7 @@ def tmp_config(tmp_path) -> Config:
 
 
 @pytest.fixture
-def mock_track_factory(tmp_session) -> Callable[[], Track]:
+def mock_track_factory() -> Callable[[], Track]:
     """Factory for mock Tracks.
 
     In particular, the path is mocked so the Track doesn't need to exist.
@@ -62,10 +62,10 @@ def mock_track_factory(tmp_session) -> Callable[[], Track]:
         Unique Track object with each call.
     """
 
-    def _mock_track(session: Session = tmp_session):  # noqa: WPS430
+    def _mock_track():  # noqa: WPS430
         return Track(
             path=MagicMock(),
-            session=session,
+            title="Halftime",
             album="Illmatic",
             albumartist="Nas",
             track_num=random.randint(1, 1000),

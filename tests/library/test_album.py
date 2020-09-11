@@ -40,30 +40,22 @@ class TestToDict:
         assert track1._album_obj.to_dict()["title"] == "Various"
 
 
-class TestGetOrCreate:
-    """Test `get_or_create()`."""
+class TestEquals:
+    """Equality based on primary key."""
 
-    def test_album_dne(self, tmp_session):
-        """We should return a new Album() if a match doesn't exist."""
-        album = Album.get_or_create(
-            tmp_session, artist="this doesnt", title="exist", year=1
-        )
+    def test_equals(self):
+        """Equal if two albums share the same primary key attributes."""
+        album1 = Album(artist="this", title="is equal", year=1111)
+        album2 = Album(artist="this", title="is equal", year=1111)
 
-        assert isinstance(album, Album)
+        assert album1 == album2
 
-    def test_album_exists(self, tmp_session):
-        """Return the matching album if it exists in the database."""
-        artist = "this does"
-        title = "exist"
-        year = 1
+    def test_not_equals(self):
+        """Not equal if two albums don't share the same primary key attributes."""
+        album1 = Album(artist="this", title="is not equal", year=1111)
+        album2 = Album(artist="this", title="is equal", year=1111)
 
-        old_album = Album(artist=artist, title=title, year=year)
-        tmp_session.add(old_album)
-
-        new_album = Album.get_or_create(
-            tmp_session, artist=artist, title=title, year=year
-        )
-        assert new_album is old_album
+        assert album1 != album2
 
 
 class TestDuplicate:
@@ -73,6 +65,8 @@ class TestDuplicate:
     If a duplicate is found when committing to the database, we should raise a
     DbDupAlbumError.
 
+    Duplicates should not error if using `session.merge()`
+
     Note:
         This error will only occur upon the session being flushed or committed.
         If you wish to catch this error, then you should use a new session scope
@@ -80,16 +74,21 @@ class TestDuplicate:
         the `with` statement with a `try/except`.
     """
 
-    def test_dup(self, mock_track_factory):
+    def test_dup(self, tmp_session):
         """Duplicate albums should raise a DbDupAlbumError."""
-        artist = "Dup"
-        title = "licate"
-        year = 9999
-
-        album1 = Album(artist=artist, title=title, year=year)
-        album2 = Album(artist=artist, title=title, year=year)
+        album1 = Album(artist="Dup", title="licate", year=1999)
+        album2 = Album(artist="Dup", title="licate", year=1999)
 
         with pytest.raises(DbDupAlbumError):
             with session_scope() as session:
                 session.add(album1)
                 session.add(album2)
+
+    def test_dup_merge(self, mock_track_factory, tmp_session):
+        """Duplicate errors should not occur if using `session.merge()`."""
+        album1 = Album(artist="Dup", title="licate", year=1999)
+        album2 = Album(artist="Dup", title="licate", year=1999)
+
+        with session_scope() as session:
+            session.merge(album1)
+            session.merge(album2)

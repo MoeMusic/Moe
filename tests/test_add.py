@@ -9,7 +9,7 @@ import pytest
 
 from moe import cli
 from moe.core.library.session import session_scope
-from moe.core.library.track import Track
+from moe.core.library.track import Album, Track
 from moe.plugins import add
 
 
@@ -39,8 +39,19 @@ class TestParseArgsDirectory:
 
         add.parse_args(Mock(), tmp_session, args)
 
-        album_ids = tmp_session.query(Track._album_id).all()
-        assert len(set(album_ids)) == 1
+        assert tmp_session.query(Album).scalar()
+
+    def test_no_valid_tracks(self, tmp_session, tmp_path):
+        """Error if given directory does not contain any valid tracks."""
+        album = tmp_path / "empty"
+        album.mkdir()
+        args = argparse.Namespace(paths=[album])
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(Mock(), tmp_session, args)
+
+        assert error.value.code != 0
+        assert not tmp_session.query(Album).scalar()
 
     def test_different_tracks(self, tmp_path, tmp_session):
         """Raise SystemExit if tracks have different album attributes.
@@ -57,22 +68,31 @@ class TestParseArgsDirectory:
             add.parse_args(Mock(), tmp_session, args)
 
         assert error.value.code != 0
-        assert not tmp_session.query(Track).all()
+        assert not tmp_session.query(Album).scalar()
 
-    @pytest.mark.skip
-    # FIXME: Currently broken
     def test_duplicate_tracks(self, tmp_session):
-        """Adding an album shouldn't fail if a track already exists in the library."""
+        """Don't fail album add if a track (by tags) already exists in the library."""
         album = "tests/resources/album"
-        tmp_session.add(
-            Track.from_tags(path=pathlib.Path(album) / "01.mp3", session=tmp_session)
-        )
+        tmp_session.add(Track.from_tags(path=pathlib.Path(album) / "01.mp3"))
+        tmp_session.commit()
         args = argparse.Namespace(paths=[album])
 
         add.parse_args(Mock(), tmp_session, args)
 
-        album_ids = tmp_session.query(Track._album_id).all()
-        assert len(set(album_ids)) == 1
+        assert tmp_session.query(Album).scalar()
+
+    def test_duplicate_track_path(self, tmp_session):
+        """Don't fail album add if a track's path already exists in the librray.."""
+        album = "tests/resources/album"
+        dup_track = Track.from_tags(pathlib.Path(album) / "01.mp3")
+        dup_track.track_num = 100
+        tmp_session.add(dup_track)
+        tmp_session.commit()
+        args = argparse.Namespace(paths=[album])
+
+        add.parse_args(Mock(), tmp_session, args)
+
+        assert tmp_session.query(Album).scalar()
 
 
 class TestParseArgsFile:
@@ -150,11 +170,15 @@ class TestParseArgsFile:
 
         assert error.value.code != 0
 
-    def test_duplicate_track(self, tmp_session):
+    def test_duplicate_track_path(self, tmp_session):
         """Raise SystemExit if the track already exists in the library."""
-        args = argparse.Namespace(paths=["tests/resources/audio_files/full.mp3"])
+        track_path = "tests/resources/audio_files/full.mp3"
+        args = argparse.Namespace(paths=[track_path])
 
-        add.parse_args(Mock(), tmp_session, args)
+        track = Track.from_tags(pathlib.Path(track_path))
+        track.track_num = 2
+        tmp_session.add(track)
+        tmp_session.commit()
 
         with pytest.raises(SystemExit) as error:
             add.parse_args(Mock(), tmp_session, args)
@@ -187,4 +211,4 @@ class TestCommand:
                 cli.main()
 
         with session_scope() as session:
-            assert session.query(Track._id).scalar()
+            assert session.query(Track).scalar()

@@ -1,6 +1,7 @@
 """Test the info plugin."""
 
 import argparse
+import pathlib
 import re
 from unittest.mock import Mock, patch
 
@@ -8,6 +9,7 @@ import pytest
 
 from moe import cli
 from moe.core.library.session import session_scope
+from moe.core.library.track import Track
 from moe.plugins import info
 
 
@@ -16,7 +18,7 @@ class TestParseArgs:
 
     def test_track(self, capsys, tmp_session, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="_id:1", album=False)
+        args = argparse.Namespace(query=f"title:{mock_track.title}", album=False)
 
         mock_track.albumartist = "test"
         tmp_session.add(mock_track)
@@ -29,7 +31,7 @@ class TestParseArgs:
 
     def test_album(self, capsys, tmp_session, mock_track):
         """Albums are printed to stdout with valid query."""
-        args = argparse.Namespace(query="_id:1", album=True)
+        args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         mock_track.album = "album title"
 
         tmp_session.add(mock_track)
@@ -42,7 +44,7 @@ class TestParseArgs:
 
     def test_exit_code(self, capsys, tmp_session):
         """If no track infos are printed, we should return a non-zero exit code."""
-        args = argparse.Namespace(query="_id:1", album=False)
+        args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:
             info.parse_args(Mock(), tmp_session, args)
@@ -84,18 +86,23 @@ class TestFmtInfo:
 class TestCommand:
     """Test cli integration with the info command."""
 
-    def test_parse_args(self, capsys, tmp_config, mock_track_factory):
+    def test_parse_args(self, capsys, tmp_config):
         """A track's info is printed when the `info` command is invoked."""
-        args = ["moe", "info", "_id:1"]
+        track = Track(
+            path=pathlib.Path("tests/resources/album/01.mp3"),
+            album="Doggystyle",
+            albumartist="Snoop Dogg",
+            year=1993,
+            track_num=1,
+        )
+        args = ["moe", "info", "track_num:1"]
 
         tmp_config.init_db()
         with session_scope() as session:
-            session.add(mock_track_factory(session))
+            session.add(track)
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=tmp_config):
                 cli.main()
 
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out
+        assert capsys.readouterr().out

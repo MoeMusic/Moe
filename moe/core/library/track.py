@@ -11,12 +11,13 @@ import mediafile
 import sqlalchemy
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import events, relationship
-from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
+from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
-from moe.core.library.session import Base
+from moe.core.library.session import Base, DbDupTrackPathError, session_scope
 
 
 class _PathType(sqlalchemy.types.TypeDecorator):
@@ -42,8 +43,7 @@ class _Genre(Base):
 
     __tablename__ = "genres"
 
-    _id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, primary_key=True)
 
     def __init__(self, name):
         self.name = name
@@ -52,8 +52,8 @@ class _Genre(Base):
 track_genres = Table(
     "association",
     Base.metadata,
-    Column("genre_id", Integer, ForeignKey("genres._id")),
-    Column("track_id", Integer, ForeignKey("tracks._id")),
+    Column("genre", String, ForeignKey("genres.name")),
+    Column("track_path", _PathType, ForeignKey("tracks.path")),
 )
 
 
@@ -61,7 +61,7 @@ track_genres = Table(
 T = TypeVar("T", bound="Track")  # noqa: WPS111
 
 
-class Track(MusicItem, Base):  # noqa: WPS230
+class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     """A single track.
 
     Attributes:
@@ -75,28 +75,33 @@ class Track(MusicItem, Base):  # noqa: WPS230
         year (int): Album release year.
 
     Note:
-        Altering any album-related properties (all association_proxy) attributes,
-        will result in changing the album field and thus all other tracks in the
-        album as well.
+        Altering any album-related property attributes, will result in changing the
+        album field and thus all other tracks in the album as well.
     """
 
     __tablename__ = "tracks"
-    __table_args__ = (UniqueConstraint("_album_id", "track_num"),)
 
-    _id = Column(Integer, primary_key=True)
-    _album_id = Column(Integer, ForeignKey("albums._id"))
+    # track_num + Album = unique track
+    track_num = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+    _albumartist = Column(String, nullable=False, primary_key=True)
+    _album = Column(String, nullable=False, primary_key=True)
+    _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+
     artist = Column(String, nullable=False, default="")
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
-    track_num = Column(Integer, nullable=False)
+
+    genre = association_proxy("_genre_obj", "name")
 
     _album_obj = relationship("Album", back_populates="tracks")
-    album = association_proxy("_album_obj", "title")
-    albumartist = association_proxy("_album_obj", "artist")
-    year = association_proxy("_album_obj", "year")
-
     _genre_obj = relationship("_Genre", secondary=track_genres)
-    genre = association_proxy("_genre_obj", "name")
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            [_albumartist, _album, _year],  # type: ignore
+            [Album.artist, Album.title, Album.year],
+        ),
+    )
 
     def __init__(  # noqa: WPS211
         self,
@@ -105,7 +110,6 @@ class Track(MusicItem, Base):  # noqa: WPS230
         albumartist: str,
         track_num: int,
         year: int,
-        session: sqlalchemy.orm.session.Session,
         **kwargs,
     ):
         """Create a track.
@@ -116,7 +120,6 @@ class Track(MusicItem, Base):  # noqa: WPS230
             albumartist: Album artist.
             track_num: Track number.
             year: Album release year.
-            session: sqlalchemy session to use to query for a matching album.
             **kwargs: Any other fields to assign to the Track.
 
         Note:
@@ -140,26 +143,61 @@ class Track(MusicItem, Base):  # noqa: WPS230
                 f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
             )
 
-        self._album_obj = Album.get_or_create(
-            session, artist=albumartist, title=album, year=year
-        )
+        self._album_obj = Album(artist=albumartist, title=album, year=year)
+        self._album = album
+        self._albumartist = albumartist
+        self._year = year
 
         self.path = path
         self.track_num = track_num
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    @hybrid_property
+    def album(self) -> str:
+        """Allow the album's title to be accessible by the track."""
+        return self._album_obj.title
+
+    @album.setter  # type: ignore
+    def album(self, new_album_title: str):  # noqa: WPS440
+        """Setting a new album title should assign the track to a different album."""
+        self._album_obj = Album(
+            artist=self.albumartist, title=new_album_title, year=self.year
+        )
+
+    @hybrid_property
+    def albumartist(self) -> str:
+        """Allow the album's artist to be accessible by the track."""
+        return self._album_obj.artist
+
+    @albumartist.setter  # type: ignore
+    def albumartist(self, new_albumartist: str):  # noqa: WPS440
+        """Setting a new album artist should assign the track to a different album."""
+        self._album_obj = Album(
+            artist=new_albumartist, title=self.album, year=self.year
+        )
+
+    @hybrid_property
+    def year(self) -> int:
+        """Allow the album's year to be accessible by the track."""
+        return self._album_obj.year
+
+    @year.setter  # type: ignore
+    def year(self, new_album_year: str):  # noqa: WPS440
+        """Setting a new album year should assign the track to a different album."""
+        self._album_obj = Album(
+            artist=self.albumartist, title=self.album, year=new_album_year
+        )
+
     @classmethod
-    def from_tags(
-        cls: Type[T], path: pathlib.Path, session: sqlalchemy.orm.session.Session
-    ) -> T:
+    def from_tags(cls: Type[T], path: pathlib.Path) -> T:
         """Alternate initializer that creates a Track from it's tags.
 
         Will read any tags from the file at path and save them to the Track.
 
         Args:
             path: Path to the track to add.
-            session: sqlalchemy session to use to query for a matching album.
 
         Returns:
             Track instance.
@@ -168,7 +206,6 @@ class Track(MusicItem, Base):  # noqa: WPS230
 
         return cls(
             path=path,
-            session=session,
             album=audio_file.album,
             albumartist=audio_file.albumartist,
             track_num=audio_file.track,
@@ -196,9 +233,27 @@ class Track(MusicItem, Base):  # noqa: WPS230
 
         return track_dict
 
+    def add_to_db(self):
+        """Adds a track to the database.
+
+        Raises:
+            DbDupTrackPathError: Track's path already exists in the library.
+        """
+        try:
+            with session_scope() as session:
+                session.merge(self)
+        except DbDupTrackPathError:
+            raise DbDupTrackPathError(
+                f"Track path already exists in the library: {self.path}"
+            )
+
     def __str__(self):
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
+
+    def __repr__(self):
+        """Track representation using the primary keys."""
+        return f"{self.albumartist} - {self.album} ({self.year}): {self.track_num}"
 
 
 @sqlalchemy.event.listens_for(Track.path, "set")

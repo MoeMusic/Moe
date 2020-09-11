@@ -18,8 +18,8 @@ class DbDupMusicItemError(Exception):
     """Attempt to add a duplicate MusicItem to the database."""
 
 
-class DbDupTrackError(DbDupMusicItemError):
-    """Attempt to add a duplicate Track to the database."""
+class DbDupTrackPathError(DbDupMusicItemError):
+    """Attempt to add a duplicate Track path to the database."""
 
 
 class DbDupAlbumError(DbDupMusicItemError):
@@ -33,16 +33,16 @@ def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
         error: IntegrityError to parse.
 
     Raises:
-        DbDupTrackError: Track already exists in the database.
+        DbDupTrackTagsError: Track's unique tags already exist in the database.
+        DbDupTrackPathError: Track's path already exists in the database.
         DbDupAlbumError: Album already exists in the database.
     """
     error_msg = str(error.orig)
-    track_dup_msg = "UNIQUE constraint failed: tracks._album_id, tracks.track_num"
     track_path_dup_msg = "UNIQUE constraint failed: tracks.path"
     album_dup_msg = "UNIQUE constraint failed: albums.artist, albums.title, albums.year"
 
-    if error_msg in {track_dup_msg, track_path_dup_msg}:
-        raise DbDupTrackError from error
+    if error_msg == track_path_dup_msg:
+        raise DbDupTrackPathError from error
     elif error_msg == album_dup_msg:
         raise DbDupAlbumError from error
 

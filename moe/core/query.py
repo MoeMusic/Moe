@@ -116,6 +116,24 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
+def _getattr(field: str):
+    """Custom `getattr()` because the native one doesn't work for hybrid properties."""
+    # hybrid attributes
+    if field == "album":
+        return Album.title
+    elif field == "albumartist":
+        return Album.artist
+    elif field == "year":
+        return Album.year
+
+    # normal Track attributes
+    try:
+        return getattr(Track, field)
+    except AttributeError:
+        log.error(f"Invalid Track field: {field}")
+        raise ValueError
+
+
 def _create_expression(
     term: Dict[str, str]
 ) -> sqlalchemy.sql.elements.BinaryExpression:
@@ -136,11 +154,8 @@ def _create_expression(
     field = term[FIELD_GROUP].lower()
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
-    try:
-        attr = getattr(Track, field)
-    except AttributeError:
-        log.error(f"Invalid Track field: {field}")
-        raise ValueError
+
+    attr = _getattr(field)
 
     if separator == ":":
         # Normal string match query - should be case insensitive.
@@ -174,14 +189,17 @@ def query(
     Returns:
         All tracks matching the query.
     """
-    query_cls = Album if album_query else Track
     terms = shlex.split(query_str)
 
     if not terms:
         log.error(f"No query given.\n{HELP_STR}")
         return []
 
-    library_query = session.query(query_cls)
+    if album_query:
+        library_query = session.query(Album).join(Track)
+    else:
+        library_query = session.query(Track).join(Album)
+
     for term in terms:
         try:
             library_query = library_query.filter(_create_expression(_parse_term(term)))
