@@ -1,12 +1,10 @@
 """An Album in the database and any related logic."""
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Type, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm.session import Session
-from sqlalchemy.schema import UniqueConstraint
 
 from moe.core.library.music_item import MusicItem
 from moe.core.library.session import Base
@@ -32,34 +30,42 @@ class Album(MusicItem, Base):
     """
 
     __tablename__ = "albums"
-    __table_args__ = (UniqueConstraint("artist", "title", "year"),)
 
-    _id = Column(Integer, primary_key=True)
-    artist = Column(String, nullable=False)
-    title = Column(String, nullable=False)
-    year = Column(Integer, nullable=False)
+    artist = Column(String, nullable=False, primary_key=True)
+    title = Column(String, nullable=False, primary_key=True)
+    year = Column(Integer, nullable=False, primary_key=True)
 
-    tracks = relationship("Track", back_populates="_album_obj", cascade="all, delete")
+    tracks = relationship(
+        "Track", back_populates="_album_obj", cascade="all, delete-orphan"
+    )
 
-    def __init__(self, artist: str, title: str, year: int, **kwargs):
+    def __init__(self, artist: str, title: str, year: int):
         """Creates an album.
 
         Args:
             artist: Album artist.
             title: Album title.
             year: Album release year.
-            **kwargs: Any other fields to assign to the Album.
         """
         self.artist = artist
         self.title = title
         self.year = year
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
     def __str__(self):
         """String representation of an album."""
         return f"{self.artist} - {self.title}"
+
+    def __repr__(self):
+        """Represent an album using it's primary keys."""
+        return f"{self.artist} - {self.title} ({self.year})"
+
+    def __eq__(self, other):
+        """Album equality based on primary key."""
+        return (
+            self.artist == other.artist
+            and self.title == other.title
+            and self.year == other.year
+        )
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Album as a dictionary.
@@ -80,26 +86,3 @@ class Album(MusicItem, Base):
                     album_dict[key] = "Various"
 
         return album_dict
-
-    @classmethod
-    def get_or_create(
-        cls: Type[A],
-        session: Session,
-        artist: str,
-        title: str,
-        year: int,
-    ) -> A:
-        """Fetches the matching album or creates a new one if it doesn't exist."""
-        album = (
-            session.query(Album)
-            .filter(Album.artist == artist)
-            .filter(Album.title == title)
-            .filter(Album.year == year)
-            .scalar()
-        )
-
-        if not album:
-            album = Album(artist=artist, title=title, year=year)
-            session.add(album)
-
-        return album

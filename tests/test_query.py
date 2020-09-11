@@ -47,9 +47,9 @@ class TestParseTerm:
 class TestQuery:
     """Test actual query."""
 
-    def test_empty_query_str(self):
+    def test_empty_query_str(self, tmp_session):
         """Empty queries should return an empty list."""
-        assert not query.query(r"", Mock())
+        assert not query.query(r"title:nope", tmp_session)
 
     def test_invalid_query_str(self):
         """Invalid queries should return an empty list."""
@@ -63,7 +63,7 @@ class TestQuery:
         """Simplest query."""
         tmp_session.add(mock_track)
 
-        assert query.query("_id:1", tmp_session)
+        assert query.query(f"title:{mock_track.title}", tmp_session)
 
     def test_space_value(self, tmp_session, mock_track):
         """If a value has whitespace, it must be encolsed by quotes."""
@@ -77,20 +77,24 @@ class TestQuery:
         mock_track.title = "C.R.E.A.M."
         tmp_session.add(mock_track)
 
-        assert query.query("_id:1 title:C.R.E.A.M.", tmp_session)
+        assert query.query(
+            f"track_num:{mock_track.track_num} title:{mock_track.title}", tmp_session
+        )
 
-    def test_track_album_field_query(self, tmp_session, mock_track):
+    def test_track_album_field_queries(self, tmp_session, mock_track):
         """We should be able to query tracks that match album-related fields.
 
         These fields belong to the Album table and thus aren't normally exposed
         through a track.
         """
-        mock_track.albumartist = "2Pac"
         mock_track.album = "All Eyez on Me"
+        mock_track.albumartist = "2Pac"
+        mock_track.year = "1996"
         tmp_session.add(mock_track)
 
         assert query.query("'album:All Eyez on Me'", tmp_session)
-        assert query.query("albumartist:2Pac", tmp_session)  # Album field
+        assert query.query("albumartist:2Pac", tmp_session)
+        assert query.query("year:1996", tmp_session)
 
     def test_case_insensitive_value(self, tmp_session, mock_track):
         """Query values should be case-insensitive."""
@@ -128,7 +132,7 @@ class TestQuery:
         """Invalid regex queries should return an empty list."""
         tmp_session.add(mock_track)
 
-        assert not query.query(r"_id::[", tmp_session)
+        assert not query.query(r"title::[", tmp_session)
 
     def test_regex_case_insensitive(self, tmp_session, mock_track):
         """Regex queries should be case-insensitive."""
@@ -143,7 +147,9 @@ class TestQuery:
         """A track query should return track objects."""
         tmp_session.add(mock_track)
 
-        tracks = query.query("_id:1", tmp_session, album_query=False)
+        tracks = query.query(
+            f"title:{mock_track.title}", tmp_session, album_query=False
+        )
 
         assert tracks
         for track in tracks:
@@ -153,7 +159,7 @@ class TestQuery:
         """An album query should return album objects."""
         tmp_session.add(mock_track)
 
-        albums = query.query("_id:1", tmp_session, album_query=True)
+        albums = query.query(f"title:{mock_track.title}", tmp_session, album_query=True)
 
         assert albums
         for album in albums:
@@ -173,9 +179,10 @@ class TestQuery:
     def test_like_query(self, tmp_session, mock_track):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
         tmp_session.add(mock_track)
+        mock_track.track_num = 1
 
-        assert query.query("_id:_", tmp_session)
-        assert query.query("_id:%", tmp_session)
+        assert query.query("track_num:_", tmp_session)
+        assert query.query("track_num:%", tmp_session)
 
     def test_like_escape_query(self, tmp_session, mock_track_factory):
         r"""We should be able to escape the LIKE wildcard characters with '/'.
@@ -187,8 +194,8 @@ class TestQuery:
         track2 = mock_track_factory()
         track1.title = "_"
         track2.title = "b"
-        tmp_session.add(track1)
-        tmp_session.add(track2)
+        tmp_session.merge(track1)
+        tmp_session.merge(track2)
 
         assert len(query.query(r"title:/_", tmp_session)) == 1
 
@@ -198,6 +205,7 @@ class TestQuery:
         `genres` is a list of genres for a Track.
         """
         mock_track.genre = ["hip hop", "rock"]
+        tmp_session.add(mock_track)
 
         assert query.query("'genre:hip hop'", tmp_session)
         assert query.query("genre:rock", tmp_session)
