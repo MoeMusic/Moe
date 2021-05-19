@@ -186,18 +186,6 @@ class TestParseArgsFile:
         assert error.value.code != 0
 
 
-class TestAddTrack:
-    """Test `_add_track()`."""
-
-    def test_track(self, tmp_session):
-        """Tracks are added to the database."""
-        music_file = pathlib.Path("tests/resources/audio_files/full.mp3")
-
-        add._add_track(music_file)
-
-        assert tmp_session.query(Track.path).scalar() == music_file.resolve()
-
-
 @pytest.mark.integration
 class TestCommand:
     """Test cli integration with the add command."""
