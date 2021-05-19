@@ -65,7 +65,7 @@ instead of tracks.
 Tip: Normal queries may be faster when compared to regex queries. If you
 are experiencing performance issues with regex queries, see if you can make an
 equivalent normal query using the LIKE wildcard characters.
-"""
+"""  # noqa: WPS360
 
 # each query will be split into these groups
 FIELD_GROUP = "field"

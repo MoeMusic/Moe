@@ -2,13 +2,13 @@ default_stages: [commit]
 
 repos:
   - repo: https://github.com/psf/black
-    rev: stable
+    rev: 21.5b1
     hooks:
       - id: black
         language_version: python3
 
   - repo: https://gitlab.com/pycqa/flake8
-    rev: master
+    rev: 3.9.2
     hooks:
       - id: flake8
         additional_dependencies: [
@@ -18,18 +18,18 @@ repos:
         ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: master
+    rev: v0.812
     hooks:
       - id: mypy
         additional_dependencies: [sqlalchemy-stubs]
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: master
+    rev: v2.17.6
     hooks:
       - id: commitizen
         stages: [commit-msg]
 
   - repo: https://github.com/timothycrosley/isort
-    rev: master
+    rev: 5.8.0
     hooks:
       - id: isort

@@ -58,7 +58,7 @@ def session_scope():
         session.rollback()
         _parse_integrity_error(exc)
         raise
-    except:  # noqa: E722
+    except:  # noqa: B001, E722
         session.rollback()
         raise
     finally:

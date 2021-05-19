@@ -25,14 +25,14 @@ class TestParseTerm:
 
         The only exception is immediately after the colon.
         """
-        match = query._parse_term(r"field:val u e")
+        match = query._parse_term("field:val u e")
 
         assert match["field"] == "field"
         assert match["value"] == "val u e"
 
     def test_regex_value(self):
         """Regular expression values are indicated by a '::' separator."""
-        match = query._parse_term(r"field::A.*")
+        match = query._parse_term("field::A.*")
 
         assert match["field"] == "field"
         assert match["separator"] == "::"
@@ -41,7 +41,7 @@ class TestParseTerm:
     def test_invalid(self):
         """Invalid terms should raise a ValueError."""
         with pytest.raises(ValueError):
-            query._parse_term(r"invalid")
+            query._parse_term("invalid")
 
 
 class TestQuery:
@@ -49,15 +49,15 @@ class TestQuery:
 
     def test_empty_query_str(self, tmp_session):
         """Empty queries should return an empty list."""
-        assert not query.query(r"title:nope", tmp_session)
+        assert not query.query("title:nope", tmp_session)
 
     def test_invalid_query_str(self):
         """Invalid queries should return an empty list."""
-        assert not query.query(r"invalid", Mock())  # invalid pattern
+        assert not query.query("invalid", Mock())  # invalid pattern
 
     def test_invalid_query_field(self):
         """Invalid queries should return an empty list."""
-        assert not query.query(r"invalid:a", Mock())  # invalid field
+        assert not query.query("invalid:a", Mock())  # invalid field
 
     def test_valid_query(self, tmp_session, mock_track):
         """Simplest query."""
@@ -118,21 +118,21 @@ class TestQuery:
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
 
-        assert query.query(r"title::.*", tmp_session)
-        assert query.query(r"album::.*", tmp_session)  # Album field
+        assert query.query("title::.*", tmp_session)
+        assert query.query("album::.*", tmp_session)  # Album field
 
     def test_regex_non_str(self, tmp_session, mock_track):
         """Non string fields should be converted to strings for matching."""
         tmp_session.add(mock_track)
 
-        assert query.query(r"track_num::.*", tmp_session)
-        assert query.query(r"year::.*", tmp_session)  # Album field
+        assert query.query("track_num::.*", tmp_session)
+        assert query.query("year::.*", tmp_session)  # Album field
 
     def test_invalid_regex(self, tmp_session, mock_track):
         """Invalid regex queries should return an empty list."""
         tmp_session.add(mock_track)
 
-        assert not query.query(r"title::[", tmp_session)
+        assert not query.query("title::[", tmp_session)
 
     def test_regex_case_insensitive(self, tmp_session, mock_track):
         """Regex queries should be case-insensitive."""
@@ -140,8 +140,8 @@ class TestQuery:
         mock_track.album = "TMP"
         tmp_session.add(mock_track)
 
-        assert query.query(r"title::tmp", tmp_session)
-        assert query.query(r"album::tmp", tmp_session)  # Album field
+        assert query.query("title::tmp", tmp_session)
+        assert query.query("album::tmp", tmp_session)  # Album field
 
     def test_track_query(self, tmp_session, mock_track):
         """A track query should return track objects."""
@@ -197,7 +197,7 @@ class TestQuery:
         tmp_session.merge(track1)
         tmp_session.merge(track2)
 
-        assert len(query.query(r"title:/_", tmp_session)) == 1
+        assert len(query.query("title:/_", tmp_session)) == 1
 
     def test_genres_query(self, tmp_session, mock_track):
         """We should be able to query genres transparently.

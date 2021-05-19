@@ -9,7 +9,9 @@ from typing import Any, List, Type, TypeVar
 
 import mediafile
 import sqlalchemy
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column as sqlColumn
+from sqlalchemy import Integer as sqlInteger
+from sqlalchemy import String as sqlString
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import events, relationship
@@ -28,6 +30,7 @@ class _PathType(sqlalchemy.types.TypeDecorator):
     """
 
     impl = sqlalchemy.types.String  # sql type
+    cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
     def process_bind_param(self, pathlib_path, dialect):
         """Convert the absolute path to a string prior to enterting in the database."""
@@ -43,7 +46,7 @@ class _Genre(Base):
 
     __tablename__ = "genres"
 
-    name = Column(String, nullable=False, primary_key=True)
+    name = sqlColumn(sqlString, nullable=False, primary_key=True)
 
     def __init__(self, name):
         self.name = name
@@ -52,8 +55,8 @@ class _Genre(Base):
 track_genres = Table(
     "association",
     Base.metadata,
-    Column("genre", String, ForeignKey("genres.name")),
-    Column("track_path", _PathType, ForeignKey("tracks.path")),
+    sqlColumn("genre", sqlString, ForeignKey("genres.name")),
+    sqlColumn("track_path", _PathType, ForeignKey("tracks.path")),
 )
 
 
@@ -82,14 +85,16 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     __tablename__ = "tracks"
 
     # track_num + Album = unique track
-    track_num = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
-    _albumartist = Column(String, nullable=False, primary_key=True)
-    _album = Column(String, nullable=False, primary_key=True)
-    _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+    track_num = sqlColumn(
+        sqlInteger, nullable=False, primary_key=True, autoincrement=False
+    )
+    _albumartist = sqlColumn(sqlString, nullable=False, primary_key=True)
+    _album = sqlColumn(sqlString, nullable=False, primary_key=True)
+    _year = sqlColumn(sqlInteger, nullable=False, primary_key=True, autoincrement=False)
 
-    artist = Column(String, nullable=False, default="")
-    path = Column(_PathType, nullable=False, unique=True)
-    title = Column(String, nullable=False, default="")
+    artist = sqlColumn(sqlString, nullable=False, default="")
+    path = sqlColumn(_PathType, nullable=False, unique=True)
+    title = sqlColumn(sqlString, nullable=False, default="")
 
     genre = association_proxy("_genre_obj", "name")
 
