@@ -87,7 +87,7 @@ def _parse_term(term: str) -> Dict[str, str]:
 
     Example:
         >>> parse_term('artist:name')
-        {"field": "artist", "separator": ":", "value": "name"
+        {"field": "artist", "separator": ":", "value": "name"}
 
     Note:
         The fields are meant to be programatically accessed with the respective

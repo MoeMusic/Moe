@@ -84,7 +84,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
     __tablename__ = "tracks"
 
-    # track_num + Album = unique track
+    # unqiue track = track_num + Album
     track_num = sqlColumn(
         sqlInteger, nullable=False, primary_key=True, autoincrement=False
     )
@@ -120,7 +120,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         """Create a track.
 
         Args:
-            path: Path to the track to add.
+            path: Filesystem path of the track to add.
             album: Album title.
             albumartist: Album artist.
             track_num: Track number.
@@ -197,12 +197,12 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
     @classmethod
     def from_tags(cls: Type[T], path: pathlib.Path) -> T:
-        """Alternate initializer that creates a Track from it's tags.
+        """Alternate initializer that creates a Track from its tags.
 
-        Will read any tags from the file at path and save them to the Track.
+        Will read any tags from the given path and save them to the Track.
 
         Args:
-            path: Path to the track to add.
+            path: Filesystem path of the track to add.
 
         Returns:
             Track instance.
@@ -245,6 +245,8 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
         Raises:
             DbDupTrackPathError: Track's path already exists in the library.
+                Note, this will only get raised if the two tracks are not considered
+                identical by the DB (same primary keys).
         """
         try:
             with session_scope() as session:

@@ -69,10 +69,18 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
 
 
 def _add_album(album_path: pathlib.Path):
-    """Add an album to the library from a given directory."""
+    """Add an album to the library from a given directory.
+
+    Args:
+        album_path: Filesystem path of the album directory to add.
+
+    Raises:
+        AddAlbumError: Unable to add the album to the library.
+    """
     log.info(f"Adding album to the library: {album_path}")
     album_tracks: List[Track] = []
     for file_path in album_path.rglob("*"):
+        log.info(f"Adding track to the library: {file_path}")
         try:
             album_tracks.append(Track.from_tags(path=file_path))
         except (TypeError, mediafile.UnreadableFileError) as exc:
@@ -94,15 +102,15 @@ def _add_album(album_path: pathlib.Path):
 
 
 def _add_track(track_path: pathlib.Path):
-    """Add a track to the library.
+    """Add a track to the library from a given file.
 
     The Track's attributes are populated from the tags read at `track_path`.
 
     Args:
-        track_path: Path of track to add.
+        track_path: Filesystem path of the track file to add.
 
     Raises:
-        AddTrackError: Unable to add Track to the library.
+        AddTrackError: Unable to add the track to the library.
     """
     log.info(f"Adding track to the library: {track_path}")
     try:

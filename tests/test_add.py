@@ -82,7 +82,7 @@ class TestParseArgsDirectory:
         assert tmp_session.query(Album).scalar()
 
     def test_duplicate_track_path(self, tmp_session):
-        """Don't fail album add if a track's path already exists in the librray.."""
+        """Don't fail album add if a track's path already exists in the library."""
         album = "tests/resources/album"
         dup_track = Track.from_tags(pathlib.Path(album) / "01.mp3")
         dup_track.track_num = 100

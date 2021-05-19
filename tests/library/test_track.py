@@ -99,9 +99,10 @@ class TestToDict:
         for key in mock_track.to_dict().keys():
             assert not isinstance(getattr(mock_track, key), types.MethodType)
 
-    def test_no_metadata(self, mock_track):
-        """Metadata is a sqlalchemy-ism and should not be included."""
+    def test_no_sqlalchemy_attrs(self, mock_track):
+        """Sqlalchemy attributes are not relevant and should not be included."""
         assert "metadata" not in mock_track.to_dict().keys()
+        assert "registry" not in mock_track.to_dict().keys()
 
 
 class TestPathSet:
@@ -119,7 +120,7 @@ class TestDuplicate:
     A duplicate Track is defined as a combination of it's album (obj) and track number.
     A duplicate can also be because two Tracks have the same path.
     If a duplicate is found when committing to the database, we should raise a
-    DbDupTrackError.
+    DbDupTrackPathError.
 
     If we use `session.merge()` to add a Track, a duplicate error should only occur
     for duplicate paths, and not because of its tags. This is because a Track's

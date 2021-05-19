@@ -33,7 +33,6 @@ def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
         error: IntegrityError to parse.
 
     Raises:
-        DbDupTrackTagsError: Track's unique tags already exist in the database.
         DbDupTrackPathError: Track's path already exists in the database.
         DbDupAlbumError: Album already exists in the database.
     """
