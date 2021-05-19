@@ -223,7 +223,9 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Track as a dictionary.
 
-        Only public attributes that are not empty will be included.
+        Only public attributes that are not empty will be included. We also remove any
+        attributes that are not relevant to the music file e.g. sqlalchemy specific
+        attributes.
 
         Returns:
             Returns a dict representation of a Track.
@@ -231,7 +233,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         """
         track_dict = OrderedDict()
         for attr in dir(self):  # noqa: WPS421
-            if not attr.startswith("_") and attr != "metadata":
+            if not attr.startswith("_") and attr != "metadata" and attr != "registry":
                 value = getattr(self, attr)
                 if value and not isinstance(value, types.MethodType):
                     track_dict[attr] = value
