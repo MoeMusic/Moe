@@ -209,3 +209,13 @@ class TestQuery:
 
         assert query.query("'genre:hip hop'", tmp_session)
         assert query.query("genre:rock", tmp_session)
+
+    def test_wildcard_query(self, tmp_session, mock_track_factory):
+        """'*' as a query should return all items."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+
+        tmp_session.merge(track1)
+        tmp_session.merge(track2)
+
+        assert len(query.query("*", tmp_session)) == 2

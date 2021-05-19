@@ -57,6 +57,8 @@ def mock_track_factory() -> Callable[[], Track]:
     Note:
         Each track will share the same album attributes, and thus will
         belong to the same album if a mock_track already exists in the database.
+        If adding multiple tracks of the same album in one session, use
+        `session.merge(track)` vice `session.add(track)`
 
     Returns:
         Unique Track object with each call.
