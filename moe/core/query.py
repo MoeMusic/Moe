@@ -53,11 +53,14 @@ To match these special characters as normal, use '/' as an escape character.
 The value can also be a regular expression. To enforce this, use two colons
 e.g. 'field::value.*'
 
-Finally, you can specify any number of terms.
+As a shortcut to matching all entries, use '*' as the term.
+
+Finally, you can also specify any number of terms.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
 '"artist:wu-tang clan" title:a%'
 
-Multiple field:value expressions are joined together using AND logic.
+Note that when using multiple terms, they are joined together using AND logic, meaning
+all terms must be true to return a match.
 
 If doing an album query, you still specify track fields, but it will match albums
 instead of tracks.
@@ -96,6 +99,12 @@ def _parse_term(term: str) -> Dict[str, str]:
     Raises:
         ValueError: Invalid query term.
     """
+    # '*' is used as a shortcut to return all entries.
+    # We use track_num as all tracks are guaranteed to have a track number.
+    # '%' is an SQL LIKE query special character.
+    if term == "*":
+        return {FIELD_GROUP: "track_num", SEPARATOR_GROUP: ":", VALUE_GROUP: "%"}
+
     query_re = re.compile(
         rf"""
         (?P<{FIELD_GROUP}>\S+?)
