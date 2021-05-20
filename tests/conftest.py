@@ -42,7 +42,7 @@ def tmp_config(tmp_path) -> Config:
     """
     config = Config(config_dir=tmp_path)
 
-    config_file = config.config_dir / "config.yaml"
+    config_file = config.config_dir / "config.toml"
     config_file.touch()
 
     return config

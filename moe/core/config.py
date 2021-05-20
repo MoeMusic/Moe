@@ -1,16 +1,18 @@
 """User configuration of moe.
 
-To avoid namespace confusion when using a variable named config,
-typical usage of this module should just import the Config class directly.
+To avoid namespace confusion when using a variable named config, typical usage of this
+module should just import the Config class directly::
 
-    >>> from moe.core.config import Config
-    >>> config = Config()
+    from moe.core.config import Config
+    config = Config()
+
+This class shouldn't be accessed normally by a plugin, it should instead be passed a
+Config object through a hook.
 
 Attributes:
     DEFAULT_PLUGINS: Plugins that are enabled by default.
-
-    This list should only contain plugins that are a net positive in the vast majority
-    of use cases.
+        This list should only contain plugins that are a net positive in the vast
+        majority of use cases.
 """
 
 import importlib
@@ -20,7 +22,7 @@ import re
 
 import pluggy
 import sqlalchemy
-import yaml
+from dynaconf import Dynaconf
 
 from moe.core.library.session import Base, Session
 
@@ -30,36 +32,47 @@ DEFAULT_PLUGINS = (
     "add",
     "info",
     "ls",
-    "move",
     "rm",
 )
 
 
 class Config:
-    """Reads and/or defines all the necessary configuration options for moe.
+    """Initializes moe configuration settings and database.
 
-    The database and config file will not be read on init. `read_config` and
-    `init_db` must be explicitly called.
+    Database initialization will not happen on `__init__()`. You must call `init_db()`
+    explicitly.
 
-    TODO: determine type of config object once we have a sample config
     Attributes:
-        config: User configuration in use.
         config_dir (pathlib.Path): Configuration directory.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
         pluginmanager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
+        settings (dynaconf.base.LazySettings): User configuration settings.
+
+    Example:
+        In your plugin, to access the library_path setting (assuming a Config object
+        named config)::
+            config.settings.library_path
+
+        See the dynaconf documentation for more info on reading settings variables.
+        https://www.dynaconf.com/#reading-settings-variables
     """
 
     _default_config_dir = pathlib.Path().home() / ".config" / "moe"
 
     def __init__(self, config_dir: pathlib.Path = _default_config_dir):
-        """Reads the configuration and initializes the database.
+        """Initializes the plugin manager and configuration settings.
 
         Args:
-            config_dir: Path of the configuration directory.
+            config_dir: Filesystem path of the configuration directory. By default,
+                this is where the settings and database files will reside.
         """
-        self.config_dir = config_dir
         self.plugins = DEFAULT_PLUGINS
+
+        self.config_dir = config_dir
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+
+        self.read_config()
 
         self.pluginmanager = pluggy.PluginManager("moe")
         for plugin in self.plugins:
@@ -67,47 +80,33 @@ class Config:
                 importlib.import_module(f"moe.plugins.{plugin}")
             )
 
-        if not self.config_dir.exists():
-            self.config_dir.mkdir(parents=True)
+    def read_config(self):
+        """Reads the user configuration settings.
 
-    def read_config(self, config_stream=None):
-        """Reads a given yaml configuration.
-
-        Args:
-            config_stream: Configuration stream to read.
-                Can be anything read by `yaml.load()`.
-                Defaults to reading a config file at `config_dir / "config.yaml"`.
+        Searches for a configuration file at `config_dir / "config.toml"`.
 
         Raises:
-            SystemExit: Couldn't read the default configuration file.
+            SystemExit: No config file found.
         """
-        if not config_stream:
-            config_file = self.config_dir / "config.yaml"
+        config_file = self.config_dir / "config.toml"
+        config_file.touch(exist_ok=True)
 
-            try:
-                config_stream = config_file.read_text()
-            except FileNotFoundError:
-                log.error(f"Configuration file '{config_file}' does not exist.")
-                raise SystemExit(1)
+        # use dynaconf to handle config files
+        self.settings = Dynaconf(
+            envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
+            settings_file=str(config_file.resolve()),
+        )
 
-        self.config = yaml.safe_load(config_stream)
-
-    def init_db(
-        self,
-        db_path: pathlib.Path = None,
-        engine: sqlalchemy.engine.base.Engine = None,
-    ):
+    def init_db(self, engine: sqlalchemy.engine.base.Engine = None):
         """Initializes the database.
 
         Moe uses sqlite by default.
 
         Args:
-            db_path: Path of the database file.
-                Defaults to config_dir / "library.db".
             engine: sqlalchemy database engine to use.
-                Defaults to sqlite located at db_dir / db_path.
+                Defaults to sqlite located at db_path.
         """
-        db_path = db_path if db_path else self.config_dir / "library.db"
+        db_path = self.config_dir / "library.db"
 
         if engine:
             self.engine = engine
