@@ -86,10 +86,13 @@ def _add_album(album_path: pathlib.Path):
         except (TypeError, mediafile.UnreadableFileError) as exc:
             log.warning(f"Could not add track to album: {str(exc)}")
 
-    albums = [track._album_obj for track in album_tracks]  # noqa: WPS437
-    if not albums:
+    if not album_tracks:
         raise AddAlbumError(f"No tracks found in album: {album_path}")
-    if albums.count(albums[0]) != len(albums):
+
+    albums = [track._album_obj for track in album_tracks]  # noqa: WPS437
+
+    # ensure every track belongs to the same album
+    if albums.count(albums[0]) != len(albums):  # checks if each album is the same
         raise AddAlbumError(
             f"Not all tracks in '{album_path}' share the same album attributes."
         )
