@@ -10,6 +10,8 @@ from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
+from moe.core.library.album import Album
+from moe.core.library.music_item import MusicItem
 from moe.core.library.session import DbDupTrackPathError
 from moe.core.library.track import Track
 
@@ -22,6 +24,15 @@ class AddTrackError(Exception):
 
 class AddAlbumError(Exception):
     """Error adding an album to the library."""
+
+
+class Hooks:
+    """Add hooks."""
+
+    @staticmethod
+    @moe.hookspec
+    def post_add(item: MusicItem):
+        """Provides the MusicItem that was added to the library."""
 
 
 @moe.hookimpl
@@ -47,9 +58,12 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     Raises:
         SystemExit: Path given does not exist.
     """
+    config.pluginmanager.add_hookspecs(Hooks)
+
     paths = [pathlib.Path(arg_path) for arg_path in args.paths]
 
     error_count = 0
+    item_added: MusicItem
     for path in paths:
         if not path.exists():
             log.error(f"Path not found: {path}")
@@ -57,9 +71,9 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
 
         try:
             if path.is_file():
-                _add_track(path)
+                item_added = _add_track(path)
             elif path.is_dir():
-                _add_album(path)
+                item_added = _add_album(path)
         except (AddTrackError, AddAlbumError) as exc:
             log.error(exc)
             error_count += 1
@@ -67,12 +81,17 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     if error_count:
         raise SystemExit(1)
 
+    config.pluginmanager.hook.post_add(item=item_added)
 
-def _add_album(album_path: pathlib.Path):
+
+def _add_album(album_path: pathlib.Path) -> Album:
     """Add an album to the library from a given directory.
 
     Args:
         album_path: Filesystem path of the album directory to add.
+
+    Returns:
+        Album added.
 
     Raises:
         AddAlbumError: Unable to add the album to the library.
@@ -103,14 +122,19 @@ def _add_album(album_path: pathlib.Path):
         except DbDupTrackPathError as dup_exc:
             log.warning(dup_exc)
 
+    return albums[0]  # we already ensured this list is just multiple of the same album
 
-def _add_track(track_path: pathlib.Path):
+
+def _add_track(track_path: pathlib.Path) -> Track:
     """Add a track to the library from a given file.
 
     The Track's attributes are populated from the tags read at `track_path`.
 
     Args:
         track_path: Filesystem path of the track file to add.
+
+    Returns:
+        Track added.
 
     Raises:
         AddTrackError: Unable to add the track to the library.
@@ -125,3 +149,5 @@ def _add_track(track_path: pathlib.Path):
         track.add_to_db()
     except DbDupTrackPathError as db_exc:
         raise AddTrackError(db_exc) from db_exc
+
+    return track
