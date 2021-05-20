@@ -3,13 +3,11 @@
 """Entry point for the CLI."""
 
 import argparse
-import importlib
 import logging
 import sys
 from typing import List
 
 import pkg_resources
-import pluggy
 
 import moe
 from moe.core.config import Config
@@ -55,37 +53,17 @@ class Hooks:
 def main():
     """Runs the CLI."""
     config = Config()
-    pm = _get_plugin_manager(config)
 
-    _parse_args(sys.argv[1:], pm, config)
+    config.pluginmanager.add_hookspecs(Hooks)
 
-
-def _get_plugin_manager(config: Config) -> pluggy.PluginManager:
-    """Gets the plugin manager.
-
-    This manages and registers all the specified plugins and hooks.
-
-    Args:
-        config: User configuration for moe.
-
-    Returns:
-        global plugin manager
-    """
-    pm = pluggy.PluginManager("moe")
-    pm.add_hookspecs(Hooks)
-
-    for plugin in config.plugins:
-        pm.register(importlib.import_module(f"moe.plugins.{plugin}"))
-
-    return pm
+    _parse_args(sys.argv[1:], config)
 
 
-def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
+def _parse_args(args: List[str], config: Config):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse. Should not include 'moe'.
-        pm: Global plugin manager
         config: User configuration for moe.
 
     Raises:
@@ -96,7 +74,7 @@ def _parse_args(args: List[str], pm: pluggy.PluginManager, config: Config):
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    pm.hook.addcommand(cmd_parsers=cmd_parsers)
+    config.pluginmanager.hook.addcommand(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
 

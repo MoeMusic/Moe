@@ -13,10 +13,12 @@ Attributes:
     of use cases.
 """
 
+import importlib
 import logging
 import pathlib
 import re
 
+import pluggy
 import sqlalchemy
 import yaml
 
@@ -28,6 +30,7 @@ DEFAULT_PLUGINS = (
     "add",
     "info",
     "ls",
+    "move",
     "rm",
 )
 
@@ -43,6 +46,7 @@ class Config:
         config: User configuration in use.
         config_dir (pathlib.Path): Configuration directory.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
+        pluginmanager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
     """
 
@@ -56,6 +60,12 @@ class Config:
         """
         self.config_dir = config_dir
         self.plugins = DEFAULT_PLUGINS
+
+        self.pluginmanager = pluggy.PluginManager("moe")
+        for plugin in self.plugins:
+            self.pluginmanager.register(
+                importlib.import_module(f"moe.plugins.{plugin}")
+            )
 
         if not self.config_dir.exists():
             self.config_dir.mkdir(parents=True)
