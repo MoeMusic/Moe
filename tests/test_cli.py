@@ -13,6 +13,6 @@ class TestArgParse:
     def test_no_args(self):
         """Test exit if 0 subcommands given."""
         with pytest.raises(SystemExit) as error:
-            cli._parse_args([], Mock(), Mock())
+            cli._parse_args([], Mock())
 
         assert error.value.code != 0
