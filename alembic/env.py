@@ -18,7 +18,7 @@ of env.py for different use cases.
 from logging.config import fileConfig
 
 from alembic import context
-from moe.core.config import Config
+from moe.core.config import _Config
 from moe.core.library.session import Base
 
 # this is the Alembic Config object, which provides
@@ -47,8 +47,8 @@ def run_migrations_online():
     In this scenario we need to create an Engine and associate a connection
     with the context.
     """
-    moe_config = Config()
-    moe_config.init_db()
+    moe_config = _Config()
+    moe_config._init_db()
     engine = moe_config.engine
 
     with engine.connect() as connection:

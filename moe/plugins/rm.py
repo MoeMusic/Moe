@@ -7,7 +7,6 @@ import sqlalchemy
 
 import moe
 from moe.core import query
-from moe.core.config import Config
 
 log = logging.getLogger(__name__)
 
@@ -29,13 +28,10 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(
-    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
-):
+def parse_args(session: sqlalchemy.orm.session.Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
-        config: Configuration in use.
         session: Current session.
         args: Commandline arguments to parse.
 

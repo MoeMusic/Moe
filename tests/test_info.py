@@ -3,7 +3,7 @@
 import argparse
 import pathlib
 import re
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -23,7 +23,7 @@ class TestParseArgs:
         mock_track.albumartist = "test"
         tmp_session.add(mock_track)
 
-        info.parse_args(Mock(), tmp_session, args)
+        info.parse_args(tmp_session, args)
 
         captured_text = capsys.readouterr()
 
@@ -36,7 +36,7 @@ class TestParseArgs:
 
         tmp_session.add(mock_track)
 
-        info.parse_args(Mock(), tmp_session, args)
+        info.parse_args(tmp_session, args)
 
         captured_text = capsys.readouterr()
 
@@ -47,7 +47,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:
-            info.parse_args(Mock(), tmp_session, args)
+            info.parse_args(tmp_session, args)
 
         assert error.value.code != 0
 
@@ -97,12 +97,12 @@ class TestCommand:
         )
         args = ["moe", "info", "track_num:1"]
 
-        tmp_config.init_db()
+        tmp_config._init_db()
         with session_scope() as session:
             session.add(track)
 
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
+            with patch("moe.cli.config", tmp_config):
                 cli.main()
 
         assert capsys.readouterr().out

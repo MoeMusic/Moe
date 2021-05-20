@@ -8,7 +8,7 @@ import pytest
 import sqlalchemy
 from sqlalchemy.orm.session import Session
 
-from moe.core.config import Config
+from moe.core.config import _Config
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 
@@ -22,17 +22,15 @@ def tmp_session() -> Iterator[Session]:
     Yields:
         session: temp Session instance
     """
-    engine = sqlalchemy.create_engine("sqlite:///:memory:")
-
-    config = Config(config_dir=MagicMock())
-    config.init_db(engine=engine)
+    config = _Config(config_dir=MagicMock())
+    config._init_db(engine=sqlalchemy.create_engine("sqlite:///:memory:"))
 
     with session_scope() as session:
         yield session
 
 
 @pytest.fixture
-def tmp_config(tmp_path) -> Config:
+def tmp_config(tmp_path) -> _Config:
     """Instantiates a temporary configuration.
 
     This is for use with integration tests.
@@ -40,12 +38,7 @@ def tmp_config(tmp_path) -> Config:
     Returns:
         The configuration instance.
     """
-    config = Config(config_dir=tmp_path)
-
-    config_file = config.config_dir / "config.toml"
-    config_file.touch()
-
-    return config
+    return _Config(config_dir=tmp_path)
 
 
 @pytest.fixture

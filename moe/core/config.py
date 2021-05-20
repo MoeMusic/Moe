@@ -1,13 +1,10 @@
 """User configuration of moe.
 
-To avoid namespace confusion when using a variable named config, typical usage of this
-module should just import the Config class directly::
+Interaction with this module should normally be through a single `_Config` instance,
+`config`::
 
-    from moe.core.config import Config
-    config = Config()
-
-This class shouldn't be accessed normally by a plugin, it should instead be passed a
-Config object through a hook.
+    from moe.core.config import config
+    config.settings.library_path
 
 Attributes:
     DEFAULT_PLUGINS: Plugins that are enabled by default.
@@ -36,11 +33,13 @@ DEFAULT_PLUGINS = (
 )
 
 
-class Config:
-    """Initializes moe configuration settings and database.
+class _Config:
+    """Initializes moe's configuration settings and database.
 
-    Database initialization will not happen on `__init__()`. You must call `init_db()`
-    explicitly.
+    Note:
+        `read_config()` and `init_db()` should only occur once per instance, but
+        must be explicitly called. They are not included in `__init__()` due to it
+        making testing easier, and it causes circular imports with the pluginmanager.
 
     Attributes:
         config_dir (pathlib.Path): Configuration directory.
@@ -61,26 +60,18 @@ class Config:
     _default_config_dir = pathlib.Path().home() / ".config" / "moe"
 
     def __init__(self, config_dir: pathlib.Path = _default_config_dir):
-        """Initializes the plugin manager and configuration settings.
+        """Initializes the plugin manager and configuration directory.
 
         Args:
             config_dir: Filesystem path of the configuration directory. By default,
                 this is where the settings and database files will reside.
         """
-        self.plugins = DEFAULT_PLUGINS
+        self.pluginmanager = pluggy.PluginManager("moe")
 
         self.config_dir = config_dir
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        self.read_config()
-
-        self.pluginmanager = pluggy.PluginManager("moe")
-        for plugin in self.plugins:
-            self.pluginmanager.register(
-                importlib.import_module(f"moe.plugins.{plugin}")
-            )
-
-    def read_config(self):
+    def _read_config(self):
         """Reads the user configuration settings.
 
         Searches for a configuration file at `config_dir / "config.toml"`.
@@ -97,7 +88,13 @@ class Config:
             settings_file=str(config_file.resolve()),
         )
 
-    def init_db(self, engine: sqlalchemy.engine.base.Engine = None):
+        self.plugins = DEFAULT_PLUGINS
+        for plugin in self.plugins:
+            self.pluginmanager.register(
+                importlib.import_module(f"moe.plugins.{plugin}")
+            )
+
+    def _init_db(self, engine: sqlalchemy.engine.base.Engine = None):
         """Initializes the database.
 
         Moe uses sqlite by default.
@@ -133,3 +130,6 @@ class Config:
                 Whether or not the match was successful.
             """
             return re.search(pattern, str(col_value), re.IGNORECASE) is not None
+
+
+config = _Config()

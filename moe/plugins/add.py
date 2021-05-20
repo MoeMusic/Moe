@@ -9,7 +9,7 @@ import mediafile
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
+from moe.core.config import config
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
 from moe.core.library.session import DbDupTrackPathError
@@ -35,6 +35,9 @@ class Hooks:
         """Provides the MusicItem that was added to the library."""
 
 
+config.pluginmanager.add_hookspecs(Hooks)
+
+
 @moe.hookimpl
 def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `add` command to moe."""
@@ -47,19 +50,16 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     add_parser.set_defaults(func=parse_args)
 
 
-def parse_args(config: Config, session: Session, args: argparse.Namespace):
+def parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
-        config: Configuration in use.
         session: Current session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Path given does not exist.
     """
-    config.pluginmanager.add_hookspecs(Hooks)
-
     paths = [pathlib.Path(arg_path) for arg_path in args.paths]
 
     error_count = 0

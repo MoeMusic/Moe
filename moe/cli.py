@@ -10,7 +10,7 @@ from typing import List
 import pkg_resources
 
 import moe
-from moe.core.config import Config
+from moe.core.config import config
 from moe.core.library.session import session_scope
 
 log = logging.getLogger(__name__)
@@ -43,7 +43,6 @@ class Hooks:
             The function will be called like::
 
                 func(
-                    config: moe.Config,  # user config
                     session: sqlalchemy.orm.session.Session,  # database session
                     args: argparse.Namespace,  # parsed commandline arguments
                 )
@@ -52,27 +51,25 @@ class Hooks:
 
 def main():
     """Runs the CLI."""
-    config = Config()
+    config.pluginmanager.add_hookspecs(Hooks)
+    _parse_args(sys.argv[1:])
 
-    _parse_args(sys.argv[1:], config)
 
-
-def _parse_args(args: List[str], config: Config):
+def _parse_args(args: List[str]):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse. Should not include 'moe'.
-        config: User configuration for moe.
 
     Raises:
         SystemExit: No sub-commands given.
             Does not include root commands such as `--version` or `--help`.
     """
     moe_parser = _create_arg_parser()
+    config._read_config()  # noqa: WPS437
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.pluginmanager.add_hookspecs(Hooks)
     config.pluginmanager.hook.addcommand(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
@@ -84,11 +81,10 @@ def _parse_args(args: List[str], config: Config):
 
     _set_root_log_lvl(parsed_args)
 
-    config.init_db()
-
     # call the sub-command's handler within a single session
+    config._init_db()  # noqa: WPS437
     with session_scope() as session:
-        parsed_args.func(config=config, session=session, args=parsed_args)
+        parsed_args.func(session=session, args=parsed_args)
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:

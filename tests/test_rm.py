@@ -2,7 +2,7 @@
 
 import argparse
 import pathlib
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -23,7 +23,7 @@ class TestParseArgs:
         )
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(tmp_session, args)
 
         query = tmp_session.query(Track.path).scalar()
 
@@ -34,7 +34,7 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(tmp_session, args)
 
         query = tmp_session.query(Album).scalar()
 
@@ -45,7 +45,7 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(tmp_session, args)
 
         query = tmp_session.query(Track).scalar()
 
@@ -56,7 +56,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:
-            rm.parse_args(Mock(), tmp_session, args)
+            rm.parse_args(tmp_session, args)
 
         assert error.value.code != 0
 
@@ -76,12 +76,12 @@ class TestCommand:
         )
         args = ["moe", "rm", "track_num:1"]
 
-        tmp_config.init_db()
+        tmp_config._init_db()
         with session_scope() as session:
             session.add(track)
 
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
+            with patch("moe.cli.config", tmp_config):
                 cli.main()
 
         with session_scope() as session2:
