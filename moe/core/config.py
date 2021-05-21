@@ -24,6 +24,7 @@ import pluggy
 import sqlalchemy
 from dynaconf import Dynaconf
 
+import moe
 from moe.core.library.session import Base, Session
 
 log = logging.getLogger(__name__)
@@ -36,13 +37,31 @@ DEFAULT_PLUGINS = (
 )
 
 
+class Hooks:
+    """Config hooks."""
+
+    @staticmethod
+    @moe.hookspec
+    def moe_addhooks(pluginmanager: pluggy.manager.PluginManager):
+        """Add hookspecs to be registered.
+
+        Args:
+            pluginmanager: pluggy pluginmanager that will register the hookspec.
+
+        Example:
+            Inside of your hook implementation, write::
+                from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+                pluginmanager.add_hookspecs(Hooks)
+        """
+
+
 class Config:
     """Initializes moe configuration settings and database.
 
     Note:
-        `_read_config()` and `_init_db()` should only occur once per instance, but
-        must be explicitly called. They are not included in `__init__()` due to it
-        making testing easier, and it causes circular imports with the pluginmanager.
+        `_read_config()` and `_init_db()` should only be called once per instance.
+        They are not included in `__init__()` due to it making testing easier,
+        and it causes circular imports with the pluginmanager.
 
     Attributes:
         config_dir (pathlib.Path): Configuration directory.
@@ -70,6 +89,7 @@ class Config:
                 this is where the settings and database files will reside.
         """
         self.pluginmanager = pluggy.PluginManager("moe")
+        self.pluginmanager.add_hookspecs(Hooks)
 
         self.config_dir = config_dir
         self.config_dir.mkdir(parents=True, exist_ok=True)
@@ -91,6 +111,10 @@ class Config:
             settings_file=str(config_file.resolve()),
         )
 
+        # register plugin hookspecs for all plugins
+        self.pluginmanager.hook.moe_addhooks(pluginmanager=self.pluginmanager)
+
+        # register plugin hookimpls for all enabled plugins
         self.plugins = DEFAULT_PLUGINS
         for plugin in self.plugins:
             self.pluginmanager.register(
