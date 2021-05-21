@@ -97,7 +97,7 @@ class TestCommand:
         )
         args = ["moe", "info", "track_num:1"]
 
-        tmp_config.init_db()
+        tmp_config._init_db()
         with session_scope() as session:
             session.add(track)
 

@@ -25,7 +25,7 @@ def tmp_session() -> Iterator[Session]:
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
 
     config = Config(config_dir=MagicMock())
-    config.init_db(engine=engine)
+    config._init_db(engine=engine)
 
     with session_scope() as session:
         yield session
@@ -40,12 +40,7 @@ def tmp_config(tmp_path) -> Config:
     Returns:
         The configuration instance.
     """
-    config = Config(config_dir=tmp_path)
-
-    config_file = config.config_dir / "config.toml"
-    config_file.touch()
-
-    return config
+    return Config(config_dir=tmp_path)
 
 
 @pytest.fixture
