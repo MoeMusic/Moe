@@ -18,12 +18,8 @@ from moe.core.library.track import Track
 log = logging.getLogger(__name__)
 
 
-class AddTrackError(Exception):
-    """Error adding a track to the library."""
-
-
-class AddAlbumError(Exception):
-    """Error adding an album to the library."""
+class AddError(Exception):
+    """Error adding an item to the library."""
 
 
 class Hooks:
@@ -74,7 +70,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
                 item_added = _add_track(path)
             elif path.is_dir():
                 item_added = _add_album(path)
-        except (AddTrackError, AddAlbumError) as exc:
+        except AddError as exc:
             log.error(exc)
             error_count += 1
 
@@ -94,7 +90,7 @@ def _add_album(album_path: pathlib.Path) -> Album:
         Album added.
 
     Raises:
-        AddAlbumError: Unable to add the album to the library.
+        AddError: Unable to add the album to the library.
     """
     log.info(f"Adding album to the library: {album_path}")
     album_tracks: List[Track] = []
@@ -106,13 +102,13 @@ def _add_album(album_path: pathlib.Path) -> Album:
             log.warning(f"Could not add track to album: {str(exc)}")
 
     if not album_tracks:
-        raise AddAlbumError(f"No tracks found in album: {album_path}")
+        raise AddError(f"No tracks found in album: {album_path}")
 
     albums = [track._album_obj for track in album_tracks]  # noqa: WPS437
 
     # ensure every track belongs to the same album
     if albums.count(albums[0]) != len(albums):  # checks if each album is the same
-        raise AddAlbumError(
+        raise AddError(
             f"Not all tracks in '{album_path}' share the same album attributes."
         )
 
@@ -137,17 +133,17 @@ def _add_track(track_path: pathlib.Path) -> Track:
         Track added.
 
     Raises:
-        AddTrackError: Unable to add the track to the library.
+        AddError: Unable to add the track to the library.
     """
     log.info(f"Adding track to the library: {track_path}")
     try:
         track = Track.from_tags(path=track_path)
     except (TypeError, mediafile.UnreadableFileError) as init_exc:
-        raise AddTrackError(init_exc) from init_exc
+        raise AddError(init_exc) from init_exc
 
     try:
         track.add_to_db()
     except DbDupTrackPathError as db_exc:
-        raise AddTrackError(db_exc) from db_exc
+        raise AddError(db_exc) from db_exc
 
     return track
