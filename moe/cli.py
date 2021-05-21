@@ -53,6 +53,7 @@ class Hooks:
 def main():
     """Runs the CLI."""
     config = Config()
+    config.pluginmanager.add_hookspecs(Hooks)
 
     _parse_args(sys.argv[1:], config)
 
@@ -69,10 +70,10 @@ def _parse_args(args: List[str], config: Config):
             Does not include root commands such as `--version` or `--help`.
     """
     moe_parser = _create_arg_parser()
+    config._read_config()  # noqa: WPS437
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.pluginmanager.add_hookspecs(Hooks)
     config.pluginmanager.hook.addcommand(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
@@ -84,9 +85,8 @@ def _parse_args(args: List[str], config: Config):
 
     _set_root_log_lvl(parsed_args)
 
-    config.init_db()
-
     # call the sub-command's handler within a single session
+    config._init_db()  # noqa: WPS437
     with session_scope() as session:
         parsed_args.func(config=config, session=session, args=parsed_args)
 
