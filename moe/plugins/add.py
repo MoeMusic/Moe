@@ -6,6 +6,7 @@ import pathlib
 from typing import List
 
 import mediafile
+import pluggy
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -29,6 +30,14 @@ class Hooks:
     @moe.hookspec
     def post_add(item: MusicItem):
         """Provides the MusicItem that was added to the library."""
+
+
+@moe.hookimpl
+def moe_addhooks(pluginmanager: pluggy.manager.PluginManager):
+    """Register add hooks to be used by other plugins."""
+    from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+
+    pluginmanager.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
