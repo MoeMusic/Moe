@@ -200,3 +200,14 @@ class TestCommand:
 
         with session_scope() as session:
             assert session.query(Track).scalar()
+
+    def test_dir(self, tmp_config):
+        """Albums are added to the library when a dir is passed to `add`."""
+        args = ["moe", "add", "tests/resources/album/"]
+
+        with patch("sys.argv", args):
+            with patch("moe.cli.Config", return_value=tmp_config):
+                cli.main()
+
+        with session_scope() as session:
+            assert session.query(Album).scalar()
