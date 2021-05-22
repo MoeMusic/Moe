@@ -157,20 +157,22 @@ class TestParseArgsFile:
 
         assert error.value.code != 0
 
-    def test_duplicate_track_path(self, tmp_session):
-        """Raise SystemExit if the track already exists in the library."""
-        track_path = "tests/resources/audio_files/full.mp3"
-        args = argparse.Namespace(paths=[track_path])
+    def test_duplicate_track(self, tmp_session, tmp_path):
+        """Overwrite old track path with the new track if a duplicate is found."""
+        old_track_path = pathlib.Path("tests/resources/audio_files/full.mp3")
+        new_track_path = tmp_path / "full2"
+        args = argparse.Namespace(paths=[str(new_track_path)])
+        shutil.copyfile(old_track_path, new_track_path)
 
-        track = Track.from_tags(pathlib.Path(track_path))
-        track.track_num = 2
+        track = Track.from_tags(pathlib.Path(old_track_path))
         tmp_session.add(track)
         tmp_session.commit()
 
-        with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+        add.parse_args(Mock(), tmp_session, args)
 
-        assert error.value.code != 0
+        new_track = tmp_session.query(Track).one()
+
+        assert new_track.path == new_track_path.resolve()
 
 
 @pytest.mark.integration

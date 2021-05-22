@@ -35,7 +35,9 @@ class TestInit:
 
         tracks = tmp_session.query(Track).all()
         album = tmp_session.query(Album).scalar()
-        assert tracks == album.tracks
+
+        assert len(tracks) == len(album.tracks)
+        assert set(tracks) == album.tracks
 
     def test_empty(self, tmp_session):
         """Raise TypeError if None value given in argument."""
