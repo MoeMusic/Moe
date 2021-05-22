@@ -62,12 +62,13 @@ class TestCommand:
         )
         args = ["moe", "ls", "track_num:1"]
 
-        tmp_config._init_db()
+        config = tmp_config(settings='default_plugins = ["ls"]')
+        config.init_db()
         with session_scope() as session:
             session.add(track)
 
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
+            with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
         assert capsys.readouterr().out

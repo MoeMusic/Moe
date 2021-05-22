@@ -81,19 +81,6 @@ class TestParseArgsDirectory:
 
         assert tmp_session.query(Album).scalar()
 
-    def test_duplicate_track_path(self, tmp_session):
-        """Don't fail album add if a track's path already exists in the library."""
-        album = "tests/resources/album"
-        dup_track = Track.from_tags(pathlib.Path(album) / "01.mp3")
-        dup_track.track_num = 100
-        tmp_session.add(dup_track)
-        tmp_session.commit()
-        args = argparse.Namespace(paths=[album])
-
-        add.parse_args(Mock(), tmp_session, args)
-
-        assert tmp_session.query(Album).scalar()
-
 
 class TestParseArgsFile:
     """Test a file argument given to add.
@@ -194,8 +181,9 @@ class TestCommand:
         """Tracks are added to the library when a file is passed to `add`."""
         args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
 
+        config = tmp_config(settings='default_plugins = ["add"]')
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
+            with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
         with session_scope() as session:
@@ -205,9 +193,17 @@ class TestCommand:
         """Albums are added to the library when a dir is passed to `add`."""
         args = ["moe", "add", "tests/resources/album/"]
 
+        config = tmp_config(settings='default_plugins = ["add"]')
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=tmp_config):
+            with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
         with session_scope() as session:
+            album = session.query(Album).scalar()
             assert session.query(Album).scalar()
+
+            tracks = session.query(Track)
+            for track in tracks:
+                assert track in album.tracks
+
+            assert len(album.tracks) > 1

@@ -25,7 +25,7 @@ def tmp_session() -> Iterator[Session]:
     engine = sqlalchemy.create_engine("sqlite:///:memory:")
 
     config = Config(config_dir=MagicMock())
-    config._init_db(engine=engine)
+    config.init_db(engine=engine)
 
     with session_scope() as session:
         yield session
