@@ -70,7 +70,6 @@ def _parse_args(args: List[str], config: Config):
             Does not include root commands such as `--version` or `--help`.
     """
     moe_parser = _create_arg_parser()
-    config._read_config()  # noqa: WPS437
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
@@ -86,7 +85,7 @@ def _parse_args(args: List[str], config: Config):
     _set_root_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
-    config._init_db()  # noqa: WPS437
+    config.init_db()  # noqa: WPS437
     with session_scope() as session:
         parsed_args.func(config=config, session=session, args=parsed_args)
 

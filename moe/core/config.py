@@ -8,11 +8,6 @@ module should just import the Config class directly::
 
 This class shouldn't be accessed normally by a plugin, it should instead be passed a
 Config object through a hook.
-
-Attributes:
-    DEFAULT_PLUGINS: Plugins that are enabled by default.
-        This list should only contain plugins that are a net positive in the vast
-        majority of use cases.
 """
 
 import importlib
@@ -20,9 +15,9 @@ import logging
 import pathlib
 import re
 
+import dynaconf
 import pluggy
 import sqlalchemy
-from dynaconf import Dynaconf
 
 import moe
 from moe.core.library.session import Base, Session
@@ -33,6 +28,7 @@ DEFAULT_PLUGINS = (
     "add",
     "info",
     "ls",
+    "move",
     "rm",
 )
 
@@ -54,17 +50,41 @@ class Hooks:
                 pluginmanager.add_hookspecs(Hooks)
         """
 
+    @staticmethod
+    @moe.hookspec
+    def add_config_validator(settings: dynaconf.base.LazySettings):
+        """Add a settings validator for the configuration file.
+
+        Args:
+            settings: moe's settings object.
+
+        Example:
+            Inside of your hook implementation, write::
+                settings.validators.register(
+                    Validator("MOVE.LIBRARY_PATH", must_exist=True)
+                )
+
+        See https://www.dynaconf.com/validation/#validation for more info.
+        """
+
+
+@moe.hookimpl
+def add_config_validator(settings: dynaconf.base.LazySettings):
+    """Validate move plugin configuration settings."""
+    settings.validators.register(
+        dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS))
+    )
+
 
 class Config:
     """Initializes moe configuration settings and database.
 
     Note:
-        `_read_config()` and `_init_db()` should only be called once per instance.
-        They are not included in `__init__()` due to it making testing easier,
-        and it causes circular imports with the pluginmanager.
+        `init_db()` is not included in `__init__()` for testing purposes.
 
     Attributes:
-        config_dir (pathlib.Path): Configuration directory.
+        config_dir (pathlib.Path): Filesystem path of the configuration directory.
+        config_file (pathlib.Path): Filesystem path of the configuration settings file.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
         pluginmanager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
@@ -81,47 +101,25 @@ class Config:
 
     _default_config_dir = pathlib.Path().home() / ".config" / "moe"
 
-    def __init__(self, config_dir: pathlib.Path = _default_config_dir):
+    def __init__(
+        self,
+        config_dir: pathlib.Path = _default_config_dir,
+        settings_filename: str = "config.toml",
+    ):
         """Initializes the plugin manager and configuration directory.
 
         Args:
             config_dir: Filesystem path of the configuration directory. By default,
                 this is where the settings and database files will reside.
+            settings_filename: Name of the configuration settings file.
         """
-        self.pluginmanager = pluggy.PluginManager("moe")
-        self.pluginmanager.add_hookspecs(Hooks)
-
         self.config_dir = config_dir
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-    def _read_config(self):
-        """Reads the user configuration settings.
+        self.config_file = self.config_dir / settings_filename
+        self._read_config()
 
-        Searches for a configuration file at `config_dir / "config.toml"`.
-
-        Raises:
-            SystemExit: No config file found.
-        """
-        config_file = self.config_dir / "config.toml"
-        config_file.touch(exist_ok=True)
-
-        # use dynaconf to handle config files
-        self.settings = Dynaconf(
-            envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
-            settings_file=str(config_file.resolve()),
-        )
-
-        # register plugin hookspecs for all plugins
-        self.pluginmanager.hook.moe_addhooks(pluginmanager=self.pluginmanager)
-
-        # register plugin hookimpls for all enabled plugins
-        self.plugins = DEFAULT_PLUGINS
-        for plugin in self.plugins:
-            self.pluginmanager.register(
-                importlib.import_module(f"moe.plugins.{plugin}")
-            )
-
-    def _init_db(self, engine: sqlalchemy.engine.base.Engine = None):
+    def init_db(self, engine: sqlalchemy.engine.base.Engine = None):
         """Initializes the database.
 
         Moe uses sqlite by default.
@@ -157,3 +155,44 @@ class Config:
                 Whether or not the match was successful.
             """
             return re.search(pattern, str(col_value), re.IGNORECASE) is not None
+
+    def _read_config(self):
+        """Reads the user configuration settings.
+
+        Searches for a configuration file at `config_dir / "config.toml"`.
+
+        Raises:
+            SystemExit: No config file found.
+        """
+        self.config_file.touch(exist_ok=True)
+
+        self.settings = dynaconf.Dynaconf(
+            envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
+            settings_file=str(self.config_file.resolve()),
+        )
+
+        self._setup_plugins()
+
+        self.pluginmanager.hook.add_config_validator(settings=self.settings)
+        self.settings.validators.validate()
+
+    def _setup_plugins(self):
+        """Setup pluginmanager and hook logic."""
+        self.pluginmanager = pluggy.PluginManager("moe")
+
+        # need to validate `config` specific settings separately
+        # this is so we have access to the 'default_plugins' setting
+        self.pluginmanager.register(moe.core.config)
+        self.pluginmanager.add_hookspecs(Hooks)
+        self.pluginmanager.hook.add_config_validator(settings=self.settings)
+        self.settings.validators.validate()
+
+        # register plugin hookimpls for all enabled plugins
+        self.plugins = self.settings.default_plugins
+        for plugin in self.plugins:
+            self.pluginmanager.register(
+                importlib.import_module(f"moe.plugins.{plugin}")
+            )
+
+        # register plugin hookspecs for all plugins
+        self.pluginmanager.hook.moe_addhooks(pluginmanager=self.pluginmanager)
