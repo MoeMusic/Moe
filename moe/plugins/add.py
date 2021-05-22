@@ -1,9 +1,11 @@
 """Adds music to the library."""
 
+# TODO: fix too many module members (separate hooks?)
+
 import argparse
 import logging
 import pathlib
-from typing import List
+from typing import List, Optional
 
 import mediafile
 import pluggy
@@ -13,7 +15,6 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
-from moe.core.library.session import DbDupTrackPathError
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_add(item: MusicItem):
+    def post_add(config: Config, item: MusicItem):
         """Provides the MusicItem that was added to the library."""
 
 
@@ -55,6 +56,9 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
 def parse_args(config: Config, session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
+    This is the plugin entry point from the commandline. Tracks can be added as files
+    or albums as directories. Assumes a given directory is a single album.
+
     Args:
         config: Configuration in use.
         session: Current session.
@@ -63,30 +67,44 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     Raises:
         SystemExit: Path given does not exist.
     """
-    config.pluginmanager.add_hookspecs(Hooks)
-
     paths = [pathlib.Path(arg_path) for arg_path in args.paths]
 
     error_count = 0
-    item_added: MusicItem
     for path in paths:
-        if not path.exists():
+        if path.exists():
+            item_added = _add_item(path)
+            if item_added:
+                config.pluginmanager.hook.post_add(config=config, item=item_added)
+            else:
+                error_count += 1
+        else:
             log.error(f"Path not found: {path}")
-            error_count += 1
-
-        try:
-            if path.is_file():
-                item_added = _add_track(path)
-            elif path.is_dir():
-                item_added = _add_album(path)
-        except AddError as exc:
-            log.error(exc)
             error_count += 1
 
     if error_count:
         raise SystemExit(1)
 
-    config.pluginmanager.hook.post_add(item=item_added)
+
+def _add_item(item_path: pathlib.Path) -> Optional[MusicItem]:
+    """Adds an item to the library.
+
+    Args:
+        item_path: Filesystem path of the item.
+
+    Returns:
+        The MusicItem added.
+    """
+    item_added: MusicItem
+    try:
+        if item_path.is_file():
+            item_added = _add_track(item_path)
+        elif item_path.is_dir():
+            item_added = _add_album(item_path)
+    except AddError as exc:
+        log.error(exc)
+        return None
+
+    return item_added
 
 
 def _add_album(album_path: pathlib.Path) -> Album:
@@ -121,13 +139,13 @@ def _add_album(album_path: pathlib.Path) -> Album:
             f"Not all tracks in '{album_path}' share the same album attributes."
         )
 
+    # merge tracks into a single album
+    album = albums[0]  # we already ensured this list is just multiple of the same album
     for track in album_tracks:
-        try:
-            track.add_to_db()
-        except DbDupTrackPathError as dup_exc:
-            log.warning(dup_exc)
+        album.tracks.add(track)
 
-    return albums[0]  # we already ensured this list is just multiple of the same album
+    album.add_to_db()
+    return album
 
 
 def _add_track(track_path: pathlib.Path) -> Track:
@@ -150,9 +168,5 @@ def _add_track(track_path: pathlib.Path) -> Track:
     except (TypeError, mediafile.UnreadableFileError) as init_exc:
         raise AddError(init_exc) from init_exc
 
-    try:
-        track.add_to_db()
-    except DbDupTrackPathError as db_exc:
-        raise AddError(db_exc) from db_exc
-
+    track.add_to_db()
     return track

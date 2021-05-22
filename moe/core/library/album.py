@@ -1,7 +1,7 @@
 """An Album in the database and any related logic."""
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Set, TypeVar
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
@@ -25,7 +25,7 @@ class Album(MusicItem, Base):
     Attributes:
         artist (str): AKA albumartist.
         title (str)
-        tracks (List[Track]): All the album's corresponding tracks.
+        tracks (Set[Track]): All the album's corresponding tracks.
         year (str)
     """
 
@@ -36,8 +36,11 @@ class Album(MusicItem, Base):
     year = Column(Integer, nullable=False, primary_key=True)
 
     tracks = relationship(
-        "Track", back_populates="_album_obj", cascade="all, delete-orphan"
-    )
+        "Track",
+        back_populates="_album_obj",
+        cascade="all, delete-orphan",
+        collection_class=set,
+    )  # type: Set[Track]  # noqa: WPS400
 
     def __init__(self, artist: str, title: str, year: int):
         """Creates an album.
@@ -78,11 +81,27 @@ class Album(MusicItem, Base):
             Returns a dict representation of an Album.
             It will be in the form { attribute: value } and is sorted by attribute.
         """
-        album_dict = self.tracks[0].to_dict()  # type: ignore
-        for track in self.tracks[1:]:  # type: ignore
+        # access any element to set intial values
+        random_track = self.tracks.pop()
+        self.tracks.add(random_track)
+        album_dict = random_track.to_dict()
+
+        # compare rest of album against initial values
+        for track in self.tracks:
             track_dict = track.to_dict()
             for key in {**track_dict, **album_dict}.keys():
                 if album_dict.get(key) != track_dict.get(key):
                     album_dict[key] = "Various"
 
         return album_dict
+
+    def add_to_db(self):
+        """Adds an album to the database.
+
+        Raises:
+            DbDupTrackPathError: Track's path already exists in the library.
+                Note, this will only get raised if the two tracks are not considered
+                identical by the DB (same primary keys).
+        """
+        for track in self.tracks:
+            track.add_to_db()

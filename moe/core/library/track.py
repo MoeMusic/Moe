@@ -9,9 +9,7 @@ from typing import Any, List, Type, TypeVar
 
 import mediafile
 import sqlalchemy
-from sqlalchemy import Column as sqlColumn
-from sqlalchemy import Integer as sqlInteger
-from sqlalchemy import String as sqlString
+from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import events, relationship
@@ -46,7 +44,7 @@ class _Genre(Base):
 
     __tablename__ = "genres"
 
-    name = sqlColumn(sqlString, nullable=False, primary_key=True)
+    name = Column(String, nullable=False, primary_key=True)
 
     def __init__(self, name):
         self.name = name
@@ -55,8 +53,8 @@ class _Genre(Base):
 track_genres = Table(
     "association",
     Base.metadata,
-    sqlColumn("genre", sqlString, ForeignKey("genres.name")),
-    sqlColumn("track_path", _PathType, ForeignKey("tracks.path")),
+    Column("genre", String, ForeignKey("genres.name")),
+    Column("track_path", _PathType, ForeignKey("tracks.path")),
 )
 
 
@@ -85,25 +83,23 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     __tablename__ = "tracks"
 
     # unqiue track = track_num + Album
-    track_num = sqlColumn(
-        sqlInteger, nullable=False, primary_key=True, autoincrement=False
-    )
-    _albumartist = sqlColumn(sqlString, nullable=False, primary_key=True)
-    _album = sqlColumn(sqlString, nullable=False, primary_key=True)
-    _year = sqlColumn(sqlInteger, nullable=False, primary_key=True, autoincrement=False)
+    track_num = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+    _albumartist = Column(String, nullable=False, primary_key=True)
+    _album = Column(String, nullable=False, primary_key=True)
+    _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
 
-    artist = sqlColumn(sqlString, nullable=False, default="")
-    path = sqlColumn(_PathType, nullable=False, unique=True)
-    title = sqlColumn(sqlString, nullable=False, default="")
+    artist = Column(String, nullable=False, default="")
+    path = Column(_PathType, nullable=False, unique=True)
+    title = Column(String, nullable=False, default="")
 
     genre = association_proxy("_genre_obj", "name")
 
-    _album_obj = relationship("Album", back_populates="tracks")
-    _genre_obj = relationship("_Genre", secondary=track_genres)
+    _album_obj: Album = relationship("Album", back_populates="tracks")
+    _genre_obj: _Genre = relationship("_Genre", secondary=track_genres)
 
     __table_args__ = (
         ForeignKeyConstraint(
-            [_albumartist, _album, _year],  # type: ignore
+            [_albumartist, _album, _year],
             [Album.artist, Album.title, Album.year],
         ),
     )
@@ -128,8 +124,8 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
             **kwargs: Any other fields to assign to the Track.
 
         Note:
-           If you wish to add several tracks to the same album,
-            ensure the album already exists in the database.
+            If you wish to add several tracks to the same album, ensure the album
+            already exists in the database, or use `session.merge()`.
 
         Raises:
             TypeError: None value found in arguments.
