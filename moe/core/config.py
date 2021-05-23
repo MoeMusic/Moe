@@ -59,6 +59,7 @@ class Hooks:
 
         Example:
             Inside of your hook implementation, write::
+
                 settings.validators.register(
                     Validator("MOVE.LIBRARY_PATH", must_exist=True)
                 )
@@ -92,6 +93,7 @@ class Config:
     Example:
         In your plugin, to access the library_path setting (assuming a Config object
         named config)::
+
             config.settings.library_path
 
         See the dynaconf documentation for more info on reading settings variables.
