@@ -27,7 +27,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_add(config: Config, item: MusicItem):
+    def post_add(config: Config, session: Session, item: MusicItem):
         """Provides the MusicItem that was added to the library."""
 
 
@@ -54,12 +54,11 @@ def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
 def parse_args(config: Config, session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
-    This is the plugin entry point from the commandline. Tracks can be added as files
-    or albums as directories. Assumes a given directory is a single album.
+    Tracks can be added as files or albums as directories.
 
     Args:
         config: Configuration in use.
-        session: Current session.
+        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -70,21 +69,24 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            item_added = _add_item(path)
+            item_added = _add_item(session, path)
         except AddError as exc:
             log.error(exc)
             error_count += 1
         else:
-            config.pluginmanager.hook.post_add(config=config, item=item_added)
+            config.pluginmanager.hook.post_add(
+                config=config, session=session, item=item_added
+            )
 
     if error_count:
         raise SystemExit(1)
 
 
-def _add_item(item_path: pathlib.Path) -> MusicItem:
+def _add_item(session: Session, item_path: pathlib.Path) -> MusicItem:
     """Adds an item to the library.
 
     Args:
+        session: Current db session.
         item_path: Filesystem path of the item.
 
     Returns:
@@ -94,17 +96,18 @@ def _add_item(item_path: pathlib.Path) -> MusicItem:
         AddError: Unable to add the item to the library.
     """
     if item_path.is_file():
-        return _add_track(item_path)
+        return _add_track(session, item_path)
     elif item_path.is_dir():
-        return _add_album(item_path)
+        return _add_album(session, item_path)
 
     raise AddError(f"Path not found: {item_path}")
 
 
-def _add_album(album_path: pathlib.Path) -> Album:
+def _add_album(session, album_path: pathlib.Path) -> Album:
     """Add an album to the library from a given directory.
 
     Args:
+        session: Current db session.
         album_path: Filesystem path of the album directory to add.
 
     Returns:
@@ -138,16 +141,17 @@ def _add_album(album_path: pathlib.Path) -> Album:
     for track in album_tracks:
         album.tracks.add(track)
 
-    album.add_to_db()
+    session.merge(album)
     return album
 
 
-def _add_track(track_path: pathlib.Path) -> Track:
+def _add_track(session: Session, track_path: pathlib.Path) -> Track:
     """Add a track to the library from a given file.
 
     The Track's attributes are populated from the tags read at `track_path`.
 
     Args:
+        session: Current db session.
         track_path: Filesystem path of the track file to add.
 
     Returns:
@@ -162,5 +166,5 @@ def _add_track(track_path: pathlib.Path) -> Track:
     except (TypeError, mediafile.UnreadableFileError) as init_exc:
         raise AddError(init_exc) from init_exc
 
-    track.add_to_db()
+    session.merge(track)
     return track

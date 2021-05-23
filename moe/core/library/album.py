@@ -94,14 +94,3 @@ class Album(MusicItem, Base):
                     album_dict[key] = "Various"
 
         return album_dict
-
-    def add_to_db(self):
-        """Adds an album to the database.
-
-        Raises:
-            DbDupTrackPathError: Track's path already exists in the library.
-                Note, this will only get raised if the two tracks are not considered
-                identical by the DB (same primary keys).
-        """
-        for track in self.tracks:
-            track.add_to_db()
