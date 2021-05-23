@@ -1,7 +1,5 @@
 """Adds music to the library."""
 
-# TODO: fix too many module members (separate hooks?)
-
 import argparse
 import logging
 import pathlib
