@@ -15,22 +15,22 @@ jobs:
         platform: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry
-        poetry install
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip poetry
+          poetry install
 
-    - name: Lint
-      run: |
-        poetry run pre-commit run --all-files
-        poetry run cz check --rev-range c8054a8acb312d3166d046f47ca14617b7f547d..HEAD
+      - name: Lint
+        run: |
+          poetry run pre-commit run --all-files
+          poetry run cz check --rev-range c8054a8acb312d3166d046f47ca14617b7f547d..HEAD
 
   test:
     runs-on: ${{ matrix.platform }}
@@ -40,30 +40,34 @@ jobs:
         platform: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry
-        poetry install
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip poetry
+          poetry install
 
-    - name: Run unit tests and create coverage report
-      run: |
-        poetry run pytest -v -m "not integration" --cov=. --cov-report=xml
+      - name: Run unit tests and create coverage report
+        run: |
+          poetry run pytest -v -m "not integration" --cov=. --cov-report=xml
 
-    - name: Upload unit test coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        flags: unit
+      - name: Upload unit test coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          flags: unit
 
-    - name: Run integration tests and create coverage report
-      run: |
-        poetry run pytest -v -m integration --cov=. --cov-report=xml
+      - name: Run integration tests and create coverage report
+        run: |
+          poetry run pytest -v -m integration --cov=. --cov-report=xml
 
-    - name: Upload integration test coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        flags: integration
+      - name: Upload integration test coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          flags: integration
+
+      - name: Build docs
+        run: |
+          poetry run sphinx-build -W -b html docs docs/_build/html
