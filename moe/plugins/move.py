@@ -64,6 +64,7 @@ def _copy_track(session, track: Track, root: pathlib.Path):
     )
     track_dest = root / track_path_fmt
 
+    log.info(f"Copying track '{track.path}' to '{track_dest}'")
     if track_dest.is_file():
         track_dest.unlink()
     track_dest.parents[0].mkdir(parents=True, exist_ok=True)
