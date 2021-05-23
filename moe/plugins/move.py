@@ -39,12 +39,12 @@ def post_add(config: Config, session: Session, item: MusicItem):
     """
     root_dest = pathlib.Path(config.settings.library_path).expanduser()
     if isinstance(item, Track):
-        _move_track(session, item, root_dest)
+        _copy_track(session, item, root_dest)
     elif isinstance(item, Album):
-        _move_album(session, item, root_dest)
+        _copy_album(session, item, root_dest)
 
 
-def _move_track(session, track: Track, root: pathlib.Path):
+def _copy_track(session, track: Track, root: pathlib.Path):
     """Copies and formats the destination of a single track.
 
     The track will overwrite anything that currently exists at the destination path.
@@ -73,7 +73,7 @@ def _move_track(session, track: Track, root: pathlib.Path):
     session.merge(track)
 
 
-def _move_album(session: Session, album: Album, root: pathlib.Path):
+def _copy_album(session: Session, album: Album, root: pathlib.Path):
     """Copies and formats the destination of an album.
 
     Args:
@@ -82,4 +82,4 @@ def _move_album(session: Session, album: Album, root: pathlib.Path):
         root: Root folder to copy the album to.
     """
     for track in album.tracks:
-        _move_track(session, track, root)
+        _copy_track(session, track, root)
