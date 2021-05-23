@@ -16,7 +16,6 @@ from moe.core.library.track import Track
 log = logging.getLogger(__name__)
 
 
-# TODO: add file extension to track and include in path format
 @moe.hookimpl
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
@@ -60,7 +59,7 @@ def _copy_track(session, track: Track, root: pathlib.Path):
     """
     track_path_fmt = (
         f"{track.albumartist}/{track.album} ({track.year})/"
-        f"{track.track_num} - {track.title}"
+        f"{track.track_num} - {track.title}.{track.file_ext}"
     )
     track_dest = root / track_path_fmt
 
