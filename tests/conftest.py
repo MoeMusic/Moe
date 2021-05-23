@@ -39,8 +39,13 @@ def tmp_config(tmp_path) -> Callable[[], Config]:
     This fixture must be declared, like a factory. If you want to use specific config
     settings, pass them in your declaration.
 
+    Note:
+        Any paths should be surrounded with triple single quotes ('''). This tells
+        toml to treat the path as a raw string, and prevents it from thinking Windows
+        paths are full of escape characters.
+
     Example::
-        settings = f'library_path = "~/Music"'
+        settings = f"library_path = '''~/Music'''"
         config = tmp_config(settings)
 
     Returns:
