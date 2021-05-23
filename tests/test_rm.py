@@ -1,7 +1,6 @@
 """Test the remove plugin."""
 
 import argparse
-import pathlib
 from unittest.mock import Mock, patch
 
 import pytest
@@ -18,12 +17,10 @@ class TestParseArgs:
 
     def test_track(self, tmp_session, mock_track):
         """Tracks are removed from the database with valid query."""
-        args = argparse.Namespace(
-            query=f"track_num:{mock_track.track_num}", album=False
-        )
+        args = argparse.Namespace(query=f"title:{mock_track.title}", album=False)
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
         query = tmp_session.query(Track.path).scalar()
 
@@ -34,7 +31,7 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
         query = tmp_session.query(Album).scalar()
 
@@ -45,18 +42,18 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
-        rm.parse_args(Mock(), tmp_session, args)
+        rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
         query = tmp_session.query(Track).scalar()
 
         assert not query
 
-    def test_exit_code(self, capsys, tmp_session):
-        """If no tracks are printed, we should return a non-zero exit code."""
+    def test_exit_code(self, capsys):
+        """If no items are removed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:
-            rm.parse_args(Mock(), tmp_session, args)
+            rm.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -65,23 +62,15 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the rm command."""
 
-    def test_parse_args(self, tmp_path, tmp_config):
+    def test_parse_args(self, real_track, tmp_path, tmp_config):
         """Music is removed from the library when the `rm` command is invoked."""
         tmp_config._default_plugins = ["rm"]
-
-        track = Track(
-            path=pathlib.Path("tests/resources/album/01.mp3"),
-            album="Doggystyle",
-            albumartist="Snoop Dogg",
-            year=1993,
-            track_num=1,
-        )
-        args = ["moe", "rm", "track_num:1"]
-
+        args = ["moe", "rm", "*"]
         config = tmp_config(settings='default_plugins = ["rm"]')
         config.init_db()
+
         with session_scope() as session:
-            session.add(track)
+            session.add(real_track)
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=config):
