@@ -81,10 +81,11 @@ class TestFromTags:
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
         assert track.artist == "Wu-Tang Clan"
-        assert track.title == "Full"
-        assert track.year == 2020
-        assert track.track_num == 1
+        assert track.file_ext == "mp3"
         assert track.genre == ["hip hop", "rock"]
+        assert track.title == "Full"
+        assert track.track_num == 1
+        assert track.year == 2020
 
 
 class TestToDict:

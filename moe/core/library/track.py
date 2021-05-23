@@ -69,6 +69,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         album (str)
         albumartist (str)
         artist (str)
+        file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
         path (pathlib.Path): Path of the track file.
         title (str)
@@ -89,6 +90,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
 
     artist = Column(String, nullable=False, default="")
+    file_ext = Column(String, nullable=False, default="")
     path = Column(_PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
 
@@ -212,8 +214,9 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
             track_num=audio_file.track,
             year=audio_file.year,
             artist=audio_file.artist,
-            title=audio_file.title,
+            file_ext=audio_file.type,
             genre=audio_file.genres,
+            title=audio_file.title,
         )
 
     def to_dict(self) -> "OrderedDict[str, Any]":
