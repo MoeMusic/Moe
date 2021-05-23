@@ -3,7 +3,7 @@
 import argparse
 import logging
 import pathlib
-from typing import List, Optional
+from typing import List
 
 import mediafile
 import pluggy
@@ -69,21 +69,19 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
 
     error_count = 0
     for path in paths:
-        if path.exists():
+        try:
             item_added = _add_item(path)
-            if item_added:
-                config.pluginmanager.hook.post_add(config=config, item=item_added)
-            else:
-                error_count += 1
-        else:
-            log.error(f"Path not found: {path}")
+        except AddError as exc:
+            log.error(exc)
             error_count += 1
+        else:
+            config.pluginmanager.hook.post_add(config=config, item=item_added)
 
     if error_count:
         raise SystemExit(1)
 
 
-def _add_item(item_path: pathlib.Path) -> Optional[MusicItem]:
+def _add_item(item_path: pathlib.Path) -> MusicItem:
     """Adds an item to the library.
 
     Args:
@@ -91,18 +89,16 @@ def _add_item(item_path: pathlib.Path) -> Optional[MusicItem]:
 
     Returns:
         The MusicItem added.
-    """
-    item_added: MusicItem
-    try:
-        if item_path.is_file():
-            item_added = _add_track(item_path)
-        elif item_path.is_dir():
-            item_added = _add_album(item_path)
-    except AddError as exc:
-        log.error(exc)
-        return None
 
-    return item_added
+    Raises:
+        AddError: Unable to add the item to the library.
+    """
+    if item_path.is_file():
+        return _add_track(item_path)
+    elif item_path.is_dir():
+        return _add_album(item_path)
+
+    raise AddError(f"Path not found: {item_path}")
 
 
 def _add_album(album_path: pathlib.Path) -> Album:
