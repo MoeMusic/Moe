@@ -5,4 +5,3 @@ moe
    :maxdepth: 4
 
    moe
-   tests
