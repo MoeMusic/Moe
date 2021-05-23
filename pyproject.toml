@@ -27,6 +27,7 @@ mypy = "^0.812"
 pre-commit = "^2.6.0"
 pytest = "^6.0.1"
 pytest-cov = "^2.10.0"
+Sphinx = "^4.0.2"
 sqlalchemy2-stubs = "^0.0.2-alpha.1"
 wemake-python-styleguide = "^0.15"
 
