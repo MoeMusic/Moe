@@ -19,7 +19,7 @@ class TestPostAdd:
 
         The track's path should refer to the destination.
         """
-        config = tmp_config(f'library_path = "{tmp_path.resolve()}"')
+        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
         origin_track_path = real_track.path
 
         move.post_add(config=config, item=real_track)
@@ -33,7 +33,7 @@ class TestPostAdd:
 
         Copying an album is just copying each item belonging to that album.
         """
-        config = tmp_config(f'library_path = "{tmp_path.resolve()}"')
+        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
         for track in real_album.tracks:
             origin_track_paths = []
             origin_track_paths.append(track.path)
@@ -49,7 +49,7 @@ class TestPostAdd:
 
     def test_home_dir(self, mock_track, tmp_config, tmp_path, tmp_session):
         """Home directories are allowed to be shortened with '~' in the config."""
-        config = tmp_config('library_path = "~"')
+        config = tmp_config("library_path = '''~'''")
 
         move.post_add(config=config, item=mock_track)
 
@@ -57,7 +57,7 @@ class TestPostAdd:
 
     def test_path_updated_in_db(self, real_track, tmp_config, tmp_path, tmp_session):
         """Make sure the path updates are being reflected in the DB."""
-        config = tmp_config(f'library_path = "{tmp_path.resolve()}"')
+        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
         move.post_add(config=config, item=real_track)
 
         db_track = tmp_session.query(Track).one()
@@ -70,7 +70,7 @@ class TestPostAdd:
         track1.genre = ["rap"]
         track2.genre = ["hip hop"]
         track2.track_num = track1.track_num
-        config = tmp_config(f'library_path = "{tmp_path.resolve()}"')
+        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
 
         move.post_add(config=config, item=track1)
         move.post_add(config=config, item=track2)
@@ -89,7 +89,7 @@ class TestAddEntry:
 
         config = tmp_config(
             settings=f"""
-                library_path = "{tmp_path}"
+                library_path = '''{tmp_path}'''
                 default_plugins = ["add", "move"]
                 """
         )
@@ -107,7 +107,7 @@ class TestAddEntry:
 
         config = tmp_config(
             settings=f"""
-                library_path = "{tmp_path}"
+                library_path = '''{tmp_path}'''
                 default_plugins = ["add", "move"]
                 """
         )
