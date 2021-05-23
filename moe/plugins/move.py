@@ -16,10 +16,6 @@ from moe.core.library.track import Track
 log = logging.getLogger(__name__)
 
 
-class MoveError(Exception):
-    """Error moving an item."""
-
-
 # TODO: add file extension to track and include in path format
 @moe.hookimpl
 def add_config_validator(settings: dynaconf.base.LazySettings):
