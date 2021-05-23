@@ -21,7 +21,7 @@ class TestParseArgs:
         args = argparse.Namespace(paths=["does not exist"])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), Mock(), args)
+            add.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -37,7 +37,7 @@ class TestParseArgsDirectory:
         album = "tests/resources/album"
         args = argparse.Namespace(paths=[album])
 
-        add.parse_args(Mock(), tmp_session, args)
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert tmp_session.query(Album).scalar()
 
@@ -48,7 +48,7 @@ class TestParseArgsDirectory:
         args = argparse.Namespace(paths=[album])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+            add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert error.value.code != 0
         assert not tmp_session.query(Album).scalar()
@@ -65,7 +65,7 @@ class TestParseArgsDirectory:
         args = argparse.Namespace(paths=[tmp_album_path])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+            add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert error.value.code != 0
         assert not tmp_session.query(Album).scalar()
@@ -77,7 +77,7 @@ class TestParseArgsDirectory:
         tmp_session.commit()
         args = argparse.Namespace(paths=[album])
 
-        add.parse_args(Mock(), tmp_session, args)
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert tmp_session.query(Album).scalar()
 
@@ -93,7 +93,7 @@ class TestParseArgsFile:
         file1 = "tests/resources/album/01.mp3"
         args = argparse.Namespace(paths=[file1])
 
-        add.parse_args(Mock(), tmp_session, args)
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert (
             tmp_session.query(Track.path)
@@ -107,7 +107,7 @@ class TestParseArgsFile:
         file2 = "tests/resources/album/02.mp3"
         args = argparse.Namespace(paths=[file1, file2])
 
-        add.parse_args(Mock(), Mock(), args)
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert (
             tmp_session.query(Track.path)
@@ -130,7 +130,7 @@ class TestParseArgsFile:
         args = argparse.Namespace(paths=[file1, file2])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+            add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert error.value.code != 0
         assert (
@@ -139,21 +139,21 @@ class TestParseArgsFile:
             .scalar()
         )
 
-    def test_non_track_file(self, tmp_session):
+    def test_non_track_file(self):
         """Raise SystemExit if the file given is not a valid track."""
         args = argparse.Namespace(paths=["tests/resources/album/log.txt"])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+            add.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
-    def test_track_missing_reqd_tags(self, tmp_session):
+    def test_track_missing_reqd_tags(self):
         """Raise SystemExit if the track doesn't have all the required tags."""
         args = argparse.Namespace(paths=["tests/resources/audio_files/empty.mp3"])
 
         with pytest.raises(SystemExit) as error:
-            add.parse_args(Mock(), tmp_session, args)
+            add.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -168,7 +168,7 @@ class TestParseArgsFile:
         tmp_session.add(track)
         tmp_session.commit()
 
-        add.parse_args(Mock(), tmp_session, args)
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         new_track = tmp_session.query(Track).one()
 
@@ -182,8 +182,8 @@ class TestCommand:
     def test_file(self, tmp_config):
         """Tracks are added to the library when a file is passed to `add`."""
         args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
-
         config = tmp_config(settings='default_plugins = ["add"]')
+
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
@@ -194,8 +194,8 @@ class TestCommand:
     def test_dir(self, tmp_config):
         """Albums are added to the library when a dir is passed to `add`."""
         args = ["moe", "add", "tests/resources/album/"]
-
         config = tmp_config(settings='default_plugins = ["add"]')
+
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()

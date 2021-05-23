@@ -5,6 +5,7 @@ import pathlib
 import shutil
 
 import dynaconf
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
@@ -29,7 +30,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
 
 
 @moe.hookimpl
-def post_add(config: Config, item: MusicItem):
+def post_add(config: Config, session: Session, item: MusicItem):
     """Copies `item` to the library_path specified in the config.
 
     Also will format the path of the item's copied according to `track_path_fmt`.
@@ -37,16 +38,17 @@ def post_add(config: Config, item: MusicItem):
 
     Args:
         config: moe config
+        session: Current db session.
         item: Item to be copied.
     """
     root_dest = pathlib.Path(config.settings.library_path).expanduser()
     if isinstance(item, Track):
-        _move_track(item, root_dest)
+        _move_track(session, item, root_dest)
     elif isinstance(item, Album):
-        _move_album(item, root_dest)
+        _move_album(session, item, root_dest)
 
 
-def _move_track(track: Track, root: pathlib.Path):
+def _move_track(session, track: Track, root: pathlib.Path):
     """Copies and formats the destination of a single track.
 
     The track will overwrite anything that currently exists at the destination path.
@@ -56,6 +58,7 @@ def _move_track(track: Track, root: pathlib.Path):
         year, and track number to ensure uniqueness.
 
     Args:
+        session: Current db session.
         track: track to copy
         root: root folder to copy the track to
     """
@@ -71,15 +74,16 @@ def _move_track(track: Track, root: pathlib.Path):
     shutil.copyfile(track.path, track_dest)  # type: ignore
 
     track.path = track_dest
-    track.add_to_db()
+    session.merge(track)
 
 
-def _move_album(album: Album, root: pathlib.Path):
+def _move_album(session: Session, album: Album, root: pathlib.Path):
     """Copies and formats the destination of an album.
 
     Args:
+        session: Current db session.
         album: Album to copy.
         root: Root folder to copy the album to.
     """
     for track in album.tracks:
-        _move_track(track, root)
+        _move_track(session, track, root)

@@ -17,7 +17,7 @@ from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
-from moe.core.library.session import Base, DbDupTrackPathError, session_scope
+from moe.core.library.session import Base
 
 
 class _PathType(sqlalchemy.types.TypeDecorator):
@@ -235,22 +235,6 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
                     track_dict[attr] = value
 
         return track_dict
-
-    def add_to_db(self):
-        """Adds a track to the database.
-
-        Raises:
-            DbDupTrackPathError: Track's path already exists in the library.
-                Note, this will only get raised if the two tracks are not considered
-                identical by the DB (same primary keys).
-        """
-        try:
-            with session_scope() as session:
-                session.merge(self)
-        except DbDupTrackPathError:
-            raise DbDupTrackPathError(
-                f"Track path already exists in the library: {self.path}"
-            )
 
     def __str__(self):
         """String representation of a track."""
