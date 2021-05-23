@@ -1,7 +1,5 @@
 """Shared pytest configuration."""
-import pathlib
 import random
-import shutil
 import textwrap
 from typing import Callable, Iterator
 from unittest.mock import MagicMock
@@ -107,15 +105,19 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
     Returns:
         Unique Track.
     """
-    track = Track.from_tags(pathlib.Path("tests/resources/audio_files/full.mp3"))
 
     def _real_track():
-        track.track_num = random.randint(1, 1000)
-        track_dest = tmp_path_factory.mktemp("real_tracks") / f"{track.track_num}"
-        shutil.copyfile(track.path, track_dest)
-        track.path = track_dest
-
-        return track
+        track_num = random.randint(1, 1000)
+        track_path = tmp_path_factory.mktemp("real_tracks") / f"{track_num}"
+        track_path.touch()
+        return Track(
+            path=track_path,
+            title="Halftime",
+            album="Illmatic",
+            albumartist="Nas",
+            track_num=track_num,
+            year=1994,
+        )
 
     return _real_track
 
