@@ -76,6 +76,44 @@ SEPARATOR_GROUP = "separator"
 VALUE_GROUP = "value"
 
 
+def query(
+    query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
+) -> List[MusicItem]:
+    """Queries the database for the given query string.
+
+    Args:
+        query_str: Query string to parse. See HELP_STR for more info.
+        album_query: Whether or not to match albums instead of tracks.
+        session: current db session
+
+    Returns:
+        All tracks matching the query.
+    """
+    terms = shlex.split(query_str)
+
+    if not terms:
+        log.error(f"No query given.\n{HELP_STR}")
+        return []
+
+    if album_query:
+        library_query = session.query(Album).join(Track)
+    else:
+        library_query = session.query(Track).join(Album)
+
+    for term in terms:
+        try:
+            library_query = library_query.filter(_create_expression(_parse_term(term)))
+        except ValueError:
+            return []
+
+    items = library_query.all()
+
+    if not items:
+        log.warning(f"No items found for the query '{query_str}'.")
+
+    return items
+
+
 def _parse_term(term: str) -> Dict[str, str]:
     """Parse the given database query term.
 
@@ -125,24 +163,6 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _getattr(field: str):
-    """Custom `getattr()` because the native one doesn't work for hybrid properties."""
-    # hybrid attributes
-    if field == "album":
-        return Album.title
-    elif field == "albumartist":
-        return Album.artist
-    elif field == "year":
-        return Album.year
-
-    # normal Track attributes
-    try:
-        return getattr(Track, field)
-    except AttributeError:
-        log.error(f"Invalid Track field: {field}")
-        raise ValueError
-
-
 def _create_expression(
     term: Dict[str, str]
 ) -> sqlalchemy.sql.elements.BinaryExpression:
@@ -185,39 +205,19 @@ def _create_expression(
     raise ValueError
 
 
-def query(
-    query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
-) -> List[MusicItem]:
-    """Queries the database for the given query string.
+def _getattr(field: str):
+    """Custom `getattr()` because the native one doesn't work for hybrid properties."""
+    # hybrid attributes
+    if field == "album":
+        return Album.title
+    elif field == "albumartist":
+        return Album.artist
+    elif field == "year":
+        return Album.year
 
-    Args:
-        query_str: Query string to parse. See HELP_STR for more info.
-        album_query: Whether or not to match albums instead of tracks.
-        session: current db session
-
-    Returns:
-        All tracks matching the query.
-    """
-    terms = shlex.split(query_str)
-
-    if not terms:
-        log.error(f"No query given.\n{HELP_STR}")
-        return []
-
-    if album_query:
-        library_query = session.query(Album).join(Track)
-    else:
-        library_query = session.query(Track).join(Album)
-
-    for term in terms:
-        try:
-            library_query = library_query.filter(_create_expression(_parse_term(term)))
-        except ValueError:
-            return []
-
-    items = library_query.all()
-
-    if not items:
-        log.warning(f"No items found for the query '{query_str}'.")
-
-    return items
+    # normal Track attributes
+    try:
+        return getattr(Track, field)
+    except AttributeError:
+        log.error(f"Invalid Track field: {field}")
+        raise ValueError
