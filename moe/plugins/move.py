@@ -51,6 +51,10 @@ def _move_track(track: Track, root: pathlib.Path):
 
     The track will overwrite anything that currently exists at the destination path.
 
+    Note:
+        The track path should contain, at a minimum, the album artist, album title,
+        year, and track number to ensure uniqueness.
+
     Args:
         track: track to copy
         root: root folder to copy the track to
