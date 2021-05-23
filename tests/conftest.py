@@ -1,6 +1,8 @@
 """Shared pytest configuration."""
-
+import pathlib
 import random
+import shutil
+import textwrap
 from typing import Callable, Iterator
 from unittest.mock import MagicMock
 
@@ -9,6 +11,7 @@ import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 from moe.core.config import Config
+from moe.core.library.album import Album
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 
@@ -32,15 +35,28 @@ def tmp_session() -> Iterator[Session]:
 
 
 @pytest.fixture
-def tmp_config(tmp_path) -> Config:
+def tmp_config(tmp_path) -> Callable[[], Config]:
     """Instantiates a temporary configuration.
 
-    This is for use with integration tests.
+    This fixture must be declared, like a factory. If you want to use specific config
+    settings, pass them in your declaration.
+
+    Example::
+        settings = f'library_path = "~/Music"'
+        config = tmp_config(settings)
 
     Returns:
         The configuration instance.
     """
-    return Config(config_dir=tmp_path)
+
+    def _tmp_config(settings: str = "") -> Config:
+        if settings:
+            settings_path = tmp_path / "config.toml"
+            settings_path.write_text(textwrap.dedent(settings))
+
+        return Config(config_dir=tmp_path, settings_filename="config.toml")
+
+    return _tmp_config
 
 
 @pytest.fixture
@@ -59,7 +75,7 @@ def mock_track_factory() -> Callable[[], Track]:
         Unique Track object with each call.
     """
 
-    def _mock_track():  # noqa: WPS430
+    def _mock_track():
         return Track(
             path=MagicMock(),
             title="Halftime",
@@ -76,3 +92,63 @@ def mock_track_factory() -> Callable[[], Track]:
 def mock_track(mock_track_factory) -> Track:
     """Creates a single mock Track object."""
     return mock_track_factory()
+
+
+@pytest.fixture
+def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
+    """Creates a Track on the filesystem.
+
+    The track is copied to a temp location, so feel free to make any changes.
+
+    Note:
+        If you don't need to interact with the filesystem, it's preferred to use
+        `mock_track_factory`.
+
+    Returns:
+        Unique Track.
+    """
+    track = Track.from_tags(pathlib.Path("tests/resources/audio_files/full.mp3"))
+
+    def _real_track():
+        track.track_num = random.randint(1, 1000)
+        track_dest = tmp_path_factory.mktemp("real_tracks") / f"{track.track_num}"
+        shutil.copyfile(track.path, track_dest)
+        track.path = track_dest
+
+        return track
+
+    return _real_track
+
+
+@pytest.fixture
+def real_track(real_track_factory) -> Track:
+    """Creates a single Track that exists on the filesystem.
+
+    Note:
+        If you do not need to interact with the filesytem, it is preferred to use
+        `mock_track`
+
+    Returns:
+        Unique Track.
+    """
+    return real_track_factory()
+
+
+@pytest.fixture
+def real_album_factory(real_track_factory) -> Callable[[], Album]:
+    """Creates an Album on the filesystem."""
+    real_track_factory()
+    real_track_factory()
+
+    def _real_album_factory():
+        """Creates an album with two tracks."""
+        real_track_factory()
+        return real_track_factory()._album_obj
+
+    return _real_album_factory
+
+
+@pytest.fixture
+def real_album(real_album_factory) -> Album:
+    """Creates a single Album on the filesystem."""
+    return real_album_factory()
