@@ -117,6 +117,7 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
         AddError: Unable to add the album to the library.
     """
     log.info(f"Adding album to the library: {album_path}")
+
     album_tracks: List[Track] = []
     for file_path in album_path.rglob("*"):
         log.info(f"Adding track to the library: {file_path}")
@@ -131,7 +132,7 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
     albums = [track._album_obj for track in album_tracks]  # noqa: WPS437
 
     # ensure every track belongs to the same album
-    if albums.count(albums[0]) != len(albums):  # checks if each album is the same
+    if albums.count(albums[0]) != len(albums):
         raise AddError(
             f"Not all tracks in '{album_path}' share the same album attributes."
         )
@@ -161,6 +162,7 @@ def _add_track(session: Session, track_path: pathlib.Path) -> Track:
         AddError: Unable to add the track to the library.
     """
     log.info(f"Adding track to the library: {track_path}")
+
     try:
         track = Track.from_tags(path=track_path)
     except (TypeError, mediafile.UnreadableFileError) as init_exc:
