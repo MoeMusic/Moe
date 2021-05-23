@@ -1,14 +1,12 @@
 """Test the list plugin."""
 
 import argparse
-import pathlib
 from unittest.mock import Mock, patch
 
 import pytest
 
 from moe import cli
 from moe.core.library.session import session_scope
-from moe.core.library.track import Track
 from moe.plugins import ls
 
 
@@ -20,7 +18,7 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=False)
         tmp_session.add(mock_track)
 
-        ls.parse_args(Mock(), tmp_session, args)
+        ls.parse_args(config=Mock(), session=tmp_session, args=args)
 
         captured_text = capsys.readouterr()
 
@@ -31,18 +29,18 @@ class TestParseArgs:
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
-        ls.parse_args(Mock(), tmp_session, args)
+        ls.parse_args(config=Mock(), session=tmp_session, args=args)
 
         captured_text = capsys.readouterr()
 
         assert captured_text.out.strip() == str(mock_track._album_obj).strip()
 
-    def test_exit_code(self, capsys, tmp_session):
+    def test_exit_code(self, capsys):
         """If no tracks are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:
-            ls.parse_args(Mock(), tmp_session, args)
+            ls.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -51,21 +49,14 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the ls command."""
 
-    def test_parse_args(self, capsys, tmp_config):
+    def test_parse_args(self, capsys, real_track, tmp_config):
         """Music is listed from the library when the `ls` command is invoked."""
-        track = Track(
-            path=pathlib.Path("tests/resources/album/01.mp3"),
-            album="Doggystyle",
-            albumartist="Snoop Dogg",
-            year=1993,
-            track_num=1,
-        )
-        args = ["moe", "ls", "track_num:1"]
+        args = ["moe", "ls", "*"]
 
         config = tmp_config(settings='default_plugins = ["ls"]')
         config.init_db()
         with session_scope() as session:
-            session.add(track)
+            session.add(real_track)
 
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=config):

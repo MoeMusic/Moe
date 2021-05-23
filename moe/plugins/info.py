@@ -33,7 +33,7 @@ def parse_args(
 
     Args:
         config: Configuration in use.
-        session: Current session.
+        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -44,14 +44,14 @@ def parse_args(
     if not items:
         raise SystemExit(1)
 
-    print(fmt_infos(items), end="")  # noqa: WPS421
+    print(_fmt_infos(items), end="")  # noqa: WPS421
 
 
-def fmt_infos(items: List[MusicItem]):
+def _fmt_infos(items: List[MusicItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
-        out_str += fmt_info(item)
+        out_str += _fmt_info(item)
 
         if item is not items[-1]:
             out_str += "\n"
@@ -59,6 +59,6 @@ def fmt_infos(items: List[MusicItem]):
     return out_str
 
 
-def fmt_info(item: MusicItem) -> str:
+def _fmt_info(item: MusicItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
     return "".join(f"{field}: {value}\n" for field, value in item.to_dict().items())

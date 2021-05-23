@@ -33,7 +33,7 @@ def parse_args(
 
     Args:
         config: Configuration in use.
-        session: Current session.
+        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
