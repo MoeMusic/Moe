@@ -17,6 +17,9 @@ pluggy = "^0.13.1"
 pyyaml = "^5.3.1"
 SQLAlchemy = {extras = ["mypy"], version = "^1.4.15"}
 
+# necessary for extras
+Sphinx = {version = "^4.0.2", optional = true}
+
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
 commitizen = "^2.0.2"
@@ -31,6 +34,11 @@ Sphinx = "^4.0.2"
 sphinx-rtd-theme = "^0.5.2"
 sqlalchemy2-stubs = "^0.0.2-alpha.1"
 wemake-python-styleguide = "^0.15"
+
+# needed because readthedocs doesn't natively support poetry
+# https://github.com/readthedocs/readthedocs.org/issues/4912
+[tool.poetry.extras]
+docs = ["Sphinx"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
