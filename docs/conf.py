@@ -7,6 +7,8 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 from typing import List
 
+import pkg_resources
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -21,7 +23,7 @@ from typing import List
 project = "Moe"
 copyright = "2021, Jacob Pavlock"
 author = "Jacob Pavlock"
-release = "v0.1"
+release = pkg_resources.get_distribution("moe").version
 
 
 # -- General configuration ---------------------------------------------------
