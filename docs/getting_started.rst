@@ -15,7 +15,7 @@ Moe *should* work on any platform.
 
     .. code-block:: bash
 
-       $ cd moe
+       $ cd Moe
        $ poetry install
 #. Run Moe
 
