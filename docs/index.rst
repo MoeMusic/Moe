@@ -19,7 +19,9 @@ So what can Moe do right now?
   * Also copies the music to a set library path and organizes it by artist/album.
 * Remove music from your library.
 * List any music in your library.
-* Print out tags of your music.
+* Print out (basic) tags of your music.
+
+  * Multi-value tag support!
 
 Like I said, *very* early in development. If you're still here and want to test out Moe in his current state, check out the :doc:`Getting Started <getting_started>` page.
 
@@ -32,7 +34,7 @@ However, there are several shortcomings that spawned the creation of Moe.
 * `No support for tags with multiple values <https://github.com/beetbox/beets/issues/505>`_.
 * `No native attachment/artifact support <https://github.com/beetbox/beets/pull/591>`_ i.e. the ability to move or query log files, album art, etc. with an album.
 * It's quite an intimidating codebase for new developers. Beets is a beast of a project, as when it was first conceived, Adrian didn't have access to all the fancy python libraries we have now. As a result, there is a *ton* of hand-written code and solutions that are arguably better dealt off to an external library e.g. database integration or cross-platform filesystem path handling. Because of it's immense size and complexity, it's fairly difficult for a developer to come in and try to understand everything that's going on. I think this is part of the reason beets has seen trouble gaining new maintainers or willing developers that want to help further it along its path. These days, Adrian has begun to focus on other projects, which means I don't believe we are likely to see any major changes to beets for the foreseeable future.
-* And most importantly, this is an area I'm passionate in, and felt it would be a valuable and fun learning experience creating my own app. I'm not a software developer by trade, so I greatly appreciate any feedback or thoughts anyone has as I go along.
+* Most importantly, this is an area I'm passionate in, and felt it would be a valuable and fun learning experience creating my own app. I'm not a software developer by trade, so I greatly appreciate any feedback or thoughts anyone has as I go along.
 
 I realize Moe probably won't match the feature-set of beets for a very long time, but every project has to start somewhere.
 

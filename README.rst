@@ -14,6 +14,8 @@ So what can Moe do right now?
   * Also copies the music to a set library path and organizes it by artist/album.
 * Remove music from your library.
 * List any music in your library.
-* Print out tags of your music.
+* Print out (basic) tags of your music.
+
+  * Multi-value tag support!
 
 Like I said, *very* early in development. If you're still here and want to test out Moe in his current state, check out the `documentattion <https://mrmoe.readthedocs.io/en/latest/index.html>`_.
