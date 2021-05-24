@@ -16,4 +16,4 @@ So what can Moe do right now?
 * List any music in your library.
 * Print out tags of your music.
 
-Like I said, *very* early in development. If you're still here and want to test out Moe in his current state, check out the `Getting Started <https://mrmoe.readthedocs.io/en/latest/getting_started.html>`_ documentation.
+Like I said, *very* early in development. If you're still here and want to test out Moe in his current state, check out the `documentattion <https://mrmoe.readthedocs.io/en/latest/index.html>`_.
