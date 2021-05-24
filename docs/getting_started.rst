@@ -21,13 +21,21 @@ Moe *should* work on any platform.
 
     .. code-block:: bash
 
+       $ poetry shell
        $ moe
+
+.. note::
+    ``poetry shell`` will enter a virtual environment to interact with the project. To exit, just type ``exit`` in the shell. If you'd like to run `moe` or other commands without entering the virtual environment, prepend any commands with ``poetry run``.
+
+    .. code-block:: bash
+
+       $ poetry run moe
 
 .. _General Configuration:
 
 General Configuration
 ---------------------
-Moe will automatically create a config file, ``config.toml`` in ``$HOME/.config/moe`` or ``%USERPROFILE\.config\moe`` if you're on Windows. This directory is also where your library database file will reside. There are currently just a few configuration options:
+Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE\.config\moe`` if you're on Windows. This directory is also where your library database file will reside. There are currently just a few configuration options:
 
 * ``library_path``: Tells Moe where to copy your added music to.
 

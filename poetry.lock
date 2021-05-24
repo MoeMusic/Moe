@@ -993,7 +993,7 @@ test = ["pytest", "pytest-cov", "html5lib", "cython", "typed-ast"]
 name = "sphinx-rtd-theme"
 version = "0.5.2"
 description = "Read the Docs theme for Sphinx"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1269,10 +1269,13 @@ python-versions = ">=3.6"
 docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "pytest-enabler", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
+[extras]
+docs = ["Sphinx"]
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.1"
-content-hash = "07796bae70989582f7e5f80339523e6d7424dff0792d711098fdfce1a7d1f90b"
+content-hash = "0456fa5ead996fbe10b91245b15720990e5f066b2ceb8de8d2cd96b1f8e91fe9"
 
 [metadata.files]
 alabaster = [
