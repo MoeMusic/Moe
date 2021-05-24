@@ -43,8 +43,10 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 
     '"artist:wu-tang clan" title:a%'
 
-Note that when using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
+.. note::
+    When using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
 
 If doing an album query, you still specify track fields, but it will match albums instead of tracks.
 
-Tip: Normal queries may be faster when compared to regex queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
+.. tip::
+    Normal queries may be faster when compared to regex queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
