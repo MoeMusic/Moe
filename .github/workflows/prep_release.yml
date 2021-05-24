@@ -30,19 +30,19 @@ jobs:
           python -m pip install -U commitizen
       - name: Check if new release
         run: |
-          if $(cz bump --dry-run | grep -q None); then
-              echo ::set-env name=NEW_RELEASE::false
+          if $(cz bump --yes --dry-run | grep -q None); then
+              echo {{NEW_RELEASE=false}} >> $GITHUB_ENV
           else
-              echo ::set-env name=NEW_RELEASE::true
+              echo {{NEW_RELEASE=true}} >> $GITHUB_ENV
           fi
       - name: Bump version and create changelog
-        if: env.NEW_RELEASE == 'true'
+        if: ${{ env.NEW_RELEASE }} == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           cz bump --yes --changelog
       - name: Push changes
-        if: env.NEW_RELEASE == 'true'
+        if: ${{ env.NEW_RELEASE }} == 'true'
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
