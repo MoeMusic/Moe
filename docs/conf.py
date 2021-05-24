@@ -18,7 +18,7 @@ from typing import List
 
 # -- Project information -----------------------------------------------------
 
-project = "moe"
+project = "Moe"
 copyright = "2021, Jacob Pavlock"
 author = "Jacob Pavlock"
 release = "v0.1"
