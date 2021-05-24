@@ -31,9 +31,9 @@ jobs:
       - name: Check if new release
         run: |
           if $(cz bump --dry-run | grep -q None); then
-              echo ::set-env name=NEW_RELEASE::false
+              echo {{NEW_RELEASE=false}} >> $GITHUB_ENV
           else
-              echo ::set-env name=NEW_RELEASE::true
+              echo {{NEW_RELEASE=true}} >> $GITHUB_ENV
           fi
       - name: Bump version and create changelog
         if: env.NEW_RELEASE == 'true'
