@@ -11,6 +11,7 @@ moe.core.library.album module
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 moe.core.library.music\_item module
 -----------------------------------
@@ -35,6 +36,7 @@ moe.core.library.track module
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Module contents
 ---------------
