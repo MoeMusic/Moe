@@ -37,7 +37,7 @@ However, there are several shortcomings that spawned the creation of Moe.
 I realize Moe probably won't match the feature-set of beets for a very long time, but every project has to start somewhere.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
    getting_started
