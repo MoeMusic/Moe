@@ -5,6 +5,9 @@ Installation
 ------------
 Moe *should* work on any platform.
 
+.. important::
+    The following will install `Moe` for use in a development environment. `Moe` isn't currently intended for normal use.
+
 #. `Install poetry <https://python-poetry.org/docs/#installation>`_.
 #. Clone the repository
 
@@ -25,7 +28,7 @@ Moe *should* work on any platform.
        $ moe
 
 .. note::
-    ``poetry shell`` will enter a virtual environment to interact with the project. To exit, just type ``exit`` in the shell. If you'd like to run `moe` or other commands without entering the virtual environment, prepend any commands with ``poetry run``.
+    ``poetry shell`` will enter a virtual environment to interact with the project. To exit, just type ``exit`` in the shell. If you'd like to run ``moe`` or other commands without entering the virtual environment, prepend any commands with ``poetry run``.
 
     .. code-block:: bash
 
