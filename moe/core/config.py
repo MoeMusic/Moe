@@ -19,8 +19,10 @@ import dynaconf
 import pluggy
 import sqlalchemy
 
+import alembic.command
+import alembic.config
 import moe
-from moe.core.library.session import Base, Session
+from moe.core.library.session import Session
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +139,13 @@ class Config:
             self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
 
         Session.configure(bind=self.engine)
-        Base.metadata.create_all(self.engine)  # creates tables
+
+        # create and update database tables
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic_cfg.attributes["configure_logger"] = False
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes["connection"] = connection
+            alembic.command.upgrade(alembic_cfg, "head")
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")

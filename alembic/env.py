@@ -25,9 +25,9 @@ from moe.core.library.session import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-fileConfig(config.config_file_name)
+# don't configure logger if Moe is running
+if config.attributes.get("configure_logger", True):
+    fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -47,11 +47,16 @@ def run_migrations_online():
     In this scenario we need to create an Engine and associate a connection
     with the context.
     """
-    moe_config = Config()
-    moe_config.init_db()
-    engine = moe_config.engine
+    connectable = config.attributes.get("connection", None)
+    if not connectable:
+        # only create Engine if we don't have a Connection from the outside
+        moe_config = Config()
+        moe_config.init_db()
+        connectable = moe_config.engine
 
-    with engine.connect() as connection:
+    # When connectable is already a Connection object, calling
+    # connect() gives us a *branched connection*.
+    with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
