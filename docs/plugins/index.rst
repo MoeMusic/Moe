@@ -3,7 +3,7 @@ Plugins
 Almost everything in Moe is a plugin. To see more details on each individual plugin, visit its page.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    add
    info
