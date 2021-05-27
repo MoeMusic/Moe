@@ -41,7 +41,7 @@ Moe *should* work on any platform.
 *************
 Configuration
 *************
-Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE\.config\moe`` if you're on Windows. This directory is also where your library database file will reside.
+Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE%\.config\moe`` if you're on Windows. This directory is also where your library database file will reside.
 
 Global Options
 ==============
