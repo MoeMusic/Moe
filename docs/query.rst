@@ -1,5 +1,6 @@
+########
 Querying
-========
+########
 Many plugins use a "query" to search for music in your library.
 
 The query must be in the format ``field:value`` where field is a track or album's field to match and value is that field's value. Internally, this ``field:value`` pair is referred to as a single "term". The match is case-insensitive.
