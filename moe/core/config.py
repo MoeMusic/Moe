@@ -30,6 +30,7 @@ DEFAULT_PLUGINS = (
     "add",
     "info",
     "ls",
+    "move",
     "rm",
 )
 

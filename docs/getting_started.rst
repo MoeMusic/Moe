@@ -55,7 +55,7 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
        library_path = '''~\Music'''
 * ``default_plugins``: Override the list of default plugins.
 
-  * Default: ``["add", "info", "ls", "rm"]``
+  * Default: ``["add", "info", "ls", "move, "rm"]``
 
     .. code-block:: text
 
