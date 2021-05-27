@@ -1,8 +1,10 @@
+###############
 Getting Started
-===============
+###############
 
+************
 Installation
-------------
+************
 Moe *should* work on any platform.
 
 .. important::
@@ -36,35 +38,50 @@ Moe *should* work on any platform.
 
 .. _General Configuration:
 
-General Configuration
----------------------
-Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE\.config\moe`` if you're on Windows. This directory is also where your library database file will reside. There are currently just a few configuration options:
+*************
+Configuration
+*************
+Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE\.config\moe`` if you're on Windows. This directory is also where your library database file will reside.
 
-* ``library_path``: Tells Moe where to copy your added music to.
+Global Options
+==============
+Most configuration options reside in their relevant plugin, however there is currently one global option:
 
-  * Default: ``"~/Music"``
-
-    .. code-block:: text
-
-       library_path = "~/Music"
-
-    If you're on Windows, you need to use a raw string by enclosing your library path in triple-single quotes.
-
-    .. code-block:: text
-
-       library_path = '''~\Music'''
 * ``default_plugins``: Override the list of default plugins.
 
   * Default: ``["add", "info", "ls", "move, "rm"]``
 
-    .. code-block:: text
+    .. code-block:: toml
 
        default_plugins = ["add", "rm"]
 
-For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/index>`.
+Plugin Options
+==============
+For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/index>`. Each plugin option should be specified under that plugin's section in the config.
 
+For example, to specify the config option ``library_path`` which is a ``move`` plugin option, we'd write the following in our config:
+
+    .. code-block:: toml
+
+       [move]
+       library_path = "~/Music"
+
+Overriding Config Values
+========================
+All configuration parameters can be overridden through environment variables. To override the configuration parameter ``{param}``, use an environment variable named ``MOE_{PARAM}``.
+
+For example, to override the ``library_path`` variable, you can run Moe with:
+
+    .. code-block:: bash
+
+       $ MOE_MOVE.LIBRARY_PATH="~/Music2" moe
+
+.. note::
+   Notice since the ``library_path`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
+
+**********************
 Command-Line Interface
-----------------------
+**********************
 To run moe:
 
     .. code-block:: bash
