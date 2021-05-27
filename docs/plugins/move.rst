@@ -8,13 +8,9 @@ Configuration
 -------------
 * ``library_path``: Tells Moe where to copy your added music to.
 
-  * Default: ``"~/Music"``
+  * Default: ``"~/Music"`` (``%USERPROFILE%\Music`` on Windows)
 
-    .. code-block:: toml
-
-       library_path = "~/Music"
-
-    If you're on Windows, you need to use a raw string by enclosing your library path in triple-single quotes.
+    If you're on Windows, you need to set your path by enclosing it in triple-single quotes.
 
     .. code-block:: toml
 

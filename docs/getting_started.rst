@@ -51,10 +51,6 @@ Most configuration options reside in their relevant plugin, however there is cur
 
   * Default: ``["add", "info", "ls", "move, "rm"]``
 
-    .. code-block:: toml
-
-       default_plugins = ["add", "rm"]
-
 Plugin Options
 ==============
 For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/index>`. Each plugin option should be specified under that plugin's section in the config.
