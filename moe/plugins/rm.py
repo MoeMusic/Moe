@@ -14,11 +14,7 @@ log = logging.getLogger(__name__)
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds a new `rm` command to moe.
-
-    Args:
-        cmd_parsers: contains all the sub-command parsers
-    """
+    """Adds a ``rm`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "rm",
         aliases=["remove"],

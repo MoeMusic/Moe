@@ -40,9 +40,9 @@ I realize Moe probably won't match the feature-set of beets for a very long time
    :caption: Contents:
 
    getting_started
-   plugins/index
+   plugins/plugins
    query
-   developers
+   developers/developers
 
 ******************
 Indices and tables

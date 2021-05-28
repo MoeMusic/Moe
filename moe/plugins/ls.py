@@ -11,11 +11,7 @@ from moe.core.config import Config
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds a new `ls` command to moe.
-
-    Args:
-        cmd_parsers: contains all the sub-command parsers
-    """
+    """Adds a ``ls`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "ls",
         aliases=["list"],

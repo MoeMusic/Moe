@@ -40,34 +40,35 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_hooks(pluginmanager: pluggy.manager.PluginManager):
-        """Add hookspecs to be registered.
-
-        Args:
-            pluginmanager: pluggy pluginmanager that will register the hookspec.
-
-        Example:
-            Inside of your hook implementation, write::
-                from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
-                pluginmanager.add_hookspecs(Hooks)
-        """
-
-    @staticmethod
-    @moe.hookspec
     def add_config_validator(settings: dynaconf.base.LazySettings):
         """Add a settings validator for the configuration file.
 
         Args:
-            settings: moe's settings object.
+            settings: Moe's settings.
 
         Example:
-            Inside of your hook implementation, write::
+            Inside your hook implementation::
 
                 settings.validators.register(
                     Validator("MOVE.LIBRARY_PATH", must_exist=True)
                 )
 
         See https://www.dynaconf.com/validation/#validation for more info.
+        """
+
+    @staticmethod
+    @moe.hookspec
+    def add_hooks(pluginmanager: pluggy.manager.PluginManager):
+        """Add hookspecs to be registered to Moe.
+
+        Args:
+            pluginmanager: pluginmanager that registers the hookspec.
+
+        Example:
+            Inside your hook implementation::
+
+                from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+                pluginmanager.add_hookspecs(Hooks)
         """
 
 

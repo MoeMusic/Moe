@@ -16,7 +16,7 @@ from moe.core.library.music_item import MusicItem
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds a new `info` command to moe."""
+    """Adds an ``info`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "info",
         description="Prints information about music in the library.",

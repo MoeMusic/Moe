@@ -4,6 +4,7 @@ Developers
 
 .. toctree::
     :maxdepth: 4
-    :caption: Documentation
+    :caption: Contents:
 
-    source/modules
+    hooks
+    ../source/modules
