@@ -23,7 +23,7 @@ class Hooks:
     @staticmethod
     @moe.hookspec
     def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-        """Add a sub-command to moe.
+        """Add a sub-command to Moe's CLI.
 
         Args:
             cmd_parsers: contains all the sub-command parsers
@@ -32,7 +32,7 @@ class Hooks:
             The sub-command should be added as an argparse parser to cmd_parsers.
 
         Example:
-            Inside of your hook implementation, write::
+            Inside your hook implementation::
 
                 my_parser = cmd_parsers.add_parser('<command_name>', help='')
                 my_parser.add_argument('bar', type=int)
@@ -40,7 +40,7 @@ class Hooks:
 
         Note:
             To specify a function to run when your command is passed, you need to
-            define the `func` key using `set_defaults` as shown above.
+            define the ``func`` key using ``set_defaults`` as shown above.
             The function will be called like::
 
                 func(
@@ -53,7 +53,7 @@ class Hooks:
 
 @moe.hookimpl
 def add_hooks(pluginmanager: pluggy.manager.PluginManager):
-    """Register add hooks to be used by other plugins."""
+    """Registers `CLI` hookspecs to Moe."""
     from moe.cli import Hooks  # noqa: WPS433, WPS442
 
     pluginmanager.add_hookspecs(Hooks)

@@ -53,7 +53,7 @@ Most configuration options reside in their relevant plugin, however there is cur
 
 Plugin Options
 ==============
-For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/index>`. Each plugin option should be specified under that plugin's section in the config.
+For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/plugins>`. Each plugin option should be specified under that plugin's section in the config.
 
 For example, to specify the config option ``library_path`` which is a ``move`` plugin option, we'd write the following in our config:
 
@@ -84,4 +84,4 @@ To run moe:
 
        $ moe
 
-The help text of each command should be enough to get you started. For more info, see :doc:`plugins <plugins/index>`.
+The help text of each command should be enough to get you started. For more info, see :doc:`plugins <plugins/plugins>`.
