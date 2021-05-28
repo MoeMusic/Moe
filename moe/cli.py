@@ -8,6 +8,7 @@ import sys
 from typing import List
 
 import pkg_resources
+import pluggy
 
 import moe
 from moe.core.config import Config
@@ -21,8 +22,8 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-        """Adds a sub-command to moe.
+    def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+        """Add a sub-command to moe.
 
         Args:
             cmd_parsers: contains all the sub-command parsers
@@ -50,11 +51,17 @@ class Hooks:
         """
 
 
+@moe.hookimpl
+def add_hooks(pluginmanager: pluggy.manager.PluginManager):
+    """Register add hooks to be used by other plugins."""
+    from moe.cli import Hooks  # noqa: WPS433, WPS442
+
+    pluginmanager.add_hookspecs(Hooks)
+
+
 def main():
     """Runs the CLI."""
     config = Config()
-    config.pluginmanager.add_hookspecs(Hooks)
-
     _parse_args(sys.argv[1:], config)
 
 
@@ -73,7 +80,7 @@ def _parse_args(args: List[str], config: Config):
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.pluginmanager.hook.addcommand(cmd_parsers=cmd_parsers)
+    config.pluginmanager.hook.add_command(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
 

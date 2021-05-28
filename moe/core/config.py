@@ -40,7 +40,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def moe_addhooks(pluginmanager: pluggy.manager.PluginManager):
+    def add_hooks(pluginmanager: pluggy.manager.PluginManager):
         """Add hookspecs to be registered.
 
         Args:
@@ -205,4 +205,4 @@ class Config:
             )
 
         # register plugin hookspecs for all plugins
-        self.pluginmanager.hook.moe_addhooks(pluginmanager=self.pluginmanager)
+        self.pluginmanager.hook.add_hooks(pluginmanager=self.pluginmanager)

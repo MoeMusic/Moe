@@ -1,10 +1,10 @@
 """Provides a positional commandline argument for querying the database.
 
 Plugins wishing to use the query argument should define query as a parent parser
-when using the addcommand() hook.
+when using the add_command() hook.
 
 Example:
-    Inside of your `addcommand` hook implemention::
+    Inside of your `add_command` hook implemention::
 
         my_parser = cmd_parser.add_parser("my_plugin", parents=[query.query_parser])
 
