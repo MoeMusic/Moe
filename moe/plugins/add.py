@@ -32,7 +32,7 @@ class Hooks:
 
 
 @moe.hookimpl
-def moe_addhooks(pluginmanager: pluggy.manager.PluginManager):
+def add_hooks(pluginmanager: pluggy.manager.PluginManager):
     """Register add hooks to be used by other plugins."""
     from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
 
@@ -40,7 +40,7 @@ def moe_addhooks(pluginmanager: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `add` command to moe."""
     add_parser = cmd_parsers.add_parser(
         "add", description="Adds music to the library.", help="add music to the library"

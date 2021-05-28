@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 @moe.hookimpl
-def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `rm` command to moe.
 
     Args:

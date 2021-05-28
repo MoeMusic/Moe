@@ -10,7 +10,7 @@ from moe.core.config import Config
 
 
 @moe.hookimpl
-def addcommand(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds a new `ls` command to moe.
 
     Args:
