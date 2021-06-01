@@ -22,9 +22,7 @@ class TestParseArgs:
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        query = tmp_session.query(Track.path).scalar()
-
-        assert not query
+        assert not tmp_session.query(Track.path).scalar()
 
     def test_album(self, tmp_session, mock_track):
         """Albums are removed from the database with valid query."""
@@ -33,23 +31,19 @@ class TestParseArgs:
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        query = tmp_session.query(Album).scalar()
-
-        assert not query
+        assert not tmp_session.query(Album).scalar()
 
     def test_album_tracks(self, tmp_session, mock_track):
-        """Respective tracks should also be removed if an album is removed."""
+        """Removing an album should also remove all of its tracks."""
         args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
         tmp_session.add(mock_track)
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        query = tmp_session.query(Track).scalar()
-
-        assert not query
+        assert not tmp_session.query(Track).scalar()
 
     def test_exit_code(self, capsys):
-        """If no items are removed, we should return a non-zero exit code."""
+        """Return a non-zero exit code if no items are removed."""
         args = argparse.Namespace(query="bad", album=False)
 
         with pytest.raises(SystemExit) as error:

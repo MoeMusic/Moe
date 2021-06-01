@@ -39,7 +39,7 @@ class TestParseArgsDirectory:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Album).scalar()
+        assert tmp_session.query(Album).one()
 
     def test_no_valid_tracks(self, tmp_session, tmp_path):
         """Error if given directory does not contain any valid tracks."""
@@ -79,7 +79,7 @@ class TestParseArgsDirectory:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Album).scalar()
+        assert tmp_session.query(Album).one()
 
 
 class TestParseArgsFile:
@@ -98,7 +98,7 @@ class TestParseArgsFile:
         assert (
             tmp_session.query(Track.path)
             .filter_by(path=pathlib.Path(file1).resolve())
-            .scalar()
+            .one()
         )
 
     def test_multiple_files(self, tmp_session):
@@ -112,12 +112,12 @@ class TestParseArgsFile:
         assert (
             tmp_session.query(Track.path)
             .filter_by(path=pathlib.Path(file1).resolve())
-            .scalar()
+            .one()
         )
         assert (
             tmp_session.query(Track.path)
             .filter_by(path=pathlib.Path(file2).resolve())
-            .scalar()
+            .one()
         )
 
     def test_multiple_files_exit_error(self, tmp_session):
@@ -136,7 +136,7 @@ class TestParseArgsFile:
         assert (
             tmp_session.query(Track.path)
             .filter_by(path=pathlib.Path(file2).resolve())
-            .scalar()
+            .one()
         )
 
     def test_non_track_file(self):
@@ -189,7 +189,7 @@ class TestCommand:
                 cli.main()
 
         with session_scope() as session:
-            assert session.query(Track).scalar()
+            assert session.query(Track).one()
 
     def test_dir(self, tmp_config):
         """Albums are added to the library when a dir is passed to `add`."""
@@ -201,8 +201,7 @@ class TestCommand:
                 cli.main()
 
         with session_scope() as session:
-            album = session.query(Album).scalar()
-            assert session.query(Album).scalar()
+            album = session.query(Album).one()
 
             tracks = session.query(Track)
             for track in tracks:

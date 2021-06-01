@@ -34,7 +34,7 @@ class TestInit:
         tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()
-        album = tmp_session.query(Album).scalar()
+        album = tmp_session.query(Album).one()
 
         assert len(tracks) == len(album.tracks)
         assert set(tracks) == album.tracks
