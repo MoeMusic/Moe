@@ -26,7 +26,7 @@ class Hooks:
         """Add a sub-command to Moe's CLI.
 
         Args:
-            cmd_parsers: contains all the sub-command parsers
+            cmd_parsers: Contains all the sub-command parsers.
 
         Note:
             The sub-command should be added as an argparse parser to cmd_parsers.
@@ -101,7 +101,7 @@ def _create_arg_parser() -> argparse.ArgumentParser:
     """Creates the root argument parser."""
     version = pkg_resources.get_distribution("moe").version
 
-    moe_parser = argparse.ArgumentParser(description="Run moe.")
+    moe_parser = argparse.ArgumentParser()
     moe_parser.add_argument(
         "--version", action="version", version=f"%(prog)s v{version}"  # noqa: WPS323
     )
