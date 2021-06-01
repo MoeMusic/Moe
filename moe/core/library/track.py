@@ -1,6 +1,7 @@
 """A Track in the database and any related logic."""
 
 import errno
+import logging
 import os
 import pathlib
 import types
@@ -18,6 +19,8 @@ from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 from moe.core.library.album import Album
 from moe.core.library.music_item import MusicItem
 from moe.core.library.session import Base
+
+log = logging.getLogger(__name__)
 
 
 class _PathType(sqlalchemy.types.TypeDecorator):
@@ -218,6 +221,37 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
             genre=audio_file.genres,
             title=audio_file.title,
         )
+
+    @staticmethod
+    def get_attr(field: str) -> sqlalchemy.orm.attributes.InstrumentedAttribute:
+        """Gets a Track's attribute for the given field.
+
+        This is essentially a custom ``getattr()`` because the builtin one doesn't work
+        with hybrid properties.
+
+        Args:
+            field: Track attribute to retrieve.
+
+        Returns:
+            The associated Track attribute for a given field.
+
+        Raises:
+            ValueError: Invalid Track field given.
+        """
+        # hybrid attributes
+        if field == "album":
+            return Album.title
+        elif field == "albumartist":
+            return Album.artist
+        elif field == "year":
+            return Album.year
+
+        # normal Track field
+        try:
+            return getattr(Track, field)
+        except AttributeError:
+            log.error(f"Invalid Track field: {field}")
+            raise ValueError
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Track as a dictionary.
