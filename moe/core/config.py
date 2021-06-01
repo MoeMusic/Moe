@@ -12,6 +12,7 @@ Config object through a hook.
 
 import importlib
 import logging
+import os
 import pathlib
 import re
 
@@ -104,21 +105,23 @@ class Config:
         https://www.dynaconf.com/#reading-settings-variables
     """
 
-    _default_config_dir = pathlib.Path().home() / ".config" / "moe"
-
     def __init__(
         self,
-        config_dir: pathlib.Path = _default_config_dir,
+        config_dir: pathlib.Path = pathlib.Path.home() / ".config" / "moe",
         settings_filename: str = "config.toml",
     ):
         """Initializes the plugin manager and configuration directory.
 
         Args:
-            config_dir: Filesystem path of the configuration directory. By default,
-                this is where the settings and database files will reside.
+            config_dir: Filesystem path of the configuration directory where the
+                settings and database files will reside. The environment variable
+                ``MOE_CONFIG_DIR`` has precedence in setting this.
             settings_filename: Name of the configuration settings file.
         """
-        self.config_dir = config_dir
+        try:
+            self.config_dir = pathlib.Path(os.environ["MOE_CONFIG_DIR"])
+        except KeyError:
+            self.config_dir = config_dir
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         self.config_file = self.config_dir / settings_filename

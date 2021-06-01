@@ -1,5 +1,6 @@
 """Tests the ``move`` plugin."""
 
+import os
 import pathlib
 from unittest.mock import Mock, patch
 
@@ -83,41 +84,37 @@ class TestPostAdd:
 class TestAddEntry:
     """Test integration with the `add` command entry of `move`."""
 
-    def test_add_track(self, tmp_config, tmp_path):
+    def test_move_track(self, tmp_config, tmp_path):
         """Tracks are copied to `library_path` after they are added."""
         args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
+        library_path = tmp_path / "Music"
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_LIBRARY_PATH"] = str(library_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["add", "move"]'
 
-        config = tmp_config(
-            settings=f"""
-                library_path = '''{tmp_path}'''
-                default_plugins = ["add", "move"]
-                """
-        )
         with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         with session_scope() as session:
             track = session.query(Track).one()
-            assert tmp_path in track.path.parents  # accounts for track path formatting
+            assert (
+                library_path in track.path.parents
+            )  # accounts for track path formatting
 
-    def test_add_album(self, tmp_config, tmp_path):
+    def test_move_album(self, tmp_path):
         """Albums are copied to `library_path` after they are added."""
         cli_args = ["moe", "add", "tests/resources/album/"]
+        library_path = tmp_path / "Music"
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_LIBRARY_PATH"] = str(library_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["add", "move"]'
 
-        config = tmp_config(
-            settings=f"""
-                library_path = '''{tmp_path}'''
-                default_plugins = ["add", "move"]
-                """
-        )
         with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         with session_scope() as session:
             album = session.query(Album).one()
             for track in album.tracks:
                 assert (
-                    tmp_path in track.path.parents
+                    library_path in track.path.parents
                 )  # accounts for track path formatting

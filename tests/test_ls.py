@@ -1,11 +1,13 @@
 """Tests the ``list`` plugin."""
 
 import argparse
+import os
 from unittest.mock import Mock, patch
 
 import pytest
 
 from moe import cli
+from moe.core.config import Config
 from moe.core.library.session import session_scope
 from moe.plugins import ls
 
@@ -49,17 +51,17 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the ls command."""
 
-    def test_parse_args(self, capsys, real_track, tmp_config):
+    def test_parse_args(self, capsys, real_track, tmp_path):
         """Music is listed from the library when the `ls` command is invoked."""
         cli_args = ["moe", "ls", "*"]
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["ls"]'
 
-        config = tmp_config(settings='default_plugins = ["ls"]')
-        config.init_db()
+        Config().init_db()
         with session_scope() as session:
             session.add(real_track)
 
         with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         assert capsys.readouterr().out

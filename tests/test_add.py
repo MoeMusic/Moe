@@ -1,6 +1,7 @@
 """Tests the add plugin."""
 
 import argparse
+import os
 import pathlib
 import shutil
 from unittest.mock import Mock, patch
@@ -179,26 +180,26 @@ class TestParseArgsFile:
 class TestCommand:
     """Test cli integration with the add command."""
 
-    def test_file(self, tmp_config):
+    def test_file(self, tmp_path):
         """Tracks are added to the library when a file is passed to `add`."""
         cli_args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
-        config = tmp_config(settings='default_plugins = ["add"]')
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["add"]'
 
         with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         with session_scope() as session:
             assert session.query(Track).one()
 
-    def test_dir(self, tmp_config):
+    def test_dir(self, tmp_path):
         """Albums are added to the library when a dir is passed to `add`."""
         cli_args = ["moe", "add", "tests/resources/album/"]
-        config = tmp_config(settings='default_plugins = ["add"]')
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["add"]'
 
         with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         with session_scope() as session:
             album = session.query(Album).one()

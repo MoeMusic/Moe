@@ -1,12 +1,14 @@
 """Tests the ``info`` plugin."""
 
 import argparse
+import os
 import re
 from unittest.mock import Mock, patch
 
 import pytest
 
 from moe import cli
+from moe.core.config import Config
 from moe.core.library.session import session_scope
 from moe.plugins import info
 
@@ -84,17 +86,17 @@ class TestFmtInfo:
 class TestCommand:
     """Test cli integration with the info command."""
 
-    def test_parse_args(self, capsys, real_track, tmp_config):
+    def test_parse_args(self, capsys, real_track, tmp_path):
         """A track's info is printed when the `info` command is invoked."""
         cli_args = ["moe", "info", "*"]
+        os.environ["MOE_CONFIG_DIR"] = str(tmp_path)
+        os.environ["MOE_DEFAULT_PLUGINS"] = '["info"]'
 
-        config = tmp_config(settings='default_plugins = ["info"]')
-        config.init_db()
+        Config().init_db()
         with session_scope() as session:
             session.add(real_track)
 
         with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+            cli.main()
 
         assert capsys.readouterr().out
