@@ -184,7 +184,7 @@ def _create_expression(
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
 
-    attr = _getattr(field)
+    attr = Track.get_attr(field)
 
     if separator == ":":
         # Normal string match query - should be case insensitive.
@@ -203,21 +203,3 @@ def _create_expression(
 
     log.error(f"Invalid query type: {separator}")
     raise ValueError
-
-
-def _getattr(field: str):
-    """Custom `getattr()` because the native one doesn't work for hybrid properties."""
-    # hybrid attributes
-    if field == "album":
-        return Album.title
-    elif field == "albumartist":
-        return Album.artist
-    elif field == "year":
-        return Album.year
-
-    # normal Track attributes
-    try:
-        return getattr(Track, field)
-    except AttributeError:
-        log.error(f"Invalid Track field: {field}")
-        raise ValueError
