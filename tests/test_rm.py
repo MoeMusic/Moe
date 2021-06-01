@@ -64,15 +64,14 @@ class TestCommand:
 
     def test_parse_args(self, real_track, tmp_path, tmp_config):
         """Music is removed from the library when the `rm` command is invoked."""
-        tmp_config._default_plugins = ["rm"]
-        args = ["moe", "rm", "*"]
+        cli_args = ["moe", "rm", "*"]
+
         config = tmp_config(settings='default_plugins = ["rm"]')
         config.init_db()
-
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 

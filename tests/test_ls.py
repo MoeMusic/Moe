@@ -51,14 +51,14 @@ class TestCommand:
 
     def test_parse_args(self, capsys, real_track, tmp_config):
         """Music is listed from the library when the `ls` command is invoked."""
-        args = ["moe", "ls", "*"]
+        cli_args = ["moe", "ls", "*"]
 
         config = tmp_config(settings='default_plugins = ["ls"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 

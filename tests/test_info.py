@@ -86,14 +86,14 @@ class TestCommand:
 
     def test_parse_args(self, capsys, real_track, tmp_config):
         """A track's info is printed when the `info` command is invoked."""
-        args = ["moe", "info", "*"]
+        cli_args = ["moe", "info", "*"]
 
         config = tmp_config(settings='default_plugins = ["info"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
