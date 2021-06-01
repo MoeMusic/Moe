@@ -103,7 +103,7 @@ class TestAddEntry:
 
     def test_add_album(self, tmp_config, tmp_path):
         """Albums are copied to `library_path` after they are added."""
-        args = ["moe", "add", "tests/resources/album/"]
+        cli_args = ["moe", "add", "tests/resources/album/"]
 
         config = tmp_config(
             settings=f"""
@@ -111,7 +111,7 @@ class TestAddEntry:
                 default_plugins = ["add", "move"]
                 """
         )
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 

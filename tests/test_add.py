@@ -181,10 +181,10 @@ class TestCommand:
 
     def test_file(self, tmp_config):
         """Tracks are added to the library when a file is passed to `add`."""
-        args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
+        cli_args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
         config = tmp_config(settings='default_plugins = ["add"]')
 
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
@@ -193,10 +193,10 @@ class TestCommand:
 
     def test_dir(self, tmp_config):
         """Albums are added to the library when a dir is passed to `add`."""
-        args = ["moe", "add", "tests/resources/album/"]
+        cli_args = ["moe", "add", "tests/resources/album/"]
         config = tmp_config(settings='default_plugins = ["add"]')
 
-        with patch("sys.argv", args):
+        with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
 
