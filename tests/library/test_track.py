@@ -1,4 +1,4 @@
-"""Test a Track object."""
+"""Tests a Track object."""
 
 import pathlib
 import re

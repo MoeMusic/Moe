@@ -1,4 +1,4 @@
-"""Test the info plugin."""
+"""Tests the ``info`` plugin."""
 
 import argparse
 import re

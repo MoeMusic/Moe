@@ -1,4 +1,4 @@
-"""Test the list plugin."""
+"""Tests the ``list`` plugin."""
 
 import argparse
 from unittest.mock import Mock, patch

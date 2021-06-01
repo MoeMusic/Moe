@@ -1,4 +1,4 @@
-"""Test an Album object."""
+"""Tests an Album object."""
 
 import pytest
 

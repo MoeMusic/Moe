@@ -1,4 +1,4 @@
-"""Test the CLI."""
+"""Tests the CLI."""
 
 from unittest.mock import Mock
 
