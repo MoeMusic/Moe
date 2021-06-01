@@ -1,4 +1,4 @@
-"""Remove music from the library."""
+"""Removes music from the library."""
 
 import argparse
 import logging
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds a ``rm`` command to Moe's CLI."""
+    """Adds the ``rm`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "rm",
         aliases=["remove"],

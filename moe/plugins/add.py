@@ -41,12 +41,15 @@ def add_hooks(pluginmanager: pluggy.manager.PluginManager):
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds an ``add`` command to Moe's CLI."""
+    """Adds the ``add`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "add", description="Adds music to the library.", help="add music to the library"
     )
     add_parser.add_argument(
-        "paths", nargs="+", help="dir to add an album or file to add a track"
+        "paths",
+        metavar="path",
+        nargs="+",
+        help="dir to add an album or file to add a track",
     )
     add_parser.set_defaults(func=parse_args)
 

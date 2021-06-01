@@ -1,4 +1,4 @@
-"""List music in the library."""
+"""Lists music in the library."""
 
 import argparse
 
@@ -11,12 +11,12 @@ from moe.core.config import Config
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds a ``ls`` command to Moe's CLI."""
+    """Adds the ``ls`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "ls",
         aliases=["list"],
-        description="Lists music from the library.",
-        help="list music from the library",
+        description="Lists music in the library.",
+        help="list music in the library",
         parents=[query.query_parser],
     )
     add_parser.set_defaults(func=parse_args)
