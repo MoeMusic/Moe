@@ -1,4 +1,4 @@
-"""Test the add plugin."""
+"""Tests the add plugin."""
 
 import argparse
 import pathlib

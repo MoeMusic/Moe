@@ -1,4 +1,4 @@
-"""Test the core query module."""
+"""Tests the core query module."""
 
 from unittest.mock import Mock
 

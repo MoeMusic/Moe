@@ -1,4 +1,4 @@
-"""Test the move plugin."""
+"""Tests the ``move`` plugin."""
 
 import pathlib
 from unittest.mock import Mock, patch

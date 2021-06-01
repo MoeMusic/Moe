@@ -1,4 +1,4 @@
-"""Test configuration."""
+"""Tests configuration."""
 
 from moe.core.config import Config
 
