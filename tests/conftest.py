@@ -144,8 +144,6 @@ def real_track(real_track_factory) -> Track:
 @pytest.fixture
 def real_album_factory(real_track_factory) -> Callable[[], Album]:
     """Creates an Album on the filesystem."""
-    real_track_factory()
-    real_track_factory()
 
     def _real_album_factory():
         """Creates an album with two tracks."""
