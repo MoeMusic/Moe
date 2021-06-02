@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     settings.validators.register(
-        dynaconf.Validator("LIBRARY_PATH", must_exist=True, default="~/Music")
+        dynaconf.Validator("MOVE.LIBRARY_PATH", must_exist=True, default="~/Music")
     )
 
 
@@ -36,7 +36,7 @@ def post_add(config: Config, session: Session, item: MusicItem):
         session: Current db session.
         item: Item to be copied.
     """
-    root_dest = pathlib.Path(config.settings.library_path).expanduser()
+    root_dest = pathlib.Path(config.settings.move.library_path).expanduser()
     if isinstance(item, Track):
         _copy_track(session, item, root_dest)
     elif isinstance(item, Album):

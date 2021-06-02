@@ -19,7 +19,11 @@ class TestPostAdd:
 
         The track's path should refer to the destination.
         """
-        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
         origin_track_path = real_track.path
 
         move.post_add(config=config, session=Mock(), item=real_track)
@@ -33,7 +37,11 @@ class TestPostAdd:
 
         Copying an album is just copying each item belonging to that album.
         """
-        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
         for track in real_album.tracks:
             origin_track_paths = []
             origin_track_paths.append(track.path)
@@ -49,7 +57,11 @@ class TestPostAdd:
 
     def test_home_dir(self, mock_track, tmp_config, tmp_path):
         """Home directories are allowed to be shortened with '~' in the config."""
-        config = tmp_config("library_path = '''~'''")
+        tmp_settings = """
+        [move]
+        library_path = '''~'''
+        """
+        config = tmp_config(tmp_settings)
 
         move.post_add(config=config, session=Mock(), item=mock_track)
 
@@ -57,7 +69,11 @@ class TestPostAdd:
 
     def test_path_updated_in_db(self, real_track, tmp_config, tmp_path, tmp_session):
         """Make sure the path updates are being reflected in the DB."""
-        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
         move.post_add(config=config, session=tmp_session, item=real_track)
 
         db_track = tmp_session.query(Track).one()
@@ -70,7 +86,11 @@ class TestPostAdd:
         track1.genre = ["rap"]
         track2.genre = ["hip hop"]
         track2.track_num = track1.track_num
-        config = tmp_config(f"library_path = '''{tmp_path.resolve()}'''")
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
 
         move.post_add(config=config, session=tmp_session, item=track1)
         move.post_add(config=config, session=tmp_session, item=track2)
@@ -87,12 +107,11 @@ class TestAddEntry:
         """Tracks are copied to `library_path` after they are added."""
         args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
 
-        config = tmp_config(
-            settings=f"""
-                library_path = '''{tmp_path}'''
-                default_plugins = ["add", "move"]
-                """
-        )
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
         with patch("sys.argv", args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
@@ -105,12 +124,11 @@ class TestAddEntry:
         """Albums are copied to `library_path` after they are added."""
         cli_args = ["moe", "add", "tests/resources/album/"]
 
-        config = tmp_config(
-            settings=f"""
-                library_path = '''{tmp_path}'''
-                default_plugins = ["add", "move"]
-                """
-        )
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
         with patch("sys.argv", cli_args):
             with patch("moe.cli.Config", return_value=config):
                 cli.main()
