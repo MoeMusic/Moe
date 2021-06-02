@@ -1,5 +1,7 @@
 """Tests configuration."""
 
+from unittest.mock import patch
+
 from moe.core.config import Config
 
 
@@ -28,3 +30,9 @@ class TestInit:
         plugins = ["moe.core.config", "moe.plugins.ls"]
         for plugin_name, _ in config.pluginmanager.list_name_plugin():
             assert plugin_name in plugins
+
+    def test_config_dir_env(self, tmp_path):
+        """The configuration directory can be set with an env var."""
+        with patch.dict("os.environ", {"MOE_CONFIG_DIR": str(tmp_path)}):
+            config = Config()
+            assert config.config_dir == tmp_path
