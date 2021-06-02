@@ -32,15 +32,31 @@ def post_add(config: Config, session: Session, item: MusicItem):
     This hook is run after an item is added to the music library.
 
     Args:
-        config: moe config
+        config: Moe config.
         session: Current db session.
         item: Item to be copied.
     """
-    root_dest = pathlib.Path(config.settings.move.library_path).expanduser()
-    if isinstance(item, Track):
-        _copy_track(session, item, root_dest)
-    elif isinstance(item, Album):
-        _copy_album(session, item, root_dest)
+    _copy_item(session, item, pathlib.Path(config.settings.move.library_path))
+
+
+def _copy_item(session, item: MusicItem, root: pathlib.Path):
+    """Copies and formats the destination of a MusicItem."""
+    if isinstance(item, Album):
+        _copy_album(session, item, root)
+    elif isinstance(item, Track):
+        _copy_track(session, item, root)
+
+
+def _copy_album(session: Session, album: Album, root: pathlib.Path):
+    """Copies and formats the destination of an album.
+
+    Args:
+        session: Current db session.
+        album: Album to copy.
+        root: Root folder to copy the album to.
+    """
+    for track in album.tracks:
+        _copy_track(session, track, root)
 
 
 def _copy_track(session, track: Track, root: pathlib.Path):
@@ -55,7 +71,7 @@ def _copy_track(session, track: Track, root: pathlib.Path):
     Args:
         session: Current db session.
         track: track to copy
-        root: root folder to copy the track to
+        root: Root folder to copy the track to.
     """
     track_path_fmt = (
         f"{track.albumartist}/{track.album} ({track.year})/"
@@ -71,15 +87,3 @@ def _copy_track(session, track: Track, root: pathlib.Path):
 
     track.path = track_dest
     session.merge(track)
-
-
-def _copy_album(session: Session, album: Album, root: pathlib.Path):
-    """Copies and formats the destination of an album.
-
-    Args:
-        session: Current db session.
-        album: Album to copy.
-        root: Root folder to copy the album to.
-    """
-    for track in album.tracks:
-        _copy_track(session, track, root)
