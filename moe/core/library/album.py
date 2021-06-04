@@ -54,22 +54,6 @@ class Album(MusicItem, Base):
         self.title = title
         self.year = year
 
-    def __str__(self):
-        """String representation of an album."""
-        return f"{self.artist} - {self.title}"
-
-    def __repr__(self):
-        """Represent an album using it's primary keys."""
-        return f"{self.artist} - {self.title} ({self.year})"
-
-    def __eq__(self, other):
-        """Album equality based on primary key."""
-        return (
-            self.artist == other.artist
-            and self.title == other.title
-            and self.year == other.year
-        )
-
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Album as a dictionary.
 
@@ -94,3 +78,19 @@ class Album(MusicItem, Base):
                     album_dict[key] = "Various"
 
         return album_dict
+
+    def __str__(self):
+        """String representation of an album."""
+        return f"{self.artist} - {self.title}"
+
+    def __repr__(self):
+        """Represent an album using it's primary keys."""
+        return f"{self.artist} - {self.title} ({self.year})"
+
+    def __eq__(self, other):
+        """Album equality based on primary key."""
+        return (
+            self.artist == other.artist
+            and self.title == other.title
+            and self.year == other.year
+        )

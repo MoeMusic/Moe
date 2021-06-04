@@ -12,6 +12,14 @@ moe.plugins.add module
    :undoc-members:
    :show-inheritance:
 
+moe.plugins.edit module
+-----------------------
+
+.. automodule:: moe.plugins.edit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 moe.plugins.info module
 -----------------------
 

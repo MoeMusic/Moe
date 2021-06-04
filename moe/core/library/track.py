@@ -167,7 +167,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
     @album.setter  # type: ignore
     def album(self, new_album_title: str):  # noqa: WPS440
-        """Setting a new album title should assign the track to a different album."""
+        """Setting a new album title assigns the track to a different album."""
         self._album_obj = Album(
             artist=self.albumartist, title=new_album_title, year=self.year
         )
@@ -179,7 +179,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
     @albumartist.setter  # type: ignore
     def albumartist(self, new_albumartist: str):  # noqa: WPS440
-        """Setting a new album artist should assign the track to a different album."""
+        """Setting a new album artist assigns the track to a different album."""
         self._album_obj = Album(
             artist=new_albumartist, title=self.album, year=self.year
         )
@@ -190,8 +190,8 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         return self._album_obj.year
 
     @year.setter  # type: ignore
-    def year(self, new_album_year: str):  # noqa: WPS440
-        """Setting a new album year should assign the track to a different album."""
+    def year(self, new_album_year: int):  # noqa: WPS440
+        """Setting a new album year assigns the track to a different album."""
         self._album_obj = Album(
             artist=self.albumartist, title=self.album, year=new_album_year
         )

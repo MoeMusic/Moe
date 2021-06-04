@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_PLUGINS = (
     "add",
+    "edit",
     "info",
     "ls",
     "move",
