@@ -35,7 +35,7 @@ def parse_args(
     Raises:
         SystemExit: Query returned no tracks.
     """
-    items = query.query(args.query, session, args.album)
+    items = query.query(args.query, session, album_query=args.album)
 
     if not items:
         raise SystemExit(1)
