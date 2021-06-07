@@ -42,7 +42,7 @@ class TestParseArgs:
 
         assert not tmp_session.query(Track).scalar()
 
-    def test_exit_code(self, capsys):
+    def test_exit_code(self):
         """Return a non-zero exit code if no items are removed."""
         args = argparse.Namespace(query="bad", album=False)
 

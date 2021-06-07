@@ -14,27 +14,36 @@ from moe.plugins import info
 class TestParseArgs:
     """Test the plugin argument parser."""
 
-    def test_track(self, capsys, tmp_session, mock_track):
+    def test_track(self, capsys, mock_track):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query=f"title:{mock_track.title}", album=False)
+        args = argparse.Namespace(query="", album=False)
 
         mock_track.albumartist = "test"
-        tmp_session.add(mock_track)
 
-        info.parse_args(config=Mock(), session=tmp_session, args=args)
+        with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+            mock_session = Mock()
+
+            info.parse_args(config=Mock(), session=mock_session, args=args)
+
+            mock_query.assert_called_once_with("", mock_session, album_query=False)
 
         captured_text = capsys.readouterr()
 
         assert captured_text.out
 
-    def test_album(self, capsys, tmp_session, mock_track):
+    def test_album(self, capsys, mock_track):
         """Albums are printed to stdout with valid query."""
-        args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
+        args = argparse.Namespace(query="", album=True)
         mock_track.album = "album title"
 
-        tmp_session.add(mock_track)
+        with patch(
+            "moe.core.query.query", return_value=[mock_track._album_obj]
+        ) as mock_query:
+            mock_session = Mock()
 
-        info.parse_args(config=Mock(), session=tmp_session, args=args)
+            info.parse_args(config=Mock(), session=mock_session, args=args)
+
+            mock_query.assert_called_once_with("", mock_session, album_query=True)
 
         captured_text = capsys.readouterr()
 
