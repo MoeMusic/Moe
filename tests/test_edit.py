@@ -66,7 +66,7 @@ class TestParseArgs:
 
             mock_query.assert_called_once_with("", mock_session, album_query=False)
 
-        assert mock_track.genre == ["a", "b"]
+        assert mock_track.genre == {"a", "b"}
 
     def test_multiple_items(self, mock_track_factory):
         """All items returned from a query are edited."""

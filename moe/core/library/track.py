@@ -73,7 +73,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         albumartist (str)
         artist (str)
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
-        genre (List[str])
+        genre (Set[str])
         path (pathlib.Path): Path of the track file.
         title (str)
         track_num (int)
@@ -100,7 +100,9 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     genre = association_proxy("_genre_obj", "name")
 
     _album_obj: Album = relationship("Album", back_populates="tracks")
-    _genre_obj: _Genre = relationship("_Genre", secondary=track_genres)
+    _genre_obj: _Genre = relationship(
+        "_Genre", secondary=track_genres, collection_class=set
+    )
 
     __table_args__ = (
         ForeignKeyConstraint(
