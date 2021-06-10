@@ -31,7 +31,7 @@ query_parser = argparse.ArgumentParser(
 )
 query_parser.add_argument("query", help="query the library for matching tracks")
 query_parser.add_argument(
-    "-a", "--album", action="store_true", help="match albums instead of tracks"
+    "-a", "--album", action="store_true", help="query albums instead of tracks"
 )
 
 

@@ -51,3 +51,15 @@ If doing an album query, you still specify track fields, but it will match album
 
 .. tip::
     Normal queries may be faster when compared to regex queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
+
+The following is a list of all the available fields you can query.
+
+* ``album``
+* ``albumartist``
+* ``artist``
+* ``file_ext`` Audio format extension e.g. mp3, flac, wav, etc.
+* ``genre``
+* ``path`` Filesystem path of the track file.
+* ``title``
+* ``track_num``
+* ``year``

@@ -1,8 +1,23 @@
 ###########
 Remove (rm)
 ###########
-Removes music from the library.
+Removes music from your library.
 
-    .. code-block:: bash
+*****
+Usage
+*****
+.. code-block:: bash
 
-       $ moe rm
+    moe rm [-h] [-a] query
+
+Options
+=======
+``-h, --help``
+    Display the help message.
+``-a``
+    Query albums instead of tracks.
+
+Arguments
+=========
+``query``
+    Query your library for items to remove. See the :doc:`query docs <../query>` for more info.
