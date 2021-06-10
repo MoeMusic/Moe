@@ -1,8 +1,22 @@
 ###
 Add
 ###
-Adds music to the library.
+Adds music to your library.
 
-    .. code-block:: bash
+*****
+Usage
+*****
 
-       $ moe add
+.. code-block:: bash
+
+    moe add [-h] path [path ...]
+
+Options
+=======
+``-h, --help``
+    Display the help message.
+
+Arguments
+=========
+``path``
+    The filesystem path of the track or album to add to the library. If ``path`` is a directory, Moe assumes that directory contains a single album.

@@ -46,13 +46,16 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
 .. note::
     The configuration directory can be overwritten by setting the environment variable ``MOE_CONFIG_DIR``.
 
+All configuration options will presented in the following format
+
+    ``option = default_value``
+
 Global Options
 ==============
 Most configuration options reside in their relevant plugin, however there is currently one global option:
 
-* ``default_plugins``: Override the list of default plugins.
-
-  * Default: ``["add", "info", "ls", "move, "rm"]``
+``default_plugins = ["add", "info", "ls", "move, "rm"]``
+    Override the list of default plugins.
 
 Plugin Options
 ==============

@@ -33,7 +33,6 @@ release = pkg_resources.get_distribution("moe").version
 # ones.
 extensions = [
     "sphinx.ext.napoleon",
-    "sphinx_rtd_theme",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -42,7 +41,10 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "global.rst"]
+
+# `rst_prolong` is automatically included in every source file.
+rst_prolog = open("global.rst", "r").read()  # noqa: WPS515
 
 
 # -- Options for HTML output -------------------------------------------------
