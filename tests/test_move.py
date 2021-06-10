@@ -89,9 +89,9 @@ class TestCopy:
 class TestAddEntry:
     """Test integration with the `add` command entry of `move`."""
 
-    def test_add_track(self, tmp_config, tmp_path):
+    def test_add_track(self, real_track, tmp_config, tmp_path):
         """Tracks are copied to `library_path` after they are added."""
-        args = ["moe", "add", "tests/resources/audio_files/full.mp3"]
+        args = ["moe", "add", str(real_track.path)]
 
         tmp_settings = f"""
         [move]
@@ -106,9 +106,9 @@ class TestAddEntry:
             track = session.query(Track).one()
             assert tmp_path in track.path.parents  # accounts for track path formatting
 
-    def test_add_album(self, tmp_config, tmp_path):
+    def test_add_album(self, real_album, tmp_config, tmp_path):
         """Albums are copied to `library_path` after they are added."""
-        cli_args = ["moe", "add", "tests/resources/album/"]
+        cli_args = ["moe", "add", str(real_album.path)]
 
         tmp_settings = f"""
         [move]

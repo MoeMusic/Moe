@@ -1,8 +1,9 @@
 """Shared pytest configuration."""
 import random
+import shutil
 import textwrap
-from typing import Callable, Iterator
-from unittest.mock import MagicMock
+from typing import Callable, Generator, Iterator
+from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy
@@ -63,10 +64,8 @@ def tmp_config(tmp_path) -> Callable[[], Config]:
 
 
 @pytest.fixture
-def mock_track_factory() -> Callable[[], Track]:
-    """Factory for mock Tracks.
-
-    In particular, the path is mocked so the Track doesn't need to exist.
+def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
+    """Factory for mock Tracks that don't exist on the filesystem.
 
     Note:
         Each track will share the same album attributes, and thus will
@@ -74,13 +73,13 @@ def mock_track_factory() -> Callable[[], Track]:
         If adding multiple tracks of the same album in one session, use
         `session.merge(track)` vice `session.add(track)`
 
-    Returns:
+    Yields:
         Unique Track object with each call.
     """
 
     def _mock_track():
         return Track(
-            path=MagicMock(),
+            path=MagicMock(),  # doesn't need to exist on the filesystem
             title="Halftime",
             album="Illmatic",
             albumartist="Nas",
@@ -88,7 +87,9 @@ def mock_track_factory() -> Callable[[], Track]:
             year=1994,
         )
 
-    return _mock_track
+    # don't try to write tags
+    with patch("moe.core.library.session.Track.write_tags"):
+        yield _mock_track
 
 
 @pytest.fixture
@@ -98,10 +99,15 @@ def mock_track(mock_track_factory) -> Track:
 
 
 @pytest.fixture
-def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
+def real_track_factory(tmp_path) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
-    The track is copied to a temp location, so feel free to make any changes.
+    The track is copied to a temp location, so feel free to make any changes. Each
+    track will belong to a single album.
+
+    Args:
+        year: Optional year to include. Changing this will change which album the
+            the track belongs to.
 
     Note:
         If you don't need to interact with the filesystem, it's preferred to use
@@ -111,18 +117,23 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         Unique Track.
     """
 
-    def _real_track():
+    def _real_track(year: int = 1994):
         track_num = random.randint(1, 1000)
-        track_path = tmp_path_factory.mktemp("real_tracks") / f"{track_num}"
-        track_path.touch()
-        return Track(
-            path=track_path,
-            title="Halftime",
+        track_path = tmp_path / f"{track_num}"
+        shutil.copyfile("tests/resources/empty.mp3", track_path)
+
+        track = Track(
             album="Illmatic",
             albumartist="Nas",
+            artist="Nas",
+            genre=["East Coast Hip Hop", "Hip Hop"],
+            title="N.Y. State of Mind",
+            path=track_path,
             track_num=track_num,
-            year=1994,
+            year=year,
         )
+        track.write_tags()
+        return track
 
     return _real_track
 
@@ -147,8 +158,13 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
 
     def _real_album_factory():
         """Creates an album with two tracks."""
-        real_track_factory()
-        return real_track_factory()._album_obj
+        year = random.randint(1, 1000)
+        track = real_track_factory(year)
+
+        album = track._album_obj
+        album.tracks.add(real_track_factory(year))
+
+        return album
 
     return _real_album_factory
 

@@ -75,14 +75,14 @@ class TestFromTags:
     def test_read_tags(self, tmp_session):
         """We should initialize the track with tags from the file if present."""
         track = Track.from_tags(
-            path=pathlib.Path("tests/resources/audio_files/full.mp3"),
+            path=pathlib.Path("tests/resources/full.mp3"),
         )
 
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
         assert track.artist == "Wu-Tang Clan"
         assert track.file_ext == "mp3"
-        assert track.genre == ["hip hop", "rock"]
+        assert track.genre == {"hip hop", "rock"}
         assert track.title == "Full"
         assert track.track_num == 1
         assert track.year == 2020
@@ -106,6 +106,31 @@ class TestToDict:
         """Sqlalchemy attributes are not relevant and should not be included."""
         assert "metadata" not in mock_track.to_dict().keys()
         assert "registry" not in mock_track.to_dict().keys()
+
+
+class TestWriteTags:
+    """Test writing tags to the file."""
+
+    def test_write_tags(self, real_track):
+        """We can write track changes to the file."""
+        real_track.album = "Bigger, Better, Faster, More!"
+        real_track.albumartist = "4 Non Blondes"
+        real_track.artist = "4 Non Blondes"
+        real_track.genre = {"alternative", "rock"}
+        real_track.title = "What's Up"
+        real_track.track_num = 3
+        real_track.year = 1992
+
+        real_track.write_tags()
+
+        new_track = Track.from_tags(path=real_track.path)
+        assert new_track.album == "Bigger, Better, Faster, More!"
+        assert new_track.albumartist == "4 Non Blondes"
+        assert new_track.artist == "4 Non Blondes"
+        assert new_track.genre == {"alternative", "rock"}
+        assert new_track.title == "What's Up"
+        assert new_track.track_num == 3
+        assert new_track.year == 1992
 
 
 class TestPathSet:

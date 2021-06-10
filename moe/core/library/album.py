@@ -24,6 +24,7 @@ class Album(MusicItem, Base):
 
     Attributes:
         artist (str): AKA albumartist.
+        path (pathlib.Path)
         title (str)
         tracks (Set[Track]): All the album's corresponding tracks.
         year (str)
