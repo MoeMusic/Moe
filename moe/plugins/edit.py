@@ -95,7 +95,7 @@ def _edit_item(item: MusicItem, term: str):
     elif isinstance(attr, int):
         setattr(item, field, int(value))
     elif isinstance(
-        attr, sqlalchemy.ext.associationproxy._AssociationList  # noqa: WPS437
+        attr, sqlalchemy.ext.associationproxy._AssociationSet  # noqa: WPS437
     ):
-        list_value = [lv.strip() for lv in value.split(";")]
-        setattr(item, field, list_value)
+        set_value = {lv.strip() for lv in value.split(";")}
+        setattr(item, field, set_value)
