@@ -5,6 +5,7 @@ Note:
 """
 
 from contextlib import contextmanager
+from typing import Generator
 
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
@@ -26,6 +27,35 @@ class DbDupAlbumError(DbDupMusicItemError):
     """Attempt to add a duplicate Album to the database."""
 
 
+@contextmanager
+def session_scope() -> Generator[sqlalchemy.orm.session.Session, None, None]:
+    """Yields a transactional scope around a series of operations."""
+    session = Session()
+    try:
+        yield session
+    except SystemExit:
+        # assumes session has already been cleaned if SystemExit intentionally raised
+        _commit_session(session)
+        raise
+    else:
+        _commit_session(session)
+
+
+def _commit_session(session: sqlalchemy.orm.session.Session):
+    """Commits the changes in the sqlalchemy db session."""
+    try:
+        session.commit()
+    except sqlalchemy.exc.IntegrityError as exc:
+        session.rollback()
+        _parse_integrity_error(exc)
+        raise
+    except:  # noqa: B001, E722
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
     """Parses a general IntegrityError and raises a more specific one.
 
@@ -44,21 +74,3 @@ def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
         raise DbDupTrackPathError from error
     elif error_msg == album_dup_msg:
         raise DbDupAlbumError from error
-
-
-@contextmanager
-def session_scope():
-    """Yields a transactional scope around a series of operations."""
-    session = Session()
-    yield session
-    try:
-        session.commit()
-    except sqlalchemy.exc.IntegrityError as exc:
-        session.rollback()
-        _parse_integrity_error(exc)
-        raise
-    except:  # noqa: B001, E722
-        session.rollback()
-        raise
-    finally:
-        session.close()
