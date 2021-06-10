@@ -107,7 +107,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     __table_args__ = (
         ForeignKeyConstraint(
             [_albumartist, _album, _year],
-            [Album.artist, Album.title, Album.year],
+            [Album.artist, Album.title, Album.year],  # type: ignore
         ),
     )
 
@@ -274,6 +274,20 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
                     track_dict[attr] = value
 
         return track_dict
+
+    def write_tags(self):
+        """Write tags to the file."""
+        audio_file = mediafile.MediaFile(self.path)
+
+        audio_file.album = self.album
+        audio_file.albumartist = self.albumartist
+        audio_file.artist = self.artist
+        audio_file.genres = self.genre
+        audio_file.title = self.title
+        audio_file.track = self.track_num
+        audio_file.year = self.year
+
+        audio_file.save()
 
     def __str__(self):
         """String representation of a track."""

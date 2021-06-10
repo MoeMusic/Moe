@@ -12,7 +12,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 Session = sessionmaker()
-Base = declarative_base()
+Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
+
+# ordering necessary to prevent a circular import with Base
+from moe.core.library.track import Track  # noqa: E402
 
 
 class DbDupMusicItemError(Exception):
@@ -43,6 +46,11 @@ def session_scope() -> Generator[sqlalchemy.orm.session.Session, None, None]:
 
 def _commit_session(session: sqlalchemy.orm.session.Session):
     """Commits the changes in the sqlalchemy db session."""
+    # write tags for any track that changed or was added
+    for item in session.new.union(session.dirty):
+        if isinstance(item, Track):
+            item.write_tags()
+
     try:
         session.commit()
     except sqlalchemy.exc.IntegrityError as exc:

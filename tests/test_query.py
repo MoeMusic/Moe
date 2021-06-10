@@ -128,9 +128,10 @@ class TestQuery:
         assert query.query("track_num::.*", tmp_session)
         assert query.query("year::.*", tmp_session)  # Album field
 
-    def test_invalid_regex(self, tmp_session, mock_track):
+    # this fails if we use `mock_track` for some reason
+    def test_invalid_regex(self, tmp_session, real_track):
         """Invalid regex queries should return an empty list."""
-        tmp_session.add(mock_track)
+        tmp_session.add(real_track)
 
         assert not query.query("title::[", tmp_session)
 
