@@ -8,8 +8,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from moe import cli
+from moe.core.library.album import Album
 from moe.core.library.session import session_scope
-from moe.core.library.track import Album, Track
+from moe.core.library.track import Track
 from moe.plugins import add
 
 
@@ -24,6 +25,25 @@ class TestParseArgs:
             add.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
+
+    def test_multiple_item_exit_error(self, tmp_session):
+        """Don't exit after the first failed item if more to be added.
+
+        Still exit with non-zero code if any failures occured.
+        """
+        file1 = "bad file"
+        file2 = "tests/resources/audio_files/full.mp3"
+        args = argparse.Namespace(paths=[file1, file2])
+
+        with pytest.raises(SystemExit) as error:
+            add.parse_args(config=Mock(), session=tmp_session, args=args)
+
+        assert error.value.code != 0
+        assert (
+            tmp_session.query(Track.path)
+            .filter_by(path=pathlib.Path(file2).resolve())
+            .one()
+        )
 
 
 class TestParseArgsDirectory:
@@ -114,25 +134,6 @@ class TestParseArgsFile:
             .filter_by(path=pathlib.Path(file1).resolve())
             .one()
         )
-        assert (
-            tmp_session.query(Track.path)
-            .filter_by(path=pathlib.Path(file2).resolve())
-            .one()
-        )
-
-    def test_multiple_files_exit_error(self, tmp_session):
-        """Don't exit after the first failed track if more to be added.
-
-        Still exit with non-zero code if any failures occured.
-        """
-        file1 = "bad file"
-        file2 = "tests/resources/audio_files/full.mp3"
-        args = argparse.Namespace(paths=[file1, file2])
-
-        with pytest.raises(SystemExit) as error:
-            add.parse_args(config=Mock(), session=tmp_session, args=args)
-
-        assert error.value.code != 0
         assert (
             tmp_session.query(Track.path)
             .filter_by(path=pathlib.Path(file2).resolve())
