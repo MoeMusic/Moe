@@ -270,7 +270,11 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         for attr in dir(self):  # noqa: WPS421
             if not attr.startswith("_") and attr != "metadata" and attr != "registry":
                 value = getattr(self, attr)
-                if value and not isinstance(value, types.MethodType):
+                if (
+                    value
+                    and not isinstance(value, types.MethodType)
+                    and not isinstance(value, types.FunctionType)
+                ):
                     track_dict[attr] = value
 
         return track_dict
