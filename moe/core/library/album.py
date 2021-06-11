@@ -74,12 +74,11 @@ class Album(MusicItem, Base):
             It will be in the form { attribute: value } and is sorted by attribute.
         """
         # access any element to set intial values
-        random_track = self.tracks.pop()
-        self.tracks.add(random_track)
-        album_dict = random_track.to_dict()
+        track_list = list(self.tracks)  # easier to deal with a list for this func
+        album_dict = track_list[0].to_dict()
 
         # compare rest of album against initial values
-        for track in self.tracks:
+        for track in track_list[1:]:
             track_dict = track.to_dict()
             for key in {**track_dict, **album_dict}.keys():
                 if album_dict.get(key) != track_dict.get(key):
