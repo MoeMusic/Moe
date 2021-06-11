@@ -7,8 +7,8 @@ Submodules
 moe.core.library.album module
 -----------------------------
 
-.. automodule:: moe.core.library.album
-   :members:
+.. autoclass:: moe.core.library.album.Album
+   :members: artist, title, year, tracks, to_dict
    :undoc-members:
    :show-inheritance:
    :noindex:
