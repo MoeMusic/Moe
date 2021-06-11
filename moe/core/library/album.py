@@ -1,9 +1,11 @@
 """An Album in the database and any related logic."""
 
+import pathlib
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Set, TypeVar
 
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from moe.core.library.music_item import MusicItem
@@ -54,6 +56,11 @@ class Album(MusicItem, Base):
         self.artist = artist
         self.title = title
         self.year = year
+
+    @hybrid_property
+    def path(self) -> pathlib.Path:
+        """Returns the directory path of the album."""
+        return list(self.tracks)[0].path.parent  # type: ignore
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Album as a dictionary.
