@@ -71,6 +71,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     Attributes:
         album (str)
         albumartist (str)
+        album_path (pathlib.Path): Path of the album directory.
         artist (str)
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (Set[str])
@@ -187,6 +188,11 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         )
 
     @hybrid_property
+    def album_path(self) -> pathlib.Path:
+        """Returns the directory path of the album."""
+        return self._album_obj.path
+
+    @hybrid_property
     def year(self) -> int:
         """Allow the album's year to be accessible by the track."""
         return self._album_obj.year
@@ -245,6 +251,8 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
             return Album.title
         elif field == "albumartist":
             return Album.artist
+        elif field == "album_path":
+            return Album.path
         elif field == "year":
             return Album.year
 
