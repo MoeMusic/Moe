@@ -128,7 +128,9 @@ class Config:
         self.config_file = self.config_dir / settings_filename
         self._read_config()
 
-    def init_db(self, engine: sqlalchemy.engine.base.Engine = None):
+    def init_db(
+        self, engine: sqlalchemy.engine.base.Engine = None, create_tables: bool = True
+    ):
         """Initializes the database.
 
         Moe uses sqlite by default.
@@ -136,6 +138,8 @@ class Config:
         Args:
             engine: sqlalchemy database engine to use.
                 Defaults to sqlite located at db_path.
+            create_tables: Whether or not to create and update the db tables.
+                If doing db migrations manually, e.g. in alembic, this shuold be False.
         """
         db_path = self.config_dir / "library.db"
 
@@ -147,11 +151,12 @@ class Config:
         Session.configure(bind=self.engine)
 
         # create and update database tables
-        alembic_cfg = alembic.config.Config("alembic.ini")
-        alembic_cfg.attributes["configure_logger"] = False
-        with self.engine.begin() as connection:
-            alembic_cfg.attributes["connection"] = connection
-            alembic.command.upgrade(alembic_cfg, "head")
+        if create_tables:
+            alembic_cfg = alembic.config.Config("alembic.ini")
+            alembic_cfg.attributes["configure_logger"] = False
+            with self.engine.begin() as connection:
+                alembic_cfg.attributes["connection"] = connection
+                alembic.command.upgrade(alembic_cfg, "head")
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")
