@@ -51,7 +51,7 @@ def run_migrations_online():
     if not connectable:
         # only create Engine if we don't have a Connection from the outside
         moe_config = Config()
-        moe_config.init_db()
+        moe_config.init_db(create_tables=False)
         connectable = moe_config.engine
 
     # When connectable is already a Connection object, calling
