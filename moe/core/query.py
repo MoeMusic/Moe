@@ -103,7 +103,8 @@ def query(
     for term in terms:
         try:
             library_query = library_query.filter(_create_expression(_parse_term(term)))
-        except ValueError:
+        except ValueError as exc:
+            log.error(exc)
             return []
 
     items = library_query.all()
@@ -154,8 +155,7 @@ def _parse_term(term: str) -> Dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        log.error(f"Invalid query term: {term}\n{HELP_STR}")
-        raise ValueError
+        raise ValueError(f"Invalid query term: {term}\n{HELP_STR}")
 
     match_dict = match.groupdict()
     match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
@@ -163,9 +163,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _create_expression(
-    term: Dict[str, str]
-) -> sqlalchemy.sql.elements.BinaryExpression:
+def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
@@ -196,10 +194,8 @@ def _create_expression(
         try:
             re.compile(value)
         except re.error:
-            log.error(f"Invalid regular expression: {value}")
-            raise ValueError
+            raise ValueError(f"Invalid regular expression: {value}")
 
         return attr.op("regexp")(value)
 
-    log.error(f"Invalid query type: {separator}")
-    raise ValueError
+    raise ValueError(f"Invalid query type: {separator}")
