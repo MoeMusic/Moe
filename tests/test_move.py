@@ -94,6 +94,7 @@ class TestAddEntry:
         args = ["moe", "add", str(real_track.path)]
 
         tmp_settings = f"""
+        default_plugins = ["add", "move"]
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
@@ -111,6 +112,7 @@ class TestAddEntry:
         cli_args = ["moe", "add", str(real_album.path)]
 
         tmp_settings = f"""
+        default_plugins = ["add", "move"]
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
@@ -124,4 +126,9 @@ class TestAddEntry:
             for track in album.tracks:
                 assert (
                     tmp_path in track.path.parents
+                )  # accounts for track path formatting
+
+            for extra in album.extras:
+                assert (
+                    tmp_path in extra.path.parents
                 )  # accounts for track path formatting

@@ -17,29 +17,10 @@ from sqlalchemy.orm import events, relationship
 from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 
 from moe.core.library.album import Album
-from moe.core.library.music_item import MusicItem
+from moe.core.library.music_item import MusicItem, PathType
 from moe.core.library.session import Base
 
 log = logging.getLogger(__name__)
-
-
-class _PathType(sqlalchemy.types.TypeDecorator):
-    """A custom type for paths for database storage.
-
-    Normally, paths are pathlib.Path type, but we can't store that in the database,
-    so we normalize the paths first for database storage.
-    """
-
-    impl = sqlalchemy.types.String  # sql type
-    cache_ok = True  # expected to produce same bind/result behavior and sql generation
-
-    def process_bind_param(self, pathlib_path, dialect):
-        """Convert the absolute path to a string prior to enterting in the database."""
-        return str(pathlib_path.resolve())
-
-    def process_result_value(self, path_str, dialect):
-        """Convert the path back to pathlib.Path on the way out."""
-        return pathlib.Path(path_str)
 
 
 class _Genre(Base):
@@ -49,15 +30,15 @@ class _Genre(Base):
 
     name = Column(String, nullable=False, primary_key=True)
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
 
 
 track_genres = Table(
-    "association",
+    "track_genres",
     Base.metadata,
     Column("genre", String, ForeignKey("genres.name")),
-    Column("track_path", _PathType, ForeignKey("tracks.path")),
+    Column("track_path", PathType, ForeignKey("tracks.path")),
 )
 
 
@@ -95,7 +76,7 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
     artist = Column(String, nullable=False, default="")
     file_ext = Column(String, nullable=False, default="")
-    path = Column(_PathType, nullable=False, unique=True)
+    path = Column(PathType, nullable=False, unique=True)
     title = Column(String, nullable=False, default="")
 
     genre = association_proxy("_genre_obj", "name")

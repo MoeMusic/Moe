@@ -58,6 +58,23 @@ class TestParseArgsDirectory:
 
         assert tmp_session.query(Album).one()
 
+    def test_extras(self, real_album, tmp_session):
+        """Add any extras that are within the album directory."""
+        cue_file = real_album.path / ".cue"
+        cue_file.touch()
+        playlist_file = real_album.path / ".m3u"
+        playlist_file.touch()
+        args = argparse.Namespace(paths=[real_album.path])
+
+        add.parse_args(config=Mock(), session=tmp_session, args=args)
+
+        album = tmp_session.query(Album).one()
+        extra_paths = [extra.path for extra in album.extras]
+
+        assert cue_file in extra_paths
+        assert playlist_file in extra_paths
+        assert len(album.extras) == 3  # accounts for log file added in fixture
+
     def test_no_valid_tracks(self, tmp_session, tmp_path):
         """Error if given directory does not contain any valid tracks."""
         album = tmp_path / "empty"
@@ -77,8 +94,8 @@ class TestParseArgsDirectory:
         """
         tmp_album_path = tmp_path / "tmp_album"
         tmp_album_path.mkdir()
-        shutil.copy(real_track_factory(1).path, tmp_album_path)
-        shutil.copy(real_track_factory(2).path, tmp_album_path)
+        shutil.copy(real_track_factory(year=1).path, tmp_album_path)
+        shutil.copy(real_track_factory(year=2).path, tmp_album_path)
         args = argparse.Namespace(paths=[tmp_album_path])
 
         with pytest.raises(SystemExit) as error:
@@ -207,3 +224,4 @@ class TestCommand:
                 assert track in album.tracks
 
             assert len(album.tracks) > 1
+            assert album.extras

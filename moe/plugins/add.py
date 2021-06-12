@@ -3,7 +3,6 @@
 import argparse
 import logging
 import pathlib
-from typing import List
 
 import mediafile
 import pluggy
@@ -12,6 +11,7 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
 from moe.core.library.music_item import MusicItem
 from moe.core.library.track import Track
 
@@ -121,13 +121,16 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
     """
     log.info(f"Adding album to the library: {album_path}")
 
-    album_tracks: List[Track] = []
+    album_tracks = set()
+    album_extras = set()
     for file_path in album_path.rglob("*"):
-        log.info(f"Adding track to the library: {file_path}")
         try:
-            album_tracks.append(Track.from_tags(path=file_path))
-        except (TypeError, mediafile.UnreadableFileError) as exc:
-            log.warning(f"Could not add track to album: {str(exc)}")
+            album_tracks.add(Track.from_tags(path=file_path))
+        except (TypeError, mediafile.UnreadableFileError):
+            log.info(f"Adding extra file to the library: {file_path}")
+            album_extras.add(Extra(file_path))
+        else:
+            log.info(f"Adding track to the library: {file_path}")
 
     if not album_tracks:
         raise AddError(f"No tracks found in album: {album_path}")
@@ -144,6 +147,9 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
     album = albums[0]  # we already ensured this list is just multiple of the same album
     for track in album_tracks:
         album.tracks.add(track)
+
+    for extra in album_extras:
+        album.extras.add(extra)
 
     session.merge(album)
     return album

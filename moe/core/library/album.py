@@ -13,6 +13,7 @@ from moe.core.library.session import Base
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
+    from moe.core.library.extra import Extra  # noqa: F401, WPS433
     from moe.core.library.track import Track  # noqa: F401, WPS433
 
 # Album generic, used for typing classmethod
@@ -43,7 +44,14 @@ class Album(MusicItem, Base):
         back_populates="_album_obj",
         cascade="all, delete-orphan",
         collection_class=set,
-    )  # type: Set[Track]  # noqa: WPS400
+    )  # type: Set[Track] # noqa: WPS400
+
+    extras = relationship(
+        "Extra",
+        back_populates="_album_obj",
+        cascade="all, delete-orphan",
+        collection_class=set,
+    )  # type: Set[Extra] # noqa: WPS400
 
     def __init__(self, artist: str, title: str, year: int):
         """Creates an album.
@@ -65,12 +73,13 @@ class Album(MusicItem, Base):
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Album as a dictionary.
 
-        An albums representation is just the merged dictionary of all its tracks.
+        The basis of an album's representation is the merged dictionary of its tracks.
         If different values are present for any given attribute among tracks, then
-        the value becomes "Various".
+        the value becomes "Various". It also includes any extras, and removes any
+        values that are guaranteed to be unique between tracks, such as track number.
 
         Returns:
-            Returns a dict representation of an Album.
+            A dict representation of an Album.
             It will be in the form { attribute: value } and is sorted by attribute.
         """
         # access any element to set intial values
@@ -83,6 +92,13 @@ class Album(MusicItem, Base):
             for key in {**track_dict, **album_dict}.keys():
                 if album_dict.get(key) != track_dict.get(key):
                     album_dict[key] = "Various"
+
+        album_dict["extras"] = {str(extra.path) for extra in self.extras}
+
+        # remove values that are always unique between tracks
+        album_dict.pop("path")
+        album_dict.pop("title")
+        album_dict.pop("track_num")
 
         return album_dict
 

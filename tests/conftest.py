@@ -1,4 +1,5 @@
 """Shared pytest configuration."""
+import pathlib
 import random
 import shutil
 import textwrap
@@ -11,6 +12,7 @@ from sqlalchemy.orm.session import Session
 
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 
@@ -34,7 +36,7 @@ def tmp_session() -> Iterator[Session]:
 
 
 @pytest.fixture
-def tmp_config(tmp_path) -> Callable[[], Config]:
+def tmp_config(tmp_path_factory) -> Callable[[], Config]:
     """Instantiates a temporary configuration.
 
     This fixture must be declared, like a factory. If you want to use specific config
@@ -54,11 +56,12 @@ def tmp_config(tmp_path) -> Callable[[], Config]:
     """
 
     def _tmp_config(settings: str = "") -> Config:
+        config_dir = tmp_path_factory.mktemp("config")
         if settings:
-            settings_path = tmp_path / "config.toml"
+            settings_path = config_dir / "config.toml"
             settings_path.write_text(textwrap.dedent(settings))
 
-        return Config(config_dir=tmp_path, settings_filename="config.toml")
+        return Config(config_dir=config_dir, settings_filename="config.toml")
 
     return _tmp_config
 
@@ -99,13 +102,14 @@ def mock_track(mock_track_factory) -> Track:
 
 
 @pytest.fixture
-def real_track_factory(tmp_path) -> Callable[[], Track]:
+def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
     The track is copied to a temp location, so feel free to make any changes. Each
     track will belong to a single album.
 
     Args:
+        path: Optional album directory to place the track under.
         year: Optional year to include. Changing this will change which album the
             the track belongs to.
 
@@ -117,17 +121,24 @@ def real_track_factory(tmp_path) -> Callable[[], Track]:
         Unique Track.
     """
 
-    def _real_track(year: int = 1994):
+    def _real_track(album_dir: pathlib.Path = None, year: int = 1994):
+        album = "Illmatic"
+        albumartist = "Nas"
         track_num = random.randint(1, 1000)
-        track_path = tmp_path / f"{track_num}"
+        title = "N.Y. State of Mind"
+
+        if not album_dir:
+            album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} ({year})")
+
+        track_path = album_dir / f"{track_num} - {title}"  # type: ignore
         shutil.copyfile("tests/resources/empty.mp3", track_path)
 
         track = Track(
-            album="Illmatic",
-            albumartist="Nas",
+            album=album,
+            albumartist=albumartist,
             artist="Nas",
             genre=["East Coast Hip Hop", "Hip Hop"],
-            title="N.Y. State of Mind",
+            title=title,
             path=track_path,
             track_num=track_num,
             year=year,
@@ -159,10 +170,14 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
     def _real_album_factory():
         """Creates an album with two tracks."""
         year = random.randint(1, 1000)
-        track = real_track_factory(year)
+        track = real_track_factory(year=year)
 
         album = track._album_obj
-        album.tracks.add(real_track_factory(year))
+        album.tracks.add(real_track_factory(album_dir=album.path, year=year))
+
+        log_file = album.path / "log.txt"
+        log_file.touch()
+        album.extras.add(Extra(log_file))
 
         return album
 

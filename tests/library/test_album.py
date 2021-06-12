@@ -9,10 +9,6 @@ from moe.core.library.session import DbDupAlbumError, session_scope
 class TestToDict:
     """Test dict representation of an album."""
 
-    def test_single_track(self, mock_track):
-        """If only one track, just return the track's dict."""
-        assert mock_track._album_obj.to_dict() == mock_track.to_dict()
-
     def test_second_track_attribute_dne(self, mock_track_factory):
         """If varying existence of fields between tracks, set field to Various.
 
@@ -22,22 +18,22 @@ class TestToDict:
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
-        track1.title = "don't show this"
-        track2.title = ""
+        track1.artist = "don't show this"
+        track2.artist = ""
         track1._album_obj = track2._album_obj
 
-        assert track1._album_obj.to_dict()["title"] == "Various"
+        assert track1._album_obj.to_dict()["artist"] == "Various"
 
     def test_second_track_attribute_different(self, mock_track_factory):
         """If varying field values between tracks, set field to Various."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
-        track1.title = "don't show this"
-        track2.title = "different"
+        track1.artist = "don't show this"
+        track2.artist = "different"
         track1._album_obj = track2._album_obj
 
-        assert track1._album_obj.to_dict()["title"] == "Various"
+        assert track1._album_obj.to_dict()["artist"] == "Various"
 
 
 class TestEquals:
@@ -84,7 +80,7 @@ class TestDuplicate:
                 session.add(album1)
                 session.add(album2)
 
-    def test_dup_merge(self, mock_track_factory, tmp_session):
+    def test_dup_merge(self, tmp_session):
         """Duplicate errors should not occur if using `session.merge()`."""
         album1 = Album(artist="Dup", title="licate", year=1999)
         album2 = Album(artist="Dup", title="licate", year=1999)
