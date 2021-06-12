@@ -10,10 +10,14 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
 from moe.core.library.music_item import MusicItem
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
+
+ALBUM_DIR_FMT = "{albumartist}/{album} ({year})"  # noqa; FS003
+TRACK_FILE_FMT = "{track_num} - {title}.{file_ext}"  # noqa: FS003
 
 
 @moe.hookimpl
@@ -58,11 +62,16 @@ def _copy_album(session: Session, album: Album, root: pathlib.Path):
     for track in album.tracks:
         _copy_track(session, track, root)
 
+    for extra in album.extras:
+        _copy_extra(session, extra, root)
 
-def _copy_track(session, track: Track, root: pathlib.Path):
+    session.merge(album)
+
+
+def _copy_track(session: Session, track: Track, root: pathlib.Path):
     """Copies and formats the destination of a single track.
 
-    The track will overwrite anything that currently exists at the destination path.
+    The track will overwrite any conflicting filenames.
 
     Note:
         The track path should contain, at a minimum, the album artist, album title,
@@ -70,16 +79,20 @@ def _copy_track(session, track: Track, root: pathlib.Path):
 
     Args:
         session: Current db session.
-        track: track to copy
+        track: Track to copy.
         root: Root folder to copy the track to.
     """
-    track_path_fmt = (
-        f"{track.albumartist}/{track.album} ({track.year})/"
-        f"{track.track_num} - {track.title}.{track.file_ext}"
+    track_dest = (
+        root
+        / ALBUM_DIR_FMT.format(
+            albumartist=track.albumartist, album=track.album, year=track.year
+        )
+        / TRACK_FILE_FMT.format(
+            track_num=track.track_num, title=track.title, file_ext=track.file_ext
+        )
     )
-    track_dest = root / track_path_fmt
-
     log.info(f"Copying track '{track.path}' to '{track_dest}'")
+
     if track_dest.is_file():
         track_dest.unlink()
     track_dest.parents[0].mkdir(parents=True, exist_ok=True)
@@ -87,3 +100,25 @@ def _copy_track(session, track: Track, root: pathlib.Path):
 
     track.path = track_dest
     session.merge(track)
+
+
+def _copy_extra(session: Session, extra: Extra, album_dir: pathlib.Path):
+    """Copies and formats the destination of an album extra file.
+
+    The extra will overwrite any conflicting filenames.
+
+    Args:
+        session: Current db session.
+        extra: Extra to copy.
+        album_dir: Album directory to copy the extra to.
+    """
+    extra_dest = album_dir / extra.path.name  # type: ignore
+    log.info(f"Copying extra '{extra}' to '{extra_dest}'")
+
+    if extra_dest.is_file():
+        extra_dest.unlink()
+    extra_dest.parents[0].mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(extra.path, extra_dest)
+
+    extra.path = extra_dest
+    session.merge(extra)

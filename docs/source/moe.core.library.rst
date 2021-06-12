@@ -18,6 +18,7 @@ moe.core.library.music\_item module
 
 .. automodule:: moe.core.library.music_item
    :members:
+   :exclude-members: cache_ok
    :undoc-members:
    :show-inheritance:
 
