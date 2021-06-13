@@ -122,20 +122,19 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
     log.info(f"Adding album to the library: {album_path}")
 
     album_tracks = set()
-    album_extras = set()
+    extra_paths = set()
     for file_path in album_path.rglob("*"):
         try:
             album_tracks.add(Track.from_tags(path=file_path))
         except (TypeError, mediafile.UnreadableFileError):
-            log.info(f"Adding extra file to the library: {file_path}")
-            album_extras.add(Extra(file_path))
+            extra_paths.add(file_path)
         else:
             log.info(f"Adding track to the library: {file_path}")
 
     if not album_tracks:
         raise AddError(f"No tracks found in album: {album_path}")
 
-    albums = [track._album_obj for track in album_tracks]  # noqa: WPS437
+    albums = [track.album_obj for track in album_tracks]
 
     # ensure every track belongs to the same album
     if albums.count(albums[0]) != len(albums):
@@ -148,8 +147,9 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
     for track in album_tracks:
         album.tracks.add(track)
 
-    for extra in album_extras:
-        album.extras.add(extra)
+    for extra_path in extra_paths:
+        log.info(f"Adding extra file to the library: {extra_path}")
+        album.extras.add(Extra(extra_path.name, album))
 
     session.merge(album)
     return album

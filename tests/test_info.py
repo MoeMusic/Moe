@@ -37,7 +37,7 @@ class TestParseArgs:
         mock_track.album = "album title"
 
         with patch(
-            "moe.core.query.query", return_value=[mock_track._album_obj]
+            "moe.core.query.query", return_value=[mock_track.album_obj]
         ) as mock_query:
             mock_session = Mock()
 

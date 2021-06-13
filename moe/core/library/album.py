@@ -1,12 +1,14 @@
 """An Album in the database and any related logic."""
 
+import errno
+import os
 import pathlib
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Set, TypeVar
 
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+import sqlalchemy
+from sqlalchemy import Column, Integer, String  # noqa: WPS458
+from sqlalchemy.orm import events, relationship
 
 from moe.core.library.music_item import MusicItem
 from moe.core.library.session import Base
@@ -20,6 +22,25 @@ if TYPE_CHECKING:
 A = TypeVar("A", bound="Album")  # noqa: WPS111
 
 
+class _PathType(sqlalchemy.types.TypeDecorator):
+    """A custom type for paths for database storage.
+
+    Normally, paths are pathlib.Path type, but we can't store that in the database,
+    so we normalize the paths first for database storage.
+    """
+
+    impl = sqlalchemy.types.String  # sql type
+    cache_ok = True  # expected to produce same bind/result behavior and sql generation
+
+    def process_bind_param(self, pathlib_path, dialect):
+        """Convert the absolute path to a string prior to enterting in the database."""
+        return str(pathlib_path.resolve())
+
+    def process_result_value(self, path_str, dialect):
+        """Convert the path back to pathlib.Path on the way out."""
+        return pathlib.Path(path_str)
+
+
 class Album(MusicItem, Base):
     """An album is a collection of tracks.
 
@@ -27,48 +48,57 @@ class Album(MusicItem, Base):
 
     Attributes:
         artist (str): AKA albumartist.
-        path (pathlib.Path)
+        extras (Set(Extra)): Extra non-track files associated with the album.
+        path (pathlib.Path): Filesystem path of the album directory.
         title (str)
-        tracks (Set[Track]): All the album's corresponding tracks.
+        tracks (Set[Track]): Album's corresponding tracks.
         year (str)
     """
 
     __tablename__ = "albums"
 
-    artist = Column(String, nullable=False, primary_key=True)
-    title = Column(String, nullable=False, primary_key=True)
-    year = Column(Integer, nullable=False, primary_key=True)
+    # unique Album = artist + title + year
+    artist: str = Column(String, nullable=False, primary_key=True)
+    title: str = Column(String, nullable=False, primary_key=True)
+    year: int = Column(Integer, nullable=False, primary_key=True)
+
+    path: pathlib.Path = Column(_PathType, nullable=False, unique=True)
 
     tracks = relationship(
         "Track",
-        back_populates="_album_obj",
+        back_populates="album_obj",
         cascade="all, delete-orphan",
         collection_class=set,
     )  # type: Set[Track] # noqa: WPS400
-
     extras = relationship(
         "Extra",
-        back_populates="_album_obj",
+        back_populates="album",
         cascade="all, delete-orphan",
         collection_class=set,
     )  # type: Set[Extra] # noqa: WPS400
 
-    def __init__(self, artist: str, title: str, year: int):
+    def __init__(
+        self,
+        artist: str,
+        title: str,
+        year: int,
+        path: pathlib.Path,
+    ):
         """Creates an album.
 
         Args:
             artist: Album artist.
             title: Album title.
             year: Album release year.
+            path: Filesystem path of the album directory.
+
+        Raises:
+            ValueError: No path given and the move plugin is disabled.
         """
         self.artist = artist
         self.title = title
         self.year = year
-
-    @hybrid_property
-    def path(self) -> pathlib.Path:
-        """Returns the directory path of the album."""
-        return list(self.tracks)[0].path.parent  # type: ignore
+        self.path = path
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Album as a dictionary.
@@ -103,17 +133,39 @@ class Album(MusicItem, Base):
         return album_dict
 
     def __str__(self):
-        """String representation of an album."""
-        return f"{self.artist} - {self.title}"
-
-    def __repr__(self):
-        """Represent an album using it's primary keys."""
+        """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
 
-    def __eq__(self, other):
-        """Album equality based on primary key."""
+    def __repr__(self):
+        """Represents an Album using it's primary keys."""
         return (
-            self.artist == other.artist
-            and self.title == other.title
-            and self.year == other.year
+            f"{self.__class__.__name__}("
+            f"artist={repr(self.artist)}, "
+            f"title={repr(self.title)}, "
+            f"year={repr(self.year)}, "
+            f"path={repr(self.path)})"
+        )
+
+    def __eq__(self, other):
+        """Compares an Album using its primary keys."""
+        if isinstance(other, Album):
+            return (
+                self.artist == other.artist
+                and self.title == other.title
+                and self.year == other.year
+            )
+        return False
+
+
+@sqlalchemy.event.listens_for(Album.path, "set")
+def album_path_set(
+    target: Album,
+    value: pathlib.Path,
+    oldvalue: pathlib.Path,
+    initiator: events.AttributeEvents,
+):
+    """Only allow paths that exist."""
+    if not value.is_dir():
+        raise NotADirectoryError(
+            errno.ENOENT, os.strerror(errno.ENOENT), str(value.resolve())
         )

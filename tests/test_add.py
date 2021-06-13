@@ -1,7 +1,6 @@
 """Tests the add plugin."""
 
 import argparse
-import pathlib
 import shutil
 from unittest.mock import Mock, patch
 
@@ -37,11 +36,7 @@ class TestParseArgs:
             add.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert error.value.code != 0
-        assert (
-            tmp_session.query(Track.path)
-            .filter_by(path=real_track.path.resolve())
-            .one()
-        )
+        assert tmp_session.query(Track).one()
 
 
 class TestParseArgsDirectory:
@@ -127,11 +122,7 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert (
-            tmp_session.query(Track.path)
-            .filter_by(path=real_track.path.resolve())
-            .one()
-        )
+        assert tmp_session.query(Track).filter_by(filename=real_track.path.name).one()
 
     def test_multiple_files(self, real_track_factory, tmp_session):
         """Add all files given."""
@@ -141,8 +132,8 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Track.path).filter_by(path=track_path1.resolve()).one()
-        assert tmp_session.query(Track.path).filter_by(path=track_path2.resolve()).one()
+        assert tmp_session.query(Track).filter_by(filename=track_path1.name).one()
+        assert tmp_session.query(Track).filter_by(filename=track_path2.name).one()
 
     def test_min_reqd_tags(self, tmp_session):
         """We can add a track with only a track_num, album, albumartist, and year."""
@@ -151,11 +142,7 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert (
-            tmp_session.query(Track.path)
-            .filter_by(path=pathlib.Path(reqd_track_path).resolve())
-            .one()
-        )
+        assert tmp_session.query(Track).filter_by(filename="reqd.mp3").one()
 
     def test_non_track_file(self):
         """Raise SystemExit if the file given is not a valid track."""
@@ -178,8 +165,8 @@ class TestParseArgsFile:
     def test_duplicate_track(self, real_track, tmp_session, tmp_path):
         """Overwrite old track path with the new track if a duplicate is found."""
         new_track_path = tmp_path / "full2"
-        args = argparse.Namespace(paths=[str(new_track_path)])
         shutil.copyfile(real_track.path, new_track_path)
+        args = argparse.Namespace(paths=[str(new_track_path)])
 
         tmp_session.add(real_track)
         tmp_session.commit()

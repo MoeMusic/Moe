@@ -7,7 +7,7 @@ import types
 import pytest
 
 from moe.core.library.album import Album
-from moe.core.library.session import DbDupTrackPathError, session_scope
+from moe.core.library.session import DbDupAlbumError, session_scope
 from moe.core.library.track import Track
 
 
@@ -18,7 +18,7 @@ class TestInit:
         """Creating a Track should also create the corresponding Album."""
         tmp_session.add(mock_track)
 
-        assert mock_track._album_obj
+        assert mock_track.album_obj
 
     def test_add_to_album(self, mock_track_factory, tmp_session):
         """Tracks with the same album attributes should be added to the same album.
@@ -36,37 +36,28 @@ class TestInit:
         tracks = tmp_session.query(Track).all()
         album = tmp_session.query(Album).one()
 
+        for track in tracks:
+            assert track in album.tracks
+
         assert len(tracks) == len(album.tracks)
         assert set(tracks) == album.tracks
 
-    def test_empty(self, tmp_session):
-        """Raise TypeError if None value given in argument."""
-        with pytest.raises(TypeError):
-            Track(
-                path=None,
-                album=None,
-                albumartist=None,
-                track_num=None,
-                year=None,
-                session=None,
-            )
-
 
 class TestAlbumSet:
-    """Create a new album when setting an album attribute.
+    """Changing an album attribute will change the value for the current Album.
 
-    This will "move" the edited track to a new album rather than editing the
-    current album and thus all the other associated tracks.
+    Thus, all tracks in the album will reflect the new value.
     """
 
-    def test_album_set(self, mock_track, tmp_session):
-        """Setting an album attribute creates a new Album instance."""
-        album1 = mock_track._album_obj
+    def test_album_set(self, mock_track, tmp_path, tmp_session):
+        """Setting an album attribute maintains the same album object."""
+        album1 = mock_track.album_obj
         mock_track.album = "TPAB"
+        mock_track.album_path = tmp_path
+        mock_track.albumartist = "Kendrick Lamar"
+        mock_track.year = 2000
 
-        assert mock_track._album_obj.title == mock_track.album
-        assert album1 is not mock_track._album_obj
-        tmp_session.add(mock_track)  # make sure we still have all the req'd values
+        assert album1 is mock_track.album_obj
 
 
 class TestFromTags:
@@ -133,27 +124,18 @@ class TestWriteTags:
         assert new_track.year == 1992
 
 
-class TestPathSet:
-    """Test path set event."""
-
-    def test_path_dne(self, mock_track):
-        """Raise an error if setting a path that doesn't exist."""
-        with pytest.raises(FileNotFoundError):
-            mock_track.path = pathlib.Path("also doesnt exist")
-
-
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Track to the db.
 
     A duplicate Track is defined as a combination of it's album (obj) and track number.
-    A duplicate can also be because two Tracks have the same path.
     If a duplicate is found when committing to the database, we should raise a
-    DbDupTrackPathError.
+    ``DbDupAlbumError``.
 
-    If we use `session.merge()` to add a Track, a duplicate error should only occur
-    for duplicate paths, and not because of its tags. This is because a Track's
-    primary key is based off of its tags, and `session.merge()` uses an object's
-    primary key to merge any existing objects.
+    The reason a DbDupAlbumError is raised instead of a track-related error, is because
+    a duplicate Track must have a duplicate Album by definition of a Track's uniqueness
+    being defined by the album it belongs to.
+
+    Duplicates should not error if using `session.merge()`
 
     Note:
         This error will only occur upon the session being flushed or committed.
@@ -161,6 +143,17 @@ class TestDuplicate:
         as shown in `test_dup_path()`. This will allow you to catch the error by
         wrapping the `with` statement with a `try/except`.
     """
+
+    def test_dup(self, mock_track_factory, tmp_session):
+        """Duplicate tracks should raise a DbDupAlbumError."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        track2.track_num = track1.track_num
+
+        with pytest.raises(DbDupAlbumError):
+            with session_scope() as session:
+                session.add(track1)
+                session.add(track2)
 
     def test_dup_fields_merge(self, mock_track_factory, tmp_session):
         """Duplicate errors should not occur if using `session.merge()`."""
@@ -170,17 +163,3 @@ class TestDuplicate:
 
         tmp_session.merge(track1)
         tmp_session.merge(track2)
-
-    def test_dup_path(self, mock_track_factory, tmp_session):
-        """Duplicate tracks can also be defined as having the same path.
-
-        These should also raise the same DbDupTrackError.
-        """
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-        track2.path = track1.path
-
-        with pytest.raises(DbDupTrackPathError):
-            with session_scope() as session:
-                session.merge(track1)
-                session.merge(track2)

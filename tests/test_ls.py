@@ -33,7 +33,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="", album=True)
 
         with patch(
-            "moe.core.query.query", return_value=[mock_track._album_obj]
+            "moe.core.query.query", return_value=[mock_track.album_obj]
         ) as mock_query:
             mock_session = Mock()
 
@@ -43,7 +43,7 @@ class TestParseArgs:
 
         captured_text = capsys.readouterr()
 
-        assert captured_text.out.strip() == str(mock_track._album_obj).strip()
+        assert captured_text.out.strip() == str(mock_track.album_obj).strip()
 
     def test_exit_code(self, capsys):
         """If no tracks are printed, we should return a non-zero exit code."""

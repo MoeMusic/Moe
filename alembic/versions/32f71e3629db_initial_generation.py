@@ -1,8 +1,8 @@
 """Initial generation.
 
-Revision ID: 5b8249a3b10a
+Revision ID: 32f71e3629db
 Revises:
-Create Date: 2021-06-11 20:24:19.675630
+Create Date: 2021-06-13 15:11:54.573755
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ import moe
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "5b8249a3b10a"
+revision = "32f71e3629db"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,7 +24,9 @@ def upgrade():
         sa.Column("artist", sa.String(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("year", sa.Integer(), nullable=False),
+        sa.Column("path", moe.core.library.album._PathType(), nullable=False),
         sa.PrimaryKeyConstraint("artist", "title", "year"),
+        sa.UniqueConstraint("path"),
     )
     op.create_table(
         "genres",
@@ -33,7 +35,7 @@ def upgrade():
     )
     op.create_table(
         "extras",
-        sa.Column("path", moe.core.library.music_item.PathType(), nullable=False),
+        sa.Column("filename", sa.String(), nullable=False),
         sa.Column("_albumartist", sa.String(), nullable=False),
         sa.Column("_album", sa.String(), nullable=False),
         sa.Column("_year", sa.Integer(), autoincrement=False, nullable=False),
@@ -41,7 +43,7 @@ def upgrade():
             ["_albumartist", "_album", "_year"],
             ["albums.artist", "albums.title", "albums.year"],
         ),
-        sa.PrimaryKeyConstraint("path"),
+        sa.PrimaryKeyConstraint("filename", "_albumartist", "_album", "_year"),
     )
     op.create_table(
         "tracks",
@@ -51,26 +53,33 @@ def upgrade():
         sa.Column("_year", sa.Integer(), autoincrement=False, nullable=False),
         sa.Column("artist", sa.String(), nullable=False),
         sa.Column("file_ext", sa.String(), nullable=False),
-        sa.Column("path", moe.core.library.music_item.PathType(), nullable=False),
+        sa.Column("filename", sa.String(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["_albumartist", "_album", "_year"],
             ["albums.artist", "albums.title", "albums.year"],
         ),
         sa.PrimaryKeyConstraint("track_num", "_albumartist", "_album", "_year"),
-        sa.UniqueConstraint("path"),
     )
     op.create_table(
         "track_genres",
         sa.Column("genre", sa.String(), nullable=True),
-        sa.Column("track_path", moe.core.library.music_item.PathType(), nullable=True),
+        sa.Column("track_num", sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column("album", sa.String(), nullable=False),
+        sa.Column("albumartist", sa.String(), nullable=False),
+        sa.Column("year", sa.Integer(), autoincrement=False, nullable=False),
         sa.ForeignKeyConstraint(
             ["genre"],
             ["genres.name"],
         ),
         sa.ForeignKeyConstraint(
-            ["track_path"],
-            ["tracks.path"],
+            ["track_num", "album", "albumartist", "year"],
+            [
+                "tracks.track_num",
+                "tracks._album",
+                "tracks._albumartist",
+                "tracks._year",
+            ],
         ),
     )
     # ### end Alembic commands ###

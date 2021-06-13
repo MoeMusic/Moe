@@ -3,7 +3,7 @@ import pathlib
 import random
 import shutil
 import textwrap
-from typing import Callable, Generator, Iterator
+from typing import Callable, Generator, Iterator, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -76,18 +76,22 @@ def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
         If adding multiple tracks of the same album in one session, use
         `session.merge(track)` vice `session.add(track)`
 
+    Args:
+        year: Optional year to include. Changing this will change which album the
+            the track belongs to.
+
     Yields:
         Unique Track object with each call.
     """
 
-    def _mock_track():
+    def _mock_track(year: int = 1996):
+        album = Album("Outkast", "ATLiens", year, path=MagicMock())
+        track_num = random.randint(1, 1000)
         return Track(
-            path=MagicMock(),  # doesn't need to exist on the filesystem
-            title="Halftime",
-            album="Illmatic",
-            albumartist="Nas",
-            track_num=random.randint(1, 1000),
-            year=1994,
+            album=album,
+            track_num=track_num,
+            filename=f"{track_num} - Jazzy Belle.mp3",
+            title="Jazzy Belle",
         )
 
     # don't try to write tags
@@ -99,6 +103,22 @@ def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
 def mock_track(mock_track_factory) -> Track:
     """Creates a single mock Track object."""
     return mock_track_factory()
+
+
+@pytest.fixture
+def mock_album_factory(mock_track_factory) -> Callable[[], Album]:
+    """Factory for mock Albums that don't exist on the filesytem."""
+
+    def _mock_album():
+        return mock_track_factory(random.randint(1, 1000)).album_obj
+
+    return _mock_album
+
+
+@pytest.fixture
+def mock_album(mock_album_factory) -> Album:
+    """Creates a single mock Album object."""
+    return mock_album_factory()
 
 
 @pytest.fixture
@@ -130,18 +150,24 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         if not album_dir:
             album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} ({year})")
 
-        track_path = album_dir / f"{track_num} - {title}"  # type: ignore
-        shutil.copyfile("tests/resources/empty.mp3", track_path)
+        filename = f"{track_num} - {title}"
+        shutil.copyfile(
+            "tests/resources/empty.mp3", cast(pathlib.Path, album_dir) / filename
+        )
 
+        album_obj = Album(
+            artist=albumartist,
+            title=album,
+            year=year,
+            path=cast(pathlib.Path, album_dir),
+        )
         track = Track(
-            album=album,
-            albumartist=albumartist,
-            artist="Nas",
+            album=album_obj,
             genre=["East Coast Hip Hop", "Hip Hop"],
             title=title,
-            path=track_path,
+            filename=filename,
             track_num=track_num,
-            year=year,
+            artist=albumartist,
         )
         track.write_tags()
         return track
@@ -172,12 +198,12 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
         year = random.randint(1, 1000)
         track = real_track_factory(year=year)
 
-        album = track._album_obj
+        album = track.album_obj
         album.tracks.add(real_track_factory(album_dir=album.path, year=year))
 
         log_file = album.path / "log.txt"
         log_file.touch()
-        album.extras.add(Extra(log_file))
+        album.extras.add(Extra(log_file.name, album))
 
         return album
 

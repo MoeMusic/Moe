@@ -17,17 +17,19 @@ class TestParseArgs:
 
     def test_track(self, tmp_session, mock_track):
         """Tracks are removed from the database with valid query."""
-        args = argparse.Namespace(query=f"title:{mock_track.title}", album=False)
+        args = argparse.Namespace(query="*", album=False)
         tmp_session.add(mock_track)
+        tmp_session.commit()
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert not tmp_session.query(Track.path).scalar()
+        assert not tmp_session.query(Track).scalar()
 
     def test_album(self, tmp_session, mock_track):
         """Albums are removed from the database with valid query."""
-        args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
+        args = argparse.Namespace(query="*", album=True)
         tmp_session.add(mock_track)
+        tmp_session.commit()
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
@@ -35,8 +37,9 @@ class TestParseArgs:
 
     def test_album_tracks(self, tmp_session, mock_track):
         """Removing an album should also remove all of its tracks."""
-        args = argparse.Namespace(query=f"title:{mock_track.title}", album=True)
+        args = argparse.Namespace(query="*", album=True)
         tmp_session.add(mock_track)
+        tmp_session.commit()
 
         rm.parse_args(config=Mock(), session=tmp_session, args=args)
 
