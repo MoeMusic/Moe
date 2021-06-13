@@ -32,7 +32,7 @@ class TestParseArgs:
         args = argparse.Namespace(fv_terms=["title=new title"], query="", album=True)
 
         with patch(
-            "moe.core.query.query", return_value=[mock_track._album_obj]
+            "moe.core.query.query", return_value=[mock_track.album_obj]
         ) as mock_query:
             mock_session = Mock()
 
@@ -138,7 +138,7 @@ class TestParseArgs:
 
         with pytest.raises(SystemExit) as error:
             with patch(
-                "moe.core.query.query", return_value=[mock_track._album_obj]
+                "moe.core.query.query", return_value=[mock_track.album_obj]
             ) as mock_query:
                 mock_session = Mock()
 

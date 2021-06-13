@@ -1,9 +1,10 @@
 """Tests an Album object."""
 
+import pathlib
+
 import pytest
 
-from moe.core.library.album import Album
-from moe.core.library.session import DbDupAlbumError, session_scope
+from moe.core.library.session import DbDupAlbumError, DbDupAlbumPathError, session_scope
 
 
 class TestToDict:
@@ -20,9 +21,9 @@ class TestToDict:
 
         track1.artist = "don't show this"
         track2.artist = ""
-        track1._album_obj = track2._album_obj
+        track1.album_obj = track2.album_obj
 
-        assert track1._album_obj.to_dict()["artist"] == "Various"
+        assert track1.album_obj.to_dict()["artist"] == "Various"
 
     def test_second_track_attribute_different(self, mock_track_factory):
         """If varying field values between tracks, set field to Various."""
@@ -31,27 +32,40 @@ class TestToDict:
 
         track1.artist = "don't show this"
         track2.artist = "different"
-        track1._album_obj = track2._album_obj
+        track1.album_obj = track2.album_obj
 
-        assert track1._album_obj.to_dict()["artist"] == "Various"
+        assert track1.album_obj.to_dict()["artist"] == "Various"
 
 
 class TestEquals:
     """Equality based on primary key."""
 
-    def test_equals(self):
+    def test_equals(self, mock_album_factory):
         """Equal if two albums share the same primary key attributes."""
-        album1 = Album(artist="this", title="is equal", year=1111)
-        album2 = Album(artist="this", title="is equal", year=1111)
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+
+        album1.artist = album2.artist
+        album1.title = album2.title
+        album1.year = album2.year
 
         assert album1 == album2
 
-    def test_not_equals(self):
+    def test_not_equals(self, mock_album_factory):
         """Not equal if two albums don't share the same primary key attributes."""
-        album1 = Album(artist="this", title="is not equal", year=1111)
-        album2 = Album(artist="this", title="is equal", year=1111)
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
 
         assert album1 != album2
+
+
+class TestPathSet:
+    """Test path set event."""
+
+    def test_path_dne(self, mock_album):
+        """Raise an error if setting a path that doesn't exist."""
+        with pytest.raises(NotADirectoryError):
+            mock_album.path = pathlib.Path("also doesnt exist")
 
 
 class TestDuplicate:
@@ -59,9 +73,16 @@ class TestDuplicate:
 
     A duplicate Album is defined as a combination of the artist, title, and year.
     If a duplicate is found when committing to the database, we should raise a
-    DbDupAlbumError.
+    ``DbDupAlbumError``.
 
-    Duplicates should not error if using `session.merge()`
+    A duplicate can also be because two Albums have the same path.
+    If a duplicate is found when committing to the database, we should raise a
+    ``DbDupAlbumPathError``.
+
+    If we use `session.merge()` to add an Album, a duplicate error should only occur
+    for duplicate paths, and not because of its tags. This is because an Album's
+    primary key is based off of its tags, and `session.merge()` uses an object's
+    primary key to merge any existing objects.
 
     Note:
         This error will only occur upon the session being flushed or committed.
@@ -70,21 +91,37 @@ class TestDuplicate:
         the `with` statement with a `try/except`.
     """
 
-    def test_dup(self, tmp_session):
+    def test_dup(self, mock_album_factory, tmp_session):
         """Duplicate albums should raise a DbDupAlbumError."""
-        album1 = Album(artist="Dup", title="licate", year=1999)
-        album2 = Album(artist="Dup", title="licate", year=1999)
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+        album1.year = album2.year
 
         with pytest.raises(DbDupAlbumError):
             with session_scope() as session:
                 session.add(album1)
                 session.add(album2)
 
-    def test_dup_merge(self, tmp_session):
+    def test_dup_merge(self, mock_album_factory, tmp_session):
         """Duplicate errors should not occur if using `session.merge()`."""
-        album1 = Album(artist="Dup", title="licate", year=1999)
-        album2 = Album(artist="Dup", title="licate", year=1999)
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+        album1.year = album2.year
 
         with session_scope() as session:
             session.merge(album1)
             session.merge(album2)
+
+    def test_dup_path(self, mock_album_factory, tmp_session):
+        """Duplicate tracks can also be defined as having the same path.
+
+        These should also raise the same DbDupTrackError.
+        """
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+        album2.path = album1.path
+
+        with pytest.raises(DbDupAlbumPathError):
+            with session_scope() as session:
+                session.merge(album1)
+                session.merge(album2)

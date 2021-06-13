@@ -1,24 +1,30 @@
 """A Track in the database and any related logic."""
 
-import errno
 import logging
-import os
 import pathlib
 import types
 from collections import OrderedDict
-from typing import Any, List, Type, TypeVar
+from typing import TYPE_CHECKING, Any, List, Set, Type, TypeVar
 
 import mediafile
 import sqlalchemy
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import events, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 
 from moe.core.library.album import Album
-from moe.core.library.music_item import MusicItem, PathType
+from moe.core.library.music_item import MusicItem
 from moe.core.library.session import Base
+
+# Makes hybrid_property's have the same typing as a normal properties.
+# Use until the stubs are improved.
+if TYPE_CHECKING:
+    typed_hybrid_property = property
+else:
+    from sqlalchemy.ext.hybrid import (  # noqa: WPS440
+        hybrid_property as typed_hybrid_property,
+    )
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +34,7 @@ class _Genre(Base):
 
     __tablename__ = "genres"
 
-    name = Column(String, nullable=False, primary_key=True)
+    name: str = Column(String, nullable=False, primary_key=True)
 
     def __init__(self, name: str):
         self.name = name
@@ -38,8 +44,16 @@ track_genres = Table(
     "track_genres",
     Base.metadata,
     Column("genre", String, ForeignKey("genres.name")),
-    Column("track_path", PathType, ForeignKey("tracks.path")),
+    Column("track_num", Integer, nullable=False, autoincrement=False),
+    Column("album", String, nullable=False),
+    Column("albumartist", String, nullable=False),
+    Column("year", Integer, nullable=False, autoincrement=False),
+    ForeignKeyConstraint(
+        ["track_num", "album", "albumartist", "year"],
+        ["tracks.track_num", "tracks._album", "tracks._albumartist", "tracks._year"],
+    ),
 )
+__table_args__ = ()
 
 
 # Track generic, used for typing classmethod
@@ -52,11 +66,14 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     Attributes:
         album (str)
         albumartist (str)
+        album_obj (Album): Corresponding Album object.
         album_path (pathlib.Path): Path of the album directory.
         artist (str)
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
+        filename (str): Base filename of the track file.
         genre (Set[str])
-        path (pathlib.Path): Path of the track file.
+        path (pathlib.Path): Filesystem path of the track file. Read-only, but you can
+            alter the ``filename``.
         title (str)
         track_num (int)
         year (int): Album release year.
@@ -69,121 +86,118 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
     __tablename__ = "tracks"
 
     # unqiue track = track_num + Album
-    track_num = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+    track_num: int = Column(
+        Integer, nullable=False, primary_key=True, autoincrement=False
+    )
     _albumartist = Column(String, nullable=False, primary_key=True)
     _album = Column(String, nullable=False, primary_key=True)
     _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
 
-    artist = Column(String, nullable=False, default="")
-    file_ext = Column(String, nullable=False, default="")
-    path = Column(PathType, nullable=False, unique=True)
-    title = Column(String, nullable=False, default="")
+    artist: str = Column(String, nullable=False, default="")
+    file_ext: str = Column(String, nullable=False, default="")
+    filename: str = Column(String, nullable=False)
+    title: str = Column(String, nullable=False, default="")
 
-    genre = association_proxy("_genre_obj", "name")
+    genre: Set[str] = association_proxy("_genre_obj", "name")
 
-    _album_obj: Album = relationship("Album", back_populates="tracks")
+    album_obj: Album = relationship("Album", back_populates="tracks")
     _genre_obj: _Genre = relationship(
         "_Genre", secondary=track_genres, collection_class=set
     )
-
     __table_args__ = (
         ForeignKeyConstraint(
-            [_albumartist, _album, _year],
-            [Album.artist, Album.title, Album.year],  # type: ignore
+            ["_albumartist", "_album", "_year"],
+            ["albums.artist", "albums.title", "albums.year"],
         ),
     )
 
-    def __init__(  # noqa: WPS211
+    def __init__(
         self,
-        path: pathlib.Path,
-        album: str,
-        albumartist: str,
+        album: Album,
         track_num: int,
-        year: int,
+        filename: str,
         **kwargs,
     ):
         """Create a track.
 
         Args:
-            path: Filesystem path of the track to add.
-            album: Album title.
-            albumartist: Album artist.
+            album: Album the track belongs to.
             track_num: Track number.
-            year: Album release year.
+            filename: Base filename of the track file. Necessary if not using the
+                ``move`` plugin. Otherwise, the path will generated by the config.
             **kwargs: Any other fields to assign to the Track.
 
         Note:
             If you wish to add several tracks to the same album, ensure the album
             already exists in the database, or use `session.merge()`.
-
-        Raises:
-            TypeError: None value found in arguments.
         """
-        missing_tags: List[str] = []
-        if album is None:
-            missing_tags.append("album")
-        if albumartist is None:
-            missing_tags.append("albumartist")
-        if track_num is None:
-            missing_tags.append("track_num")
-        if year is None:
-            missing_tags.append("year")
-        if missing_tags:
-            raise TypeError(
-                f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
-            )
-
-        self._album_obj = Album(artist=albumartist, title=album, year=year)
-        self._album = album
-        self._albumartist = albumartist
-        self._year = year
-
-        self.path = path
+        self.album_obj = album
+        self._album = album.title
+        self._albumartist = album.artist
+        self._year = album.year
         self.track_num = track_num
+
+        self.filename = filename
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    @hybrid_property
+    @typed_hybrid_property
     def album(self) -> str:
-        """Allow the album's title to be accessible by the track."""
-        return self._album_obj.title
+        """Returns the album's title."""
+        return self.album_obj.title
 
-    @album.setter  # type: ignore
+    @album.setter
     def album(self, new_album_title: str):  # noqa: WPS440
-        """Setting a new album title assigns the track to a different album."""
-        self._album_obj = Album(
-            artist=self.albumartist, title=new_album_title, year=self.year
-        )
+        """Changes the title of the Album this Track belongs to."""
+        self.album_obj.title = new_album_title
 
-    @hybrid_property
+    @typed_hybrid_property
     def albumartist(self) -> str:
-        """Allow the album's artist to be accessible by the track."""
-        return self._album_obj.artist
+        """Returns the album's artist."""
+        return self.album_obj.artist
 
-    @albumartist.setter  # type: ignore
+    @albumartist.setter
     def albumartist(self, new_albumartist: str):  # noqa: WPS440
-        """Setting a new album artist assigns the track to a different album."""
-        self._album_obj = Album(
-            artist=new_albumartist, title=self.album, year=self.year
-        )
+        """Changes the artist of the Album this Track belongs to."""
+        self.album_obj.artist = new_albumartist
 
-    @hybrid_property
+    @typed_hybrid_property
     def album_path(self) -> pathlib.Path:
         """Returns the directory path of the album."""
-        return self._album_obj.path
+        return self.album_obj.path
 
-    @hybrid_property
+    @album_path.setter
+    def album_path(self, new_album_path: pathlib.Path):  # noqa: WPS440
+        """Changes the path of the Album this Track belongs to.
+
+        Be careful changing this that you ensure each item in the Album physically
+        resides under this path.
+
+        Args:
+            new_album_path: New album path.
+        """
+        self.album_obj.path = new_album_path
+
+    @typed_hybrid_property
+    def path(self) -> pathlib.Path:
+        """Filesystem path of the track file."""
+        return self.album_obj.path / self.filename
+
+    @path.expression
+    def path(cls):  # noqa: WPS440, N805, B902
+        """Creates a sql expression so we can query for a path."""
+        return Album.path + cls.filename
+
+    @typed_hybrid_property
     def year(self) -> int:
-        """Allow the album's year to be accessible by the track."""
-        return self._album_obj.year
+        """Returns the album's artist."""
+        return self.album_obj.year
 
-    @year.setter  # type: ignore
-    def year(self, new_album_year: int):  # noqa: WPS440
-        """Setting a new album year assigns the track to a different album."""
-        self._album_obj = Album(
-            artist=self.albumartist, title=self.album, year=new_album_year
-        )
+    @year.setter
+    def year(self, new_year: int):  # noqa: WPS440
+        """Changes the year of the Album this Track belongs to."""
+        self.album_obj.year = new_year
 
     @classmethod
     def from_tags(cls: Type[T], path: pathlib.Path) -> T:
@@ -196,15 +210,36 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
 
         Returns:
             Track instance.
+
+        Raises:
+            TypeError: Missing required tags.
         """
         audio_file = mediafile.MediaFile(path)
 
-        return cls(
-            path=path,
-            album=audio_file.album,
-            albumartist=audio_file.albumartist,
-            track_num=audio_file.track,
+        missing_tags: List[str] = []
+        if not audio_file.album:
+            missing_tags.append("album")
+        if not audio_file.albumartist:
+            missing_tags.append("albumartist")
+        if not audio_file.track:
+            missing_tags.append("track_num")
+        if not audio_file.year:
+            missing_tags.append("year")
+        if missing_tags:
+            raise TypeError(
+                f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
+            )
+
+        album = Album(
+            artist=audio_file.albumartist,
+            title=audio_file.album,
             year=audio_file.year,
+            path=path.parent,
+        )
+        return cls(
+            album=album,
+            filename=path.name,
+            track_num=audio_file.track,
             artist=audio_file.artist,
             file_ext=audio_file.type,
             genre=audio_file.genres,
@@ -287,19 +322,12 @@ class Track(MusicItem, Base):  # noqa: WPS230, WPS214
         return f"{self.artist} - {self.title}"
 
     def __repr__(self):
-        """Track representation using the primary keys."""
-        return f"{self.albumartist} - {self.album} ({self.year}): {self.track_num}"
-
-
-@sqlalchemy.event.listens_for(Track.path, "set")
-def track_path_set(
-    target: Track,
-    value: pathlib.Path,
-    oldvalue: pathlib.Path,
-    initiator: events.AttributeEvents,
-):
-    """Only allow paths that exist."""
-    if not value.is_file():
-        raise FileNotFoundError(
-            errno.ENOENT, os.strerror(errno.ENOENT), str(value.resolve())
+        """Represents a Track using its primary and other common keys."""
+        return (
+            f"{self.__class__.__name__}("
+            f"{repr(self.album_obj)}, "
+            f"artist={repr(self.artist)}, "
+            f"title={repr(self.title)}, "
+            f"track_num={repr(self.track_num)}, "
+            f"filename={repr(self.filename)})"
         )

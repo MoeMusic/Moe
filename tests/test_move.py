@@ -1,6 +1,5 @@
 """Tests the ``move`` plugin."""
 
-import pathlib
 from unittest.mock import Mock, patch
 
 import pytest
@@ -21,11 +20,39 @@ class TestPostAdd:
         with patch("moe.plugins.move._copy_item") as mock_copy_item:
             move.post_add(config=config, session=mock_session, item=mock_track)
 
-            mock_copy_item.assert_called_once_with(
-                mock_session,
-                mock_track,
-                pathlib.Path(config.settings.move.library_path),
-            )
+            mock_copy_item.assert_called_once()
+
+    def test_path_updated_in_db(self, real_track, tmp_config, tmp_path, tmp_session):
+        """Make sure the path updates are being reflected in the db."""
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        move.post_add(
+            config=tmp_config(tmp_settings), session=tmp_session, item=real_track
+        )
+
+        db_track = tmp_session.query(Track).one()
+        assert db_track.path == real_track.path
+
+    def test_duplicate(self, real_track_factory, tmp_config, tmp_path, tmp_session):
+        """Overwrite duplicate tracks that already exist in the db."""
+        tmp_settings = f"""
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
+        track1 = real_track_factory()
+        track2 = real_track_factory()
+        track1.genre = ["rap"]
+        track2.genre = ["hip hop"]
+        track2.track_num = track1.track_num
+
+        move.post_add(config, session=tmp_session, item=track1)
+        move.post_add(config, session=tmp_session, item=track2)
+
+        db_track = tmp_session.query(Track).one()
+        assert db_track.genre == track2.genre
 
 
 class TestCopy:
@@ -39,9 +66,9 @@ class TestCopy:
         """
         origin_track_path = real_track.path
 
-        move._copy_item(session=Mock(), item=real_track, root=tmp_path)
+        move._copy_item(item=real_track, album_dir=tmp_path)
 
-        assert tmp_path in real_track.path.parents  # accounts for track path formatting
+        assert tmp_path / real_track.filename == real_track.path
         assert origin_track_path.is_file()
         assert real_track.path.is_file()
 
@@ -54,35 +81,14 @@ class TestCopy:
         for track in real_album.tracks:
             origin_track_paths.append(track.path)
 
-        move._copy_item(session=Mock(), item=real_album, root=tmp_path)
+        move._copy_item(item=real_album, album_dir=tmp_path)
 
         for copied_track in real_album.tracks:
-            assert tmp_path in copied_track.path.parents
+            assert tmp_path / copied_track.filename == copied_track.path
             assert copied_track.path.is_file()
 
         for origin_track_path in origin_track_paths:
             assert origin_track_path.is_file()
-
-    def test_path_updated_in_db(self, real_track, tmp_path, tmp_session):
-        """Make sure the path updates are being reflected in the db."""
-        move._copy_item(session=tmp_session, item=real_track, root=tmp_path)
-
-        db_track = tmp_session.query(Track).one()
-        assert db_track.path == real_track.path
-
-    def test_duplicate(self, real_track_factory, tmp_config, tmp_path, tmp_session):
-        """Overwrite duplicate tracks that already exist in the db."""
-        track1 = real_track_factory()
-        track2 = real_track_factory()
-        track1.genre = ["rap"]
-        track2.genre = ["hip hop"]
-        track2.track_num = track1.track_num
-
-        move._copy_item(session=tmp_session, item=track1, root=tmp_path)
-        move._copy_item(session=tmp_session, item=track2, root=tmp_path)
-
-        db_track = tmp_session.query(Track).one()
-        assert db_track.genre == track2.genre
 
 
 @pytest.mark.integration
@@ -124,11 +130,7 @@ class TestAddEntry:
         with session_scope() as session:
             album = session.query(Album).one()
             for track in album.tracks:
-                assert (
-                    tmp_path in track.path.parents
-                )  # accounts for track path formatting
+                assert tmp_path / album.path / track.filename == track.path
 
             for extra in album.extras:
-                assert (
-                    tmp_path in extra.path.parents
-                )  # accounts for track path formatting
+                assert tmp_path / album.path / extra.filename == extra.path

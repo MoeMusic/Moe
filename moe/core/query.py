@@ -186,7 +186,7 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
 
     if separator == ":":
         # Normal string match query - should be case insensitive.
-        return attr.ilike(value, escape="/")
+        return attr.ilike(sqlalchemy.sql.expression.literal(value), escape="/")
 
     elif separator == "::":
         # Regular expression query.
@@ -196,6 +196,6 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         except re.error:
             raise ValueError(f"Invalid regular expression: {value}")
 
-        return attr.op("regexp")(value)
+        return attr.op("regexp")(sqlalchemy.sql.expression.literal(value))
 
     raise ValueError(f"Invalid query type: {separator}")

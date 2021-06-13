@@ -63,7 +63,7 @@ class TestQuery:
         """Simplest query."""
         tmp_session.add(mock_track)
 
-        assert query.query(f"title:{mock_track.title}", tmp_session)
+        assert query.query(f"title:'{mock_track.title}'", tmp_session)
 
     def test_space_value(self, tmp_session, mock_track):
         """If a value has whitespace, it must be encolsed by quotes."""
@@ -81,18 +81,32 @@ class TestQuery:
             f"track_num:{mock_track.track_num} title:{mock_track.title}", tmp_session
         )
 
-    def test_track_album_field_queries(self, tmp_session, mock_track):
+    def test_path(self, real_track, tmp_session):
+        """We can query a track's path.
+
+        For some reason, this test isn't working with full path names. More testing
+        needed.
+        """
+        tmp_session.add(real_track)
+
+        assert query.query(f"'path:%{str(real_track.path.name)}'", tmp_session)
+        assert query.query(f"'path::{str(real_track.path.name)}'", tmp_session)
+
+    def test_track_album_field_queries(self, real_track, tmp_session):
         """We should be able to query tracks that match album-related fields.
 
         These fields belong to the Album table and thus aren't normally exposed
         through a track.
         """
-        mock_track.album = "All Eyez on Me"
-        mock_track.albumartist = "2Pac"
-        mock_track.year = "1996"
-        tmp_session.add(mock_track)
+        real_track.album = "All Eyez on Me"
+        real_track.albumartist = "2Pac"
+        real_track.year = "1996"
+        tmp_session.add(real_track)
 
         assert query.query("'album:All Eyez on Me'", tmp_session)
+        assert query.query(
+            f"'album_path:%{str(real_track.album_path.name)}'", tmp_session
+        )
         assert query.query("albumartist:2Pac", tmp_session)
         assert query.query("year:1996", tmp_session)
 
@@ -149,7 +163,7 @@ class TestQuery:
         tmp_session.add(mock_track)
 
         tracks = query.query(
-            f"title:{mock_track.title}", tmp_session, album_query=False
+            f"title:'{mock_track.title}'", tmp_session, album_query=False
         )
 
         assert tracks
@@ -160,7 +174,9 @@ class TestQuery:
         """An album query should return album objects."""
         tmp_session.add(mock_track)
 
-        albums = query.query(f"title:{mock_track.title}", tmp_session, album_query=True)
+        albums = query.query(
+            f"title:'{mock_track.title}'", tmp_session, album_query=True
+        )
 
         assert albums
         for album in albums:
@@ -208,6 +224,7 @@ class TestQuery:
         mock_track.genre = ["hip hop", "rock"]
         tmp_session.add(mock_track)
 
+        assert query.query("'genre::.*'", tmp_session)
         assert query.query("'genre:hip hop'", tmp_session)
         assert query.query("genre:rock", tmp_session)
 
