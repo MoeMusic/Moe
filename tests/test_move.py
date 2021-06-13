@@ -90,6 +90,11 @@ class TestCopy:
         for origin_track_path in origin_track_paths:
             assert origin_track_path.is_file()
 
+    def test_file_src_eq_dst(self, real_album, tmp_path):
+        """Do nothing if the Track or Extra destination is the same as the source."""
+        move._copy_item(item=real_album, album_dir=tmp_path)
+        move._copy_item(item=real_album, album_dir=tmp_path)
+
 
 @pytest.mark.integration
 class TestAddEntry:

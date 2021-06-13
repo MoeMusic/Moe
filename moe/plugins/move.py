@@ -82,7 +82,6 @@ def _copy_album(album: Album, album_dir: pathlib.Path):
         album: Album to copy.
         album_dir: Album directory destination.
     """
-    log.info(f"Copying album '{album.path}' to '{album_dir}'")
     for track in album.tracks:
         _copy_track(track, album_dir)
 
@@ -109,8 +108,11 @@ def _copy_track(track: Track, album_dir: pathlib.Path):
         track_num=track.track_num, title=track.title, file_ext=track.file_ext
     )
     track_dest = album_dir / track_filename
-    log.info(f"Copying track '{track.path}' to '{track_dest}'")
 
+    if track_dest == track.path:
+        return
+
+    log.info(f"Copying track '{track.path}' to '{track_dest}'")
     shutil.copyfile(track.path, track_dest)
 
     track.filename = track_filename
@@ -126,6 +128,9 @@ def _copy_extra(extra: Extra, album_dir: pathlib.Path):
         album_dir: Album directory to copy the extra to.
     """
     extra_dest = album_dir / extra.filename
-    log.info(f"Copying extra '{extra}' to '{extra_dest}'")
 
+    if extra_dest == extra.path:
+        return
+
+    log.info(f"Copying extra '{extra}' to '{extra_dest}'")
     shutil.copyfile(extra.path, extra_dest)
