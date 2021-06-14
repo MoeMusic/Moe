@@ -50,6 +50,25 @@ class Hooks:
                 )
         """
 
+    @staticmethod
+    @moe.hookspec
+    def post_args(config: Config, session):
+        """Process any cleanup tasks after the CLI arguments have been executed.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+
+        Note:
+            A common use-case may be to process any items that are about to be committed
+            to the database. ``session.new.union(session.dirty)`` will return a set of
+            any changed or new objects (not just MusicItems) to be added to the db.
+
+        Important:
+            Normal usage of this hook will not involve altering the state/fields of the
+            items that are about to be added to the database.
+        """
+
 
 @moe.hookimpl
 def add_hooks(pluginmanager: pluggy.manager.PluginManager):
@@ -94,7 +113,8 @@ def _parse_args(args: List[str], config: Config):
     # call the sub-command's handler within a single session
     config.init_db()  # noqa: WPS437
     with session_scope() as session:
-        parsed_args.func(config=config, session=session, args=parsed_args)
+        parsed_args.func(config, session, args=parsed_args)
+        config.pluginmanager.hook.post_args(config=config, session=session)
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:

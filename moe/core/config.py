@@ -203,6 +203,7 @@ class Config:
         # need to validate `config` specific settings separately
         # this is so we have access to the 'default_plugins' setting
         self.pluginmanager.register(moe.core.config)
+        self.pluginmanager.register(moe.cli)
         self.pluginmanager.add_hookspecs(Hooks)
         self.pluginmanager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
