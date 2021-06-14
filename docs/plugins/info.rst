@@ -13,7 +13,7 @@ Commandline
 ***********
 .. code-block:: bash
 
-    moe info [-h] [-a] query
+    moe info [-h] [-a | -e] query
 
 Currently, only a basic set of tags are supported, so you probably won't see all the tags of your music.
 
@@ -22,7 +22,9 @@ Options
 ``-h, --help``
     Display the help message.
 ``-a, --album``
-    Query albums instead of tracks.
+    Query for matching albums instead of tracks.
+``-e, --extra``
+    Query for matching extras instead of tracks.
 
 Arguments
 =========

@@ -53,9 +53,17 @@ def parse_args(
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
+    if args.album:
+        query_type = "album"
+    elif args.extra:
+        query_type = "extra"
+    else:
+        query_type = "track"
+    items = query.query(args.query, session, query_type=query_type)
+
     error_count = 0
     for term in args.fv_terms:
-        for item in query.query(args.query, session, album_query=args.album):
+        for item in items:
             try:
                 _edit_item(item, term)
             except EditError as exc:

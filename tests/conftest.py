@@ -4,7 +4,7 @@ import random
 import shutil
 import textwrap
 from typing import Callable, Iterator, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 import sqlalchemy
@@ -110,7 +110,17 @@ def mock_album_factory(mock_track_factory) -> Callable[[], Album]:
     """Factory for mock Albums that don't exist on the filesytem."""
 
     def _mock_album():
-        return mock_track_factory(random.randint(1, 1000)).album_obj
+        year = random.randint(1, 1000)
+        track = mock_track_factory(year=year)
+
+        album = track.album_obj
+        album.tracks.add(mock_track_factory(year=year))
+
+        mock_log_file = album.path / "log.txt"
+        type(mock_log_file).name = PropertyMock(return_value="log.txt")
+        album.extras.add(Extra(mock_log_file, album))
+
+        return album
 
     return _mock_album
 

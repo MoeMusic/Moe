@@ -1,7 +1,8 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
+import os
 import pathlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
@@ -26,6 +27,7 @@ class Extra(LibItem, Base):
 
     Attributes:
         album (Album): Album the extra file belongs to.
+        filename (str): Base file name of the extra file.
         path (pathlib.Path): Filesystem path of the extra file.
     """
 
@@ -58,10 +60,22 @@ class Extra(LibItem, Base):
         """
         self.path = path
         self.album = album
-        self._filename = path.name
 
     @typed_hybrid_property
-    def path(self):
+    def filename(self) -> str:
+        """Gets an Extra's filename."""
+        return cast(str, self._filename)
+
+    @filename.setter
+    def filename(self, new_name: str):  # noqa: WPS440
+        """Sets an Extra's filename and renames it on the filesystem."""
+        self._filename = new_name
+        new_path = self.path.parent / new_name
+        os.rename(self.path, new_path)
+        self.path = new_path
+
+    @typed_hybrid_property
+    def path(self) -> pathlib.Path:
         """Gets an Extra's path."""
         return self._path
 
