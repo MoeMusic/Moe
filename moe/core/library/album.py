@@ -1,8 +1,7 @@
 """An Album in the database and any related logic."""
 
 import pathlib
-from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Set, TypeVar
+from typing import TYPE_CHECKING, Set, TypeVar
 
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.orm import relationship
@@ -77,38 +76,6 @@ class Album(LibItem, Base):
         self.title = title
         self.year = year
         self.path = path
-
-    def to_dict(self) -> "OrderedDict[str, Any]":
-        """Represents the Album as a dictionary.
-
-        The basis of an album's representation is the merged dictionary of its tracks.
-        If different values are present for any given attribute among tracks, then
-        the value becomes "Various". It also includes any extras, and removes any
-        values that are guaranteed to be unique between tracks, such as track number.
-
-        Returns:
-            A dict representation of an Album.
-            It will be in the form { attribute: value } and is sorted by attribute.
-        """
-        # access any element to set intial values
-        track_list = list(self.tracks)  # easier to deal with a list for this func
-        album_dict = track_list[0].to_dict()
-
-        # compare rest of album against initial values
-        for track in track_list[1:]:
-            track_dict = track.to_dict()
-            for key in {**track_dict, **album_dict}.keys():
-                if album_dict.get(key) != track_dict.get(key):
-                    album_dict[key] = "Various"
-
-        album_dict["extras"] = {str(extra.path) for extra in self.extras}
-
-        # remove values that are always unique between tracks
-        album_dict.pop("path")
-        album_dict.pop("title")
-        album_dict.pop("track_num")
-
-        return album_dict
 
     def __str__(self):
         """String representation of an Album."""

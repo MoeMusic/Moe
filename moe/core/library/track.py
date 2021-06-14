@@ -2,9 +2,7 @@
 
 import logging
 import pathlib
-import types
-from collections import OrderedDict
-from typing import Any, List, Set, Type, TypeVar
+from typing import List, Set, Type, TypeVar
 
 import mediafile
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
@@ -171,30 +169,6 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             genre=audio_file.genres,
             title=audio_file.title,
         )
-
-    def to_dict(self) -> "OrderedDict[str, Any]":
-        """Represents the Track as a dictionary.
-
-        Only public attributes that are not empty will be included. We also remove any
-        attributes that are not relevant to the music file e.g. sqlalchemy specific
-        attributes.
-
-        Returns:
-            Returns a dict representation of a Track.
-            It will be in the form { attribute: value } and is sorted by attribute.
-        """
-        track_dict = OrderedDict()
-        for attr in dir(self):  # noqa: WPS421
-            if not attr.startswith("_") and attr != "metadata" and attr != "registry":
-                value = getattr(self, attr)
-                if (
-                    value
-                    and not isinstance(value, types.MethodType)
-                    and not isinstance(value, types.FunctionType)
-                ):
-                    track_dict[attr] = value
-
-        return track_dict
 
     def __str__(self):
         """String representation of a track."""

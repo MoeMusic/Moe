@@ -5,36 +5,6 @@ import pytest
 from moe.core.library.session import DbDupAlbumError, DbDupAlbumPathError, session_scope
 
 
-class TestToDict:
-    """Test dict representation of an album."""
-
-    def test_second_track_attribute_dne(self, mock_track_factory):
-        """If varying existence of fields between tracks, set field to Various.
-
-        For example, if track 1 has a year, but track 2 doesn't. The album should
-        display `year: Various`.
-        """
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-
-        track1.artist = "don't show this"
-        track2.artist = ""
-        track1.album_obj = track2.album_obj
-
-        assert track1.album_obj.to_dict()["artist"] == "Various"
-
-    def test_second_track_attribute_different(self, mock_track_factory):
-        """If varying field values between tracks, set field to Various."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-
-        track1.artist = "don't show this"
-        track2.artist = "different"
-        track1.album_obj = track2.album_obj
-
-        assert track1.album_obj.to_dict()["artist"] == "Various"
-
-
 class TestEquals:
     """Equality based on primary key."""
 

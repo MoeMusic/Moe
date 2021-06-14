@@ -4,14 +4,17 @@ All fields and their values should be printed to stdout for any music queried.
 """
 
 import argparse
-from typing import List
+import types
+from typing import Any, List, OrderedDict
 
 import sqlalchemy
 
 import moe
 from moe.core import query
 from moe.core.config import Config
+from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem
+from moe.core.library.track import Track
 
 
 @moe.hookimpl
@@ -61,4 +64,91 @@ def _fmt_infos(items: List[LibItem]):
 
 def _fmt_info(item: LibItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
-    return "".join(f"{field}: {value}\n" for field, value in item.to_dict().items())
+    return "".join(f"{field}: {value}\n" for field, value in _item_dict(item).items())
+
+
+def _item_dict(item: LibItem) -> "OrderedDict[str, Any]":
+    """Represents a LibItem as a dictionary.
+
+    Only relevant, non-empty attributes will be included in the dictionary.
+
+    Args:
+        item: Library item to represent
+
+    Returns:
+        Returns a dict representation of an Extra.
+        It will be in the form { attribute: value } and is sorted by attribute.
+
+    Raises:
+        NotImplementedError: No ``dict()`` method has been implemented for the item.
+    """
+    if isinstance(item, Track):
+        return _track_dict(item)
+    elif isinstance(item, Album):
+        return _album_dict(item)
+
+    raise NotImplementedError(f"``_item_dict()`` not yet implemented for {type(item)}")
+
+
+def _track_dict(track: Track) -> "OrderedDict[str, Any]":
+    """Represents a Track as a dictionary.
+
+    Only public attributes that are not empty will be included. We also remove any
+    attributes that are not relevant to the music file e.g. sqlalchemy specific
+    attributes.
+
+    Args:
+        track: Track.
+
+    Returns:
+        Returns a dict representation of a Track.
+        It will be in the form { attribute: value } and is sorted by attribute.
+    """
+    track_dict = OrderedDict()
+    for attr in dir(track):  # noqa: WPS421
+        if not attr.startswith("_") and attr != "metadata" and attr != "registry":
+            value = getattr(track, attr)
+            if (
+                value
+                and not isinstance(value, types.MethodType)
+                and not isinstance(value, types.FunctionType)
+            ):
+                track_dict[attr] = value
+
+    return track_dict
+
+
+def _album_dict(album: Album) -> "OrderedDict[str, Any]":
+    """Represents an Album as a dictionary.
+
+    The basis of an album's representation is the merged dictionary of its tracks.
+    If different values are present for any given attribute among tracks, then
+    the value becomes "Various". It also includes any extras, and removes any
+    values that are guaranteed to be unique between tracks, such as track number.
+
+    Args:
+        album: Album.
+
+    Returns:
+        A dict representation of an Album.
+        It will be in the form { attribute: value } and is sorted by attribute.
+    """
+    # access any element to set intial values
+    track_list = list(album.tracks)  # easier to deal with a list for this func
+    album_dict = _track_dict(track_list[0])
+
+    # compare rest of album against initial values
+    for track in track_list[1:]:
+        track_dict = _track_dict(track)
+        for key in {**track_dict, **album_dict}.keys():
+            if album_dict.get(key) != track_dict.get(key):
+                album_dict[key] = "Various"
+
+    album_dict["extras"] = {str(extra.path) for extra in album.extras}
+
+    # remove values that are always unique between tracks
+    album_dict.pop("path")
+    album_dict.pop("title")
+    album_dict.pop("track_num")
+
+    return album_dict

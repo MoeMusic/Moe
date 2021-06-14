@@ -1,8 +1,6 @@
 """Tests a Track object."""
 
 import pathlib
-import re
-import types
 
 import pytest
 
@@ -77,26 +75,6 @@ class TestFromTags:
         assert track.title == "Full"
         assert track.track_num == 1
         assert track.year == 2020
-
-
-class TestToDict:
-    """Test dict representation of a track."""
-
-    def test_no_private_attributes(self, mock_track):
-        """Private attributes should not be included."""
-        private_re = "^_.*"
-        for key in mock_track.to_dict().keys():
-            assert not re.match(private_re, key)
-
-    def test_no_methods(self, mock_track):
-        """Methods should not be included."""
-        for key in mock_track.to_dict().keys():
-            assert not isinstance(getattr(mock_track, key), types.MethodType)
-
-    def test_no_sqlalchemy_attrs(self, mock_track):
-        """Sqlalchemy attributes are not relevant and should not be included."""
-        assert "metadata" not in mock_track.to_dict().keys()
-        assert "registry" not in mock_track.to_dict().keys()
 
 
 class TestDuplicate:
