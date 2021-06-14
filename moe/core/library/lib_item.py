@@ -1,18 +1,12 @@
 """A LibItem in the database and any related logic."""
 
 import pathlib
-from collections import OrderedDict
-from typing import Any
 
 import sqlalchemy
 
 
 class LibItem:
     """Abstract base class for library items i.e. Albums, Extras, and Tracks."""
-
-    def to_dict(self) -> "OrderedDict[str, Any]":
-        """Represents the LibItem as an alphabetically-sorted dictionary."""
-        raise NotImplementedError
 
 
 class PathType(sqlalchemy.types.TypeDecorator):
