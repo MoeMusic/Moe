@@ -52,6 +52,14 @@ moe.plugins.rm module
    :undoc-members:
    :show-inheritance:
 
+moe.plugins.rm module
+---------------------
+
+.. automodule:: moe.plugins.write
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

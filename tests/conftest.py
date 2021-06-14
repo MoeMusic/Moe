@@ -3,8 +3,8 @@ import pathlib
 import random
 import shutil
 import textwrap
-from typing import Callable, Generator, Iterator, cast
-from unittest.mock import MagicMock, patch
+from typing import Callable, Iterator, cast
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy
@@ -15,6 +15,7 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
+from moe.plugins import write as moe_write
 
 
 @pytest.fixture
@@ -67,7 +68,7 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
 
 
 @pytest.fixture
-def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
+def mock_track_factory() -> Callable[[], Track]:
     """Factory for mock Tracks that don't exist on the filesystem.
 
     Note:
@@ -80,7 +81,7 @@ def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
         year: Optional year to include. Changing this will change which album the
             the track belongs to.
 
-    Yields:
+    Returns:
         Unique Track object with each call.
     """
 
@@ -94,9 +95,7 @@ def mock_track_factory() -> Generator[Callable[[], Track], None, None]:
             title="Jazzy Belle",
         )
 
-    # don't try to write tags
-    with patch("moe.core.library.session.Track.write_tags"):
-        yield _mock_track
+    return _mock_track
 
 
 @pytest.fixture
@@ -169,7 +168,7 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
             track_num=track_num,
             artist=albumartist,
         )
-        track.write_tags()
+        moe_write._write_tags(track)
         return track
 
     return _real_track
