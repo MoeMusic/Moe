@@ -20,6 +20,8 @@ import shlex
 from typing import Dict, List
 
 import sqlalchemy
+from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem
@@ -40,6 +42,9 @@ HELP_STR = r"""
 The query must be in the format 'field:value' where field is a track or album's field to
 match and value is that field's value. Internally, this 'field:value' pair is referred
 to as a single term. The match is case-insensitive.
+
+Album queries, specified with the `-a, --album` option, will return any albums that
+contain any tracks matching the given query.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
 term in quotes.
@@ -62,9 +67,6 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 
 Note that when using multiple terms, they are joined together using AND logic, meaning
 all terms must be true to return a match.
-
-If doing an album query, you still specify track fields, but it will match albums
-instead of tracks.
 
 Tip: Normal queries may be faster when compared to regex queries. If you
 are experiencing performance issues with regex queries, see if you can make an
@@ -185,13 +187,19 @@ def _create_expression(  # noqa: WPS231
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
 
-    attr = Track.get_attr(field)
+    try:
+        attr = getattr(Track, field)
+    except AttributeError:
+        raise ValueError(f"Invalid Track field: {field}")
 
     if separator == ":":
         # path matching
-        if str(attr) == "Track.path":
+        if isinstance(attr, InstrumentedAttribute) and attr == Track.path:
             return Track.path == pathlib.Path(value)
-        elif str(attr) == "Album.path":
+        elif (
+            isinstance(attr, ColumnAssociationProxyInstance)
+            and attr.attr[1] == Album.path
+        ):
             return Album.path == pathlib.Path(value)
 
         # normal string match query - should be case insensitive
