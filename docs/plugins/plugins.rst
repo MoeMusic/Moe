@@ -12,3 +12,4 @@ Almost everything in Moe is a plugin. To see more details on each individual plu
    List (ls) <ls>
    Move <move>
    Remove (rm) <rm>
+   Write <write>

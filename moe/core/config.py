@@ -34,6 +34,7 @@ DEFAULT_PLUGINS = (
     "ls",
     "move",
     "rm",
+    "write",
 )
 
 

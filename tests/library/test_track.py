@@ -99,31 +99,6 @@ class TestToDict:
         assert "registry" not in mock_track.to_dict().keys()
 
 
-class TestWriteTags:
-    """Test writing tags to the file."""
-
-    def test_write_tags(self, real_track):
-        """We can write track changes to the file."""
-        real_track.album = "Bigger, Better, Faster, More!"
-        real_track.albumartist = "4 Non Blondes"
-        real_track.artist = "4 Non Blondes"
-        real_track.genre = {"alternative", "rock"}
-        real_track.title = "What's Up"
-        real_track.track_num = 3
-        real_track.year = 1992
-
-        real_track.write_tags()
-
-        new_track = Track.from_tags(path=real_track.path)
-        assert new_track.album == "Bigger, Better, Faster, More!"
-        assert new_track.albumartist == "4 Non Blondes"
-        assert new_track.artist == "4 Non Blondes"
-        assert new_track.genre == {"alternative", "rock"}
-        assert new_track.title == "What's Up"
-        assert new_track.track_num == 3
-        assert new_track.year == 1992
-
-
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Track to the db.
 
