@@ -19,7 +19,7 @@ Options
 =======
 ``-h, --help``
     Display the help message.
-``-a``
+``-a, --album``
     Query albums instead of tracks.
 
 Arguments

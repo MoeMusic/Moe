@@ -20,7 +20,7 @@ Options
 =======
 ``-h, --help``
     Display the help message.
-``-a``
+``-a, --album``
     Query albums instead of tracks.
 
 Arguments
@@ -29,7 +29,7 @@ Arguments
     Query your library for items to edit. See the :doc:`query docs <../query>` for more info.
 
 ``FIELD=VALUE``
-    Set a track's field or an album's field if an album query is specified with the ``-a`` option. If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
+    Set a track's field or an album's field if an album query is specified with the ``-a, --album`` option. If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
 
     The following is a list of all the available fields you can edit.
 
@@ -50,3 +50,11 @@ Arguments
     * ``year``
 
     .. [*] Supports multiple values.
+
+.. note::
+    Editing a track's album-related field is equivalent to editing the field directly through the album. For example, the following commands will both edit an album's artist.
+
+    .. code-block:: bash
+
+        moe edit [query] albumartist=2Pac
+        moe edit -a [query] artist=2Pac
