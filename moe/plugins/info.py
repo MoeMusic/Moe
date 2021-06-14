@@ -11,7 +11,7 @@ import sqlalchemy
 import moe
 from moe.core import query
 from moe.core.config import Config
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 
 
 @moe.hookimpl
@@ -47,7 +47,7 @@ def parse_args(
     print(_fmt_infos(items), end="")  # noqa: WPS421
 
 
-def _fmt_infos(items: List[MusicItem]):
+def _fmt_infos(items: List[LibItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
@@ -59,6 +59,6 @@ def _fmt_infos(items: List[MusicItem]):
     return out_str
 
 
-def _fmt_info(item: MusicItem) -> str:
+def _fmt_info(item: LibItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
     return "".join(f"{field}: {value}\n" for field, value in item.to_dict().items())

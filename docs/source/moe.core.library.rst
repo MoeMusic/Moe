@@ -16,7 +16,7 @@ moe.core.library.album module
 moe.core.library.music\_item module
 -----------------------------------
 
-.. automodule:: moe.core.library.music_item
+.. automodule:: moe.core.library.lib_item
    :members:
    :exclude-members: cache_ok
    :undoc-members:

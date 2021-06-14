@@ -8,7 +8,7 @@ import sqlalchemy
 import moe
 from moe.core import query
 from moe.core.config import Config
-from moe.core.library.track import MusicItem
+from moe.core.library.track import LibItem
 
 log = logging.getLogger(__name__)
 
@@ -66,11 +66,11 @@ def parse_args(
         raise SystemExit(1)
 
 
-def _edit_item(item: MusicItem, term: str):
-    """Sets a MusicItem's ``field`` to ``value``.
+def _edit_item(item: LibItem, term: str):
+    """Sets a LibItem's ``field`` to ``value``.
 
     Args:
-        item: MusicItem to edit.
+        item: LibItem to edit.
         term: FIELD=VALUE format used to set the item's ``field`` to ``value``.
 
     Raises:

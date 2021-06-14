@@ -14,7 +14,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 
 from moe.core.library.album import Album
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.session import Base
 
 # Makes hybrid_property's have the same typing as a normal properties.
@@ -60,7 +60,7 @@ __table_args__ = ()
 T = TypeVar("T", bound="Track")  # noqa: WPS111
 
 
-class Track(MusicItem, Base):  # noqa: WPS230, WPS214
+class Track(LibItem, Base):  # noqa: WPS230, WPS214
     """A single track.
 
     Attributes:

@@ -62,7 +62,7 @@ class Hooks:
         Note:
             A common use-case may be to process any items that are about to be committed
             to the database. ``session.new.union(session.dirty)`` will return a set of
-            any changed or new objects (not just MusicItems) to be added to the db.
+            any changed or new objects (not just LibItems) to be added to the db.
 
         Important:
             Normal usage of this hook will not involve altering the state/fields of the
