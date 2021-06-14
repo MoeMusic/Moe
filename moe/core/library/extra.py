@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKeyConstraint
 
 from moe.core.library.album import Album
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.session import Base
 
 # Makes hybrid_property's have the same typing as a normal properties.
@@ -21,7 +21,7 @@ else:
     )
 
 
-class Extra(MusicItem, Base):
+class Extra(LibItem, Base):
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:

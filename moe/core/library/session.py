@@ -15,15 +15,15 @@ Session = sessionmaker()
 Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
 
 
-class DbDupMusicItemError(Exception):
-    """Attempt to add a duplicate MusicItem to the database."""
+class DbDupLibItemError(Exception):
+    """Attempt to add a duplicate LibItem to the database."""
 
 
-class DbDupAlbumPathError(DbDupMusicItemError):
+class DbDupAlbumPathError(DbDupLibItemError):
     """Attempt to add a duplicate Album path to the database."""
 
 
-class DbDupAlbumError(DbDupMusicItemError):
+class DbDupAlbumError(DbDupLibItemError):
     """Attempt to add a duplicate Album to the database."""
 
 

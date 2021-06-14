@@ -12,7 +12,7 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
@@ -27,8 +27,8 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_add(config: Config, session: Session, item: MusicItem):
-        """Provides the MusicItem that was added to the library."""
+    def post_add(config: Config, session: Session, item: LibItem):
+        """Provides the LibItem that was added to the library."""
 
 
 @moe.hookimpl
@@ -85,7 +85,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
         raise SystemExit(1)
 
 
-def _add_item(session: Session, item_path: pathlib.Path) -> MusicItem:
+def _add_item(session: Session, item_path: pathlib.Path) -> LibItem:
     """Adds an item to the library.
 
     Args:
@@ -93,7 +93,7 @@ def _add_item(session: Session, item_path: pathlib.Path) -> MusicItem:
         item_path: Filesystem path of the item.
 
     Returns:
-        The MusicItem added.
+        The LibItem added.
 
     Raises:
         AddError: Unable to add the item to the library.

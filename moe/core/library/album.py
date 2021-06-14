@@ -10,7 +10,7 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.orm import events, relationship
 
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.session import Base
 
 # This would normally cause a cyclic dependency.
@@ -41,7 +41,7 @@ class _PathType(sqlalchemy.types.TypeDecorator):
         return pathlib.Path(path_str)
 
 
-class Album(MusicItem, Base):
+class Album(LibItem, Base):
     """An album is a collection of tracks.
 
     Albums also house any attributes that are shared by tracks e.g. albumartist.

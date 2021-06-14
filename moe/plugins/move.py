@@ -11,7 +11,7 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
@@ -38,11 +38,11 @@ def post_args(config: Config, session: Session):
         session: Currrent db session.
     """
     for item in session.new.union(session.dirty):
-        if isinstance(item, MusicItem):
+        if isinstance(item, LibItem):
             _alter_item_loc(config, session, item)
 
 
-def _alter_item_loc(config: Config, session: Session, item: MusicItem):
+def _alter_item_loc(config: Config, session: Session, item: LibItem):
     """Alters the location of an item according to the given configuration.
 
     By default, the item will be copied, overwriting any existing files.
@@ -63,8 +63,8 @@ def _alter_item_loc(config: Config, session: Session, item: MusicItem):
     session.merge(item)
 
 
-def _copy_item(item: MusicItem, album_dir: pathlib.Path):
-    """Copies and formats the destination of a MusicItem."""
+def _copy_item(item: LibItem, album_dir: pathlib.Path):
+    """Copies and formats the destination of a LibItem."""
     if isinstance(item, Album):
         _copy_album(item, album_dir)
     elif isinstance(item, Track):

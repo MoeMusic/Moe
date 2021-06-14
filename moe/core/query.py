@@ -21,7 +21,7 @@ from typing import Dict, List
 import sqlalchemy
 
 from moe.core.library.album import Album
-from moe.core.library.music_item import MusicItem
+from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ VALUE_GROUP = "value"
 
 def query(
     query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
-) -> List[MusicItem]:
+) -> List[LibItem]:
     """Queries the database for the given query string.
 
     Args:
