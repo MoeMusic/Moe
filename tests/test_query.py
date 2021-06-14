@@ -59,7 +59,7 @@ class TestQuery:
         """Invalid queries should return an empty list."""
         assert not query.query("invalid:a", Mock())  # invalid field
 
-    def test_valid_query(self, tmp_session, mock_track):
+    def test_valid_query(self, mock_track, tmp_session):
         """Simplest query."""
         tmp_session.add(mock_track)
 
@@ -212,10 +212,10 @@ class TestQuery:
 
         assert len(query.query("title:/_", tmp_session)) == 1
 
-    def test_genres_query(self, tmp_session, mock_track):
-        """We should be able to query genres transparently.
+    def test_multi_value_query(self, tmp_session, mock_track):
+        """We should be able to query multi-value fields transparently.
 
-        `genres` is a list of genres for a Track.
+        ``genre`` is a list of genres for a Track.
         """
         mock_track.genre = ["hip hop", "rock"]
         tmp_session.add(mock_track)
@@ -233,3 +233,11 @@ class TestQuery:
         tmp_session.merge(track2)
 
         assert len(query.query("*", tmp_session)) == 2
+
+    def test_extra_path_query(self, real_album, tmp_session):
+        """We can query for Extra paths."""
+        tmp_session.merge(real_album)
+
+        extra_path_str = str(real_album.extras.pop().path.resolve())
+        assert query.query(f"'extra_path:{extra_path_str}'", tmp_session)
+        assert query.query("'extra_path::.*'", tmp_session)

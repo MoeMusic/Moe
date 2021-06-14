@@ -24,6 +24,7 @@ from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
@@ -102,6 +103,10 @@ def query(
         library_query = session.query(Album).join(Track)
     else:
         library_query = session.query(Track).join(Album)
+
+    # only join Extras if the table is not empty
+    if session.query(Extra).all():
+        library_query = library_query.join(Extra)
 
     for term in terms:
         try:
@@ -187,10 +192,14 @@ def _create_expression(  # noqa: WPS231
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
 
-    try:
-        attr = getattr(Track, field)
-    except AttributeError:
-        raise ValueError(f"Invalid Track field: {field}")
+    if field == "extra_path":
+        attr = Extra.path
+    else:
+        # match track fields (all album fields should also be exposed by the Track)
+        try:
+            attr = getattr(Track, field)
+        except AttributeError:
+            raise ValueError(f"Invalid Track field: {field}")
 
     if separator == ":":
         # path matching
@@ -201,9 +210,11 @@ def _create_expression(  # noqa: WPS231
             and attr.attr[1] == Album.path
         ):
             return Album.path == pathlib.Path(value)
+        elif str(attr) == "Extra.path":
+            return Extra.path == pathlib.Path(value)  # type: ignore
 
         # normal string match query - should be case insensitive
-        return attr.ilike(value, escape="/")
+        return attr.ilike(value, escape="/")  # type: ignore
 
     elif separator == "::":
         # Regular expression query.
@@ -213,6 +224,8 @@ def _create_expression(  # noqa: WPS231
         except re.error:
             raise ValueError(f"Invalid regular expression: {value}")
 
-        return attr.op("regexp")(sqlalchemy.sql.expression.literal(value))
+        return attr.op("regexp")(  # type: ignore
+            sqlalchemy.sql.expression.literal(value)
+        )
 
     raise ValueError(f"Invalid query type: {separator}")

@@ -56,7 +56,9 @@ The following is a list of all the available fields you can query.
 
 * ``album``
 * ``albumartist``
+* ``album_path`` Filesystem path of the album directory.
 * ``artist``
+* ``extra_path`` Filesystem path of any attached extra files.
 * ``file_ext`` Audio format extension e.g. mp3, flac, wav, etc.
 * ``genre``
 * ``path`` Filesystem path of the track file.
