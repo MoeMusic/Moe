@@ -6,6 +6,7 @@ import pytest
 
 from moe.core import query
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
 from moe.core.library.track import Track
 
 
@@ -155,11 +156,11 @@ class TestQuery:
         assert query.query("album::tmp", tmp_session)  # Album field
 
     def test_track_query(self, tmp_session, mock_track):
-        """A track query should return track objects."""
+        """A track query should return Track objects."""
         tmp_session.add(mock_track)
 
         tracks = query.query(
-            f"title:'{mock_track.title}'", tmp_session, album_query=False
+            f"title:'{mock_track.title}'", tmp_session, query_type="track"
         )
 
         assert tracks
@@ -167,11 +168,11 @@ class TestQuery:
             assert isinstance(track, Track)
 
     def test_album_query(self, tmp_session, mock_track):
-        """An album query should return album objects."""
+        """An album query should return Album objects."""
         tmp_session.add(mock_track)
 
         albums = query.query(
-            f"title:'{mock_track.title}'", tmp_session, album_query=True
+            f"title:'{mock_track.title}'", tmp_session, query_type="album"
         )
 
         assert albums
@@ -183,11 +184,23 @@ class TestQuery:
         mock_track.album = "ATLiens"
         tmp_session.add(mock_track)
 
-        albums = query.query("album:ATLiens", tmp_session, album_query=True)
+        albums = query.query("album:ATLiens", tmp_session, query_type="album")
 
         assert albums
         for album in albums:
             assert isinstance(album, Album)
+
+    def test_extra_query(self, mock_album, tmp_session):
+        """An extra query should return Extra objects."""
+        tmp_session.add(mock_album)
+
+        extras = query.query(
+            f"album:'{mock_album.title}'", tmp_session, query_type="extra"
+        )
+
+        assert extras
+        for extra in extras:
+            assert isinstance(extra, Extra)
 
     def test_like_query(self, tmp_session, mock_track):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""

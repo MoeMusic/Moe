@@ -34,18 +34,25 @@ query_parser = argparse.ArgumentParser(
     add_help=False, formatter_class=argparse.RawTextHelpFormatter
 )
 query_parser.add_argument("query", help="query the library for matching tracks")
-query_parser.add_argument(
-    "-a", "--album", action="store_true", help="query albums instead of tracks"
+
+query_type_group = query_parser.add_mutually_exclusive_group()
+query_type_group.add_argument(
+    "-a", "--album", action="store_true", help="query for matching albums"
+)
+query_type_group.add_argument(
+    "-e", "--extra", action="store_true", help="query for matching extras"
 )
 
 
 HELP_STR = r"""
-The query must be in the format 'field:value' where field is a track or album's field to
+The query must be in the format 'field:value' where field is a track's field to
 match and value is that field's value. Internally, this 'field:value' pair is referred
 to as a single term. The match is case-insensitive.
 
-Album queries, specified with the `-a, --album` option, will return any albums that
-contain any tracks matching the given query.
+Album queries, specified with the `-a, --album` option, will return albums that contain
+any tracks matching the given query. Similarly, extra queries, specified with the
+`-e, --extra` option, will return extras that are attached to albums that contain any
+tracks matching the given query.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
 term in quotes.
@@ -69,9 +76,8 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 Note that when using multiple terms, they are joined together using AND logic, meaning
 all terms must be true to return a match.
 
-Tip: Normal queries may be faster when compared to regex queries. If you
-are experiencing performance issues with regex queries, see if you can make an
-equivalent normal query using the LIKE wildcard characters.
+For more information, see the docs.
+https://mrmoe.readthedocs.io/en/latest/query.html
 """  # noqa: WPS360
 
 # each query will be split into these groups
@@ -81,14 +87,14 @@ VALUE_GROUP = "value"
 
 
 def query(
-    query_str: str, session: sqlalchemy.orm.session.Session, album_query: bool = False
+    query_str: str, session: sqlalchemy.orm.session.Session, query_type: str = "track"
 ) -> List[LibItem]:
     """Queries the database for the given query string.
 
     Args:
         query_str: Query string to parse. See HELP_STR for more info.
-        album_query: Whether or not to match albums instead of tracks.
-        session: current db session
+        session: Current db session.
+        query_type: Type of query. Should be one of "album", "extra", or "track"
 
     Returns:
         All tracks matching the query.
@@ -99,28 +105,51 @@ def query(
         log.error(f"No query given.\n{HELP_STR}")
         return []
 
-    if album_query:
-        library_query = session.query(Album).join(Track)
-    else:
-        library_query = session.query(Track).join(Album)
-
-    # only join Extras if the table is not empty
-    if session.query(Extra).all():
-        library_query = library_query.join(Extra)
-
-    for term in terms:
-        try:
-            library_query = library_query.filter(_create_expression(_parse_term(term)))
-        except ValueError as exc:
-            log.error(exc)
-            return []
-
-    items = library_query.all()
+    try:
+        items = _create_query(session, terms, query_type).all()
+    except ValueError as exc:
+        log.error(exc)
+        return []
 
     if not items:
         log.warning(f"No items found for the query '{query_str}'.")
 
     return items
+
+
+def _create_query(
+    session: sqlalchemy.orm.session.Session, terms: List[str], query_type: str
+) -> sqlalchemy.orm.query.Query:
+    """Creates a query statement.
+
+    Args:
+        session: Current db session.
+        terms: Query terms to parse.
+        query_type: Type of query. Should be one of "album", "extra", or "track"
+
+    Returns:
+        Sqlalchemy query statement.
+
+    Raises:
+        ValueError: Invalid query terms or type.
+    """
+    if query_type == "track":
+        library_query = session.query(Track).join(Album)
+    elif query_type == "album":
+        library_query = session.query(Album).join(Track)
+    elif query_type == "extra":
+        library_query = session.query(Extra).join(Album).join(Track)
+    else:
+        raise ValueError(f"Invalid query type: {query_type}")
+
+    # only join Extras if the table is not empty
+    if session.query(Extra).all() and query_type in {"album", "track"}:
+        library_query = library_query.join(Extra)
+
+    for term in terms:
+        library_query = library_query.filter(_create_expression(_parse_term(term)))
+
+    return library_query
 
 
 def _parse_term(term: str) -> Dict[str, str]:
@@ -129,7 +158,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     A term is a single field:value declaration.
 
     Args:
-        term: Query string to parse.
+        term: Query term to parse.
 
     Returns:
         A dictionary containing each named group and its value.

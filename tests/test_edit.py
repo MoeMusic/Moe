@@ -16,20 +16,24 @@ class TestParseArgs:
 
     def test_track(self, mock_track):
         """We can edit a track's field."""
-        args = argparse.Namespace(fv_terms=["title=new title"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["title=new title"], query="", album=False, extra=False
+        )
 
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_once_with("", mock_session, album_query=False)
+            mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert mock_track.title == "new title"
 
     def test_album(self, mock_track):
-        """We can edit a track's field."""
-        args = argparse.Namespace(fv_terms=["title=new title"], query="", album=True)
+        """We can edit an album's field."""
+        args = argparse.Namespace(
+            fv_terms=["title=new title"], query="", album=True, extra=False
+        )
 
         with patch(
             "moe.core.query.query", return_value=[mock_track.album_obj]
@@ -38,39 +42,68 @@ class TestParseArgs:
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_once_with("", mock_session, album_query=True)
+            mock_query.assert_called_once_with("", mock_session, query_type="album")
 
         assert mock_track.album == "new title"
 
+    def test_extra(self, real_album):
+        """We can edit an Extra's filename.
+
+        Editing an Extra's filename should also rename the file.
+        """
+        new_filename = "dumb_log.txt"
+        args = argparse.Namespace(
+            fv_terms=[f"filename={new_filename}"], query="", album=False, extra=True
+        )
+
+        extra = real_album.extras.pop()
+        old_path = extra.path
+        with patch("moe.core.query.query", return_value=[extra]) as mock_query:
+            mock_session = Mock()
+
+            edit.parse_args(config=Mock(), session=mock_session, args=args)
+
+            mock_query.assert_called_once_with("", mock_session, query_type="extra")
+
+        assert extra.filename == new_filename
+        assert extra.path.is_file()
+        assert not old_path.is_file()
+
     def test_int_field(self, mock_track):
         """We can edit integer fields."""
-        args = argparse.Namespace(fv_terms=["track_num=3"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["track_num=3"], query="", album=False, extra=False
+        )
 
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_once_with("", mock_session, album_query=False)
+            mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert mock_track.track_num == 3
 
     def test_list_field(self, mock_track):
         """We can edit list fields."""
-        args = argparse.Namespace(fv_terms=["genre=a; b"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["genre=a; b"], query="", album=False, extra=False
+        )
 
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_once_with("", mock_session, album_query=False)
+            mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert mock_track.genre == {"a", "b"}
 
     def test_multiple_items(self, mock_track_factory):
         """All items returned from a query are edited."""
-        args = argparse.Namespace(fv_terms=["track_num=3"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["track_num=3"], query="", album=False, extra=False
+        )
 
         track1 = mock_track_factory()
         track2 = mock_track_factory()
@@ -79,7 +112,7 @@ class TestParseArgs:
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_once_with("", mock_session, album_query=False)
+            mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert track1.track_num == 3
         assert track2.track_num == 3
@@ -87,7 +120,7 @@ class TestParseArgs:
     def test_multiple_terms(self, mock_track):
         """We can edit multiple terms at once."""
         args = argparse.Namespace(
-            fv_terms=["track_num=3", "title=yo"], query="", album=False
+            fv_terms=["track_num=3", "title=yo"], query="", album=False, extra=False
         )
 
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
@@ -95,7 +128,7 @@ class TestParseArgs:
 
             edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-            mock_query.assert_called_with("", mock_session, album_query=False)
+            mock_query.assert_called_with("", mock_session, query_type="track")
 
         assert mock_track.track_num == 3
         assert mock_track.title == "yo"
@@ -103,7 +136,7 @@ class TestParseArgs:
     def test_non_editable_fields(self, mock_track):
         """Paths and file extensions shouldn't be edited."""
         args = argparse.Namespace(
-            fv_terms=["path=3", "file_ext=2"], query="", album=False
+            fv_terms=["path=3", "file_ext=2"], query="", album=False, extra=False
         )
 
         with pytest.raises(SystemExit) as error:
@@ -112,7 +145,7 @@ class TestParseArgs:
 
                 edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-                mock_query.assert_called_once_with("", mock_session, album_query=False)
+                mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert error.value.code != 0
         assert mock_track.file_ext != "2"
@@ -120,7 +153,9 @@ class TestParseArgs:
 
     def test_invalid_track_field(self, mock_track):
         """Raise SystemExit if attempting to edit an invalid field."""
-        args = argparse.Namespace(fv_terms=["lol=3"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["lol=3"], query="", album=False, extra=False
+        )
 
         with pytest.raises(SystemExit) as error:
             with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
@@ -128,13 +163,15 @@ class TestParseArgs:
 
                 edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-                mock_query.assert_called_once_with("", mock_session, album_query=False)
+                mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert error.value.code != 0
 
     def test_invalid_album_field(self, mock_track):
         """Raise SystemExit if attempting to edit an invalid field."""
-        args = argparse.Namespace(fv_terms=["lol=3"], query="track_num:%", album=True)
+        args = argparse.Namespace(
+            fv_terms=["lol=3"], query="track_num:%", album=True, extra=False
+        )
 
         with pytest.raises(SystemExit) as error:
             with patch(
@@ -144,13 +181,15 @@ class TestParseArgs:
 
                 edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-                mock_query.assert_called_once_with("", mock_session, album_query=True)
+                mock_query.assert_called_once_with("", mock_session, query_type="album")
 
         assert error.value.code != 0
 
     def test_invalid_fv_term(self, mock_track):
         """Raise SystemExit if field/value term is in the wrong format."""
-        args = argparse.Namespace(fv_terms=["bad_format"], query="", album=False)
+        args = argparse.Namespace(
+            fv_terms=["bad_format"], query="", album=False, extra=False
+        )
 
         with pytest.raises(SystemExit) as error:
             with patch("moe.core.query.query", return_value=[mock_track]):
@@ -161,7 +200,7 @@ class TestParseArgs:
     def test_single_invalid_field(self, mock_track):
         """If only one out of multiple fields are invalid, still process the others."""
         args = argparse.Namespace(
-            fv_terms=["lol=3", "track_num=3"], query="", album=False
+            fv_terms=["lol=3", "track_num=3"], query="", album=False, extra=False
         )
 
         with pytest.raises(SystemExit) as error:
@@ -170,7 +209,7 @@ class TestParseArgs:
 
                 edit.parse_args(config=Mock(), session=mock_session, args=args)
 
-                mock_query.assert_called_once_with("", mock_session, album_query=False)
+                mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert error.value.code != 0
         assert mock_track.track_num == 3

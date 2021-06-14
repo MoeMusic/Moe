@@ -13,14 +13,16 @@ Commandline
 ***********
 .. code-block:: bash
 
-    moe rm [-h] [-a] query
+    moe rm [-h] [-a | -e] query
 
 Options
 =======
 ``-h, --help``
     Display the help message.
 ``-a, --album``
-    Query albums instead of tracks.
+    Query for matching albums instead of tracks.
+``-e, --extra``
+    Query for matching extras instead of tracks.
 
 Arguments
 =========
