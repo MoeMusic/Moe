@@ -77,7 +77,7 @@ def _create_album_dir(config: Config, album: Album) -> pathlib.Path:
     album_track = list(album.tracks)[0]
 
     album_dir_fmt = "{albumartist}/{album} ({year})"  # noqa; FS003
-    library_path = pathlib.Path(config.settings.move.library_path)
+    library_path = pathlib.Path(config.settings.move.library_path).expanduser()
     album_dir = library_path / album_dir_fmt.format(
         albumartist=album_track.albumartist,
         album=album_track.album,
@@ -130,7 +130,7 @@ def _copy_track(track: Track, album_dir: pathlib.Path):
     log.info(f"Copying track '{track.path}' to '{track_dest}'")
     shutil.copyfile(track.path, track_dest)
 
-    track.filename = track_filename
+    track.path = track_dest
 
 
 def _copy_extra(extra: Extra, album_dir: pathlib.Path):
@@ -142,10 +142,12 @@ def _copy_extra(extra: Extra, album_dir: pathlib.Path):
         extra: Extra to copy.
         album_dir: Album directory to copy the extra to.
     """
-    extra_dest = album_dir / extra.filename
+    extra_dest = album_dir / extra.path.name
 
     if extra_dest == extra.path:
         return
 
     log.info(f"Copying extra '{extra}' to '{extra_dest}'")
     shutil.copyfile(extra.path, extra_dest)
+
+    extra.path = extra_dest

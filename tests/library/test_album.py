@@ -1,7 +1,5 @@
 """Tests an Album object."""
 
-import pathlib
-
 import pytest
 
 from moe.core.library.session import DbDupAlbumError, DbDupAlbumPathError, session_scope
@@ -57,15 +55,6 @@ class TestEquals:
         album2 = mock_album_factory()
 
         assert album1 != album2
-
-
-class TestPathSet:
-    """Test path set event."""
-
-    def test_path_dne(self, mock_album):
-        """Raise an error if setting a path that doesn't exist."""
-        with pytest.raises(NotADirectoryError):
-            mock_album.path = pathlib.Path("also doesnt exist")
 
 
 class TestDuplicate:

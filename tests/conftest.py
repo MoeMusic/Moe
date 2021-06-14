@@ -88,10 +88,11 @@ def mock_track_factory() -> Callable[[], Track]:
     def _mock_track(year: int = 1996):
         album = Album("Outkast", "ATLiens", year, path=MagicMock())
         track_num = random.randint(1, 1000)
+        track_path = album.path / f"{track_num} - Jazzy Belle.mp3"
         return Track(
             album=album,
+            path=track_path,
             track_num=track_num,
-            filename=f"{track_num} - Jazzy Belle.mp3",
             title="Jazzy Belle",
         )
 
@@ -147,9 +148,10 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         title = "N.Y. State of Mind"
 
         if not album_dir:
-            album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} ({year})")
+            album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} {year}")
 
-        filename = f"{track_num} - {title}"
+        filename = f"{track_num} - {title}.mp3"
+        track_path = cast(pathlib.Path, album_dir) / filename
         shutil.copyfile(
             "tests/resources/empty.mp3", cast(pathlib.Path, album_dir) / filename
         )
@@ -164,7 +166,7 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
             album=album_obj,
             genre=["East Coast Hip Hop", "Hip Hop"],
             title=title,
-            filename=filename,
+            path=track_path,
             track_num=track_num,
             artist=albumartist,
         )
@@ -202,7 +204,7 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
 
         log_file = album.path / "log.txt"
         log_file.touch()
-        album.extras.add(Extra(log_file.name, album))
+        album.extras.add(Extra(log_file, album))
 
         return album
 

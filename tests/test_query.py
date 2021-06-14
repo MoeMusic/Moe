@@ -82,15 +82,11 @@ class TestQuery:
         )
 
     def test_path(self, real_track, tmp_session):
-        """We can query a track's path.
-
-        For some reason, this test isn't working with full path names. More testing
-        needed.
-        """
+        """We can query a track's path."""
         tmp_session.add(real_track)
 
-        assert query.query(f"'path:%{str(real_track.path.name)}'", tmp_session)
-        assert query.query(f"'path::{str(real_track.path.name)}'", tmp_session)
+        assert query.query(f"'path:{str(real_track.path.resolve())}'", tmp_session)
+        assert query.query("'path::.*'", tmp_session)
 
     def test_track_album_field_queries(self, real_track, tmp_session):
         """We should be able to query tracks that match album-related fields.
@@ -105,7 +101,7 @@ class TestQuery:
 
         assert query.query("'album:All Eyez on Me'", tmp_session)
         assert query.query(
-            f"'album_path:%{str(real_track.album_path.name)}'", tmp_session
+            f"'album_path:{str(real_track.album_path.resolve())}'", tmp_session
         )
         assert query.query("albumartist:2Pac", tmp_session)
         assert query.query("year:1996", tmp_session)

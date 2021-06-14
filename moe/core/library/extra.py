@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKeyConstraint
 
 from moe.core.library.album import Album
-from moe.core.library.lib_item import LibItem
+from moe.core.library.lib_item import LibItem, PathType
 from moe.core.library.session import Base
 
 # Makes hybrid_property's have the same typing as a normal properties.
@@ -26,20 +26,21 @@ class Extra(LibItem, Base):
 
     Attributes:
         album (Album): Album the extra file belongs to.
-        filename (str): Base filename of the extra file.
-        path (pathlib.Path): Filesystem path of the extra file. Read-only, but you can
-            alter the ``filename``.
+        path (pathlib.Path): Filesystem path of the extra file.
     """
 
     __tablename__ = "extras"
 
     # unique Extra = filename + Album
-    filename: str = Column(String, nullable=False, primary_key=True)
+    _filename = Column(String, primary_key=True)
     _albumartist = Column(String, nullable=False, primary_key=True)
     _album = Column(String, nullable=False, primary_key=True)
     _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
 
     album: Album = relationship("Album", back_populates="extras")
+    _path: pathlib.Path = Column(
+        PathType, nullable=False, unique=True, primary_key=True
+    )
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -48,33 +49,35 @@ class Extra(LibItem, Base):
         ),
     )
 
-    def __init__(self, filename: str, album: Album):
+    def __init__(self, path: pathlib.Path, album: Album):
         """Creates an extra.
 
         Args:
+            path: Filesystem path of the extra file.
             album: Album the extra file belongs to.
-            filename: Base filename of the extra file.
         """
-        self.filename = filename
+        self.path = path
         self.album = album
+        self._filename = path.name
 
     @typed_hybrid_property
-    def path(self) -> pathlib.Path:
-        """Returns the filesystem path of the extra file."""
-        return self.album.path / self.filename
+    def path(self):
+        """Gets an Extra's path."""
+        return self._path
 
-    @path.expression  # type: ignore
-    def path(cls):  # noqa: WPS440, N805, B902
-        """Creates a sql expression so we can query for a path."""
-        return Album.path + cls.filename
+    @path.setter
+    def path(self, new_path: pathlib.Path):  # noqa: WPS440
+        """Sets an Extra's path."""
+        self._filename = new_path.name
+        self._path = new_path
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album}: {self.filename}"
+        return f"{self.album}: {self._filename}"
 
     def __repr__(self):
         """Represents an Extra using its primary keys."""
         return (
             f"{self.__class__.__name__}("
-            f"{repr(self.album)}, filename={repr(self.filename)})"
+            f"{repr(self.album)}, filename={repr(self._filename)})"
         )
