@@ -23,11 +23,11 @@ class TestInit:
     def test_default_plugins(self, tmp_config):
         """Only register enabled + default plugins.
 
-        The config "plugin" will always be registered.
+        The config and cli "plugins" will always be registered.
         """
         config = tmp_config(settings='default_plugins = ["ls"]')
 
-        plugins = ["moe.core.config", "moe.plugins.ls"]
+        plugins = ["moe.core.config", "moe.cli", "moe.plugins.ls"]
         for plugin_name, _ in config.pluginmanager.list_name_plugin():
             assert plugin_name in plugins
 
