@@ -4,10 +4,9 @@ import logging
 import pathlib
 import types
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, List, Set, Type, TypeVar
+from typing import Any, List, Set, Type, TypeVar
 
 import mediafile
-import sqlalchemy
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -16,15 +15,6 @@ from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
 from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem, PathType
 from moe.core.library.session import Base
-
-# Makes hybrid_property's have the same typing as a normal properties.
-# Use until the stubs are improved.
-if TYPE_CHECKING:
-    typed_hybrid_property = property
-else:
-    from sqlalchemy.ext.hybrid import (  # noqa: WPS440
-        hybrid_property as typed_hybrid_property,
-    )
 
 log = logging.getLogger(__name__)
 
@@ -89,6 +79,10 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     path: pathlib.Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
 
+    album: str = association_proxy("album_obj", "title")
+    album_path: pathlib.Path = association_proxy("album_obj", "path")
+    albumartist: str = association_proxy("album_obj", "artist")
+    year: int = association_proxy("album_obj", "year")
     genre: Set[str] = association_proxy("_genre_obj", "name")
 
     album_obj: Album = relationship("Album", back_populates="tracks")
@@ -130,53 +124,6 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-    @typed_hybrid_property
-    def album(self) -> str:
-        """Returns the album's title."""
-        return self.album_obj.title
-
-    @album.setter
-    def album(self, new_album_title: str):  # noqa: WPS440
-        """Changes the title of the Album this Track belongs to."""
-        self.album_obj.title = new_album_title
-
-    @typed_hybrid_property
-    def albumartist(self) -> str:
-        """Returns the album's artist."""
-        return self.album_obj.artist
-
-    @albumartist.setter
-    def albumartist(self, new_albumartist: str):  # noqa: WPS440
-        """Changes the artist of the Album this Track belongs to."""
-        self.album_obj.artist = new_albumartist
-
-    @typed_hybrid_property
-    def album_path(self) -> pathlib.Path:
-        """Returns the directory path of the album."""
-        return self.album_obj.path
-
-    @album_path.setter
-    def album_path(self, new_album_path: pathlib.Path):  # noqa: WPS440
-        """Changes the path of the Album this Track belongs to.
-
-        Be careful changing this that you ensure each item in the Album physically
-        resides under this path.
-
-        Args:
-            new_album_path: New album path.
-        """
-        self.album_obj.path = new_album_path
-
-    @typed_hybrid_property
-    def year(self) -> int:
-        """Returns the album's artist."""
-        return self.album_obj.year
-
-    @year.setter
-    def year(self, new_year: int):  # noqa: WPS440
-        """Changes the year of the Album this Track belongs to."""
-        self.album_obj.year = new_year
 
     @classmethod
     def from_tags(cls: Type[T], path: pathlib.Path) -> T:
@@ -224,39 +171,6 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             genre=audio_file.genres,
             title=audio_file.title,
         )
-
-    @staticmethod
-    def get_attr(field: str) -> sqlalchemy.orm.attributes.InstrumentedAttribute:
-        """Gets a Track's attribute for the given field.
-
-        This is essentially a custom ``getattr()`` because the builtin one doesn't work
-        with hybrid properties.
-
-        Args:
-            field: Track attribute to retrieve.
-
-        Returns:
-            The associated Track attribute for a given field.
-
-        Raises:
-            ValueError: Invalid Track field given.
-        """
-        # hybrid attributes
-        if field == "album":
-            return Album.title
-        elif field == "albumartist":
-            return Album.artist
-        elif field == "album_path":
-            return Album.path
-        elif field == "year":
-            return Album.year
-
-        # normal Track field
-        try:
-            return getattr(Track, field)
-        except AttributeError:
-            log.error(f"Invalid Track field: {field}")
-            raise ValueError
 
     def to_dict(self) -> "OrderedDict[str, Any]":
         """Represents the Track as a dictionary.
