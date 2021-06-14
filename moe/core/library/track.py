@@ -182,5 +182,5 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             f"artist={repr(self.artist)}, "
             f"title={repr(self.title)}, "
             f"track_num={repr(self.track_num)}, "
-            f"filename={repr(self.filename)})"
+            f"path={repr(self.path)})"
         )
