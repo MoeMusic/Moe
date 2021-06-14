@@ -18,12 +18,11 @@ class TestGeneralMove:
 
     def test_default_copy(self, mock_track, tmp_config):
         """Items are copied by default."""
-        mock_session = Mock()
         config = tmp_config()
         with patch("moe.plugins.move._copy_item") as mock_copy_item:
-            move._alter_item_loc(config, mock_session, mock_track)
+            move._alter_item_loc(config, Mock(), mock_track)
 
-            mock_copy_item.assert_called_once()
+        mock_copy_item.assert_called_once()
 
     def test_path_updated_in_db(self, real_track, tmp_config, tmp_path, tmp_session):
         """Make sure the path updates are being reflected in the db."""
@@ -69,7 +68,7 @@ class TestCopy:
 
         move._copy_item(item=real_track, album_dir=tmp_path)
 
-        assert tmp_path / real_track.filename == real_track.path
+        assert tmp_path / real_track.path.name == real_track.path
         assert origin_track_path.is_file()
         assert real_track.path.is_file()
 
@@ -85,7 +84,7 @@ class TestCopy:
         move._copy_item(item=real_album, album_dir=tmp_path)
 
         for copied_track in real_album.tracks:
-            assert tmp_path / copied_track.filename == copied_track.path
+            assert tmp_path / copied_track.path.name == copied_track.path
             assert copied_track.path.is_file()
 
         for origin_track_path in origin_track_paths:
@@ -136,7 +135,7 @@ class TestPostArgs:
         with session_scope() as session:
             album = session.query(Album).one()
             for track in album.tracks:
-                assert tmp_path / album.path / track.filename == track.path
+                assert tmp_path / album.path / track.path.name == track.path
 
             for extra in album.extras:
-                assert tmp_path / album.path / extra.filename == extra.path
+                assert tmp_path / album.path / extra.path.name == extra.path

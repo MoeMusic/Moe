@@ -122,7 +122,7 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Track).filter_by(filename=real_track.path.name).one()
+        assert tmp_session.query(Track.path).filter_by(path=real_track.path).one()
 
     def test_multiple_files(self, real_track_factory, tmp_session):
         """Add all files given."""
@@ -132,8 +132,8 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Track).filter_by(filename=track_path1.name).one()
-        assert tmp_session.query(Track).filter_by(filename=track_path2.name).one()
+        assert tmp_session.query(Track.path).filter_by(path=track_path1).one()
+        assert tmp_session.query(Track.path).filter_by(path=track_path2).one()
 
     def test_min_reqd_tags(self, tmp_session):
         """We can add a track with only a track_num, album, albumartist, and year."""
@@ -142,7 +142,7 @@ class TestParseArgsFile:
 
         add.parse_args(config=Mock(), session=tmp_session, args=args)
 
-        assert tmp_session.query(Track).filter_by(filename="reqd.mp3").one()
+        assert tmp_session.query(Track).one()
 
     def test_non_track_file(self):
         """Raise SystemExit if the file given is not a valid track."""

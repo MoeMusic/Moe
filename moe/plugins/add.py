@@ -149,7 +149,7 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
 
     for extra_path in extra_paths:
         log.info(f"Adding extra file to the library: {extra_path}")
-        album.extras.add(Extra(extra_path.name, album))
+        album.extras.add(Extra(extra_path, album))
 
     session.merge(album)
     return album

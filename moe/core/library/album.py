@@ -1,16 +1,13 @@
 """An Album in the database and any related logic."""
 
-import errno
-import os
 import pathlib
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Set, TypeVar
 
-import sqlalchemy
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
-from sqlalchemy.orm import events, relationship
+from sqlalchemy.orm import relationship
 
-from moe.core.library.lib_item import LibItem
+from moe.core.library.lib_item import LibItem, PathType
 from moe.core.library.session import Base
 
 # This would normally cause a cyclic dependency.
@@ -20,25 +17,6 @@ if TYPE_CHECKING:
 
 # Album generic, used for typing classmethod
 A = TypeVar("A", bound="Album")  # noqa: WPS111
-
-
-class _PathType(sqlalchemy.types.TypeDecorator):
-    """A custom type for paths for database storage.
-
-    Normally, paths are pathlib.Path type, but we can't store that in the database,
-    so we normalize the paths first for database storage.
-    """
-
-    impl = sqlalchemy.types.String  # sql type
-    cache_ok = True  # expected to produce same bind/result behavior and sql generation
-
-    def process_bind_param(self, pathlib_path, dialect):
-        """Convert the absolute path to a string prior to enterting in the database."""
-        return str(pathlib_path.resolve())
-
-    def process_result_value(self, path_str, dialect):
-        """Convert the path back to pathlib.Path on the way out."""
-        return pathlib.Path(path_str)
 
 
 class Album(LibItem, Base):
@@ -62,7 +40,7 @@ class Album(LibItem, Base):
     title: str = Column(String, nullable=False, primary_key=True)
     year: int = Column(Integer, nullable=False, primary_key=True)
 
-    path: pathlib.Path = Column(_PathType, nullable=False, unique=True)
+    path: pathlib.Path = Column(PathType, nullable=False, unique=True)
 
     tracks = relationship(
         "Track",
@@ -155,17 +133,3 @@ class Album(LibItem, Base):
                 and self.year == other.year
             )
         return False
-
-
-@sqlalchemy.event.listens_for(Album.path, "set")
-def album_path_set(
-    target: Album,
-    value: pathlib.Path,
-    oldvalue: pathlib.Path,
-    initiator: events.AttributeEvents,
-):
-    """Only allow paths that exist."""
-    if not value.is_dir():
-        raise NotADirectoryError(
-            errno.ENOENT, os.strerror(errno.ENOENT), str(value.resolve())
-        )

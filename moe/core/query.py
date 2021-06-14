@@ -14,6 +14,7 @@ to get a list of Tracks matching the query from the library.
 
 import argparse
 import logging
+import pathlib
 import re
 import shlex
 from typing import Dict, List
@@ -163,7 +164,9 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
+def _create_expression(  # noqa: WPS231
+    term: Dict[str, str]
+) -> sqlalchemy.sql.elements.ClauseElement:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
@@ -185,8 +188,14 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
     attr = Track.get_attr(field)
 
     if separator == ":":
-        # Normal string match query - should be case insensitive.
-        return attr.ilike(sqlalchemy.sql.expression.literal(value), escape="/")
+        # path matching
+        if str(attr) == "Track.path":
+            return Track.path == pathlib.Path(value)
+        elif str(attr) == "Album.path":
+            return Album.path == pathlib.Path(value)
+
+        # normal string match query - should be case insensitive
+        return attr.ilike(value, escape="/")
 
     elif separator == "::":
         # Regular expression query.
