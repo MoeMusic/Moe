@@ -10,15 +10,18 @@ from moe.core.library.track import Album, Track
 from moe.plugins import move
 
 
-class TestPostAdd:
-    """Test functionality of the post-add hook."""
+class TestGeneralMove:
+    """Tests generally altering the location of files via ``_alter_item_loc().
+
+    These tests should not assume any move method e.g. copy, move, softlink, etc.
+    """
 
     def test_default_copy(self, mock_track, tmp_config):
         """Items are copied by default."""
         mock_session = Mock()
         config = tmp_config()
         with patch("moe.plugins.move._copy_item") as mock_copy_item:
-            move.post_add(config=config, session=mock_session, item=mock_track)
+            move._alter_item_loc(config, mock_session, mock_track)
 
             mock_copy_item.assert_called_once()
 
@@ -28,9 +31,7 @@ class TestPostAdd:
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
-        move.post_add(
-            config=tmp_config(tmp_settings), session=tmp_session, item=real_track
-        )
+        move._alter_item_loc(tmp_config(tmp_settings), tmp_session, real_track)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.path == real_track.path
@@ -48,8 +49,8 @@ class TestPostAdd:
         track2.genre = ["hip hop"]
         track2.track_num = track1.track_num
 
-        move.post_add(config, session=tmp_session, item=track1)
-        move.post_add(config, session=tmp_session, item=track2)
+        move._alter_item_loc(config, tmp_session, track1)
+        move._alter_item_loc(config, tmp_session, track2)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.genre == track2.genre
@@ -59,7 +60,7 @@ class TestCopy:
     """Tests ``_copy_item()``."""
 
     def test_copy_track(self, real_track, tmp_path):
-        """Test we can copy a Track that was added to the library.
+        """We can copy a Track that was added to the library.
 
         The new track's path should refer to the destination i.e. only one copy of the
         item will remain in the library.
@@ -73,7 +74,7 @@ class TestCopy:
         assert real_track.path.is_file()
 
     def test_copy_album(self, real_album, tmp_path):
-        """Test we can copy an Album that was added to the library.
+        """We can copy an Album that was added to the library.
 
         Copying an album is just copying each item belonging to that album.
         """
@@ -97,8 +98,8 @@ class TestCopy:
 
 
 @pytest.mark.integration
-class TestAddEntry:
-    """Test integration with the `add` command entry of `move`."""
+class TestPostArgs:
+    """Test integration with the ``post_args`` hook entry to the plugin."""
 
     def test_add_track(self, real_track, tmp_config, tmp_path):
         """Tracks are copied to `library_path` after they are added."""

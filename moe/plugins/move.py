@@ -27,22 +27,37 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     )
 
 
-@moe.hookimpl
-def post_add(config: Config, session: Session, item: MusicItem):
-    """Copies `item` to the library_path specified in the config.
+@moe.hookimpl(trylast=True)
+def post_args(config: Config, session: Session):
+    """Alters the location of any changed or new items in the session.
 
-    Also will format the path of the item's copied according to `track_path_fmt`.
-    This hook is run after an item is added to the music library.
+    This hook is run after the CLI arguments have been executed.
+
+    Args:
+        config: Moe config.
+        session: Currrent db session.
+    """
+    for item in session.new.union(session.dirty):
+        if isinstance(item, MusicItem):
+            _alter_item_loc(config, session, item)
+
+
+def _alter_item_loc(config: Config, session: Session, item: MusicItem):
+    """Alters the location of an item according to the given configuration.
+
+    By default, the item will be copied, overwriting any existing files.
 
     Args:
         config: Moe config.
         session: Current db session.
-        item: Item to be copied.
+        item: Item to be moved.
     """
     if isinstance(item, Album):
         album_dir = _create_album_dir(config, item)
-    if isinstance(item, Track):
+    elif isinstance(item, Track):
         album_dir = _create_album_dir(config, item.album_obj)
+    else:
+        return
 
     _copy_item(item, album_dir)
     session.merge(item)
@@ -53,7 +68,7 @@ def _copy_item(item: MusicItem, album_dir: pathlib.Path):
     if isinstance(item, Album):
         _copy_album(item, album_dir)
     elif isinstance(item, Track):
-        # Copy the entire album to ensure there's only a single existing album path.
+        # copy the entire album to ensure there's only a single existing album path
         _copy_album(item.album_obj, album_dir)
 
 
