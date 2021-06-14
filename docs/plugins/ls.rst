@@ -3,9 +3,14 @@ List (ls)
 #########
 Lists music in your library.
 
-*****
-Usage
-*****
+*************
+Configuration
+*************
+This plugin is enabled by default.
+
+***********
+Commandline
+***********
 .. code-block:: bash
 
     moe ls [-h] [-a] query

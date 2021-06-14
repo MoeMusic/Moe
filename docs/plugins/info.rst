@@ -3,9 +3,14 @@ Info
 ####
 Prints info about the music in your library. This includes any tags and other relevant information.
 
-*****
-Usage
-*****
+*************
+Configuration
+*************
+This plugin is enabled by default.
+
+***********
+Commandline
+***********
 .. code-block:: bash
 
     moe info [-h] [-a] query

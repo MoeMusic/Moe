@@ -3,9 +3,14 @@ Remove (rm)
 ###########
 Removes music from your library.
 
-*****
-Usage
-*****
+*************
+Configuration
+*************
+This plugin is enabled by default.
+
+***********
+Commandline
+***********
 .. code-block:: bash
 
     moe rm [-h] [-a] query

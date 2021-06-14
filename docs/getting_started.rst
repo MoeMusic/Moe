@@ -54,7 +54,7 @@ Global Options
 ==============
 Most configuration options reside in their relevant plugin, however there is currently one global option:
 
-``default_plugins = ["add", "info", "ls", "move, "rm"]``
+``default_plugins = ["add", "edit", "info", "ls", "move, "rm", "write"]``
     Override the list of default plugins.
 
 Plugin Options

@@ -8,6 +8,8 @@ Files will be automatically copied to the location set under ``library_path`` in
 *************
 Configuration
 *************
+This plugin is enabled by default.
+
 ``library_path = "~/Music"``
     Tells Moe where to copy your added music to.
 
