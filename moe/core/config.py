@@ -61,17 +61,17 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_hooks(pluginmanager: pluggy.manager.PluginManager):
+    def add_hooks(plugin_manager: pluggy.manager.PluginManager):
         """Add hookspecs to be registered to Moe.
 
         Args:
-            pluginmanager: pluginmanager that registers the hookspec.
+            plugin_manager: PluginManager that registers the hookspec.
 
         Example:
             Inside your hook implementation::
 
                 from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
-                pluginmanager.add_hookspecs(Hooks)
+                plugin_manager.add_hookspecs(Hooks)
         """
 
 
@@ -93,7 +93,7 @@ class Config:
         config_dir (pathlib.Path): Filesystem path of the configuration directory.
         config_file (pathlib.Path): Filesystem path of the configuration settings file.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
-        pluginmanager (pluggy.manager.PluginManager): Manages plugin logic.
+        plugin_manager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
         settings (dynaconf.base.LazySettings): User configuration settings.
 
@@ -194,20 +194,22 @@ class Config:
 
         self._setup_plugins()
 
-        self.pluginmanager.hook.add_config_validator(settings=self.settings)
+        self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
 
     def _setup_plugins(self):
-        """Setup pluginmanager and hook logic."""
-        self.pluginmanager = pluggy.PluginManager("moe")
+        """Setup plugin_manager and hook logic."""
+        self.plugin_manager = pluggy.PluginManager("moe")
 
-        # need to validate `config` specific settings separately
-        # this is so we have access to the 'default_plugins' setting
-        self.pluginmanager.register(moe.core.config)
-        self.pluginmanager.register(importlib.import_module("moe.cli"))
-        self.pluginmanager.add_hookspecs(Hooks)
-        self.pluginmanager.hook.add_config_validator(settings=self.settings)
+        # need to validate `config` specific settings separately so we have access to
+        # the 'default_plugins' setting
+        self.plugin_manager.register(moe.core.config, name="config")
+        self.plugin_manager.add_hookspecs(Hooks)
+        self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
+
+        # cli is always registered
+        self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
         self.plugins = self.settings.default_plugins
@@ -217,4 +219,4 @@ class Config:
             )
 
         # register plugin hookspecs for all plugins
-        self.pluginmanager.hook.add_hooks(pluginmanager=self.pluginmanager)
+        self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
