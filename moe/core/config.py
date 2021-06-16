@@ -11,10 +11,12 @@ Config object through a hook.
 """
 
 import importlib
+import importlib.util  # noqa: WPS458
 import logging
 import os
 import pathlib
 import re
+from typing import cast
 
 import dynaconf
 import pluggy
@@ -213,10 +215,44 @@ class Config:
 
         # register plugin hookimpls for all enabled plugins
         self.plugins = self.settings.default_plugins
-        for plugin in self.plugins:
-            self.pluginmanager.register(
-                importlib.import_module(f"moe.plugins.{plugin}")
-            )
+        internal_plugin_path = pathlib.Path(__file__).resolve().parents[1] / "plugins"
+        self._register_plugin_dir(internal_plugin_path)
 
         # register plugin hookspecs for all plugins
         self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
+
+    def _register_plugin_dir(self, plugin_dir: pathlib.Path):
+        """Registers plugins in a given directory.
+
+        Assumes each plugin is a single file named ``{plugin_name}.py``, or is a
+        package directory named ``{plugin_name}/``. If the plugin is a package, it will
+        register each file in the dir as a new plugin.
+
+        Only registers plugins that are enabled in the configuration.
+
+        Args:
+            plugin_dir: Path to search for plugin modules or packages.
+        """
+        for plugin_path in plugin_dir.iterdir():
+            if plugin_path.stem in self.plugins:
+                self._register_plugin_path(plugin_path)
+
+    def _register_plugin_path(self, plugin_path: pathlib.Path):
+        """Registers a plugin file or directory."""
+        if plugin_path.is_file():
+            self._register_plugin_from_file(plugin_path)
+        elif plugin_path.is_dir():
+            # register every file in a plugin's directory
+            for plugin_file in plugin_path.glob("*.py"):
+                if not plugin_file.name.startswith("_"):
+                    self._register_plugin_from_file(plugin_file)
+
+    def _register_plugin_from_file(self, plugin_file: pathlib.Path):
+        """Registers a plugin to Moe from a given file."""
+        plugin_spec = importlib.util.spec_from_file_location(
+            plugin_file.stem, plugin_file
+        )
+        plugin_module = importlib.util.module_from_spec(plugin_spec)
+        cast(importlib.abc.Loader, plugin_spec.loader).exec_module(plugin_module)
+
+        self.plugin_manager.register(plugin_module)

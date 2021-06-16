@@ -25,10 +25,10 @@ class TestInit:
 
         The config and cli "plugins" will always be registered.
         """
-        config = tmp_config(settings='default_plugins = ["ls"]')
+        config = tmp_config(settings='default_plugins = ["ls", "edit"]')
 
-        plugins = ["moe.core.config", "moe.cli", "moe.plugins.ls"]
-        for plugin_name, _ in config.pluginmanager.list_name_plugin():
+        plugins = ["config", "cli", "ls", "edit"]
+        for plugin_name, _ in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
 
     def test_config_dir_env(self, tmp_path):
@@ -36,3 +36,76 @@ class TestInit:
         with patch.dict("os.environ", {"MOE_CONFIG_DIR": str(tmp_path)}):
             config = Config()
             assert config.config_dir == tmp_path
+
+
+class TestRegisterPluginDir:
+    """Test registering plugins from a directory."""
+
+    def test_files(self, tmp_config, tmp_path):
+        """We can register plugin files within a directory."""
+        plugins = ["add", "move"]
+        tmp_settings = f"default_plugins = {plugins}"
+        config = tmp_config(tmp_settings)
+        (tmp_path / "add.py").touch()
+        (tmp_path / "move.py").touch()
+
+        # start with no plugins registered
+        for _, plugin in config.plugin_manager.list_name_plugin():
+            config.plugin_manager.unregister(plugin)
+
+        config._register_plugin_dir(tmp_path)
+        registered_plugins = {
+            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
+        }
+        assert set(plugins) == registered_plugins
+
+    def test_dirs(self, tmp_config, tmp_path):
+        """We can register plugin package directories within a directory.
+
+        Each file within the appropriate plugin directory should be added.
+        """
+        plugins = ["add", "move"]
+        tmp_settings = f"default_plugins = {plugins}"
+        config = tmp_config(tmp_settings)
+
+        add_path = tmp_path / "add"
+        add_path.mkdir()
+        (add_path / "my_add.py").touch()
+        (add_path / "my_add2.py").touch()
+        (tmp_path / "move.py").touch()
+
+        # start with no plugins registered
+        for _, plugin in config.plugin_manager.list_name_plugin():
+            config.plugin_manager.unregister(plugin)
+
+        config._register_plugin_dir(tmp_path)
+
+        registered_plugins = [
+            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
+        ]
+
+        assert set(registered_plugins) == {"move", "my_add", "my_add2"}
+
+    def test_wrong_plugin_name(self, tmp_config, tmp_path):
+        """Don't add any files or directories that don't match our enabled plugins."""
+        plugins = ["not_add", "not_move"]
+        tmp_settings = f"default_plugins = {plugins}"
+        config = tmp_config(tmp_settings)
+
+        add_path = tmp_path / "add"
+        add_path.mkdir()
+        (add_path / "add.py").touch()
+        (add_path / "my_add2.py").touch()
+        (tmp_path / "move.py").touch()
+
+        # start with no plugins registered
+        for _, plugin in config.plugin_manager.list_name_plugin():
+            config.plugin_manager.unregister(plugin)
+
+        config._register_plugin_dir(tmp_path)
+
+        registered_plugins = [
+            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
+        ]
+
+        assert not registered_plugins

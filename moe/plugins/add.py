@@ -32,11 +32,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pluginmanager: pluggy.manager.PluginManager):
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
     from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
 
-    pluginmanager.add_hookspecs(Hooks)
+    plugin_manager.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -77,7 +77,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
             log.error(exc)
             error_count += 1
         else:
-            config.pluginmanager.hook.post_add(
+            config.plugin_manager.hook.post_add(
                 config=config, session=session, item=item_added
             )
 
