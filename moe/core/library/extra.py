@@ -22,7 +22,7 @@ else:
     )
 
 
-class Extra(LibItem, Base):
+class Extra(LibItem, Base):  # noqa: WPS214
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:
@@ -95,3 +95,14 @@ class Extra(LibItem, Base):
             f"{self.__class__.__name__}("
             f"{repr(self.album)}, filename={repr(self._filename)})"
         )
+
+    def __eq__(self, other):
+        """Compares an Extra by it's attributes."""
+        if isinstance(other, Extra):
+            return (
+                self.album.artist == other.album.artist
+                and self.album.title == other.album.title
+                and self.album.year == other.album.year
+                and self.filename == other.filename
+            )
+        return False

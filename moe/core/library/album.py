@@ -1,7 +1,7 @@
 """An Album in the database and any related logic."""
 
 import pathlib
-from typing import TYPE_CHECKING, Set, TypeVar
+from typing import TYPE_CHECKING, List, TypeVar
 
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.orm import relationship
@@ -25,10 +25,10 @@ class Album(LibItem, Base):
 
     Attributes:
         artist (str): AKA albumartist.
-        extras (Set(Extra)): Extra non-track files associated with the album.
+        extras (List[Extra]): Extra non-track files associated with the album.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
-        tracks (Set[Track]): Album's corresponding tracks.
+        tracks (List[Track]): Album's corresponding tracks.
         year (str)
     """
 
@@ -45,14 +45,14 @@ class Album(LibItem, Base):
         "Track",
         back_populates="album_obj",
         cascade="all, delete-orphan",
-        collection_class=set,
-    )  # type: Set[Track] # noqa: WPS400
+        collection_class=list,
+    )  # type: List[Track] # noqa: WPS400
     extras = relationship(
         "Extra",
         back_populates="album",
         cascade="all, delete-orphan",
-        collection_class=set,
-    )  # type: Set[Extra] # noqa: WPS400
+        collection_class=list,
+    )  # type: List[Extra] # noqa: WPS400
 
     def __init__(
         self,
@@ -77,6 +77,14 @@ class Album(LibItem, Base):
         self.year = year
         self.path = path
 
+    def has_eq_keys(self, other: "Album") -> bool:
+        """Compares an Album by its primary keys."""
+        return (
+            self.artist == other.artist
+            and self.title == other.title
+            and self.year == other.year
+        )
+
     def __str__(self):
         """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
@@ -92,11 +100,13 @@ class Album(LibItem, Base):
         )
 
     def __eq__(self, other):
-        """Compares an Album using its primary keys."""
+        """Compares an Album by it's attributes."""
         if isinstance(other, Album):
             return (
-                self.artist == other.artist
+                self.artist == other.artist  # noqa: WPS222
                 and self.title == other.title
                 and self.year == other.year
+                and self.tracks == other.tracks
+                and self.extras == other.extras
             )
         return False

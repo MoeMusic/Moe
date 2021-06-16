@@ -29,7 +29,7 @@ class TestWriteTags:
         assert new_track.album == "Bigger, Better, Faster, More!"
         assert new_track.albumartist == "4 Non Blondes"
         assert new_track.artist == "4 Non Blondes"
-        assert new_track.genre == {"alternative", "rock"}
+        assert set(new_track.genre) == {"alternative", "rock"}
         assert new_track.title == "What's Up"
         assert new_track.track_num == 3
         assert new_track.year == 1992

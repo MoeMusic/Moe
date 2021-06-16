@@ -114,11 +114,11 @@ def mock_album_factory(mock_track_factory) -> Callable[[], Album]:
         track = mock_track_factory(year=year)
 
         album = track.album_obj
-        album.tracks.add(mock_track_factory(year=year))
+        album.tracks.append(mock_track_factory(year=year))
 
         mock_log_file = album.path / "log.txt"
         type(mock_log_file).name = PropertyMock(return_value="log.txt")
-        album.extras.add(Extra(mock_log_file, album))
+        album.extras.append(Extra(mock_log_file, album))
 
         return album
 
@@ -210,11 +210,11 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
         track = real_track_factory(year=year)
 
         album = track.album_obj
-        album.tracks.add(real_track_factory(album_dir=album.path, year=year))
+        album.tracks.append(real_track_factory(album_dir=album.path, year=year))
 
         log_file = album.path / "log.txt"
         log_file.touch()
-        album.extras.add(Extra(log_file, album))
+        Extra(log_file, album)
 
         return album
 

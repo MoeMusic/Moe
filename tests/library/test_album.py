@@ -5,28 +5,6 @@ import pytest
 from moe.core.library.session import DbDupAlbumError, DbDupAlbumPathError, session_scope
 
 
-class TestEquals:
-    """Equality based on primary key."""
-
-    def test_equals(self, mock_album_factory):
-        """Equal if two albums share the same primary key attributes."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-
-        album1.artist = album2.artist
-        album1.title = album2.title
-        album1.year = album2.year
-
-        assert album1 == album2
-
-    def test_not_equals(self, mock_album_factory):
-        """Not equal if two albums don't share the same primary key attributes."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-
-        assert album1 != album2
-
-
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Album to the db.
 
