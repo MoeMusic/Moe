@@ -71,11 +71,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pluginmanager: pluggy.manager.PluginManager):
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `CLI` hookspecs to Moe."""
     from moe.cli import Hooks  # noqa: WPS433, WPS442
 
-    pluginmanager.add_hookspecs(Hooks)
+    plugin_manager.add_hookspecs(Hooks)
 
 
 def main():
@@ -99,7 +99,7 @@ def _parse_args(args: List[str], config: Config):
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.pluginmanager.hook.add_command(cmd_parsers=cmd_parsers)
+    config.plugin_manager.hook.add_command(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
 
@@ -114,7 +114,7 @@ def _parse_args(args: List[str], config: Config):
     config.init_db()  # noqa: WPS437
     with session_scope() as session:
         parsed_args.func(config, session, args=parsed_args)
-        config.pluginmanager.hook.post_args(config=config, session=session)
+        config.plugin_manager.hook.post_args(config=config, session=session)
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:
