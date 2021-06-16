@@ -113,17 +113,16 @@ def _album_dict(album: Album) -> "OrderedDict[str, Any]":
         It will be in the form { attribute: value } and is sorted by attribute.
     """
     # access any element to set intial values
-    track_list = list(album.tracks)  # easier to deal with a list for this func
-    album_dict = _track_extra_dict(track_list[0])
+    album_dict = _track_extra_dict(album.tracks[0])
 
     # compare rest of album against initial values
-    for track in track_list[1:]:
+    for track in album.tracks[1:]:
         track_dict = _track_extra_dict(track)
         for key in {**track_dict, **album_dict}.keys():
             if album_dict.get(key) != track_dict.get(key):
                 album_dict[key] = "Various"
 
-    album_dict["extras"] = {str(extra.path) for extra in album.extras}
+    album_dict["extras"] = [str(extra.path) for extra in album.extras]
 
     # remove values that are always unique between tracks
     album_dict.pop("path")

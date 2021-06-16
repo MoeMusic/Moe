@@ -101,7 +101,7 @@ class TestParseArgsDirectory:
 
     def test_duplicate_tracks(self, real_album, tmp_session):
         """Don't fail album add if a track (by tags) already exists in the library."""
-        tmp_session.merge(list(real_album.tracks)[0])
+        tmp_session.merge(real_album.tracks[0])
         tmp_session.commit()
         args = argparse.Namespace(paths=[real_album.path])
 

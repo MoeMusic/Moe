@@ -38,7 +38,7 @@ class TestInit:
             assert track in album.tracks
 
         assert len(tracks) == len(album.tracks)
-        assert set(tracks) == album.tracks
+        assert tracks == album.tracks
 
 
 class TestAlbumSet:
@@ -71,7 +71,7 @@ class TestFromTags:
         assert track.albumartist == "Wu-Tang Clan"
         assert track.artist == "Wu-Tang Clan"
         assert track.file_ext == "mp3"
-        assert track.genre == {"hip hop", "rock"}
+        assert set(track.genre) == {"hip hop", "rock"}
         assert track.title == "Full"
         assert track.track_num == 1
         assert track.year == 2020

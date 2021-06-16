@@ -74,7 +74,7 @@ def _copy_item(item: LibItem, album_dir: pathlib.Path):
 
 def _create_album_dir(config: Config, album: Album) -> pathlib.Path:
     """Creates and formats an Album directory."""
-    album_track = list(album.tracks)[0]
+    album_track = album.tracks[0]
 
     album_dir_fmt = "{albumartist}/{album} ({year})"  # noqa; FS003
     library_path = pathlib.Path(config.settings.move.library_path).expanduser()

@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import List, Set, Type, TypeVar
+from typing import List, Type, TypeVar
 
 import mediafile
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
@@ -51,7 +51,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album_path (pathlib.Path): Path of the album directory.
         artist (str)
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
-        genre (Set[str])
+        genre (List[str])
         path (pathlib.Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -81,11 +81,11 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     album_path: pathlib.Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     year: int = association_proxy("album_obj", "year")
-    genre: Set[str] = association_proxy("_genre_obj", "name")
+    genre: List[str] = association_proxy("_genre_obj", "name")
 
     album_obj: Album = relationship("Album", back_populates="tracks")
     _genre_obj: _Genre = relationship(
-        "_Genre", secondary=track_genres, collection_class=set
+        "_Genre", secondary=track_genres, collection_class=list
     )
     __table_args__ = (
         ForeignKeyConstraint(
@@ -184,3 +184,19 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             f"track_num={repr(self.track_num)}, "
             f"path={repr(self.path)})"
         )
+
+    def __eq__(self, other):
+        """Compares a Track by it's attributes."""
+        if isinstance(other, Track):
+            return (
+                self.album_obj.artist == other.album_obj.artist  # noqa: WPS222
+                and self.album_obj.title == other.album_obj.title
+                and self.album_obj.year == other.album_obj.year
+                and self.artist == other.artist
+                and self.file_ext == other.file_ext
+                and set(self.genre) == set(other.genre)
+                and self.path == other.path
+                and self.title == other.title
+                and self.track_num == other.track_num
+            )
+        return False
