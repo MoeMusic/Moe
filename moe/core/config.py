@@ -239,13 +239,16 @@ class Config:
 
     def _register_plugin_path(self, plugin_path: pathlib.Path):
         """Registers a plugin file or directory."""
-        if plugin_path.is_file():
+        if (
+            plugin_path.is_file()
+            and not plugin_path.name.startswith("_")
+            and plugin_path.suffix == ".py"
+        ):
             self._register_plugin_from_file(plugin_path)
         elif plugin_path.is_dir():
             # register every file in a plugin's directory
-            for plugin_file in plugin_path.glob("*.py"):
-                if not plugin_file.name.startswith("_"):
-                    self._register_plugin_from_file(plugin_file)
+            for path in plugin_path.iterdir():
+                self._register_plugin_path(path)
 
     def _register_plugin_from_file(self, plugin_file: pathlib.Path):
         """Registers a plugin to Moe from a given file."""
