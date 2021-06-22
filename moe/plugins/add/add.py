@@ -1,6 +1,7 @@
 """Adds music to the library."""
 
 import argparse
+import copy
 import logging
 import pathlib
 
@@ -14,6 +15,7 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
+from moe.plugins.add import prompt
 
 log = logging.getLogger(__name__)
 
@@ -27,14 +29,23 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_add(config: Config, session: Session, item: LibItem):
-        """Provides the LibItem that was added to the library."""
+    def pre_add(config: Config, session: Session, album: Album) -> Album:
+        """Return a new album with changes to be applied by the user via the prompt.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            album: Original album to alter.
+
+        Returns:
+            The new, altered album to compare against the original in the prompt.
+        """  # noqa: DAR202
 
 
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
-    from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+    from moe.plugins.add.add import Hooks  # noqa: WPS433, WPS442
 
     plugin_manager.add_hookspecs(Hooks)
 
@@ -60,7 +71,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     Tracks can be added as files or albums as directories.
 
     Args:
-        config: Configuration in use.
+        config: Moe config.
         session: Current db session.
         args: Commandline arguments to parse.
 
@@ -72,36 +83,35 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            item_added = _add_item(session, path)
+            add_item(config, session, path)
         except AddError as exc:
             log.error(exc)
             error_count += 1
-        else:
-            config.plugin_manager.hook.post_add(
-                config=config, session=session, item=item_added
-            )
 
     if error_count:
         raise SystemExit(1)
 
 
-def _add_item(session: Session, item_path: pathlib.Path) -> LibItem:
-    """Adds an item to the library.
+def add_item(config: Config, session: Session, item_path: pathlib.Path):
+    """Adds a LibItem to the library from a given path.
 
     Args:
+        config: Moe config.
         session: Current db session.
         item_path: Filesystem path of the item.
-
-    Returns:
-        The LibItem added.
 
     Raises:
         AddError: Unable to add the item to the library.
     """
+    item: LibItem
     if item_path.is_file():
-        return _add_track(session, item_path)
+        item = _add_track(item_path)
+        old_album = item.album_obj
     elif item_path.is_dir():
-        return _add_album(session, item_path)
+        item = _add_album(item_path)
+        old_album = item
+    else:
+        raise AddError(f"Path not found: {item_path}")
 
     new_albums = config.plugin_manager.hook.pre_add(
         config=config, session=session, album=copy.deepcopy(old_album)
@@ -111,14 +121,14 @@ def _add_item(session: Session, item_path: pathlib.Path) -> LibItem:
     else:
         add_album = old_album
 
-    add_album.merge_existing(session)
+    if add_album:
+        add_album.merge_existing(session)
 
 
-def _add_album(session, album_path: pathlib.Path) -> Album:
+def _add_album(album_path: pathlib.Path) -> Album:
     """Add an album to the library from a given directory.
 
     Args:
-        session: Current db session.
         album_path: Filesystem path of the album directory to add.
 
     Returns:
@@ -158,17 +168,15 @@ def _add_album(session, album_path: pathlib.Path) -> Album:
         log.info(f"Adding extra file to the library: {extra_path}")
         Extra(extra_path, album)
 
-    session.merge(album)
     return album
 
 
-def _add_track(session: Session, track_path: pathlib.Path) -> Track:
+def _add_track(track_path: pathlib.Path) -> Track:
     """Add a track to the library from a given file.
 
     The Track's attributes are populated from the tags read at `track_path`.
 
     Args:
-        session: Current db session.
         track_path: Filesystem path of the track file to add.
 
     Returns:
@@ -184,5 +192,4 @@ def _add_track(session: Session, track_path: pathlib.Path) -> Track:
     except (TypeError, mediafile.UnreadableFileError) as init_exc:
         raise AddError(init_exc) from init_exc
 
-    session.merge(track)
     return track

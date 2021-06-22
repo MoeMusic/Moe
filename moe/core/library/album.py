@@ -1,7 +1,7 @@
 """An Album in the database and any related logic."""
 
 import pathlib
-from typing import TYPE_CHECKING, List, TypeVar
+from typing import TYPE_CHECKING, List, Optional, TypeVar
 
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.orm import relationship
@@ -90,13 +90,34 @@ class Album(LibItem, Base):
             and self.year == other.year
         )
 
-    def merge_existing(self, session: Session):
-        """Merges the current Album with an existing Album in the library."""
-        existing_album = (
+    def get_existing(self, session: Session, query_opts=None) -> Optional["Album"]:
+        """Gets a matching Album in the library.
+
+        Args:
+            session: Current db session.
+            query_opts: Optional query options to provide. See
+                https://docs.sqlalchemy.org/en/14/orm/query.html#sqlalchemy.orm.Query.options
+                for more info.
+
+        Returns:
+             Matching existing album in the library.
+        """
+        if query_opts:
+            return (
+                session.query(Album)
+                .filter_by(artist=self.artist, title=self.title, year=self.year)
+                .options(query_opts)
+                .one_or_none()
+            )
+        return (
             session.query(Album)
             .filter_by(artist=self.artist, title=self.title, year=self.year)
             .one_or_none()
         )
+
+    def merge_existing(self, session: Session):
+        """Merges the current Album with an existing Album in the library."""
+        existing_album = self.get_existing(session)
         if existing_album:
             self._id = existing_album._id  # noqa: WPS437
 
