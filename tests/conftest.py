@@ -78,6 +78,7 @@ def mock_track_factory() -> Callable[[], Track]:
         `session.merge(track)` vice `session.add(track)`
 
     Args:
+        track_num: Optional track number.
         year: Optional year to include. Changing this will change which album the
             the track belongs to.
 
@@ -85,9 +86,10 @@ def mock_track_factory() -> Callable[[], Track]:
         Unique Track object with each call.
     """
 
-    def _mock_track(year: int = 1996):
+    def _mock_track(track_num: int = 0, year: int = 1996):
         album = Album("Outkast", "ATLiens", year, path=MagicMock())
-        track_num = random.randint(1, 1000)
+        if not track_num:
+            track_num = random.randint(1, 1000)
         track_path = album.path / f"{track_num} - Jazzy Belle.mp3"
         return Track(
             album=album,
@@ -111,14 +113,14 @@ def mock_album_factory(mock_track_factory) -> Callable[[], Album]:
 
     def _mock_album():
         year = random.randint(1, 1000)
-        track = mock_track_factory(year=year)
+        track = mock_track_factory(year=year, track_num=1)
 
         album = track.album_obj
-        album.tracks.append(mock_track_factory(year=year))
+        album.tracks.append(mock_track_factory(year=year, track_num=2))
 
         mock_log_file = album.path / "log.txt"
         type(mock_log_file).name = PropertyMock(return_value="log.txt")
-        album.extras.append(Extra(mock_log_file, album))
+        Extra(mock_log_file, album)
 
         return album
 
@@ -140,8 +142,9 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
 
     Args:
         path: Optional album directory to place the track under.
-        year: Optional year to include. Changing this will change which album the
-            the track belongs to.
+        track_num: Optional track number.
+        year: Optional year. Changing this will change which album the the track
+            belongs to.
 
     Note:
         If you don't need to interact with the filesystem, it's preferred to use
@@ -151,11 +154,14 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         Unique Track.
     """
 
-    def _real_track(album_dir: pathlib.Path = None, year: int = 1994):
+    def _real_track(
+        album_dir: pathlib.Path = None, track_num: int = 0, year: int = 1994
+    ):
         album = "Illmatic"
         albumartist = "Nas"
-        track_num = random.randint(1, 1000)
         title = "N.Y. State of Mind"
+        if not track_num:
+            track_num = random.randint(1, 1000)
 
         if not album_dir:
             album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} {year}")
@@ -205,12 +211,14 @@ def real_album_factory(real_track_factory) -> Callable[[], Album]:
     """Creates an Album on the filesystem."""
 
     def _real_album_factory():
-        """Creates an album with two tracks."""
+        """Creates an album with two tracks and a log.txt file."""
         year = random.randint(1, 1000)
-        track = real_track_factory(year=year)
+        track = real_track_factory(year=year, track_num=1)
 
         album = track.album_obj
-        album.tracks.append(real_track_factory(album_dir=album.path, year=year))
+        album.tracks.append(
+            real_track_factory(album_dir=album.path, year=year, track_num=2)
+        )
 
         log_file = album.path / "log.txt"
         log_file.touch()
