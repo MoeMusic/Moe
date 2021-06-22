@@ -175,10 +175,11 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         """Represents a Track using its primary and other common keys."""
         return (
             f"{self.__class__.__name__}("
+            f"id={repr(self._id)}, "
+            f"track_num={repr(self.track_num)}, "
             f"{repr(self.album_obj)}, "
             f"artist={repr(self.artist)}, "
             f"title={repr(self.title)}, "
-            f"track_num={repr(self.track_num)}, "
             f"path={repr(self.path)})"
         )
 

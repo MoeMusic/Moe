@@ -25,6 +25,10 @@ Plugins
 Add
 ===
 
-.. autoclass:: moe.plugins.add.Hooks
+.. autoclass:: moe.plugins.add.add.Hooks
+   :members:
+   :noindex:
+
+.. autoclass:: moe.plugins.add.prompt.Hooks
    :members:
    :noindex:
