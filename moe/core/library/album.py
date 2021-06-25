@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, List, TypeVar
 
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.session import Session
+from sqlalchemy.schema import UniqueConstraint
 
 from moe.core.library.lib_item import LibItem, PathType
 from moe.core.library.session import Base
@@ -32,14 +34,17 @@ class Album(LibItem, Base):
         year (str)
     """
 
-    __tablename__ = "albums"
+    __tablename__ = "album"
 
-    # unique Album = artist + title + year
-    artist: str = Column(String, nullable=False, primary_key=True)
-    title: str = Column(String, nullable=False, primary_key=True)
-    year: int = Column(Integer, nullable=False, primary_key=True)
-
+    _id: int = Column(Integer, primary_key=True)
+    artist: str = Column(String, nullable=False)
     path: pathlib.Path = Column(PathType, nullable=False, unique=True)
+    title: str = Column(String, nullable=False)
+    year: int = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("artist", "title", "year", sqlite_on_conflict="IGNORE"),
+    )
 
     tracks = relationship(
         "Track",
@@ -85,6 +90,30 @@ class Album(LibItem, Base):
             and self.year == other.year
         )
 
+    def merge_existing(self, session: Session):
+        """Merges the current Album with an existing Album in the library."""
+        existing_album = (
+            session.query(Album)
+            .filter_by(artist=self.artist, title=self.title, year=self.year)
+            .one_or_none()
+        )
+        if existing_album:
+            self._id = existing_album._id  # noqa: WPS437
+
+        for track in self.tracks:
+            track._album_id = self._id  # noqa: WPS437
+            existing_track = track.get_existing(session)
+            if existing_track:
+                track._id = existing_track._id  # noqa: WPS437
+
+        for extra in self.extras:
+            extra._album_id = self._id  # noqa: WPS437
+            existing_extra = extra.get_existing(session)
+            if existing_extra:
+                extra._id = existing_extra._id  # noqa: WPS437
+
+        session.merge(self)
+
     def __str__(self):
         """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
@@ -93,6 +122,7 @@ class Album(LibItem, Base):
         """Represents an Album using it's primary keys."""
         return (
             f"{self.__class__.__name__}("
+            f"id={repr(self._id)}, "
             f"artist={repr(self.artist)}, "
             f"title={repr(self.title)}, "
             f"year={repr(self.year)}, "
