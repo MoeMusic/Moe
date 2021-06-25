@@ -19,12 +19,12 @@ class DbDupLibItemError(Exception):
     """Attempt to add a duplicate LibItem to the database."""
 
 
-class DbDupAlbumPathError(DbDupLibItemError):
-    """Attempt to add a duplicate Album path to the database."""
-
-
 class DbDupAlbumError(DbDupLibItemError):
-    """Attempt to add a duplicate Album to the database."""
+    """Attempt to add a duplicate Album to the database.
+
+    A duplicate can be due to a duplicate path, or due to a duplicate combination of
+    artist, title and year.
+    """
 
 
 @contextmanager
@@ -63,14 +63,11 @@ def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
         error: IntegrityError to parse.
 
     Raises:
-        DbDupAlbumPathError: Album's path already exists in the database.
         DbDupAlbumError: Album already exists in the database.
     """
     error_msg = str(error.orig)
-    album_path_dup_msg = "UNIQUE constraint failed: albums.path"
-    album_dup_msg = "UNIQUE constraint failed: albums.artist, albums.title, albums.year"
+    album_path_dup_msg = "UNIQUE constraint failed: album.path"
+    album_dup_msg = "UNIQUE constraint failed: album.artist, album.title, album.year"
 
-    if error_msg == album_path_dup_msg:
-        raise DbDupAlbumPathError from error
-    elif error_msg == album_dup_msg:
+    if error_msg in {album_path_dup_msg, album_dup_msg}:
         raise DbDupAlbumError from error

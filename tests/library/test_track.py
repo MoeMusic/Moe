@@ -19,17 +19,12 @@ class TestInit:
         assert mock_track.album_obj
 
     def test_add_to_album(self, mock_track_factory, tmp_session):
-        """Tracks with the same album attributes should be added to the same album.
-
-        Note:
-            We must use `session.merge()` here to avoid duplicate albums being added
-            to the database.
-        """
+        """Tracks with the same album attributes should be added to the same album."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
 
         tmp_session.merge(track1)
-        tmp_session.merge(track2)
+        track2.album_obj.merge_existing(tmp_session)
 
         tracks = tmp_session.query(Track).all()
         album = tmp_session.query(Album).one()
@@ -88,7 +83,7 @@ class TestDuplicate:
     a duplicate Track must have a duplicate Album by definition of a Track's uniqueness
     being defined by the album it belongs to.
 
-    Duplicates should not error if using `session.merge()`
+    Duplicates should not error if using ``track.album_obj.merge_existing(session)``.
 
     Note:
         This error will only occur upon the session being flushed or committed.
@@ -109,10 +104,10 @@ class TestDuplicate:
                 session.add(track2)
 
     def test_dup_fields_merge(self, mock_track_factory, tmp_session):
-        """Duplicate errors should not occur if using `session.merge()`."""
+        """Duplicate errors should not occur if using `Album.merge_existing()`."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
         track2.track_num = track1.track_num
 
-        tmp_session.merge(track1)
-        tmp_session.merge(track2)
+        tmp_session.add(track1)
+        track2.album_obj.merge_existing(tmp_session)

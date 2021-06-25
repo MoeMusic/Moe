@@ -121,7 +121,7 @@ def add_item(config: Config, session: Session, item_path: pathlib.Path):
     else:
         add_album = old_album
 
-    session.merge(add_album)
+    add_album.merge_existing(session)
 
 
 def _add_album(album_path: pathlib.Path) -> Album:
@@ -161,7 +161,7 @@ def _add_album(album_path: pathlib.Path) -> Album:
     album = albums[0]
     for track in album_tracks:
         log.info(f"Adding track file to the library: {track.path}")
-        track.album_obj = album
+        album.tracks.append(track)
 
     for extra_path in extra_paths:
         log.info(f"Adding extra file to the library: {extra_path}")

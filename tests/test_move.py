@@ -1,6 +1,6 @@
 """Tests the ``move`` plugin."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -20,7 +20,7 @@ class TestGeneralMove:
         """Items are copied by default."""
         config = tmp_config()
         with patch("moe.plugins.move._copy_item") as mock_copy_item:
-            move._alter_item_loc(config, Mock(), mock_track)
+            move._alter_item_loc(config, mock_track)
 
         mock_copy_item.assert_called_once()
 
@@ -30,7 +30,8 @@ class TestGeneralMove:
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
-        move._alter_item_loc(tmp_config(tmp_settings), tmp_session, real_track)
+        tmp_session.add(real_track)
+        move._alter_item_loc(tmp_config(tmp_settings), real_track)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.path == real_track.path
@@ -48,8 +49,11 @@ class TestGeneralMove:
         track2.genre = ["hip hop"]
         track2.track_num = track1.track_num
 
-        move._alter_item_loc(config, tmp_session, track1)
-        move._alter_item_loc(config, tmp_session, track2)
+        tmp_session.add(track1)
+        move._alter_item_loc(config, track1)
+
+        track2.album_obj.merge_existing(tmp_session)
+        move._alter_item_loc(config, track2)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.genre == track2.genre

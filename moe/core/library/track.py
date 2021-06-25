@@ -2,13 +2,14 @@
 
 import logging
 import pathlib
-from typing import List, Type, TypeVar
+from typing import List, Optional, Type, TypeVar
 
 import mediafile
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKey, ForeignKeyConstraint, Table
+from sqlalchemy.orm.session import Session
+from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem, PathType
@@ -20,7 +21,7 @@ log = logging.getLogger(__name__)
 class _Genre(Base):
     """A track can have multiple genres."""
 
-    __tablename__ = "genres"
+    __tablename__ = "genre"
 
     name: str = Column(String, nullable=False, primary_key=True)
 
@@ -28,11 +29,11 @@ class _Genre(Base):
         self.name = name
 
 
-track_genres = Table(
-    "track_genres",
+track_genre = Table(
+    "track_genre",
     Base.metadata,
-    Column("genre", String, ForeignKey("genres.name")),
-    Column("track_path", PathType, ForeignKey("tracks.path")),
+    Column("genre", String, ForeignKey("genre.name")),
+    Column("track_id", Integer, ForeignKey("track._id")),
 )
 __table_args__ = ()
 
@@ -62,37 +63,28 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album field and thus all other tracks in the album as well.
     """
 
-    __tablename__ = "tracks"
+    __tablename__ = "track"
 
-    # unqiue track = track_num + Album
-    track_num: int = Column(
-        Integer, nullable=False, primary_key=True, autoincrement=False
-    )
-    _albumartist = Column(String, nullable=False, primary_key=True)
-    _album = Column(String, nullable=False, primary_key=True)
-    _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
-
+    _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False, default="")
     file_ext: str = Column(String, nullable=False, default="")
     path: pathlib.Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
+    track_num: int = Column(Integer, nullable=False)
 
+    _album_id: int = Column(Integer, ForeignKey("album._id"))
+    album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
     album_path: pathlib.Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     year: int = association_proxy("album_obj", "year")
+
+    _genre_obj: _Genre = relationship(
+        "_Genre", secondary=track_genre, collection_class=list
+    )
     genre: List[str] = association_proxy("_genre_obj", "name")
 
-    album_obj: Album = relationship("Album", back_populates="tracks")
-    _genre_obj: _Genre = relationship(
-        "_Genre", secondary=track_genres, collection_class=list
-    )
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["_albumartist", "_album", "_year"],
-            ["albums.artist", "albums.title", "albums.year"],
-        ),
-    )
+    __table_args__ = (UniqueConstraint("track_num", "_album_id"),)
 
     def __init__(
         self,
@@ -114,14 +106,19 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             already exists in the database, or use `session.merge()`.
         """
         self.album_obj = album
-        self._album = album.title
-        self._albumartist = album.artist
-        self._year = album.year
         self.path = path
         self.track_num = track_num
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def get_existing(self, session: Session) -> Optional["Track"]:
+        """Gets a matching Track in the library."""
+        return (
+            session.query(Track)
+            .filter_by(track_num=self.track_num, _album_id=self._album_id)
+            .one_or_none()
+        )
 
     @classmethod
     def from_tags(cls: Type[T], path: pathlib.Path) -> T:
