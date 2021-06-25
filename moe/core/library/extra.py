@@ -2,11 +2,12 @@
 
 import os
 import pathlib
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKeyConstraint
+from sqlalchemy.orm.session import Session
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem, PathType
@@ -33,23 +34,14 @@ class Extra(LibItem, Base):  # noqa: WPS214
 
     __tablename__ = "extras"
 
-    # unique Extra = filename + Album
-    _filename = Column(String, primary_key=True)
-    _albumartist = Column(String, nullable=False, primary_key=True)
-    _album = Column(String, nullable=False, primary_key=True)
-    _year = Column(Integer, nullable=False, primary_key=True, autoincrement=False)
+    _id: int = Column(Integer, primary_key=True)
+    _filename: str = Column(String, nullable=False)
+    _path: pathlib.Path = Column(PathType, nullable=False, unique=True)
 
+    _album_id: int = Column(Integer, ForeignKey("album._id"))
     album: Album = relationship("Album", back_populates="extras")
-    _path: pathlib.Path = Column(
-        PathType, nullable=False, unique=True, primary_key=True
-    )
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["_albumartist", "_album", "_year"],
-            ["albums.artist", "albums.title", "albums.year"],
-        ),
-    )
+    __table_args__ = (UniqueConstraint("_filename", "_album_id"),)
 
     def __init__(self, path: pathlib.Path, album: Album):
         """Creates an extra.
@@ -60,6 +52,14 @@ class Extra(LibItem, Base):  # noqa: WPS214
         """
         self.path = path
         self.album = album
+
+    def get_existing(self, session: Session) -> Optional["Extra"]:
+        """Gets a matching Extra in the library."""
+        return (
+            session.query(Extra)
+            .filter_by(filename=self.filename, _album_id=self._album_id)
+            .one_or_none()
+        )
 
     @typed_hybrid_property
     def filename(self) -> str:

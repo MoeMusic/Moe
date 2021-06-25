@@ -39,17 +39,16 @@ def post_args(config: Config, session: Session):
     """
     for item in session.new.union(session.dirty):
         if isinstance(item, LibItem):
-            _alter_item_loc(config, session, item)
+            _alter_item_loc(config, item)
 
 
-def _alter_item_loc(config: Config, session: Session, item: LibItem):
+def _alter_item_loc(config: Config, item: LibItem):
     """Alters the location of an item according to the given configuration.
 
     By default, the item will be copied, overwriting any existing files.
 
     Args:
         config: Moe config.
-        session: Current db session.
         item: Item to be moved.
     """
     if isinstance(item, Album):
@@ -60,7 +59,6 @@ def _alter_item_loc(config: Config, session: Session, item: LibItem):
         return
 
     _copy_item(item, album_dir)
-    session.merge(item)
 
 
 def _copy_item(item: LibItem, album_dir: pathlib.Path):

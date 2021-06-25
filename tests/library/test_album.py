@@ -2,7 +2,7 @@
 
 import pytest
 
-from moe.core.library.session import DbDupAlbumError, DbDupAlbumPathError, session_scope
+from moe.core.library.session import DbDupAlbumError, session_scope
 
 
 class TestDuplicate:
@@ -16,10 +16,7 @@ class TestDuplicate:
     If a duplicate is found when committing to the database, we should raise a
     ``DbDupAlbumPathError``.
 
-    If we use `session.merge()` to add an Album, a duplicate error should only occur
-    for duplicate paths, and not because of its tags. This is because an Album's
-    primary key is based off of its tags, and `session.merge()` uses an object's
-    primary key to merge any existing objects.
+    Duplicates should not error if using ``album.merge_existing(session)``.
 
     Note:
         This error will only occur upon the session being flushed or committed.
@@ -40,17 +37,18 @@ class TestDuplicate:
                 session.add(album2)
 
     def test_dup_merge(self, mock_album_factory, tmp_session):
-        """Duplicate errors should not occur if using `session.merge()`."""
+        """Duplicate errors should not occur if using `Album.merge_existing()`."""
         album1 = mock_album_factory()
         album2 = mock_album_factory()
         album1.year = album2.year
+        album1.path = album2.path
 
         with session_scope() as session:
-            session.merge(album1)
-            session.merge(album2)
+            session.add(album1)
+            album2.merge_existing(session)
 
     def test_dup_path(self, mock_album_factory, tmp_session):
-        """Duplicate tracks can also be defined as having the same path.
+        """Duplicate albums can also be defined as having the same path.
 
         These should also raise the same DbDupTrackError.
         """
@@ -58,7 +56,7 @@ class TestDuplicate:
         album2 = mock_album_factory()
         album2.path = album1.path
 
-        with pytest.raises(DbDupAlbumPathError):
+        with pytest.raises(DbDupAlbumError):
             with session_scope() as session:
-                session.merge(album1)
-                session.merge(album2)
+                session.add(album1)
+                session.add(album2)
