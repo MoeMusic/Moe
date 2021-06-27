@@ -5,7 +5,8 @@ All fields and their values should be printed to stdout for any music queried.
 
 import argparse
 import types
-from typing import Any, List, OrderedDict, Union
+from collections import OrderedDict
+from typing import Any, Dict, List, Union
 
 import sqlalchemy
 
@@ -74,7 +75,7 @@ def _fmt_info(item: LibItem) -> str:
     return "".join(f"{field}: {value}\n" for field, value in _item_dict(item).items())
 
 
-def _item_dict(item: LibItem) -> "OrderedDict[str, Any]":
+def _item_dict(item: LibItem) -> "Dict[str, Any]":
     """Represents a LibItem as a dictionary.
 
     Only relevant, non-empty attributes will be included in the dictionary.
@@ -97,7 +98,7 @@ def _item_dict(item: LibItem) -> "OrderedDict[str, Any]":
     raise NotImplementedError(f"``_item_dict()`` not yet implemented for {type(item)}")
 
 
-def _album_dict(album: Album) -> "OrderedDict[str, Any]":
+def _album_dict(album: Album) -> "Dict[str, Any]":
     """Represents an Album as a dictionary.
 
     The basis of an album's representation is the merged dictionary of its tracks.
@@ -132,7 +133,7 @@ def _album_dict(album: Album) -> "OrderedDict[str, Any]":
     return album_dict
 
 
-def _track_extra_dict(item: Union[Extra, Track]) -> "OrderedDict[str, Any]":
+def _track_extra_dict(item: Union[Extra, Track]) -> "Dict[str, Any]":
     """Represents a Item or an Extra as a dictionary.
 
     Only public attributes that are not empty will be included. We also remove any
