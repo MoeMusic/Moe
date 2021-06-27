@@ -36,6 +36,7 @@ class Album(LibItem, Base):
         artist (str): AKA albumartist.
         date (datetime.date): Album release date.
         extras (List[Extra]): Extra non-track files associated with the album.
+        mb_id (str): Musicbrainz release id.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         tracks (List[Track]): Album's corresponding tracks.
@@ -46,6 +47,7 @@ class Album(LibItem, Base):
     _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False)
     date: datetime.date = Column(Date, nullable=False)
+    mb_id: str = Column(String, nullable=False, default="")
     path: pathlib.Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False)
 
@@ -121,6 +123,10 @@ class Album(LibItem, Base):
             .filter_by(artist=self.artist, title=self.title, date=self.date)
             .one_or_none()
         )
+
+    def get_track(self, track_num: int) -> "Track":
+        """Gets a track by its track number."""
+        return next(track for track in self.tracks if track.track_num == track_num)
 
     def merge_existing(self, session: Session):
         """Merges the current Album with an existing Album in the library."""

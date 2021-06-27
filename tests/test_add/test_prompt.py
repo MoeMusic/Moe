@@ -24,14 +24,33 @@ class TestRunPrompt:
 
     def test_apply_changes(self, mock_album, tmp_config):
         """If selected, apply the changes to the old album."""
-        mock_session = MagicMock()
-        mock_session.get.return_value = None
         config = tmp_config("default_plugins = ['add']")
         new_album = copy.deepcopy(mock_album)
         new_album.title = "new title"
         assert mock_album.title != new_album.title
 
+        # new albums won't have paths
+        new_album.path = None
+        for new_track in new_album.tracks:
+            new_track.path = None
+
         with patch("builtins.input", side_effect="a"):
+            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
+
+        assert add_album.title == new_album.title
+        assert add_album.path == mock_album.path
+
+        for track in add_album.tracks:
+            assert track.path == mock_album.get_track(track.track_num).path
+
+    def test_invalid_input(self, mock_album, tmp_config):
+        """Keep asking for user input if invalid."""
+        config = tmp_config("default_plugins = ['add']")
+        new_album = copy.deepcopy(mock_album)
+        new_album.title = "new title"
+
+        # new albums won't have paths
+        with patch("builtins.input", side_effect=["invalid", "a"]):
             add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
 
         assert add_album.title == new_album.title
@@ -62,8 +81,6 @@ class TestRunPrompt:
 
     def test_abort_changes(self, mock_album, tmp_config):
         """If selected, abort the changes to the old album."""
-        mock_session = MagicMock()
-        mock_session.get.return_value = None
         config = tmp_config("default_plugins = ['add']")
         new_album = copy.deepcopy(mock_album)
         new_album.title = "new title"
