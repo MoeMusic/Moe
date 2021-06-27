@@ -67,6 +67,9 @@ def _get_matching_release(album: Album) -> Dict:
         Dictionary of release information. See ``tests/resources/musicbrainz`` for
         an idea of what this contains.
     """
+    if album.mb_id:
+        return _get_release_by_id(album.mb_id)
+
     search_criteria: Dict = {}
     search_criteria["artist"] = album.artist
     search_criteria["release"] = album.title
