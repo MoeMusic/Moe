@@ -1,11 +1,10 @@
 """Tests the ``write`` plugin."""
 
 import datetime
-from unittest.mock import patch
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 from moe.plugins import write as moe_write
@@ -47,7 +46,7 @@ class TestPostArgs:
     def test_edit_track(self, real_track, tmp_config):
         """Any altered Tracks have their tags written."""
         new_title = "Summertime"
-        args = ["moe", "edit", "*", f"title={new_title}"]
+        cli_args = ["edit", "*", f"title={new_title}"]
 
         tmp_settings = """
         default_plugins = ["edit", "write"]
@@ -57,9 +56,7 @@ class TestPostArgs:
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+        moe.cli.main(cli_args, config)
 
         with session_scope() as post_session:
             track = post_session.query(Track).one()

@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.session import session_scope
 from moe.plugins import info
 
@@ -160,15 +160,13 @@ class TestCommand:
 
     def test_parse_args(self, capsys, real_track, tmp_config):
         """A track's info is printed when the `info` command is invoked."""
-        cli_args = ["moe", "info", "*"]
+        cli_args = ["info", "*"]
 
         config = tmp_config(settings='default_plugins = ["info"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+        moe.cli.main(cli_args, config)
 
         assert capsys.readouterr().out
