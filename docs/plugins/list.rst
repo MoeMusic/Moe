@@ -1,6 +1,6 @@
-#########
-List (ls)
-#########
+####
+List
+####
 Lists music in your library.
 
 *************
@@ -13,7 +13,7 @@ Commandline
 ***********
 .. code-block:: bash
 
-    moe ls [-h] [-a | -e] query
+    moe list [-h] [-a | -e] query
 
 Options
 =======

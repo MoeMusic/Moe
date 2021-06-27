@@ -7,7 +7,7 @@ import pytest
 
 from moe import cli
 from moe.core.library.session import session_scope
-from moe.plugins import ls
+from moe.plugins import list
 
 
 class TestParseArgs:
@@ -20,7 +20,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
-            ls.parse_args(config=Mock(), session=mock_session, args=args)
+            list.parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="track")
 
@@ -35,7 +35,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[mock_album]) as mock_query:
             mock_session = Mock()
 
-            ls.parse_args(config=Mock(), session=mock_session, args=args)
+            list.parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="album")
 
@@ -51,7 +51,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[extra]) as mock_query:
             mock_session = Mock()
 
-            ls.parse_args(config=Mock(), session=mock_session, args=args)
+            list.parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="extra")
 
@@ -64,20 +64,20 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            ls.parse_args(config=Mock(), session=Mock(), args=args)
+            list.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
 
 @pytest.mark.integration
 class TestCommand:
-    """Test cli integration with the ls command."""
+    """Test cli integration with the list command."""
 
     def test_parse_args(self, capsys, real_track, tmp_config):
-        """Music is listed from the library when the `ls` command is invoked."""
-        cli_args = ["moe", "ls", "*"]
+        """Music is listed from the library when the `list` command is invoked."""
+        cli_args = ["moe", "list", "*"]
 
-        config = tmp_config(settings='default_plugins = ["ls"]')
+        config = tmp_config(settings='default_plugins = ["list"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)

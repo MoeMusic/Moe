@@ -28,10 +28,10 @@ moe.plugins.info module
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.ls module
----------------------
+moe.plugins.list module
+-----------------------
 
-.. automodule:: moe.plugins.ls
+.. automodule:: moe.plugins.list
    :members:
    :undoc-members:
    :show-inheritance:
