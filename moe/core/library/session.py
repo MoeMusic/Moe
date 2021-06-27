@@ -67,7 +67,7 @@ def _parse_integrity_error(error: sqlalchemy.exc.IntegrityError):
     """
     error_msg = str(error.orig)
     album_path_dup_msg = "UNIQUE constraint failed: album.path"
-    album_dup_msg = "UNIQUE constraint failed: album.artist, album.title, album.year"
+    album_dup_msg = "UNIQUE constraint failed: album.artist, album.title, album.date"
 
     if error_msg in {album_path_dup_msg, album_dup_msg}:
         raise DbDupAlbumError from error

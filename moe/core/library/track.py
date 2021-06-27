@@ -1,5 +1,6 @@
 """A Track in the database and any related logic."""
 
+import datetime
 import logging
 import pathlib
 from typing import List, Optional, Type, TypeVar
@@ -51,6 +52,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album_obj (Album): Corresponding Album object.
         album_path (pathlib.Path): Path of the album directory.
         artist (str)
+        date (datetime.date): Album release date.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
         path (pathlib.Path): Filesystem path of the track file.
@@ -77,6 +79,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     album: str = association_proxy("album_obj", "title")
     album_path: pathlib.Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
+    date: datetime.date = association_proxy("album_obj", "date")
     year: int = association_proxy("album_obj", "year")
 
     _genre_obj: _Genre = relationship(
@@ -144,8 +147,8 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             missing_tags.append("albumartist")
         if not audio_file.track:
             missing_tags.append("track_num")
-        if not audio_file.year:
-            missing_tags.append("year")
+        if not audio_file.date:
+            missing_tags.append("date")
         if missing_tags:
             raise TypeError(
                 f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
@@ -154,7 +157,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album = Album(
             artist=audio_file.albumartist,
             title=audio_file.album,
-            year=audio_file.year,
+            date=audio_file.date,
             path=path.parent,
         )
         return cls(
@@ -188,8 +191,8 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         if isinstance(other, Track):
             return (
                 self.album_obj.artist == other.album_obj.artist  # noqa: WPS222
+                and self.album_obj.date == other.album_obj.date
                 and self.album_obj.title == other.album_obj.title
-                and self.album_obj.year == other.album_obj.year
                 and self.artist == other.artist
                 and self.file_ext == other.file_ext
                 and set(self.genre) == set(other.genre)
