@@ -1,6 +1,7 @@
 """Tests the add plugin interactive prompt."""
 
 import copy
+import datetime
 import random
 from unittest.mock import MagicMock, Mock, patch
 
@@ -110,7 +111,7 @@ class TestFmtAlbumChanges:
         old_album.tracks[0].title = "really really long old title"
         new_album.title = "new title"
         new_album.artist = "new artist"
-        new_album.year = "1999"
+        new_album.date = datetime.date(1999, 12, 31)
 
         for track in new_album.tracks:
             track.title = "new title"

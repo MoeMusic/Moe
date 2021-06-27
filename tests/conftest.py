@@ -1,4 +1,5 @@
 """Shared pytest configuration."""
+import datetime
 import pathlib
 import random
 import shutil
@@ -87,7 +88,7 @@ def mock_track_factory() -> Callable[[], Track]:
     """
 
     def _mock_track(track_num: int = 0, year: int = 1996):
-        album = Album("Outkast", "ATLiens", year, path=MagicMock())
+        album = Album("Outkast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock())
         if not track_num:
             track_num = random.randint(1, 1000)
         track_path = album.path / f"{track_num} - Jazzy Belle.mp3"
@@ -175,7 +176,7 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         album_obj = Album(
             artist=albumartist,
             title=album,
-            year=year,
+            date=datetime.date(year, 1, 1),
             path=cast(pathlib.Path, album_dir),
         )
         track = Track(
