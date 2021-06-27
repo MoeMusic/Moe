@@ -153,7 +153,7 @@ class Album(LibItem, Base):
         """Gets an Album's year."""
         return self.date.year
 
-    @year.expression
+    @year.expression  # noqa: WPS440
     def year(cls):  # noqa: B902, N805, WPS440
         """Returns a year at the sql level."""
         return sqlalchemy.extract("year", cls.date)

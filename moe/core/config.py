@@ -16,6 +16,7 @@ import logging
 import os
 import pathlib
 import re
+import sys
 from typing import cast
 
 import dynaconf
@@ -163,9 +164,14 @@ class Config:
                 alembic.command.upgrade(alembic_cfg, "head")
 
         # create regular expression function for sqlite queries
-        @sqlalchemy.event.listens_for(self.engine, "begin")
+        @sqlalchemy.event.listens_for(self.engine, "begin")  # noqa: WPS430
         def sqlite_engine_connect(conn):  # noqa: WPS430
-            conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
+            if (sys.version_info.major, sys.version_info.minor) < (3, 8):
+                conn.connection.create_function("regexp", 2, _regexp)
+            else:
+                conn.connection.create_function(
+                    "regexp", 2, _regexp, deterministic=True
+                )
 
         def _regexp(pattern: str, col_value) -> bool:  # noqa: WPS430
             """Use the python re module for sqlite regular expression functionality.
@@ -245,18 +251,17 @@ class Config:
             and not plugin_path.name.startswith("_")
             and plugin_path.suffix == ".py"
         ):
-            self._register_plugin_from_file(plugin_path)
+            plugin_spec = importlib.util.spec_from_file_location(
+                plugin_path.stem, plugin_path
+            )
+            if plugin_spec:
+                plugin_module = importlib.util.module_from_spec(plugin_spec)
+                cast(importlib.abc.Loader, plugin_spec.loader).exec_module(
+                    plugin_module
+                )
+
+                self.plugin_manager.register(plugin_module)
         elif plugin_path.is_dir():
             # register every file in a plugin's directory
             for path in plugin_path.iterdir():
                 self._register_plugin_path(path)
-
-    def _register_plugin_from_file(self, plugin_file: pathlib.Path):
-        """Registers a plugin to Moe from a given file."""
-        plugin_spec = importlib.util.spec_from_file_location(
-            plugin_file.stem, plugin_file
-        )
-        plugin_module = importlib.util.module_from_spec(plugin_spec)
-        cast(importlib.abc.Loader, plugin_spec.loader).exec_module(plugin_module)
-
-        self.plugin_manager.register(plugin_module)

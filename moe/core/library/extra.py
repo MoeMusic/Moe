@@ -66,7 +66,7 @@ class Extra(LibItem, Base):  # noqa: WPS214
         """Gets an Extra's filename."""
         return cast(str, self._filename)
 
-    @filename.setter
+    @filename.setter  # noqa: WPS440
     def filename(self, new_name: str):  # noqa: WPS440
         """Sets an Extra's filename and renames it on the filesystem."""
         self._filename = new_name
@@ -79,7 +79,7 @@ class Extra(LibItem, Base):  # noqa: WPS214
         """Gets an Extra's path."""
         return self._path
 
-    @path.setter
+    @path.setter  # noqa: WPS440
     def path(self, new_path: pathlib.Path):  # noqa: WPS440
         """Sets an Extra's path."""
         self._filename = new_path.name
