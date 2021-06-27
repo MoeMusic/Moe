@@ -117,13 +117,11 @@ class TestNetwork:
         """Make sure we can actually hit the real API."""
         mock_album.artist = "Kanye West"
         mock_album.title = "My Beautiful Dark Twisted Fantasy"
-        mock_album.date = datetime.date(2010, 11, 22)
 
         mb_album = musicbrainz.pre_add(Mock(), Mock(), mock_album)
 
         assert mb_album.artist == mock_album.artist
         assert mb_album.title == mock_album.title
-        assert mb_album.date == mock_album.date
 
 
 @patch(

@@ -122,7 +122,7 @@ def _create_album(release: Dict) -> Album:
     for track in release["medium-list"][0]["track-list"]:
         Track(
             album=album,
-            track_num=int(track["number"]),
+            track_num=int(track["position"]),
             path=None,  # type: ignore # this will get set in `add_prompt`
             artist=_flatten_artist_credit(track["recording"]["artist-credit"]),
             mb_id=track["recording"]["id"],
