@@ -43,7 +43,7 @@ class TestPreAdd:
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
 
     def test_dont_search_if_mbid(self, mock_album):
-        """If the album to search already contains an ``mb_id``, use that to search."""
+        """Use ``mb_id`` if it exists."""
         mock_album.mb_id = "1"
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",

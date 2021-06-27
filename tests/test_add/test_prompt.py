@@ -106,7 +106,8 @@ class TestRunPrompt:
         with patch("builtins.input", side_effect="a"):
             add_album = prompt.run_prompt(config, tmp_session, mock_album, new_album)
 
-        add_album.merge_existing(tmp_session)
+        add_album.merge(add_album.get_existing(tmp_session))
+        tmp_session.merge(add_album)
 
         album = tmp_session.query(Album).one()
         assert len(album.tracks) == 2

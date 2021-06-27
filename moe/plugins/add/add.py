@@ -1,7 +1,6 @@
 """Adds music to the library."""
 
 import argparse
-import copy
 import logging
 import pathlib
 
@@ -113,8 +112,9 @@ def add_item(config: Config, session: Session, item_path: pathlib.Path):
     else:
         raise AddError(f"Path not found: {item_path}")
 
+    old_album.merge(old_album.get_existing(session), overwrite_album_info=False)
     new_albums = config.plugin_manager.hook.pre_add(
-        config=config, session=session, album=copy.deepcopy(old_album)
+        config=config, session=session, album=old_album
     )
     if new_albums:
         add_album = prompt.run_prompt(config, session, old_album, new_albums[0])
@@ -122,7 +122,7 @@ def add_item(config: Config, session: Session, item_path: pathlib.Path):
         add_album = old_album
 
     if add_album:
-        add_album.merge_existing(session)
+        session.merge(add_album)
 
 
 def _add_album(album_path: pathlib.Path) -> Album:

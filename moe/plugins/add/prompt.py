@@ -8,7 +8,6 @@ import logging
 from typing import Callable, List, NamedTuple, Optional, cast
 
 import pluggy
-from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -104,7 +103,8 @@ def run_prompt(
     if old_album == new_album:
         return old_album
 
-    old_album = _merge_existing_album(session, old_album, new_album)
+    existing_album = new_album.get_existing(session)
+    old_album.merge(existing_album, overwrite_album_info=False)
 
     print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
@@ -130,38 +130,6 @@ def run_prompt(
                     user_input=user_input,
                 )
         log.warning(f"Invalid input: {user_input}")
-
-
-def _merge_existing_album(
-    session: Session, old_album: Album, new_album: Album
-) -> Album:
-    """Merges a given album with a matching existing album in the library.
-
-    If a matching track is found, the original album track will take precedence,
-    otherwise any existing tracks in the library will be added to the original album.
-
-    Args:
-        session: Current db session.
-        old_album: Original album to merge into.
-        new_album: New album used to lookup an existing album in the library. It is
-            assumed ``new_album`` will have more correct metadata/metadata more closely
-            resembling an existing album than ``old_album``.
-
-    Returns:
-        The merged album.
-    """
-    with session.no_autoflush:
-        existing_album = new_album.get_existing(session, query_opts=joinedload("*"))
-    if not existing_album:
-        return old_album
-
-    session.expunge(existing_album)
-    old_existing_matches = add_match.get_matching_tracks(old_album, existing_album)
-    for old_track, existing_track in old_existing_matches:
-        if not old_track:
-            old_album.tracks.append(cast(Track, existing_track))
-
-    return old_album
 
 
 def _fmt_album_changes(old_album: Album, new_album: Album) -> str:

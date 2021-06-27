@@ -25,4 +25,7 @@ class PathType(sqlalchemy.types.TypeDecorator):
 
     def process_result_value(self, path_str, dialect):
         """Convert the path back to pathlib.Path on the way out."""
+        if path_str is None:
+            return None
+
         return pathlib.Path(path_str)

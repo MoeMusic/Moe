@@ -2,11 +2,10 @@
 
 import os
 import pathlib
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 from moe.core.library.album import Album
@@ -52,14 +51,6 @@ class Extra(LibItem, Base):  # noqa: WPS214
         """
         self.path = path
         self.album = album
-
-    def get_existing(self, session: Session) -> Optional["Extra"]:
-        """Gets a matching Extra in the library."""
-        return (
-            session.query(Extra)
-            .filter_by(filename=self.filename, _album_id=self._album_id)
-            .one_or_none()
-        )
 
     @typed_hybrid_property
     def filename(self) -> str:

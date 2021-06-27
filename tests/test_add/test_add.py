@@ -133,11 +133,45 @@ class TestAddItemFromDir:
         mock_config.plugin_manager.hook.pre_add.return_value = []
 
         tmp_session.merge(real_album.tracks[0])
-        tmp_session.commit()
 
         add.add_item(mock_config, tmp_session, real_album.path)
 
         assert tmp_session.query(Album).filter_by(path=real_album.path).one()
+
+    def test_merge_existing(self, real_album_factory, tmp_session):
+        """Merge the album to be added with an existing album in the library.
+
+        The album info should be kept (likely to be more accurate), however, any tracks
+        or extras should be overwritten.
+        """
+        mock_config = MagicMock()
+        mock_config.plugin_manager.hook.pre_add.return_value = []
+
+        new_album = real_album_factory()
+        existing_album = real_album_factory()
+        new_album.date = existing_album.date
+        new_album.path = existing_album.path
+        existing_album.mb_id = "1234"
+        assert new_album.has_eq_keys(existing_album)
+
+        for track in new_album.tracks:
+            track.title = "new_album"
+
+        for extra_num, extra in enumerate(new_album.extras):
+            extra.filename = f"{extra_num} new_album"
+
+        assert new_album.mb_id != existing_album.mb_id
+        assert new_album.tracks != existing_album.tracks
+        assert new_album.extras != existing_album.extras
+
+        tmp_session.merge(existing_album)
+        with patch("moe.plugins.add.add._add_album", return_value=new_album):
+            add.add_item(mock_config, tmp_session, new_album.path)
+
+        db_album = tmp_session.query(Album).one()
+        assert db_album.mb_id == existing_album.mb_id
+        assert db_album.tracks == new_album.tracks
+        assert db_album.extras == new_album.extras
 
 
 class TestAddItemFromFile:

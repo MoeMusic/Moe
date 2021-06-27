@@ -25,7 +25,8 @@ class TestInit:
         track2 = mock_track_factory()
 
         tmp_session.merge(track1)
-        track2.album_obj.merge_existing(tmp_session)
+        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()
         album = tmp_session.query(Album).one()
@@ -84,7 +85,11 @@ class TestDuplicate:
     a duplicate Track must have a duplicate Album by definition of a Track's uniqueness
     being defined by the album it belongs to.
 
-    Duplicates should not error if using ``track.album_obj.merge_existing(session)``.
+    To handle duplicates by tags, you should use ``album.get_existing(session)`` to get
+    the existing album. At this point, you can either delete the existing album from the
+    session using ``session.delete()``, or you can merge it with the current album
+    using ``album.merge()``. Finally, to add the current track into the session,
+    make sure to use ``session.merge()``.
 
     Note:
         This error will only occur upon the session being flushed or committed.
@@ -105,10 +110,11 @@ class TestDuplicate:
                 session.add(track2)
 
     def test_dup_fields_merge(self, mock_track_factory, tmp_session):
-        """Duplicate errors should not occur if using `Album.merge_existing()`."""
+        """Duplicate errors should not occur if we merge the existing album."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
         track2.track_num = track1.track_num
 
         tmp_session.add(track1)
-        track2.album_obj.merge_existing(tmp_session)
+        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        tmp_session.merge(track2)
