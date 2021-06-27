@@ -11,10 +11,10 @@ from moe.core.config import Config
 
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds the ``ls`` command to Moe's CLI."""
+    """Adds the ``list`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
-        "ls",
-        aliases=["list"],
+        "list",
+        aliases=["ls"],
         description="Lists music in the library.",
         help="list music in the library",
         parents=[query.query_parser],

@@ -34,7 +34,7 @@ DEFAULT_PLUGINS = (
     "add",
     "edit",
     "info",
-    "ls",
+    "list",
     "move",
     "musicbrainz",
     "remove",

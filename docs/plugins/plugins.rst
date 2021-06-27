@@ -9,7 +9,7 @@ Almost everything in Moe is a plugin. To see more details on each individual plu
    Add <add>
    Edit <edit>
    Info <info>
-   List (ls) <ls>
+   List <list>
    Move <move>
    Musicbrainz <musicbrainz>
    Remove <remove>
