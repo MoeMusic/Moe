@@ -95,17 +95,14 @@ class TestQuery:
         These fields belong to the Album table and thus aren't normally exposed
         through a track.
         """
-        real_track.album = "All Eyez on Me"
-        real_track.albumartist = "2Pac"
-        real_track.year = "1996"
         tmp_session.add(real_track)
 
-        assert query.query("'album:All Eyez on Me'", tmp_session)
+        assert query.query(f"'album:{real_track.album}'", tmp_session)
         assert query.query(
             f"'album_path:{str(real_track.album_path.resolve())}'", tmp_session
         )
-        assert query.query("albumartist:2Pac", tmp_session)
-        assert query.query("year:1996", tmp_session)
+        assert query.query(f"albumartist:{real_track.albumartist}", tmp_session)
+        assert query.query(f"year:{real_track.year}", tmp_session)
 
     def test_case_insensitive_value(self, tmp_session, mock_track):
         """Query values should be case-insensitive."""

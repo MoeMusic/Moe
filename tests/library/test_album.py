@@ -29,7 +29,7 @@ class TestDuplicate:
         """Duplicate albums should raise a DbDupAlbumError."""
         album1 = mock_album_factory()
         album2 = mock_album_factory()
-        album1.year = album2.year
+        album1.date = album2.date
 
         with pytest.raises(DbDupAlbumError):
             with session_scope() as session:
@@ -40,7 +40,7 @@ class TestDuplicate:
         """Duplicate errors should not occur if using `Album.merge_existing()`."""
         album1 = mock_album_factory()
         album2 = mock_album_factory()
-        album1.year = album2.year
+        album1.date = album2.date
         album1.path = album2.path
 
         with session_scope() as session:

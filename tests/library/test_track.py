@@ -1,5 +1,6 @@
 """Tests a Track object."""
 
+import datetime
 import pathlib
 
 import pytest
@@ -48,7 +49,7 @@ class TestAlbumSet:
         mock_track.album = "TPAB"
         mock_track.album_path = tmp_path
         mock_track.albumartist = "Kendrick Lamar"
-        mock_track.year = 2000
+        mock_track.date = datetime.date(2015, 3, 15)
 
         assert album1 is mock_track.album_obj
 

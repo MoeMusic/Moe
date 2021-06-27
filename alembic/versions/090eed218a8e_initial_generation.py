@@ -1,8 +1,8 @@
 """Initial generation.
 
-Revision ID: 3af977cf2c1f
+Revision ID: 090eed218a8e
 Revises:
-Create Date: 2021-06-25 07:24:05.269136
+Create Date: 2021-06-26 18:47:05.650907
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ import moe
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "3af977cf2c1f"
+revision = "090eed218a8e"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,11 +23,12 @@ def upgrade():
         "album",
         sa.Column("_id", sa.Integer(), nullable=False),
         sa.Column("artist", sa.String(), nullable=False),
+        sa.Column("date", sa.Date(), nullable=False),
+        sa.Column("mb_id", sa.String(), nullable=False),
         sa.Column("path", moe.core.library.lib_item.PathType(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
-        sa.Column("year", sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint("_id"),
-        sa.UniqueConstraint("artist", "title", "year"),
+        sa.UniqueConstraint("artist", "title", "date"),
         sa.UniqueConstraint("path"),
     )
     op.create_table(
@@ -54,6 +55,7 @@ def upgrade():
         sa.Column("_id", sa.Integer(), nullable=False),
         sa.Column("artist", sa.String(), nullable=False),
         sa.Column("file_ext", sa.String(), nullable=False),
+        sa.Column("mb_id", sa.String(), nullable=False),
         sa.Column("path", moe.core.library.lib_item.PathType(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("track_num", sa.Integer(), nullable=False),

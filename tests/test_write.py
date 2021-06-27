@@ -1,5 +1,6 @@
 """Tests the ``write`` plugin."""
 
+import datetime
 from unittest.mock import patch
 
 import pytest
@@ -21,7 +22,7 @@ class TestWriteTags:
         real_track.genre = {"alternative", "rock"}
         real_track.title = "What's Up"
         real_track.track_num = 3
-        real_track.year = 1992
+        real_track.date = datetime.date(1992, 1, 1)
 
         moe_write._write_tags(real_track)
 
@@ -32,7 +33,7 @@ class TestWriteTags:
         assert set(new_track.genre) == {"alternative", "rock"}
         assert new_track.title == "What's Up"
         assert new_track.track_num == 3
-        assert new_track.year == 1992
+        assert new_track.date == datetime.date(1992, 1, 1)
 
 
 @pytest.mark.integration
