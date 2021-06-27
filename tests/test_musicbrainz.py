@@ -8,7 +8,7 @@ import pytest
 
 import tests.resources.musicbrainz.edge as mb_edge
 import tests.resources.musicbrainz.full_release as mb_full_release
-from moe import cli as moe_cli
+from moe import cli
 from moe.core.library.album import Album
 from moe.core.library.session import session_scope
 from moe.plugins import musicbrainz
@@ -140,13 +140,11 @@ class TestAdd:
 
     def test_album(self, mock_mb_by_id, mock_mb_search, real_album, tmp_config):
         """We can import and add an album to the library."""
-        cli_args = ["moe", "add", str(real_album.path)]
+        cli_args = ["add", str(real_album.path)]
         config = tmp_config(settings='default_plugins = ["add", "musicbrainz"]')
 
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                with patch("builtins.input", lambda _: "a"):  # apply changes
-                    moe_cli.main()
+        with patch("builtins.input", lambda _: "a"):  # apply changes
+            cli.main(cli_args, config)
 
         with session_scope() as session:
             album = session.query(Album).one()

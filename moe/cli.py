@@ -78,10 +78,11 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     plugin_manager.add_hookspecs(Hooks)
 
 
-def main():
+def main(args: List[str] = sys.argv[1:], config: Config = None):
     """Runs the CLI."""
-    config = Config()
-    _parse_args(sys.argv[1:], config)
+    if not config:
+        config = Config()
+    _parse_args(args, config)
 
 
 def _parse_args(args: List[str], config: Config):

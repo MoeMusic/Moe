@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 from moe.plugins import edit
@@ -223,16 +223,14 @@ class TestCommand:
         """Music is edited when the `edit` command is invoked."""
         new_title = "Lovely Day"
         assert real_track.title != new_title
-        cli_args = ["moe", "edit", "*", f"title={new_title}"]
+        cli_args = ["edit", "*", f"title={new_title}"]
 
         config = tmp_config(settings='default_plugins = ["edit"]')
         config.init_db()
         with session_scope() as pre_edit_session:
             pre_edit_session.add(real_track)
 
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+        moe.cli.main(cli_args, config)
 
         with session_scope() as post_edit_session:
             edited_track = post_edit_session.query(Track).one()

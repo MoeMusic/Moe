@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.session import session_scope
 from moe.core.library.track import Album, Track
 from moe.plugins import move
@@ -107,17 +107,15 @@ class TestPostArgs:
 
     def test_add_track(self, real_track, tmp_config, tmp_path):
         """Tracks are copied to `library_path` after they are added."""
-        args = ["moe", "add", str(real_track.path)]
-
+        cli_args = ["add", str(real_track.path)]
         tmp_settings = f"""
         default_plugins = ["add", "move"]
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
         config = tmp_config(tmp_settings)
-        with patch("sys.argv", args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+
+        moe.cli.main(cli_args, config)
 
         with session_scope() as session:
             track = session.query(Track).one()
@@ -125,17 +123,15 @@ class TestPostArgs:
 
     def test_add_album(self, real_album, tmp_config, tmp_path):
         """Albums are copied to `library_path` after they are added."""
-        cli_args = ["moe", "add", str(real_album.path)]
-
+        cli_args = ["add", str(real_album.path)]
         tmp_settings = f"""
         default_plugins = ["add", "move"]
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
         config = tmp_config(tmp_settings)
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+
+        moe.cli.main(cli_args, config)
 
         with session_scope() as session:
             album = session.query(Album).one()

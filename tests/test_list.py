@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.session import session_scope
 from moe.plugins import list
 
@@ -75,15 +75,13 @@ class TestCommand:
 
     def test_parse_args(self, capsys, real_track, tmp_config):
         """Music is listed from the library when the `list` command is invoked."""
-        cli_args = ["moe", "list", "*"]
+        cli_args = ["list", "*"]
 
         config = tmp_config(settings='default_plugins = ["list"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+        moe.cli.main(cli_args, config)
 
         assert capsys.readouterr().out

@@ -1,11 +1,11 @@
 """Tests the ``remove`` plugin."""
 
 import argparse
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
-from moe import cli
+import moe
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
@@ -83,16 +83,13 @@ class TestCommand:
 
     def test_parse_args(self, real_track, tmp_path, tmp_config):
         """Music is removed from the library when the `remove` command is invoked."""
-        cli_args = ["moe", "remove", "*"]
-
+        cli_args = ["remove", "*"]
         config = tmp_config(settings='default_plugins = ["remove"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
 
-        with patch("sys.argv", cli_args):
-            with patch("moe.cli.Config", return_value=config):
-                cli.main()
+        moe.cli.main(cli_args, config)
 
         with session_scope() as session2:
             assert not session2.query(Track).scalar()
