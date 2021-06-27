@@ -226,6 +226,7 @@ def _apply_changes(
     user_input: str,
 ) -> Optional[Album]:
     """Applies the album changes."""
+    new_album.path = old_album.path
     for old_track, new_track in add_match.get_matching_tracks(old_album, new_album):
         if not old_track:
             new_track.album_obj = None  # type: ignore # (causes mypy error)

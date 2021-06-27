@@ -55,6 +55,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         date (datetime.date): Album release date.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
+        mb_id (str): Musicbrainz recording id.
         path (pathlib.Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -70,6 +71,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False, default="")
     file_ext: str = Column(String, nullable=False, default="")
+    mb_id: str = Column(String, nullable=False, default="")
     path: pathlib.Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
     track_num: int = Column(Integer, nullable=False)
@@ -89,19 +91,13 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
 
     __table_args__ = (UniqueConstraint("track_num", "_album_id"),)
 
-    def __init__(
-        self,
-        album: Album,
-        path: pathlib.Path,
-        track_num: int,
-        **kwargs,
-    ):
+    def __init__(self, album: Album, track_num: int, path: pathlib.Path, **kwargs):
         """Create a track.
 
         Args:
             album: Album the track belongs to.
-            path: Filesystem path of the track file.
             track_num: Track number.
+            path: Filesystem path of the track file.
             **kwargs: Any other fields to assign to the Track.
 
         Note:

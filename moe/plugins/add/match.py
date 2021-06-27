@@ -56,7 +56,10 @@ def get_matching_tracks(  # noqa: WPS231
             continue
 
         track_matches.append(
-            (_get_track(album_a, track_pair[0]), _get_track(album_b, track_pair[1]))
+            (
+                album_a.get_track(track_pair[0]),
+                album_b.get_track(track_pair[1]),
+            )
         )
 
         # prevent subsequent matches
@@ -81,8 +84,3 @@ def get_match_value(track_a: Track, track_b: Track) -> int:
         return 1
 
     return 0
-
-
-def _get_track(album: Album, track_num: int) -> Track:
-    """Gets an album track by its track number."""
-    return next(track for track in album.tracks if track.track_num == track_num)
