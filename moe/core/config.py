@@ -37,7 +37,7 @@ DEFAULT_PLUGINS = (
     "ls",
     "move",
     "musicbrainz",
-    "rm",
+    "remove",
     "write",
 )
 

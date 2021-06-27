@@ -1,6 +1,6 @@
-###########
-Remove (rm)
-###########
+######
+Remove
+######
 Removes music from your library.
 
 *************
@@ -13,7 +13,7 @@ Commandline
 ***********
 .. code-block:: bash
 
-    moe rm [-h] [-a | -e] query
+    moe remove [-h] [-a | -e] query
 
 Options
 =======

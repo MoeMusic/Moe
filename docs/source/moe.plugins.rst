@@ -44,10 +44,10 @@ moe.plugins.move module
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.rm module
----------------------
+moe.plugins.remove module
+-------------------------
 
-.. automodule:: moe.plugins.rm
+.. automodule:: moe.plugins.remove
    :members:
    :undoc-members:
    :show-inheritance:

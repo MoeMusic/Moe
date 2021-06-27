@@ -10,7 +10,7 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
-from moe.plugins import rm
+from moe.plugins import remove
 
 
 class TestParseArgs:
@@ -21,7 +21,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=False, extra=False)
         tmp_session.add(mock_track)
 
-        rm.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -30,7 +30,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.add(mock_album)
 
-        rm.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Album).scalar()
 
@@ -44,7 +44,7 @@ class TestParseArgs:
         tmp_session.merge(real_album)
         assert real_album.extras
 
-        rm.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -53,7 +53,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.add(mock_album)
 
-        rm.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -63,7 +63,7 @@ class TestParseArgs:
         tmp_session.add(mock_album)
 
         assert mock_album.extras
-        rm.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove.parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -72,20 +72,20 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            rm.parse_args(config=Mock(), session=Mock(), args=args)
+            remove.parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
 
 @pytest.mark.integration
 class TestCommand:
-    """Test cli integration with the rm command."""
+    """Test cli integration with the remove command."""
 
     def test_parse_args(self, real_track, tmp_path, tmp_config):
-        """Music is removed from the library when the `rm` command is invoked."""
-        cli_args = ["moe", "rm", "*"]
+        """Music is removed from the library when the `remove` command is invoked."""
+        cli_args = ["moe", "remove", "*"]
 
-        config = tmp_config(settings='default_plugins = ["rm"]')
+        config = tmp_config(settings='default_plugins = ["remove"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)
