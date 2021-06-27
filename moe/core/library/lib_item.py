@@ -20,7 +20,7 @@ class PathType(sqlalchemy.types.TypeDecorator):
     cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
     def process_bind_param(self, pathlib_path, dialect):
-        """Convert the absolute path to a string prior to enterting in the database."""
+        """Convert the absolute path to a string prior to entering in the database."""
         return str(pathlib_path.resolve())
 
     def process_result_value(self, path_str, dialect):
