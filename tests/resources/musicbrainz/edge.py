@@ -1,47 +1,5 @@
 """Musicbrainz release containing some various edge cases."""
 
-search = {
-    "release-list": [
-        {
-            "id": "61e48c23-eeb7-4598-a9f0-e2a689f52040",
-            "ext:score": "100",
-            "title": "R.E.I.D.",
-            "status": "Official",
-            "text-representation": {"language": "eng", "script": "Latn"},
-            "artist-credit": [
-                {
-                    "name": "Vataff Project",
-                    "artist": {
-                        "id": "47d79f4d-f334-45a3-89ab-bcd024ef8933",
-                        "name": "Vataff Project",
-                        "sort-name": "Vataff Project",
-                    },
-                }
-            ],
-            "release-group": {
-                "id": "bff15202-da14-42b5-803b-0b4653b66ab9",
-                "type": "Album",
-                "title": "R.E.I.D.",
-                "primary-type": "Album",
-            },
-            "medium-list": [
-                {
-                    "format": "CD",
-                    "disc-list": [],
-                    "disc-count": 0,
-                    "track-list": [],
-                    "track-count": 8,
-                }
-            ],
-            "medium-track-count": 8,
-            "medium-count": 1,
-            "tag-list": [],
-            "artist-credit-phrase": "Vataff Project",
-        }
-    ],
-    "release-count": 582,
-}
-
 # date only includes the year
 partial_date_year = {
     "release": {

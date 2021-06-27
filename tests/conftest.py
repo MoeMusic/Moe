@@ -88,7 +88,7 @@ def mock_track_factory() -> Callable[[], Track]:
     """
 
     def _mock_track(track_num: int = 0, year: int = 1996):
-        album = Album("Outkast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock())
+        album = Album("OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock())
         if not track_num:
             track_num = random.randint(1, 1000)
         track_path = album.path / f"{track_num} - Jazzy Belle.mp3"
