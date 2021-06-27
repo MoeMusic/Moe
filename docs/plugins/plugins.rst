@@ -11,5 +11,6 @@ Almost everything in Moe is a plugin. To see more details on each individual plu
    Info <info>
    List (ls) <ls>
    Move <move>
+   Musicbrainz <musicbrainz>
    Remove (rm) <rm>
    Write <write>
