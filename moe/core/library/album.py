@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 import sqlalchemy
 from sqlalchemy import Column, Date, Integer, String  # noqa: WPS458
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import UniqueConstraint
 
@@ -36,7 +36,7 @@ class Album(LibItem, Base):
         artist (str): AKA albumartist.
         date (datetime.date): Album release date.
         extras (List[Extra]): Extra non-track files associated with the album.
-        mb_id (str): Musicbrainz release id.
+        mb_id (str): Musicbrainz album aka release id.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         tracks (List[Track]): Album's corresponding tracks.
@@ -88,6 +88,9 @@ class Album(LibItem, Base):
         self.path = path
         self.title = title
 
+        # set default values
+        self.mb_id = ""
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -99,54 +102,80 @@ class Album(LibItem, Base):
             and self.title == other.title
         )
 
-    def get_existing(self, session: Session, query_opts=None) -> Optional["Album"]:
+    def get_existing(self, session: Session) -> Optional["Album"]:
         """Gets a matching Album in the library.
 
         Args:
             session: Current db session.
-            query_opts: Optional query options to provide. See
-                https://docs.sqlalchemy.org/en/14/orm/query.html#sqlalchemy.orm.Query.options
-                for more info.
 
         Returns:
              Matching existing album in the library.
         """
-        if query_opts:
-            return (
-                session.query(Album)
-                .filter_by(artist=self.artist, title=self.title, date=self.date)
-                .options(query_opts)
-                .one_or_none()
-            )
-        return (
+        existing_album = (
             session.query(Album)
             .filter_by(artist=self.artist, title=self.title, date=self.date)
+            .options(joinedload("*"))
             .one_or_none()
         )
+        if not existing_album:
+            return None
 
-    def get_track(self, track_num: int) -> "Track":
-        """Gets a track by its track number."""
-        return next(track for track in self.tracks if track.track_num == track_num)
+        session.expunge(existing_album)
+        return existing_album
 
-    def merge_existing(self, session: Session):
-        """Merges the current Album with an existing Album in the library."""
-        existing_album = self.get_existing(session)
-        if existing_album:
-            self._id = existing_album._id
+    def get_extra(self, filename: str) -> "Optional[Extra]":
+        """Gets an Extra by its filename."""
+        return next(
+            (extra for extra in self.extras if extra.filename == filename), None
+        )
+
+    def get_track(self, track_num: int) -> "Optional[Track]":
+        """Gets a Track by its track number."""
+        return next(
+            (track for track in self.tracks if track.track_num == track_num), None
+        )
+
+    def merge(self, other: "Optional[Album]", overwrite_album_info=True):
+        """Merges the current Album with another, overwriting the other if conflict.
+
+        Changes won't take effect until the album is merged into the session.
+
+        Args:
+            other: Other album to be merged into the current album.
+            overwrite_album_info: If ``False``, the album metadata of the other album
+                will persist onto the current album. Only the tracks and extras will
+                be overwritten in this case.
+        """
+        if not other:
+            return
+
+        self._id = other._id
+
+        if not overwrite_album_info:
+            self.artist = other.artist
+            self.date = other.date
+            self.title = other.title
+            self.mb_id = other.mb_id
+
+        for other_track in other.tracks:
+            conflict_track = self.get_track(other_track.track_num)
+            if conflict_track:
+                conflict_track._id = other_track._id
+            else:
+                self.tracks.append(other_track)
 
         for track in self.tracks:
             track._album_id = self._id
-            existing_track = track.get_existing(session)
-            if existing_track:
-                track._id = existing_track._id
+
+        for other_extra in other.extras:
+            conflict_extra = self.get_extra(other_extra.filename)
+            if conflict_extra:
+                conflict_extra._id = other_extra._id
+            else:
+                self.extras.append(other_extra)
 
         for extra in self.extras:
             extra._album_id = self._id
-            existing_extra = extra.get_existing(session)
-            if existing_extra:
-                extra._id = existing_extra._id
-
-        session.merge(self)
 
     @typed_hybrid_property
     def year(self) -> int:
@@ -163,7 +192,7 @@ class Album(LibItem, Base):
         return f"{self.artist} - {self.title} ({self.year})"
 
     def __repr__(self):
-        """Represents an Album using it's primary keys."""
+        """Represents an Album using it's primary key and unique fields."""
         return (
             f"{self.__class__.__name__}("
             f"id={repr(self._id)}, "
@@ -179,6 +208,7 @@ class Album(LibItem, Base):
             return (
                 self.artist == other.artist  # noqa: WPS222
                 and self.date == other.date
+                and self.mb_id == other.mb_id
                 and self.title == other.title
                 and self.tracks == other.tracks
                 and self.extras == other.extras

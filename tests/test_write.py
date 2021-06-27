@@ -19,6 +19,8 @@ class TestWriteTags:
         real_track.album = "Bigger, Better, Faster, More!"
         real_track.albumartist = "4 Non Blondes"
         real_track.artist = "4 Non Blondes"
+        real_track.mb_album_id = "123"
+        real_track.mb_id = "1234"
         real_track.genre = {"alternative", "rock"}
         real_track.title = "What's Up"
         real_track.track_num = 3
@@ -31,6 +33,8 @@ class TestWriteTags:
         assert new_track.albumartist == "4 Non Blondes"
         assert new_track.artist == "4 Non Blondes"
         assert set(new_track.genre) == {"alternative", "rock"}
+        assert new_track.mb_album_id == "123"
+        assert new_track.mb_id == "1234"
         assert new_track.title == "What's Up"
         assert new_track.track_num == 3
         assert new_track.date == datetime.date(1992, 1, 1)

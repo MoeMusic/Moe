@@ -52,7 +52,8 @@ class TestGeneralMove:
         tmp_session.add(track1)
         move._alter_item_loc(config, track1)
 
-        track2.album_obj.merge_existing(tmp_session)
+        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        tmp_session.merge(track2)
         move._alter_item_loc(config, track2)
 
         db_track = tmp_session.query(Track).one()

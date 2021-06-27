@@ -1,8 +1,8 @@
 """Initial generation.
 
-Revision ID: 090eed218a8e
+Revision ID: 6c1306e0a867
 Revises:
-Create Date: 2021-06-26 18:47:05.650907
+Create Date: 2021-06-27 13:54:31.766905
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ import moe
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "090eed218a8e"
+revision = "6c1306e0a867"
 down_revision = None
 branch_labels = None
 depends_on = None

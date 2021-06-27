@@ -3,13 +3,12 @@
 import datetime
 import logging
 import pathlib
-from typing import List, Optional, Type, TypeVar
+from typing import List, Type, TypeVar
 
 import mediafile
 from sqlalchemy import Column, Integer, String  # noqa: WPS458
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 from moe.core.library.album import Album
@@ -55,7 +54,8 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         date (datetime.date): Album release date.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
-        mb_id (str): Musicbrainz recording id.
+        mb_album_id (str): Musicbrainz album aka release id.
+        mb_id (str): Musicbrainz track aka recording id.
         path (pathlib.Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -82,12 +82,13 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     album_path: pathlib.Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     date: datetime.date = association_proxy("album_obj", "date")
+    mb_album_id: str = association_proxy("album_obj", "mb_id")
     year: int = association_proxy("album_obj", "year")
 
-    _genre_obj: _Genre = relationship(
+    _genres: List[_Genre] = relationship(
         "_Genre", secondary=track_genre, collection_class=list
     )
-    genre: List[str] = association_proxy("_genre_obj", "name")
+    genre: List[str] = association_proxy("_genres", "name")
 
     __table_args__ = (UniqueConstraint("track_num", "_album_id"),)
 
@@ -108,16 +109,14 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         self.path = path
         self.track_num = track_num
 
+        # set default values
+        self.artist = ""
+        self.file_ext = ""
+        self.mb_id = ""
+        self.title = ""
+
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-    def get_existing(self, session: Session) -> Optional["Track"]:
-        """Gets a matching Track in the library."""
-        return (
-            session.query(Track)
-            .filter_by(track_num=self.track_num, _album_id=self._album_id)
-            .one_or_none()
-        )
 
     @classmethod
     def from_tags(cls: Type[T], path: pathlib.Path) -> T:
@@ -154,6 +153,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             artist=audio_file.albumartist,
             title=audio_file.album,
             date=audio_file.date,
+            mb_id=audio_file.mb_albumid,
             path=path.parent,
         )
         return cls(
@@ -163,6 +163,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             artist=audio_file.artist,
             file_ext=audio_file.type,
             genre=audio_file.genres,
+            mb_id=audio_file.mb_trackid,
             title=audio_file.title,
         )
 
@@ -171,7 +172,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         return f"{self.artist} - {self.title}"
 
     def __repr__(self):
-        """Represents a Track using its primary and other common keys."""
+        """Represents a Track using its primary key, unique fields, title and artist."""
         return (
             f"{self.__class__.__name__}("
             f"id={repr(self._id)}, "
@@ -192,6 +193,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
                 and self.artist == other.artist
                 and self.file_ext == other.file_ext
                 and set(self.genre) == set(other.genre)
+                and self.mb_id == other.mb_id
                 and self.path == other.path
                 and self.title == other.title
                 and self.track_num == other.track_num
