@@ -180,6 +180,27 @@ class Album(LibItem, Base):
         """Returns a year at the sql level."""
         return sqlalchemy.extract("year", cls.date)
 
+    def __eq__(self, other) -> bool:
+        """Compares an Album by it's attributes."""
+        if isinstance(other, Album):
+            return (
+                self.artist == other.artist  # noqa: WPS222
+                and self.date == other.date
+                and self.mb_id == other.mb_id
+                and self.title == other.title
+                and self.tracks == other.tracks
+                and self.extras == other.extras
+            )
+        return False
+
+    def __lt__(self, other: "Album") -> bool:
+        """Sort an album based on it's title, then artist, then date."""
+        if self.title == other.title:
+            if self.artist == other.artist:
+                return self.date < other.date
+            return self.artist < other.artist
+        return self.title < other.title
+
     def __str__(self):
         """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
@@ -194,16 +215,3 @@ class Album(LibItem, Base):
             f"date={repr(self.date)}, "
             f"path={repr(self.path)})"
         )
-
-    def __eq__(self, other):
-        """Compares an Album by it's attributes."""
-        if isinstance(other, Album):
-            return (
-                self.artist == other.artist  # noqa: WPS222
-                and self.date == other.date
-                and self.mb_id == other.mb_id
-                and self.title == other.title
-                and self.tracks == other.tracks
-                and self.extras == other.extras
-            )
-        return False

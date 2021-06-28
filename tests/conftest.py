@@ -135,7 +135,7 @@ def mock_album(mock_album_factory) -> Album:
 
 
 @pytest.fixture
-def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
+def real_track_factory(mock_track_factory, tmp_path_factory) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
     The track is copied to a temp location, so feel free to make any changes. Each
@@ -156,33 +156,21 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
     """
 
     def _real_track(album_dir: Path = None, track_num: int = 0, year: int = 1994):
-        album = "Illmatic"
-        albumartist = "Nas"
-        title = "N.Y. State of Mind"
-        if not track_num:
-            track_num = random.randint(1, 1000)
+        track = mock_track_factory(track_num, year)
 
         if not album_dir:
-            album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} {year}")
+            album_dir = tmp_path_factory.mktemp(
+                f"{track.albumartist} - {track.album} {track.year}"
+            )
+        album_dir = cast(Path, album_dir)
 
-        filename = f"{track_num} - {title}.mp3"
-        track_path = cast(Path, album_dir) / filename
-        shutil.copyfile("tests/resources/empty.mp3", cast(Path, album_dir) / filename)
+        filename = f"{track.track_num} - {track.title}.mp3"
+        track_path = album_dir / filename
+        shutil.copyfile("tests/resources/empty.mp3", album_dir / filename)
 
-        album_obj = Album(
-            artist=albumartist,
-            title=album,
-            date=datetime.date(year, 1, 1),
-            path=cast(Path, album_dir),
-        )
-        track = Track(
-            album=album_obj,
-            genre=["East Coast Hip Hop", "Hip Hop"],
-            title=title,
-            path=track_path,
-            track_num=track_num,
-            artist=albumartist,
-        )
+        track.album_obj.path = album_dir
+        track.path = track_path
+
         moe_write._write_tags(track)
         return track
 

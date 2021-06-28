@@ -116,7 +116,8 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         self.title = ""
 
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if value:
+                setattr(self, key, value)
 
     @classmethod
     def from_tags(cls: Type[T], path: Path) -> T:
@@ -167,23 +168,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             title=audio_file.title,
         )
 
-    def __str__(self):
-        """String representation of a track."""
-        return f"{self.artist} - {self.title}"
-
-    def __repr__(self):
-        """Represents a Track using its primary key, unique fields, title and artist."""
-        return (
-            f"{self.__class__.__name__}("
-            f"id={repr(self._id)}, "
-            f"track_num={repr(self.track_num)}, "
-            f"{repr(self.album_obj)}, "
-            f"artist={repr(self.artist)}, "
-            f"title={repr(self.title)}, "
-            f"path={repr(self.path)})"
-        )
-
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """Compares a Track by it's attributes."""
         if isinstance(other, Track):
             return (
@@ -199,3 +184,26 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
                 and self.track_num == other.track_num
             )
         return False
+
+    def __lt__(self, other: "Track") -> bool:
+        """Sort based on album, then track number."""
+        if self.album_obj == other.album_obj:
+            return self.track_num < other.track_num
+
+        return self.album_obj < other.album_obj
+
+    def __str__(self):
+        """String representation of a track."""
+        return f"{self.artist} - {self.title}"
+
+    def __repr__(self):
+        """Represents a Track using its primary key, unique fields, title and artist."""
+        return (
+            f"{self.__class__.__name__}("
+            f"id={repr(self._id)}, "
+            f"track_num={repr(self.track_num)}, "
+            f"{repr(self.album_obj)}, "
+            f"artist={repr(self.artist)}, "
+            f"title={repr(self.title)}, "
+            f"path={repr(self.path)})"
+        )

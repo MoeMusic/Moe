@@ -144,8 +144,8 @@ class TestDuplicate:
             session.merge(album2)
 
             db_album = session.query(Album).one()
-            assert db_album.tracks == album2.tracks
-            assert db_album.extras == album2.extras
+            assert sorted(db_album.tracks) == sorted(album2.tracks)
+            assert sorted(db_album.extras) == sorted(album2.extras)
 
     def test_dup_merge(self, real_album_factory, tmp_session):
         """Duplicate errors should not occur if the existing album is merged."""
