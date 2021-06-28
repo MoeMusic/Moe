@@ -131,3 +131,14 @@ class TestGetMatchValue:
         assert track1.track_num != track2.track_num
 
         assert match.get_match_value(track1, track2) == 0
+
+    def test_diff_disc(self, mock_track_factory):
+        """Tracks with the same track number on different discs should not match."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        track1.track_num = track2.track_num
+        track2.disc = 2
+        assert track1.track_num == track2.track_num
+        assert track1.disc != track2.disc
+
+        assert match.get_match_value(track1, track2) == 0

@@ -83,10 +83,7 @@ def add_prompt_choice(prompt_choices: List[PromptChoice]):
 
 
 def run_prompt(
-    config: Config,
-    session: Session,
-    old_album: Album,
-    new_album: Album,
+    config: Config, session: Session, old_album: Album, new_album: Album
 ) -> Album:
     """Runs the interactive prompt for the given album changes.
 
@@ -150,30 +147,7 @@ def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
         album_year = album_year + f" {CHANGES_SYMBOL} {new_album.year}"
     album_info_str += "\n" + album_year
 
-    tracklist_str = ""
-    matches = add_match.get_matching_tracks(old_album, new_album)
-    matches.sort(key=lambda match: getattr(match[1], "track_num", 0))
-    unmatched_tracks: List[Track] = []
-    for old_track, new_track in matches:
-        track_change = ""
-        if not new_track:
-            unmatched_tracks.append(cast(Track, old_track))
-            continue
-        if old_track:
-            old_track_title = f"{old_track.track_num}: {old_track.title}"
-        else:
-            old_track_title = "(missing)"
-        track_change += old_track_title
-
-        track_change = (
-            f"\n{old_track_title} "
-            f"{CHANGES_SYMBOL} {new_track.track_num}: {new_track.title}"
-        )
-        tracklist_str += track_change
-
-    if unmatched_tracks:
-        tracklist_str += "\n\nUnmatched Tracks:\n"
-        tracklist_str += "\n".join([str(track) for track in unmatched_tracks])
+    tracklist_str = _fmt_tracklist(old_album, new_album)
 
     extra_str = ""
     extra_str += "\nExtras:\n"
@@ -184,6 +158,52 @@ def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
         album_str += "\n" + extra_str
 
     return album_str
+
+
+def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
+    """Formats the changes of the tracklist between two albums."""
+    tracklist_str = ""
+
+    matches = add_match.get_matching_tracks(old_album, new_album)
+    matches.sort(
+        key=lambda match: match[1].track_num + match[1].disc * len(matches)
+        if match[1] is not None
+        else 0
+    )  # sort by new track's track number and disc
+    unmatched_tracks: List[Track] = []
+    for old_track, new_track in matches:
+        if not new_track:
+            unmatched_tracks.append(cast(Track, old_track))
+            continue
+
+        tracklist_str += _fmt_track_change(old_track, new_track)
+
+    if unmatched_tracks:
+        tracklist_str += "\n\nUnmatched Tracks:\n"
+        tracklist_str += "\n".join([str(track) for track in unmatched_tracks])
+
+    return tracklist_str
+
+
+def _fmt_track_change(old_track: Optional[Track], new_track: Track) -> str:
+    """Formats the changes between two tracks."""
+    track_change = ""
+    new_disc = ""
+    old_disc = ""
+    if new_track.disc_total > 1:
+        new_disc = f"{new_track.disc}."
+        if old_track:
+            old_disc = f"{old_track.disc}."
+    if old_track:
+        old_track_title = f"{old_disc}{old_track.track_num}: {old_track.title}"
+    else:
+        old_track_title = "(missing)"
+    track_change += old_track_title
+
+    return (
+        f"\n{old_track_title} "
+        f"{CHANGES_SYMBOL} {new_disc}{new_track.track_num}: {new_track.title}"
+    )
 
 
 def _apply_changes(

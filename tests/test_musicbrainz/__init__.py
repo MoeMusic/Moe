@@ -1,0 +1,1 @@
+"""Test the Musicbrainz plugin."""

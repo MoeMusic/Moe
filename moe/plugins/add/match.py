@@ -6,6 +6,9 @@ from moe.core.library.album import Album
 from moe.core.library.track import Track
 
 TrackMatch = Tuple[Optional[Track], Optional[Track]]
+TrackCoord = Tuple[
+    Tuple[int, int], Tuple[int, int]
+]  # ((a.disc, a.track_num), (b.disc, b.track_num))
 
 
 def get_matching_tracks(  # noqa: WPS231
@@ -26,11 +29,11 @@ def get_matching_tracks(  # noqa: WPS231
         ``(album_a_track, album_b_track)``.
     """
     # get all match values for every pair of tracks between both albums
-    track_match_values: Dict[Tuple[int, int], int] = {}
+    track_match_values: Dict[TrackCoord, int] = {}
     for a_track in album_a.tracks:
         for b_track in album_b.tracks:
             track_match_values[
-                (a_track.track_num, b_track.track_num)
+                ((a_track.disc, a_track.track_num), (b_track.disc, b_track.track_num))
             ] = get_match_value(a_track, b_track)
 
     # Greedy algorithm that assigns a match to each track pair in order of greatest
@@ -57,8 +60,8 @@ def get_matching_tracks(  # noqa: WPS231
 
         track_matches.append(
             (
-                album_a.get_track(track_pair[0]),
-                album_b.get_track(track_pair[1]),
+                album_a.get_track(track_num=track_pair[0][1], disc=track_pair[0][0]),
+                album_b.get_track(track_num=track_pair[1][1], disc=track_pair[1][0]),
             )
         )
 
@@ -80,7 +83,7 @@ def get_matching_tracks(  # noqa: WPS231
 
 def get_match_value(track_a: Track, track_b: Track) -> int:
     """Returns a similarity "match value" between two tracks on a scale of 0 to 1."""
-    if track_a.track_num == track_b.track_num:
+    if track_a.track_num == track_b.track_num and track_a.disc == track_b.disc:
         return 1
 
     return 0

@@ -4,10 +4,10 @@ import datetime
 import operator
 from unittest.mock import Mock, patch
 
+import musicbrainzngs  # noqa: F401
 import pytest
 
-import tests.resources.musicbrainz.edge as mb_edge
-import tests.resources.musicbrainz.full_release as mb_full_release
+import tests.test_musicbrainz.resources as mb_rsrc
 from moe import cli
 from moe.core.library.album import Album
 from moe.core.library.session import session_scope
@@ -15,7 +15,18 @@ from moe.plugins import musicbrainz
 
 
 class TestPreAdd:
-    """Test the ``import_album()`` hook entry into the plugin."""
+    """Test the ``import_album()`` hook entry into the plugin.
+
+    You can use the following code to print the result of a musicbrainz api query.
+
+        def test_print_result(self):
+            id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
+            includes = ["artist-credits", "recordings"]
+            print(musicbrainzngs.get_release_by_id(id, includes))
+            assert 0
+
+    Make sure to add any ``includes`` for whatever is needed for the test.
+    """
 
     def test_release_search(self, mock_album):
         """Searching for a release uses the expected parameters."""
@@ -30,12 +41,12 @@ class TestPreAdd:
 
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.search_releases",
-            return_value=mb_full_release.search,
+            return_value=mb_rsrc.full_release.search,
             autospec=True,
         ) as mock_mb_search:
             with patch(
                 "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-                return_value=mb_full_release.release,
+                return_value=mb_rsrc.full_release.release,
                 autospec=True,
             ):
                 musicbrainz.import_album(Mock(), Mock(), mock_album)
@@ -43,36 +54,36 @@ class TestPreAdd:
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
 
     def test_dont_search_if_mbid(self, mock_album):
-        """Use ``mb_id`` if it exists."""
-        mock_album.mb_id = "1"
+        """Use ``mb_album_id`` if it exists."""
+        mock_album.mb_album_id = "1"
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-            return_value=mb_full_release.release,
+            return_value=mb_rsrc.full_release.release,
             autospec=True,
         ) as mock_mb_by_id:
             musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         mock_mb_by_id.assert_called_once_with(
-            mock_album.mb_id, includes=musicbrainz.RELEASE_INCLUDES
+            mock_album.mb_album_id, includes=musicbrainz.RELEASE_INCLUDES
         )
 
     def test_return_album(self):
         """An Album with all the updated musicbrainz info is returned."""
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.search_releases",
-            return_value=mb_full_release.search,
+            return_value=mb_rsrc.full_release.search,
             autospec=True,
         ):
             with patch(
                 "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-                return_value=mb_full_release.release,
+                return_value=mb_rsrc.full_release.release,
                 autospec=True,
             ):
                 mb_album = musicbrainz.import_album(Mock(), Mock(), Mock())
 
         assert mb_album.artist == "Kanye West"
         assert mb_album.date == datetime.date(2010, 11, 22)
-        assert mb_album.mb_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
+        assert mb_album.mb_album_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
         assert mb_album.title == "My Beautiful Dark Twisted Fantasy"
 
         mb_album.tracks.sort(key=operator.attrgetter("track_num"))
@@ -81,15 +92,15 @@ class TestPreAdd:
 
             if track_num == 2:
                 assert track.artist == "Kanye West feat. Kid Cudi & Raekwon"
-                assert track.mb_id == "b3c6aa0a-6960-4db6-bf27-ed50de88309c"
+                assert track.mb_track_id == "d4cbaf03-b40a-352d-9461-eadbc5986fc0"
                 assert track.title == "Gorgeous"
 
     def test_partial_date_year_mon(self, mock_album):
         """If given date is missing the day, default to 1."""
-        mock_album.mb_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        mock_album.mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-            return_value=mb_edge.partial_date_year_mon,
+            return_value=mb_rsrc.partial_date.partial_date_year_mon,
             autospec=True,
         ):
             mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
@@ -98,15 +109,30 @@ class TestPreAdd:
 
     def test_partial_date_year(self, mock_album):
         """If given date is missing the day and month, default to 1 for each."""
-        mock_album.mb_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        mock_album.mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         with patch(
             "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-            return_value=mb_edge.partial_date_year,
+            return_value=mb_rsrc.partial_date.partial_date_year,
             autospec=True,
         ):
             mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         assert mb_album.date == datetime.date(1992, 1, 1)
+
+    def test_multi_disc_release(self, mock_album):
+        """We can add a release with multiple discs."""
+        mock_album.mb_album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
+        with patch(
+            "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
+            return_value=mb_rsrc.multi_disc.release,
+            autospec=True,
+        ):
+            mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
+
+        assert mb_album.disc_total == 2
+
+        assert any(track.disc == 1 for track in mb_album.tracks)
+        assert any(track.disc == 2 for track in mb_album.tracks)
 
 
 @pytest.mark.network
@@ -126,12 +152,12 @@ class TestNetwork:
 
 @patch(
     "moe.plugins.musicbrainz.musicbrainzngs.search_releases",
-    return_value=mb_full_release.search,
+    return_value=mb_rsrc.full_release.search,
     autospec=True,
 )
 @patch(
     "moe.plugins.musicbrainz.musicbrainzngs.get_release_by_id",
-    return_value=mb_full_release.release,
+    return_value=mb_rsrc.full_release.release,
     autospec=True,
 )
 @pytest.mark.integration
@@ -151,5 +177,5 @@ class TestAdd:
 
             assert album.artist == "Kanye West"
             assert album.date == datetime.date(2010, 11, 22)
-            assert album.mb_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
+            assert album.mb_album_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
             assert album.title == "My Beautiful Dark Twisted Fantasy"

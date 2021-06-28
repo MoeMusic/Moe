@@ -1,4 +1,5 @@
-"""Musicbrainz release containing some various edge cases."""
+"""Musicbrainz release containing partial dates."""
+# flake8: noqa
 
 # date only includes the year
 partial_date_year = {

@@ -89,6 +89,13 @@ class TestQuery:
         assert query.query(f"'path:{str(real_track.path.resolve())}'", tmp_session)
         assert query.query("'path::.*'", tmp_session)
 
+    def test_date(self, real_track, tmp_session):
+        """We can query an album's date."""
+        tmp_session.add(real_track)
+
+        assert query.query(f"'date:{str(real_track.date)}'", tmp_session)
+        assert query.query("'date::.*'", tmp_session)
+
     def test_track_album_field_queries(self, real_track, tmp_session):
         """We should be able to query tracks that match album-related fields.
 

@@ -150,7 +150,7 @@ class TestAddItemFromDir:
         existing_album = real_album_factory()
         new_album.date = existing_album.date
         new_album.path = existing_album.path
-        existing_album.mb_id = "1234"
+        existing_album.mb_album_id = "1234"
         assert not new_album.is_unique(existing_album)
 
         for track in new_album.tracks:
@@ -159,7 +159,7 @@ class TestAddItemFromDir:
         for extra_num, extra in enumerate(new_album.extras):
             extra.filename = f"{extra_num} new_album"
 
-        assert new_album.mb_id != existing_album.mb_id
+        assert new_album.mb_album_id != existing_album.mb_album_id
         assert new_album.tracks != existing_album.tracks
         assert new_album.extras != existing_album.extras
 
@@ -168,9 +168,36 @@ class TestAddItemFromDir:
             add.add_item(mock_config, tmp_session, new_album.path)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_id == existing_album.mb_id
+        assert db_album.mb_album_id == existing_album.mb_album_id
         assert sorted(db_album.tracks) == sorted(new_album.tracks)
         assert sorted(db_album.extras) == sorted(new_album.extras)
+
+    def test_add_multi_disc(self, real_album, tmp_session):
+        """We can add a multi-disc album."""
+        mock_config = MagicMock()
+        mock_config.plugin_manager.hook.import_album.return_value = []
+
+        track1 = real_album.tracks[0]
+        track2 = real_album.tracks[1]
+        track1.disc = 1
+        track2.disc = 2
+        real_album.disc_total = 2
+
+        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
+        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
+        track1_path.parent.mkdir()
+        track2_path.parent.mkdir()
+        track1.path.rename(track1_path)
+        track2.path.rename(track2_path)
+        track1.path = track1_path
+        track2.path = track2_path
+
+        add.add_item(mock_config, tmp_session, real_album.path)
+
+        album = tmp_session.query(Album).filter_by(path=real_album.path).one()
+
+        assert track1 in album.tracks
+        assert track2 in album.tracks
 
 
 class TestAddItemFromFile:

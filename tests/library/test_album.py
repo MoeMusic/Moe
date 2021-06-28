@@ -64,16 +64,16 @@ class TestMerge:
         album2 = mock_album_factory()
         album1.date = album2.date
         album1.path = album2.path
-        album1.mb_id = "1234"
+        album1.mb_album_id = "1234"
         assert not album1.is_unique(album2)
-        assert album1.mb_id != album2.mb_id
+        assert album1.mb_album_id != album2.mb_album_id
 
         tmp_session.merge(album1)
         album2.merge(album2.get_existing(tmp_session), overwrite_album_info=True)
         tmp_session.merge(album2)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_id == album2.mb_id
+        assert db_album.mb_album_id == album2.mb_album_id
 
     def test_keep_album_info(self, mock_album_factory, tmp_session):
         """If ``overwrite_album_info=False`` don't overwrite the album info."""
@@ -81,16 +81,16 @@ class TestMerge:
         album2 = mock_album_factory()
         album1.date = album2.date
         album1.path = album2.path
-        album1.mb_id = "1234"
+        album1.mb_album_id = "1234"
         assert not album1.is_unique(album2)
-        assert album1.mb_id != album2.mb_id
+        assert album1.mb_album_id != album2.mb_album_id
 
         tmp_session.merge(album1)
         album2.merge(album2.get_existing(tmp_session), overwrite_album_info=False)
         tmp_session.merge(album2)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_id == album1.mb_id
+        assert db_album.mb_album_id == album1.mb_album_id
 
 
 class TestDuplicate:
@@ -163,8 +163,8 @@ class TestDuplicate:
             session.merge(album2)
 
             db_album = session.query(Album).one()
-            assert db_album.tracks == album2.tracks
-            assert db_album.extras == album2.extras
+            assert sorted(db_album.tracks) == sorted(album2.tracks)
+            assert sorted(db_album.extras) == sorted(album2.extras)
 
     def test_dup_path(self, mock_album_factory, tmp_session):
         """Duplicate albums can also be defined as having the same path.

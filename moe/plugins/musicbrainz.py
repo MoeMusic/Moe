@@ -67,8 +67,8 @@ def _get_matching_release(album: Album) -> Dict:
         Dictionary of release information. See ``tests/resources/musicbrainz`` for
         an idea of what this contains.
     """
-    if album.mb_id:
-        return _get_release_by_id(album.mb_id)
+    if album.mb_album_id:
+        return _get_release_by_id(album.mb_album_id)
 
     search_criteria: Dict = {}
     search_criteria["artist"] = album.artist
@@ -115,19 +115,22 @@ def _create_album(release: Dict) -> Album:
     album = Album(
         artist=_flatten_artist_credit(release["artist-credit"]),
         date=datetime.date(year, month, day),
-        mb_id=release["id"],
+        disc_total=int(release["medium-count"]),
+        mb_album_id=release["id"],
         title=release["title"],
         path=None,  # type: ignore # this will get set in `add_prompt`
     )
-    for track in release["medium-list"][0]["track-list"]:
-        Track(
-            album=album,
-            track_num=int(track["position"]),
-            path=None,  # type: ignore # this will get set in `add_prompt`
-            artist=_flatten_artist_credit(track["recording"]["artist-credit"]),
-            mb_id=track["recording"]["id"],
-            title=track["recording"]["title"],
-        )
+    for medium in release["medium-list"]:
+        for track in medium["track-list"]:
+            Track(
+                album=album,
+                track_num=int(track["position"]),
+                path=None,  # type: ignore # this will get set in `add_prompt`
+                artist=_flatten_artist_credit(track["recording"]["artist-credit"]),
+                disc=int(medium["position"]),
+                mb_track_id=track["id"],
+                title=track["recording"]["title"],
+            )
     return album
 
 
