@@ -154,7 +154,7 @@ def _add_album(album_path: Path) -> Album:
 
     # ensure each track belongs to the same album
     for discovered_album in albums:
-        if not albums[0].has_eq_keys(discovered_album):
+        if albums[0].is_unique(discovered_album):
             raise AddError(
                 f"Not all tracks in '{album_path}' share the same album attributes."
             )

@@ -94,14 +94,6 @@ class Album(LibItem, Base):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def has_eq_keys(self, other: "Album") -> bool:
-        """Compares an Album by its primary keys."""
-        return (
-            self.artist == other.artist
-            and self.date == other.date
-            and self.title == other.title
-        )
-
     def get_existing(self, session: Session) -> Optional["Album"]:
         """Gets a matching Album in the library.
 
@@ -133,6 +125,14 @@ class Album(LibItem, Base):
         """Gets a Track by its track number."""
         return next(
             (track for track in self.tracks if track.track_num == track_num), None
+        )
+
+    def is_unique(self, other: "Album") -> bool:
+        """Whether or not the given album is unique (by tags) from the current album."""
+        return (
+            self.artist != other.artist
+            or self.date != other.date
+            or self.title != other.title
         )
 
     def merge(self, other: "Optional[Album]", overwrite_album_info=True):
