@@ -151,7 +151,7 @@ class TestAddItemFromDir:
         new_album.date = existing_album.date
         new_album.path = existing_album.path
         existing_album.mb_id = "1234"
-        assert new_album.has_eq_keys(existing_album)
+        assert not new_album.is_unique(existing_album)
 
         for track in new_album.tracks:
             track.title = "new_album"
