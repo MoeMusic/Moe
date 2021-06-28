@@ -169,8 +169,8 @@ class TestAddItemFromDir:
 
         db_album = tmp_session.query(Album).one()
         assert db_album.mb_id == existing_album.mb_id
-        assert db_album.tracks == new_album.tracks
-        assert db_album.extras == new_album.extras
+        assert sorted(db_album.tracks) == sorted(new_album.tracks)
+        assert sorted(db_album.extras) == sorted(new_album.extras)
 
 
 class TestAddItemFromFile:
@@ -219,7 +219,6 @@ class TestAddItemFromFile:
         new_track_path = tmp_path / "full2"
         shutil.copyfile(real_track.path, new_track_path)
         tmp_session.add(real_track)
-        tmp_session.commit()
 
         add.add_item(mock_config, tmp_session, new_track_path)
 

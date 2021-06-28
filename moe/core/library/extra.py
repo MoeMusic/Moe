@@ -76,17 +76,6 @@ class Extra(LibItem, Base):  # noqa: WPS214
         self._filename = new_path.name
         self._path = new_path
 
-    def __str__(self):
-        """String representation of an Extra."""
-        return f"{self.album}: {self._filename}"
-
-    def __repr__(self):
-        """Represents an Extra using its primary keys."""
-        return (
-            f"{self.__class__.__name__}("
-            f"{repr(self.album)}, filename={repr(self._filename)})"
-        )
-
     def __eq__(self, other):
         """Compares an Extra by it's attributes."""
         if isinstance(other, Extra):
@@ -97,3 +86,21 @@ class Extra(LibItem, Base):  # noqa: WPS214
                 and self.filename == other.filename
             )
         return False
+
+    def __lt__(self, other: "Extra") -> bool:
+        """Sort based on album then filename."""
+        if self.album == other.album:
+            return self.filename < other.filename
+
+        return self.album < other.album
+
+    def __str__(self):
+        """String representation of an Extra."""
+        return f"{self.album}: {self._filename}"
+
+    def __repr__(self):
+        """Represents an Extra using its primary keys."""
+        return (
+            f"{self.__class__.__name__}("
+            f"{repr(self.album)}, filename={repr(self._filename)})"
+        )
