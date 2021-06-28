@@ -1,9 +1,9 @@
 """Shared pytest configuration."""
 import datetime
-import pathlib
 import random
 import shutil
 import textwrap
+from pathlib import Path
 from typing import Callable, Iterator, cast
 from unittest.mock import MagicMock, PropertyMock
 
@@ -155,9 +155,7 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
         Unique Track.
     """
 
-    def _real_track(
-        album_dir: pathlib.Path = None, track_num: int = 0, year: int = 1994
-    ):
+    def _real_track(album_dir: Path = None, track_num: int = 0, year: int = 1994):
         album = "Illmatic"
         albumartist = "Nas"
         title = "N.Y. State of Mind"
@@ -168,16 +166,14 @@ def real_track_factory(tmp_path_factory) -> Callable[[], Track]:
             album_dir = tmp_path_factory.mktemp(f"{albumartist} - {album} {year}")
 
         filename = f"{track_num} - {title}.mp3"
-        track_path = cast(pathlib.Path, album_dir) / filename
-        shutil.copyfile(
-            "tests/resources/empty.mp3", cast(pathlib.Path, album_dir) / filename
-        )
+        track_path = cast(Path, album_dir) / filename
+        shutil.copyfile("tests/resources/empty.mp3", cast(Path, album_dir) / filename)
 
         album_obj = Album(
             artist=albumartist,
             title=album,
             date=datetime.date(year, 1, 1),
-            path=cast(pathlib.Path, album_dir),
+            path=cast(Path, album_dir),
         )
         track = Track(
             album=album_obj,

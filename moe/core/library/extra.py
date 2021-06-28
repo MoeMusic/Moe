@@ -1,7 +1,7 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 import os
-import pathlib
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from sqlalchemy import Column, Integer, String
@@ -28,21 +28,21 @@ class Extra(LibItem, Base):  # noqa: WPS214
     Attributes:
         album (Album): Album the extra file belongs to.
         filename (str): Base file name of the extra file.
-        path (pathlib.Path): Filesystem path of the extra file.
+        path (Path): Filesystem path of the extra file.
     """
 
     __tablename__ = "extras"
 
     _id: int = Column(Integer, primary_key=True)
     _filename: str = Column(String, nullable=False)
-    _path: pathlib.Path = Column(PathType, nullable=False, unique=True)
+    _path: Path = Column(PathType, nullable=False, unique=True)
 
     _album_id: int = Column(Integer, ForeignKey("album._id"))
     album: Album = relationship("Album", back_populates="extras")
 
     __table_args__ = (UniqueConstraint("_filename", "_album_id"),)
 
-    def __init__(self, path: pathlib.Path, album: Album):
+    def __init__(self, path: Path, album: Album):
         """Creates an extra.
 
         Args:
@@ -66,12 +66,12 @@ class Extra(LibItem, Base):  # noqa: WPS214
         self.path = new_path
 
     @typed_hybrid_property
-    def path(self) -> pathlib.Path:
+    def path(self) -> Path:
         """Gets an Extra's path."""
         return self._path
 
     @path.setter  # noqa: WPS440
-    def path(self, new_path: pathlib.Path):  # noqa: WPS440
+    def path(self, new_path: Path):  # noqa: WPS440
         """Sets an Extra's path."""
         self._filename = new_path.name
         self._path = new_path

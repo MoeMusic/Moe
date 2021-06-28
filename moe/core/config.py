@@ -14,9 +14,9 @@ import importlib
 import importlib.util  # noqa: WPS458
 import logging
 import os
-import pathlib
 import re
 import sys
+from pathlib import Path
 from typing import cast
 
 import dynaconf
@@ -94,8 +94,8 @@ class Config:
         `init_db()` is not included in `__init__()` for testing purposes.
 
     Attributes:
-        config_dir (pathlib.Path): Filesystem path of the configuration directory.
-        config_file (pathlib.Path): Filesystem path of the configuration settings file.
+        config_dir (Path): Filesystem path of the configuration directory.
+        config_file (Path): Filesystem path of the configuration settings file.
         engine (sqlalchemy.engine.base.Engine): Database engine in use.
         plugin_manager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
@@ -113,7 +113,7 @@ class Config:
 
     def __init__(
         self,
-        config_dir: pathlib.Path = pathlib.Path.home() / ".config" / "moe",
+        config_dir: Path = Path.home() / ".config" / "moe",
         settings_filename: str = "config.toml",
     ):
         """Initializes the plugin manager and configuration directory.
@@ -125,7 +125,7 @@ class Config:
             settings_filename: Name of the configuration settings file.
         """
         try:
-            self.config_dir = pathlib.Path(os.environ["MOE_CONFIG_DIR"])
+            self.config_dir = Path(os.environ["MOE_CONFIG_DIR"])
         except KeyError:
             self.config_dir = config_dir
         self.config_dir.mkdir(parents=True, exist_ok=True)
@@ -222,13 +222,13 @@ class Config:
 
         # register plugin hookimpls for all enabled plugins
         self.plugins = self.settings.default_plugins
-        internal_plugin_path = pathlib.Path(__file__).resolve().parents[1] / "plugins"
+        internal_plugin_path = Path(__file__).resolve().parents[1] / "plugins"
         self._register_plugin_dir(internal_plugin_path)
 
         # register plugin hookspecs for all plugins
         self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
 
-    def _register_plugin_dir(self, plugin_dir: pathlib.Path):
+    def _register_plugin_dir(self, plugin_dir: Path):
         """Registers plugins in a given directory.
 
         Assumes each plugin is a single file named ``{plugin_name}.py``, or is a
@@ -244,7 +244,7 @@ class Config:
             if plugin_path.stem in self.plugins:
                 self._register_plugin_path(plugin_path)
 
-    def _register_plugin_path(self, plugin_path: pathlib.Path):
+    def _register_plugin_path(self, plugin_path: Path):
         """Registers a plugin file or directory."""
         if (
             plugin_path.is_file()

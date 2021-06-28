@@ -2,7 +2,7 @@
 
 import datetime
 import logging
-import pathlib
+from pathlib import Path
 from typing import List, Type, TypeVar
 
 import mediafile
@@ -49,14 +49,14 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album (str)
         albumartist (str)
         album_obj (Album): Corresponding Album object.
-        album_path (pathlib.Path): Path of the album directory.
+        album_path (Path): Path of the album directory.
         artist (str)
         date (datetime.date): Album release date.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
         mb_album_id (str): Musicbrainz album aka release id.
         mb_id (str): Musicbrainz track aka recording id.
-        path (pathlib.Path): Filesystem path of the track file.
+        path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
         year (int): Album release year.
@@ -72,14 +72,14 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     artist: str = Column(String, nullable=False, default="")
     file_ext: str = Column(String, nullable=False, default="")
     mb_id: str = Column(String, nullable=False, default="")
-    path: pathlib.Path = Column(PathType, nullable=False, unique=True)
+    path: Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
     track_num: int = Column(Integer, nullable=False)
 
     _album_id: int = Column(Integer, ForeignKey("album._id"))
     album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
-    album_path: pathlib.Path = association_proxy("album_obj", "path")
+    album_path: Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     date: datetime.date = association_proxy("album_obj", "date")
     mb_album_id: str = association_proxy("album_obj", "mb_id")
@@ -92,7 +92,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
 
     __table_args__ = (UniqueConstraint("track_num", "_album_id"),)
 
-    def __init__(self, album: Album, track_num: int, path: pathlib.Path, **kwargs):
+    def __init__(self, album: Album, track_num: int, path: Path, **kwargs):
         """Create a track.
 
         Args:
@@ -119,7 +119,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             setattr(self, key, value)
 
     @classmethod
-    def from_tags(cls: Type[T], path: pathlib.Path) -> T:
+    def from_tags(cls: Type[T], path: Path) -> T:
         """Alternate initializer that creates a Track from its tags.
 
         Will read any tags from the given path and save them to the Track.

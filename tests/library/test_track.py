@@ -1,7 +1,7 @@
 """Tests a Track object."""
 
 import datetime
-import pathlib
+from pathlib import Path
 
 import pytest
 
@@ -61,7 +61,7 @@ class TestFromTags:
     def test_read_tags(self, tmp_session):
         """We should initialize the track with tags from the file if present."""
         track = Track.from_tags(
-            path=pathlib.Path("tests/resources/full.mp3"),
+            path=Path("tests/resources/full.mp3"),
         )
 
         assert track.album == "The Lost Album"

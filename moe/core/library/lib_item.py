@@ -1,6 +1,6 @@
 """A LibItem in the database and any related logic."""
 
-import pathlib
+from pathlib import Path
 
 import sqlalchemy
 
@@ -12,7 +12,7 @@ class LibItem:
 class PathType(sqlalchemy.types.TypeDecorator):
     """A custom type for paths for database storage.
 
-    Normally, paths are pathlib.Path type, but we can't store that in the database,
+    Normally, paths are Path type, but we can't store that in the database,
     so we normalize the paths first for database storage.
     """
 
@@ -24,8 +24,8 @@ class PathType(sqlalchemy.types.TypeDecorator):
         return str(pathlib_path.resolve())
 
     def process_result_value(self, path_str, dialect):
-        """Convert the path back to pathlib.Path on the way out."""
+        """Convert the path back to Path on the way out."""
         if path_str is None:
             return None
 
-        return pathlib.Path(path_str)
+        return Path(path_str)

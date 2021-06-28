@@ -1,7 +1,7 @@
 """An Album in the database and any related logic."""
 
 import datetime
-import pathlib
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import sqlalchemy
@@ -37,7 +37,7 @@ class Album(LibItem, Base):
         date (datetime.date): Album release date.
         extras (List[Extra]): Extra non-track files associated with the album.
         mb_id (str): Musicbrainz album aka release id.
-        path (pathlib.Path): Filesystem path of the album directory.
+        path (Path): Filesystem path of the album directory.
         title (str)
         tracks (List[Track]): Album's corresponding tracks.
     """
@@ -48,7 +48,7 @@ class Album(LibItem, Base):
     artist: str = Column(String, nullable=False)
     date: datetime.date = Column(Date, nullable=False)
     mb_id: str = Column(String, nullable=False, default="")
-    path: pathlib.Path = Column(PathType, nullable=False, unique=True)
+    path: Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False)
 
     __table_args__ = (UniqueConstraint("artist", "title", "date"),)
@@ -67,7 +67,7 @@ class Album(LibItem, Base):
     )
 
     def __init__(  # noqa: WPS211
-        self, artist: str, title: str, date: datetime.date, path: pathlib.Path, **kwargs
+        self, artist: str, title: str, date: datetime.date, path: Path, **kwargs
     ):
         """Creates an album.
 
