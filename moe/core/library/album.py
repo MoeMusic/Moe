@@ -95,14 +95,7 @@ class Album(LibItem, Base):
             setattr(self, key, value)
 
     def get_existing(self, session: Session) -> Optional["Album"]:
-        """Gets a matching Album in the library.
-
-        Args:
-            session: Current db session.
-
-        Returns:
-             Matching existing album in the library.
-        """
+        """Gets a matching Album in the library."""
         existing_album = (
             session.query(Album)
             .filter_by(artist=self.artist, title=self.title, date=self.date)
