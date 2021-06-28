@@ -125,7 +125,7 @@ def _copy_track(track: Track, album_dir: Path):
     if track_dest == track.path:
         return
 
-    log.info(f"Copying track '{track.path}' to '{track_dest}'")
+    log.info(f"Copying track '{track.path}' to '{track_dest}'.")
     shutil.copyfile(track.path, track_dest)
 
     track.path = track_dest
@@ -145,7 +145,7 @@ def _copy_extra(extra: Extra, album_dir: Path):
     if extra_dest == extra.path:
         return
 
-    log.info(f"Copying extra '{extra}' to '{extra_dest}'")
+    log.info(f"Copying extra '{extra}' to '{extra_dest}'.")
     shutil.copyfile(extra.path, extra_dest)
 
     extra.path = extra_dest
