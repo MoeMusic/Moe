@@ -28,8 +28,12 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def pre_add(config: Config, session: Session, album: Album) -> Album:
-        """Return a new album with changes to be applied by the user via the prompt.
+    def import_album(config: Config, session: Session, album: Album) -> Album:
+        """Return an album with changes to be applied by the user via the prompt.
+
+        This hook is intended to be used to import metadata from an external source.
+        The user will then select one of the imported albums to apply the changes prior
+        to the album being added to the library.
 
         Args:
             config: Moe config.
@@ -113,7 +117,7 @@ def add_item(config: Config, session: Session, item_path: Path):
         raise AddError(f"Path not found: {item_path}")
 
     old_album.merge(old_album.get_existing(session), overwrite_album_info=False)
-    new_albums = config.plugin_manager.hook.pre_add(
+    new_albums = config.plugin_manager.hook.import_album(
         config=config, session=session, album=old_album
     )
     if new_albums:

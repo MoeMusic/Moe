@@ -15,7 +15,7 @@ from moe.plugins import musicbrainz
 
 
 class TestPreAdd:
-    """Test the ``pre_add()`` hook entry into the plugin."""
+    """Test the ``import_album()`` hook entry into the plugin."""
 
     def test_release_search(self, mock_album):
         """Searching for a release uses the expected parameters."""
@@ -38,7 +38,7 @@ class TestPreAdd:
                 return_value=mb_full_release.release,
                 autospec=True,
             ):
-                musicbrainz.pre_add(Mock(), Mock(), mock_album)
+                musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
 
@@ -50,7 +50,7 @@ class TestPreAdd:
             return_value=mb_full_release.release,
             autospec=True,
         ) as mock_mb_by_id:
-            musicbrainz.pre_add(Mock(), Mock(), mock_album)
+            musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         mock_mb_by_id.assert_called_once_with(
             mock_album.mb_id, includes=musicbrainz.RELEASE_INCLUDES
@@ -68,7 +68,7 @@ class TestPreAdd:
                 return_value=mb_full_release.release,
                 autospec=True,
             ):
-                mb_album = musicbrainz.pre_add(Mock(), Mock(), Mock())
+                mb_album = musicbrainz.import_album(Mock(), Mock(), Mock())
 
         assert mb_album.artist == "Kanye West"
         assert mb_album.date == datetime.date(2010, 11, 22)
@@ -92,7 +92,7 @@ class TestPreAdd:
             return_value=mb_edge.partial_date_year_mon,
             autospec=True,
         ):
-            mb_album = musicbrainz.pre_add(Mock(), Mock(), mock_album)
+            mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         assert mb_album.date == datetime.date(1992, 12, 1)
 
@@ -104,7 +104,7 @@ class TestPreAdd:
             return_value=mb_edge.partial_date_year,
             autospec=True,
         ):
-            mb_album = musicbrainz.pre_add(Mock(), Mock(), mock_album)
+            mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         assert mb_album.date == datetime.date(1992, 1, 1)
 
@@ -113,12 +113,12 @@ class TestPreAdd:
 class TestNetwork:
     """Test we can hit the actual API."""
 
-    def test_pre_add(self, mock_album):
+    def test_real_import_album(self, mock_album):
         """Make sure we can actually hit the real API."""
         mock_album.artist = "Kanye West"
         mock_album.title = "My Beautiful Dark Twisted Fantasy"
 
-        mb_album = musicbrainz.pre_add(Mock(), Mock(), mock_album)
+        mb_album = musicbrainz.import_album(Mock(), Mock(), mock_album)
 
         assert mb_album.artist == mock_album.artist
         assert mb_album.title == mock_album.title
