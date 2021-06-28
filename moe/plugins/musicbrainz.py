@@ -40,7 +40,7 @@ RELEASE_INCLUDES = [  # noqa: WPS407
 
 
 @moe.hookimpl
-def pre_add(config: Config, session: Session, album: Album) -> Album:
+def import_album(config: Config, session: Session, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
 
     Args:

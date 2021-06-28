@@ -16,12 +16,12 @@ from moe.core.library.track import Track
 from moe.plugins.add import add
 
 
-class PreAddPlugin:
-    """Test plugin that implements the ``pre_add`` hook for testing."""
+class ImportPlugin:
+    """Test plugin that implements the ``import_metadata`` hook for testing."""
 
     @staticmethod
     @moe.hookimpl
-    def pre_add(config: Config, session: Session, album: Album) -> Album:
+    def import_album(config: Config, session: Session, album: Album) -> Album:
         """Changes the album title."""
         album.title = "pre-add plugin"
         return album
@@ -71,7 +71,7 @@ class TestAddItemFromDir:
     def test_dir_album(self, real_album, tmp_session):
         """If a directory given, add to library as an album."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         add.add_item(mock_config, tmp_session, real_album.path)
 
@@ -80,7 +80,7 @@ class TestAddItemFromDir:
     def test_extras(self, real_album, tmp_session):
         """Add any extras that are within the album directory."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         cue_file = real_album.path / ".cue"
         cue_file.touch()
@@ -98,7 +98,7 @@ class TestAddItemFromDir:
     def test_no_valid_tracks(self, tmp_session, tmp_path):
         """Error if given directory does not contain any valid tracks."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         album_path = tmp_path / "empty"
         album_path.mkdir()
@@ -114,7 +114,7 @@ class TestAddItemFromDir:
         All tracks in a given directory should belong to the same album.
         """
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         tmp_album_path = tmp_path / "tmp_album"
         tmp_album_path.mkdir()
@@ -129,7 +129,7 @@ class TestAddItemFromDir:
     def test_duplicate_tracks(self, real_album, tmp_session):
         """Don't fail album add if a track (by tags) already exists in the library."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         tmp_session.merge(real_album.tracks[0])
 
@@ -144,7 +144,7 @@ class TestAddItemFromDir:
         or extras should be overwritten.
         """
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         new_album = real_album_factory()
         existing_album = real_album_factory()
@@ -184,7 +184,7 @@ class TestAddItemFromFile:
     def test_file_track(self, real_track, tmp_session):
         """If a file given, add to library as a Track."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         add.add_item(mock_config, tmp_session, real_track.path)
 
@@ -193,7 +193,7 @@ class TestAddItemFromFile:
     def test_min_reqd_tags(self, tmp_session):
         """We can add a track with only a track_num, album, albumartist, and year."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         reqd_track_path = Path("tests/resources/reqd.mp3")
 
@@ -214,7 +214,7 @@ class TestAddItemFromFile:
     def test_duplicate_track(self, real_track, tmp_session, tmp_path):
         """Overwrite old track path with the new track if a duplicate is found."""
         mock_config = MagicMock()
-        mock_config.plugin_manager.hook.pre_add.return_value = []
+        mock_config.plugin_manager.hook.import_album.return_value = []
 
         new_track_path = tmp_path / "full2"
         shutil.copyfile(real_track.path, new_track_path)
@@ -227,13 +227,13 @@ class TestAddItemFromFile:
 
 @pytest.mark.integration
 class TestPreAdd:
-    """Test integration with the ``pre_add`` hook and thus the add prompt."""
+    """Test integration with the ``import_album`` hook and thus the add prompt."""
 
     def test_album(self, real_album, tmp_config):
-        """Prompt is run with a plugin implementing the ``pre_add`` hook."""
+        """Prompt is run with a plugin implementing the ``import_album`` hook."""
         cli_args = ["add", str(real_album.path)]
         config = tmp_config(settings='default_plugins = ["add"]')
-        config.plugin_manager.register(PreAddPlugin)
+        config.plugin_manager.register(ImportPlugin)
 
         with patch("builtins.input", lambda _: "a"):  # apply changes
             moe.cli.main(cli_args, config)
