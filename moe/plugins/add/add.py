@@ -13,7 +13,7 @@ from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
-from moe.core.library.track import Track
+from moe.core.library.track import Track, TrackError
 from moe.plugins.add import prompt
 
 log = logging.getLogger(__name__)
@@ -148,7 +148,7 @@ def _add_album(album_path: Path) -> Album:
     for file_path in album_path.rglob("*"):
         try:
             album_tracks.append(Track.from_tags(path=file_path))
-        except (TypeError, mediafile.UnreadableFileError):
+        except (TrackError, mediafile.UnreadableFileError):
             extra_paths.append(file_path)
 
     if not album_tracks:
@@ -193,7 +193,7 @@ def _add_track(track_path: Path) -> Track:
 
     try:
         track = Track.from_tags(path=track_path)
-    except (TypeError, mediafile.UnreadableFileError) as init_exc:
+    except (TrackError, mediafile.UnreadableFileError) as init_exc:
         raise AddError(init_exc) from init_exc
 
     return track

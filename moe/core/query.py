@@ -30,6 +30,11 @@ from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
 
+
+class QueryError(Exception):
+    """Error querying an item from the library."""
+
+
 query_parser = argparse.ArgumentParser(
     add_help=False, formatter_class=argparse.RawTextHelpFormatter
 )
@@ -107,7 +112,7 @@ def query(
 
     try:
         items = _create_query(session, terms, query_type).all()
-    except ValueError as exc:
+    except QueryError as exc:
         log.error(exc)
         return []
 
@@ -131,7 +136,7 @@ def _create_query(
         Sqlalchemy query statement.
 
     Raises:
-        ValueError: Invalid query terms or type.
+        QueryError: Invalid query terms or type.
     """
     if query_type == "track":
         library_query = session.query(Track).join(Album)
@@ -140,7 +145,7 @@ def _create_query(
     elif query_type == "extra":
         library_query = session.query(Extra).join(Album).join(Track)
     else:
-        raise ValueError(f"Invalid query type: {query_type}")
+        raise QueryError(f"Invalid query type: {query_type}")
 
     # only join Extras if the table is not empty
     if session.query(Extra).all() and query_type in {"album", "track"}:
@@ -173,7 +178,7 @@ def _parse_term(term: str) -> Dict[str, str]:
         group constant e.g. `expression[FIELD_GROUP] == "artist"`
 
     Raises:
-        ValueError: Invalid query term.
+        QueryError: Invalid query term.
     """
     # '*' is used as a shortcut to return all entries.
     # We use track_num as all tracks are guaranteed to have a track number.
@@ -192,7 +197,7 @@ def _parse_term(term: str) -> Dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        raise ValueError(f"Invalid query term: {term}\n{HELP_STR}")
+        raise QueryError(f"Invalid query term: {term}\n{HELP_STR}")
 
     match_dict = match.groupdict()
     match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
@@ -215,7 +220,7 @@ def _create_expression(  # noqa: WPS231
         https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
 
     Raises:
-        ValueError: Invalid query given.
+        QueryError: Invalid query given.
     """
     field = term[FIELD_GROUP].lower()
     separator = term[SEPARATOR_GROUP]
@@ -228,7 +233,7 @@ def _create_expression(  # noqa: WPS231
         try:
             attr = getattr(Track, field)
         except AttributeError:
-            raise ValueError(f"Invalid Track field: {field}")
+            raise QueryError(f"Invalid Track field: {field}")
 
     if separator == ":":
         # path matching
@@ -251,10 +256,10 @@ def _create_expression(  # noqa: WPS231
         try:
             re.compile(value)
         except re.error:
-            raise ValueError(f"Invalid regular expression: {value}")
+            raise QueryError(f"Invalid regular expression: {value}")
 
         return attr.op("regexp")(  # type: ignore
             sqlalchemy.sql.expression.literal(value)
         )
 
-    raise ValueError(f"Invalid query type: {separator}")
+    raise QueryError(f"Invalid query type: {separator}")
