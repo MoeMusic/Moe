@@ -108,13 +108,13 @@ class Album(LibItem, Base):
         session.expunge(existing_album)
         return existing_album
 
-    def get_extra(self, filename: str) -> "Optional[Extra]":
+    def get_extra(self, filename: str) -> Optional["Extra"]:
         """Gets an Extra by its filename."""
         return next(
             (extra for extra in self.extras if extra.filename == filename), None
         )
 
-    def get_track(self, track_num: int) -> "Optional[Track]":
+    def get_track(self, track_num: int) -> Optional["Track"]:
         """Gets a Track by its track number."""
         return next(
             (track for track in self.tracks if track.track_num == track_num), None
@@ -128,7 +128,7 @@ class Album(LibItem, Base):
             or self.title != other.title
         )
 
-    def merge(self, other: "Optional[Album]", overwrite_album_info=True):
+    def merge(self, other: Optional["Album"], overwrite_album_info=True):
         """Merges the current Album with another, overwriting the other if conflict.
 
         Changes won't take effect until the album is merged into the session.
