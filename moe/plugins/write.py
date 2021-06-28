@@ -1,11 +1,15 @@
 """Writes tags to track files."""
 
+import logging
+
 import mediafile
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
 from moe.core.library.track import Track
+
+log = logging.getLogger(__name__)
 
 
 @moe.hookimpl
@@ -25,6 +29,8 @@ def post_args(config: Config, session: Session):
 
 def _write_tags(track: Track):
     """Write tags to a track's file."""
+    log.info(f"Writing tags for '{track}'.")
+
     audio_file = mediafile.MediaFile(track.path)
 
     audio_file.album = track.album

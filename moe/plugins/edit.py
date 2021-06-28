@@ -98,6 +98,7 @@ def _edit_item(item: LibItem, term: str):
     if field in non_editable_fields:
         raise EditError(f"'{field}' is not an editable field.")
 
+    log.debug(f"Editing '{field}' to '{value}' for '{item}'.")
     if isinstance(attr, str):
         setattr(item, field, value)
     elif isinstance(attr, int):

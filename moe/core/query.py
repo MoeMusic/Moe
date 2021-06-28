@@ -119,6 +119,7 @@ def query(
     if not items:
         log.warning(f"No items found for the query '{query_str}'.")
 
+    log.debug(f"Query '{query_str}' returned '{items}'.")
     return items
 
 
