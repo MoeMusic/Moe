@@ -14,9 +14,9 @@ to get a list of Tracks matching the query from the library.
 
 import argparse
 import logging
-import pathlib
 import re
 import shlex
+from pathlib import Path
 from typing import Dict, List
 
 import sqlalchemy
@@ -233,14 +233,14 @@ def _create_expression(  # noqa: WPS231
     if separator == ":":
         # path matching
         if isinstance(attr, InstrumentedAttribute) and attr == Track.path:
-            return Track.path == pathlib.Path(value)
+            return Track.path == Path(value)
         elif (
             isinstance(attr, ColumnAssociationProxyInstance)
             and attr.attr[1] == Album.path
         ):
-            return Album.path == pathlib.Path(value)
+            return Album.path == Path(value)
         elif str(attr) == "Extra.path":
-            return Extra.path == pathlib.Path(value)  # type: ignore
+            return Extra.path == Path(value)  # type: ignore
 
         # normal string match query - should be case insensitive
         return attr.ilike(value, escape="/")  # type: ignore

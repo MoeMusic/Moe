@@ -1,8 +1,8 @@
 """Any operations regarding altering the location of files in the library."""
 
 import logging
-import pathlib
 import shutil
+from pathlib import Path
 
 import dynaconf
 from sqlalchemy.orm.session import Session
@@ -61,7 +61,7 @@ def _alter_item_loc(config: Config, item: LibItem):
     _copy_item(item, album_dir)
 
 
-def _copy_item(item: LibItem, album_dir: pathlib.Path):
+def _copy_item(item: LibItem, album_dir: Path):
     """Copies and formats the destination of a LibItem."""
     if isinstance(item, Album):
         _copy_album(item, album_dir)
@@ -70,12 +70,12 @@ def _copy_item(item: LibItem, album_dir: pathlib.Path):
         _copy_album(item.album_obj, album_dir)
 
 
-def _create_album_dir(config: Config, album: Album) -> pathlib.Path:
+def _create_album_dir(config: Config, album: Album) -> Path:
     """Creates and formats an Album directory."""
     album_track = album.tracks[0]
 
     album_dir_fmt = "{albumartist}/{album} ({year})"  # noqa; FS003
-    library_path = pathlib.Path(config.settings.move.library_path).expanduser()
+    library_path = Path(config.settings.move.library_path).expanduser()
     album_dir = library_path / album_dir_fmt.format(
         albumartist=album_track.albumartist,
         album=album_track.album,
@@ -86,7 +86,7 @@ def _create_album_dir(config: Config, album: Album) -> pathlib.Path:
     return album_dir
 
 
-def _copy_album(album: Album, album_dir: pathlib.Path):
+def _copy_album(album: Album, album_dir: Path):
     """Copies an Album to ``album_dir``.
 
     Overwrites any files at the destination.
@@ -104,7 +104,7 @@ def _copy_album(album: Album, album_dir: pathlib.Path):
     album.path = album_dir
 
 
-def _copy_track(track: Track, album_dir: pathlib.Path):
+def _copy_track(track: Track, album_dir: Path):
     """Copies and formats the destination of a single track.
 
     Overwrites any file at the destination.
@@ -131,7 +131,7 @@ def _copy_track(track: Track, album_dir: pathlib.Path):
     track.path = track_dest
 
 
-def _copy_extra(extra: Extra, album_dir: pathlib.Path):
+def _copy_extra(extra: Extra, album_dir: Path):
     """Copies and formats the destination of an album extra file.
 
     Overwrites any file at the destination.

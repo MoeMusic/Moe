@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-import pathlib
+from pathlib import Path
 
 import mediafile
 import pluggy
@@ -77,7 +77,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     Raises:
         SystemExit: Path given does not exist.
     """
-    paths = [pathlib.Path(arg_path) for arg_path in args.paths]
+    paths = [Path(arg_path) for arg_path in args.paths]
 
     error_count = 0
     for path in paths:
@@ -91,7 +91,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
         raise SystemExit(1)
 
 
-def add_item(config: Config, session: Session, item_path: pathlib.Path):
+def add_item(config: Config, session: Session, item_path: Path):
     """Adds a LibItem to the library from a given path.
 
     Args:
@@ -125,7 +125,7 @@ def add_item(config: Config, session: Session, item_path: pathlib.Path):
         session.merge(add_album)
 
 
-def _add_album(album_path: pathlib.Path) -> Album:
+def _add_album(album_path: Path) -> Album:
     """Add an album to the library from a given directory.
 
     Args:
@@ -171,7 +171,7 @@ def _add_album(album_path: pathlib.Path) -> Album:
     return album
 
 
-def _add_track(track_path: pathlib.Path) -> Track:
+def _add_track(track_path: Path) -> Track:
     """Add a track to the library from a given file.
 
     The Track's attributes are populated from the tags read at `track_path`.
