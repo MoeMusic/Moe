@@ -41,7 +41,7 @@ class TestParseTerm:
 
     def test_invalid(self):
         """Invalid terms should raise a ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(query.QueryError):
             query._parse_term("invalid")
 
 

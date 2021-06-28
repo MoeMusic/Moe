@@ -18,6 +18,10 @@ from moe.core.library.session import Base
 log = logging.getLogger(__name__)
 
 
+class TrackError(Exception):
+    """Error creating a Track."""
+
+
 class _Genre(Base):
     """A track can have multiple genres."""
 
@@ -132,7 +136,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
             Track instance.
 
         Raises:
-            TypeError: Missing required tags.
+            TrackError: Missing required tags.
         """
         audio_file = mediafile.MediaFile(path)
 
@@ -146,7 +150,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         if not audio_file.date:
             missing_tags.append("date")
         if missing_tags:
-            raise TypeError(
+            raise TrackError(
                 f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
             )
 
