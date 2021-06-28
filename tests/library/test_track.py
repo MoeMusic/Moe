@@ -60,26 +60,26 @@ class TestFromTags:
 
     def test_read_tags(self, tmp_session):
         """We should initialize the track with tags from the file if present."""
-        track = Track.from_tags(
-            path=Path("tests/resources/full.mp3"),
-        )
+        track = Track.from_tags(path=Path("tests/resources/full.mp3"))
 
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
         assert track.artist == "Wu-Tang Clan"
+        assert track.date == datetime.date(2020, 1, 12)
+        assert track.disc == 1
+        assert track.disc_total == 2
         assert track.file_ext == "mp3"
         assert set(track.genre) == {"hip hop", "rock"}
         assert track.title == "Full"
         assert track.track_num == 1
-        assert track.year == 2020
 
 
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Track to the db.
 
-    A duplicate Track is defined as a combination of it's album (obj) and track number.
-    If a duplicate is found when committing to the database, we should raise a
-    ``DbDupAlbumError``.
+    A duplicate Track is defined as a combination of it's album (obj), disc, and
+    track number. If a duplicate is found when committing to the database, we should
+    raise a ``DbDupAlbumError``.
 
     The reason a DbDupAlbumError is raised instead of a track-related error, is because
     a duplicate Track must have a duplicate Album by definition of a Track's uniqueness

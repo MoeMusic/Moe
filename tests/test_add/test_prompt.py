@@ -112,6 +112,24 @@ class TestRunPrompt:
         album = tmp_session.query(Album).one()
         assert len(album.tracks) == 2
 
+    def test_multi_disc_album(self, mock_album, tmp_config, tmp_session):
+        """Prompt supports multi_disc albums."""
+        config = tmp_config("default_plugins = ['add']")
+        mock_album.disc_total = 2
+        mock_album.tracks[1].disc = 2
+        mock_album.tracks[1].track_num = 1
+        new_album = copy.deepcopy(mock_album)
+
+        with patch("builtins.input", side_effect="a"):
+            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
+
+        add_album.merge(add_album.get_existing(tmp_session))
+        tmp_session.merge(add_album)
+
+        album = tmp_session.query(Album).one()
+        assert album.disc_total == 2
+        assert album.get_track(1, disc=2)
+
 
 class TestFmtAlbumChanges:
     """Test formatting of album changes.
@@ -122,7 +140,7 @@ class TestFmtAlbumChanges:
     (add ``assert 0`` to the end of any test case to see it's output to stdout).
     """
 
-    def test_full_diff_album(self, capsys, mock_album):
+    def test_full_diff_album(self, mock_album):
         """Print prompt for fully different albums."""
         old_album = mock_album
         new_album = copy.deepcopy(mock_album)
@@ -138,7 +156,7 @@ class TestFmtAlbumChanges:
 
         print(prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
-    def test_unmatched_tracks(self, capsys, mock_album):
+    def test_unmatched_tracks(self, mock_album):
         """Print prompt for albums with non-matching tracks."""
         old_album = mock_album
         new_album = copy.deepcopy(mock_album)
@@ -149,3 +167,12 @@ class TestFmtAlbumChanges:
         assert old_album is not new_album
 
         print(prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
+
+    def test_multi_disc_album(self, mock_album):
+        """Prompt supports multi_disc albums."""
+        mock_album.disc_total = 2
+        mock_album.tracks[1].disc = 2
+        mock_album.tracks[1].track_num = 1
+        new_album = copy.deepcopy(mock_album)
+
+        print(prompt._fmt_album_changes(mock_album, new_album))  # noqa: WPS421

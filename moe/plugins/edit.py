@@ -1,7 +1,10 @@
 """Edits music in the library."""
 
 import argparse
+import datetime
 import logging
+import re
+import sys
 
 import sqlalchemy
 
@@ -74,7 +77,7 @@ def parse_args(
         raise SystemExit(1)
 
 
-def _edit_item(item: LibItem, term: str):
+def _edit_item(item: LibItem, term: str):  # noqa: WPS231, WPS238
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:
@@ -103,8 +106,25 @@ def _edit_item(item: LibItem, term: str):
         setattr(item, field, value)
     elif isinstance(attr, int):
         setattr(item, field, int(value))
+    elif isinstance(attr, datetime.date):
+        if (sys.version_info.major, sys.version_info.minor) < (3, 7):
+            if not re.match(
+                r"^\d{4}-([0]\d|1[0-2])-([0-2]\d|3[01])$", value  # noqa: FS003
+            ):
+                raise EditError("Date must be in format YYYY-MM-DD")
+            date = value.split("-")
+            setattr(
+                item, field, datetime.date(int(date[0]), int(date[1]), int(date[2]))
+            )
+        else:
+            try:
+                setattr(item, field, datetime.date.fromisoformat(value))
+            except ValueError:
+                raise EditError("Date must be in format YYYY-MM-DD")
     elif isinstance(
         attr, sqlalchemy.ext.associationproxy._AssociationList  # noqa: WPS437
     ):
         list_value = [lv.strip() for lv in value.split(";")]
         setattr(item, field, list_value)
+    else:
+        raise EditError(f"Editing field of type '{type(attr)}' not supported.")

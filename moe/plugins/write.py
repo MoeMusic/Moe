@@ -40,7 +40,7 @@ def _write_tags(track: Track):
     audio_file.title = track.title
     audio_file.track = track.track_num
     audio_file.year = track.year
-    audio_file.mb_trackid = track.mb_id
+    audio_file.mb_trackid = track.mb_track_id
     audio_file.mb_albumid = track.mb_album_id
 
     audio_file.save()

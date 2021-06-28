@@ -96,6 +96,7 @@ def mock_track_factory() -> Callable[[], Track]:
             album=album,
             path=track_path,
             track_num=track_num,
+            file_ext="mp3",
             title="Jazzy Belle",
         )
 

@@ -56,10 +56,12 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         album_path (Path): Path of the album directory.
         artist (str)
         date (datetime.date): Album release date.
+        disc (int): Disc number the track is on.
+        disc_total (int): Number of discs in the album.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (List[str])
-        mb_album_id (str): Musicbrainz album aka release id.
-        mb_id (str): Musicbrainz track aka recording id.
+        mb_album_id (str): Musicbrainz album aka release ID.
+        mb_track_id (str): Musicbrainz track ID.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -74,8 +76,9 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
 
     _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False, default="")
+    disc: int = Column(Integer, nullable=False, default=1)
     file_ext: str = Column(String, nullable=False, default="")
-    mb_id: str = Column(String, nullable=False, default="")
+    mb_track_id: str = Column(String, nullable=False, default="")
     path: Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
     track_num: int = Column(Integer, nullable=False)
@@ -86,7 +89,8 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     album_path: Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     date: datetime.date = association_proxy("album_obj", "date")
-    mb_album_id: str = association_proxy("album_obj", "mb_id")
+    disc_total: int = association_proxy("album_obj", "disc_total")
+    mb_album_id: str = association_proxy("album_obj", "mb_album_id")
     year: int = association_proxy("album_obj", "year")
 
     _genres: List[_Genre] = relationship(
@@ -94,7 +98,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
     )
     genre: List[str] = association_proxy("_genres", "name")
 
-    __table_args__ = (UniqueConstraint("track_num", "_album_id"),)
+    __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
     def __init__(self, album: Album, track_num: int, path: Path, **kwargs):
         """Create a track.
@@ -115,8 +119,9 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
 
         # set default values
         self.artist = ""
+        self.disc = 1
         self.file_ext = ""
-        self.mb_id = ""
+        self.mb_track_id = ""
         self.title = ""
 
         for key, value in kwargs.items():
@@ -124,13 +129,15 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
                 setattr(self, key, value)
 
     @classmethod
-    def from_tags(cls: Type[T], path: Path) -> T:
+    def from_tags(cls: Type[T], path: Path, album_path: Path = None) -> T:
         """Alternate initializer that creates a Track from its tags.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
             path: Filesystem path of the track to add.
+            album_path: Filesystem path of the track's album. Defaults to using the
+                parent of the track path.
 
         Returns:
             Track instance.
@@ -154,21 +161,25 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
                 f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
             )
 
+        if not album_path:
+            album_path = path.parent
         album = Album(
             artist=audio_file.albumartist,
             title=audio_file.album,
             date=audio_file.date,
-            mb_id=audio_file.mb_albumid,
-            path=path.parent,
+            disc_total=audio_file.disctotal,
+            mb_album_id=audio_file.mb_albumid,
+            path=album_path,
         )
         return cls(
             album=album,
             path=path,
             track_num=audio_file.track,
             artist=audio_file.artist,
+            disc=audio_file.disc,
             file_ext=audio_file.type,
             genre=audio_file.genres,
-            mb_id=audio_file.mb_trackid,
+            mb_track_id=audio_file.mb_trackid,
             title=audio_file.title,
         )
 
@@ -182,17 +193,20 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
                 and self.artist == other.artist
                 and self.file_ext == other.file_ext
                 and set(self.genre) == set(other.genre)
-                and self.mb_id == other.mb_id
+                and self.mb_track_id == other.mb_track_id
                 and self.path == other.path
                 and self.title == other.title
                 and self.track_num == other.track_num
             )
         return False
 
-    def __lt__(self, other: "Track") -> bool:
-        """Sort based on album, then track number."""
+    def __lt__(self, other) -> bool:
+        """Sort based on album, then disc, then track number."""
         if self.album_obj == other.album_obj:
-            return self.track_num < other.track_num
+            if self.disc == other.disc:
+                return self.track_num < other.track_num
+
+            return self.disc < other.disc
 
         return self.album_obj < other.album_obj
 
@@ -205,6 +219,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         return (
             f"{self.__class__.__name__}("
             f"id={repr(self._id)}, "
+            f"disc={repr(self.disc)}, "
             f"track_num={repr(self.track_num)}, "
             f"{repr(self.album_obj)}, "
             f"artist={repr(self.artist)}, "

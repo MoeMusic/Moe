@@ -16,8 +16,6 @@ from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
 
-TRACK_FILE_FMT = "{track_num} - {title}.{file_ext}"  # noqa: FS003
-
 
 @moe.hookimpl
 def add_config_validator(settings: dynaconf.base.LazySettings):
@@ -111,16 +109,20 @@ def _copy_track(track: Track, album_dir: Path):
 
     Note:
         The track path should contain, at a minimum, the album artist, album title,
-        year, and track number to ensure uniqueness.
+        year, disc (if more than one), and track number to ensure uniqueness.
 
     Args:
         track: Track to copy.
         album_dir: Album directory destination.
     """
-    track_filename = TRACK_FILE_FMT.format(
-        track_num=track.track_num, title=track.title, file_ext=track.file_ext
-    )
-    track_dest = album_dir / track_filename
+    disc_dir_name = ""
+    if track.disc_total > 1:
+        disc_dir_name = f"Disc {track.disc:02}"
+    disc_dir = album_dir / disc_dir_name
+    disc_dir.mkdir(exist_ok=True)
+
+    track_filename = f"{track.track_num:02} - {track.title}.{track.file_ext}"
+    track_dest = disc_dir / track_filename
 
     if track_dest == track.path:
         return

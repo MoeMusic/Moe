@@ -1,6 +1,7 @@
 """Tests the ``edit`` plugin."""
 
 import argparse
+import datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -83,6 +84,37 @@ class TestParseArgs:
             mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert mock_track.track_num == 3
+
+    def test_date_field(self, mock_track):
+        """We can edit the date."""
+        args = argparse.Namespace(
+            fv_terms=["date=2020-11-01"], query="", album=False, extra=False
+        )
+
+        with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+            mock_session = Mock()
+
+            edit.parse_args(config=Mock(), session=mock_session, args=args)
+
+            mock_query.assert_called_once_with("", mock_session, query_type="track")
+
+        assert mock_track.date == datetime.date(2020, 11, 1)
+
+    def test_invalid_date_field(self, mock_track):
+        """We can edit the date."""
+        args = argparse.Namespace(
+            fv_terms=["date=2020"], query="", album=False, extra=False
+        )
+
+        with pytest.raises(SystemExit) as error:
+            with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+                mock_session = Mock()
+
+                edit.parse_args(config=Mock(), session=mock_session, args=args)
+
+                mock_query.assert_called_once_with("", mock_session, query_type="track")
+
+        assert error.value.code == 1
 
     def test_list_field(self, mock_track):
         """We can edit list fields."""

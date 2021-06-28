@@ -95,6 +95,25 @@ class TestCopy:
         for origin_track_path in origin_track_paths:
             assert origin_track_path.is_file()
 
+    def test_copy_multi_disc_album(self, real_album, tmp_path):
+        """We can albums containing multiple discs."""
+        real_album.tracks[1].disc = 2
+        real_album.tracks[1].track_num = 1
+        real_album.disc_total = 2
+
+        origin_track_paths = []
+        for track in real_album.tracks:
+            origin_track_paths.append(track.path)
+
+        move._copy_item(item=real_album, album_dir=tmp_path)
+
+        for copied_track in real_album.tracks:
+            assert tmp_path in copied_track.path.parents
+            assert copied_track.path.is_file()
+
+        for origin_track_path in origin_track_paths:
+            assert origin_track_path.is_file()
+
     def test_file_src_eq_dst(self, real_album, tmp_path):
         """Do nothing if the Track or Extra destination is the same as the source."""
         move._copy_item(item=real_album, album_dir=tmp_path)

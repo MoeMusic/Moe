@@ -145,9 +145,10 @@ def _add_album(album_path: Path) -> Album:
 
     album_tracks = []
     extra_paths = []
-    for file_path in album_path.rglob("*"):
+    album_file_paths = [path for path in album_path.rglob("*") if path.is_file()]
+    for file_path in album_file_paths:
         try:
-            album_tracks.append(Track.from_tags(path=file_path))
+            album_tracks.append(Track.from_tags(path=file_path, album_path=album_path))
         except (TrackError, mediafile.UnreadableFileError):
             extra_paths.append(file_path)
 

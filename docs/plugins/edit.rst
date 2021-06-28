@@ -40,16 +40,21 @@ Arguments
     * ``album``
     * ``albumartist``
     * ``artist``
+    * ``date`` Must be in YYYY-MM-DD format.
+    * ``disc``
     * ``genre`` [*]_
+    * ``mb_album_id``
+    * ``mb_track_id``
     * ``title``
     * ``track_num``
-    * ``year``
 
     *Album fields*
 
     * ``artist``
+    * ``date`` Must be in YYYY-MM-DD format.
+    * ``disc_total``
+    * ``mb_album_id``
     * ``title``
-    * ``year``
 
     .. [*] Supports multiple values.
 

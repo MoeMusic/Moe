@@ -1,1 +1,0 @@
-"""Musicbrainz test resources."""

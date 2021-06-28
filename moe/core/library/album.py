@@ -35,8 +35,9 @@ class Album(LibItem, Base):
     Attributes:
         artist (str): AKA albumartist.
         date (datetime.date): Album release date.
+        disc_total (int): Number of discs in the album.
         extras (List[Extra]): Extra non-track files associated with the album.
-        mb_id (str): Musicbrainz album aka release id.
+        mb_album_id (str): Musicbrainz album aka release id.
         path (Path): Filesystem path of the album directory.
         title (str)
         tracks (List[Track]): Album's corresponding tracks.
@@ -47,7 +48,8 @@ class Album(LibItem, Base):
     _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False)
     date: datetime.date = Column(Date, nullable=False)
-    mb_id: str = Column(String, nullable=False, default="")
+    disc_total: int = Column(Integer, nullable=False, default=1)
+    mb_album_id: str = Column(String, nullable=False, default="")
     path: Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False)
 
@@ -89,10 +91,12 @@ class Album(LibItem, Base):
         self.title = title
 
         # set default values
-        self.mb_id = ""
+        self.disc_total = 1
+        self.mb_album_id = ""
 
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if value:
+                setattr(self, key, value)
 
     def get_existing(self, session: Session) -> Optional["Album"]:
         """Gets a matching Album in the library."""
@@ -114,10 +118,15 @@ class Album(LibItem, Base):
             (extra for extra in self.extras if extra.filename == filename), None
         )
 
-    def get_track(self, track_num: int) -> Optional["Track"]:
+    def get_track(self, track_num: int, disc: int = 1) -> Optional["Track"]:
         """Gets a Track by its track number."""
         return next(
-            (track for track in self.tracks if track.track_num == track_num), None
+            (
+                track
+                for track in self.tracks
+                if track.track_num == track_num and track.disc == disc
+            ),
+            None,
         )
 
     def is_unique(self, other: "Album") -> bool:
@@ -148,7 +157,7 @@ class Album(LibItem, Base):
             self.artist = other.artist
             self.date = other.date
             self.title = other.title
-            self.mb_id = other.mb_id
+            self.mb_album_id = other.mb_album_id
 
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num)
@@ -186,7 +195,7 @@ class Album(LibItem, Base):
             return (
                 self.artist == other.artist  # noqa: WPS222
                 and self.date == other.date
-                and self.mb_id == other.mb_id
+                and self.mb_album_id == other.mb_album_id
                 and self.title == other.title
                 and self.tracks == other.tracks
                 and self.extras == other.extras
@@ -198,7 +207,9 @@ class Album(LibItem, Base):
         if self.title == other.title:
             if self.artist == other.artist:
                 return self.date < other.date
+
             return self.artist < other.artist
+
         return self.title < other.title
 
     def __str__(self):
