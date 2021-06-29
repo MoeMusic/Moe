@@ -165,11 +165,12 @@ class Album(LibItem, Base):
         if not overwrite_album_info:
             self.artist = other.artist
             self.date = other.date
-            self.title = other.title
+            self.disc_total = other.disc_total
             self.mb_album_id = other.mb_album_id
+            self.title = other.title
 
         for other_track in other.tracks:
-            conflict_track = self.get_track(other_track.track_num)
+            conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
                 conflict_track._id = other_track._id
             else:
