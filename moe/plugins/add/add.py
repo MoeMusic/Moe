@@ -44,6 +44,11 @@ class Hooks:
             The new, altered album to compare against the original in the prompt.
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec
+    def pre_add(config: Config, session: Session, album: Album):
+        """Provides an album prior to it being added to the library."""
+
 
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
@@ -126,6 +131,9 @@ def add_item(config: Config, session: Session, item_path: Path):
         add_album = old_album
 
     if add_album:
+        config.plugin_manager.hook.pre_add(
+            config=config, session=session, album=add_album
+        )
         session.merge(add_album)
 
 
