@@ -1,6 +1,7 @@
 """Tests the add plugin."""
 
 import argparse
+import copy
 import shutil
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
@@ -132,6 +133,19 @@ class TestAddItemFromDir:
         mock_config.plugin_manager.hook.import_album.return_value = []
 
         tmp_session.merge(real_album.tracks[0])
+
+        add.add_item(mock_config, tmp_session, real_album.path)
+
+        assert tmp_session.query(Album).filter_by(path=real_album.path).one()
+
+    def test_duplicate_album(self, real_album, tmp_session):
+        """We merge an existing album by it's path."""
+        mock_config = MagicMock()
+        mock_config.plugin_manager.hook.import_album.return_value = []
+
+        dup_album = copy.deepcopy(real_album)
+        dup_album.title = "diff"
+        tmp_session.merge(dup_album)
 
         add.add_item(mock_config, tmp_session, real_album.path)
 

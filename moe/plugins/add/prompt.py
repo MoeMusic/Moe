@@ -212,6 +212,10 @@ def _apply_changes(
         elif new_track:
             new_track.path = old_track.path
 
+    for extra in old_album.extras:
+        extra.album = new_album
+
+    new_album.merge(old_album)
     return new_album
 
 
