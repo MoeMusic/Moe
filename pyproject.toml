@@ -11,7 +11,7 @@ classifiers=[
     "License :: OSI Approved :: MIT License",
     "Topic :: Multimedia :: Sound/Audio :: Editors",
 ]
-readme = "README.md"
+readme = "README.rst"
 license = "MIT"
 
 [tool.poetry.scripts]

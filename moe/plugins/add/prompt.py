@@ -5,7 +5,8 @@ added to the library.
 """
 
 import logging
-from typing import Callable, List, NamedTuple, Optional, cast
+import operator
+from typing import List, Optional, cast
 
 import pluggy
 import questionary
@@ -18,38 +19,6 @@ from moe.core.library.track import Track
 from moe.plugins.add import match as add_match
 
 log = logging.getLogger(__name__)
-
-CHANGES_SYMBOL = "->"
-
-
-class PromptChoice(NamedTuple):
-    """A single user-selectable choice for the album changes prompt.
-
-    Attributes:
-        title: Title of the prompt choice that is displayed to the user alongside
-            the other prompt choices. The letter of the title that the user should enter
-            to select this prompt option should be capitalized. For example, to
-            ``aBort`` changes to an album, the user would input the letter ``b``. If
-            the letter desired does not appear in the title, simply add the letter in
-            parenthesis after the title. For example, if you wanted to create an option
-            called "cancel", that requires the user to enter the letter "x", create the
-            title as ``cancel (x)``.
-        selection_strs: All possible inputs the user can use to select this prompt
-            choice. Usually, this is just a single letter and the title of the of the
-            prompt choice. Each input string is case-insensitive.
-        func: Function to call upon this prompt choice being selected. The function
-            should return the album to be added to the library (or ``None`` if no album
-            should be added) and will be supplied the following keyword arguments:
-                ``config (Config)``: Moe config.
-                ``session (Session)``: Current db session.
-                ``old_album (Album)``: Old album with no changes applied.
-                ``new_album (Album)``: New album consisting of all the new changes.
-                ``user_input (str)``: User inputted selection text.
-    """
-
-    title: str
-    selection_strs: List[str]
-    func: Callable
 
 
 class Hooks:
@@ -103,17 +72,17 @@ def add_prompt_choice(prompt_choices: List[questionary.Choice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
         questionary.Choice(
-            title="Apply changes", value=_apply_changes, checked=True, shortcut_key="a"
+            title="Apply changes", value=_apply_changes, shortcut_key="a"
         )
     )
     prompt_choices.append(
-        questionary.Choice(title="Abort", value=_abort_changes, shortcut_key="b")
+        questionary.Choice(title="Abort", value=_abort_changes, shortcut_key="x")
     )
 
 
 def run_prompt(
     config: Config, session: Session, old_album: Album, new_album: Album
-) -> Album:
+) -> Optional[Album]:
     """Runs the interactive prompt for the given album changes.
 
     Args:
@@ -136,16 +105,20 @@ def run_prompt(
 
     prompt_choices: List[questionary.Choice] = []
     config.plugin_manager.hook.add_prompt_choice(prompt_choices=prompt_choices)
+    prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
     prompt_choice_func = questionary.rawselect(
         "What do you want to do?", choices=prompt_choices
     ).ask()
-    return prompt_choice_func(
-        config=config,
-        session=session,
-        old_album=old_album,
-        new_album=new_album,
-    )
+    if prompt_choice_func:
+        return prompt_choice_func(
+            config=config,
+            session=session,
+            old_album=old_album,
+            new_album=new_album,
+        )
+
+    return None
 
 
 def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
@@ -153,17 +126,17 @@ def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
     album_info_str = ""
     album_title = f"Album: {old_album.title}"
     if old_album.title != new_album.title:
-        album_title += f" {CHANGES_SYMBOL} {new_album.title}"
+        album_title += f" -> {new_album.title}"
     album_info_str += album_title
 
     album_artist = f"Album Artist: {old_album.artist}"
     if old_album.artist != new_album.artist:
-        album_artist = album_artist + f" {CHANGES_SYMBOL} {new_album.artist}"
+        album_artist = album_artist + f" -> {new_album.artist}"
     album_info_str += "\n" + album_artist
 
     album_year = f"Year: {old_album.year}"
     if old_album.year != new_album.year:
-        album_year = album_year + f" {CHANGES_SYMBOL} {new_album.year}"
+        album_year = album_year + f" -> {new_album.year}"
     album_info_str += "\n" + album_year
     if new_album.mb_album_id:
         mb_album_id = f"Musicbrainz ID: {new_album.mb_album_id}"
@@ -222,10 +195,7 @@ def _fmt_track_change(old_track: Optional[Track], new_track: Track) -> str:
         old_track_title = "(missing)"
     track_change += old_track_title
 
-    return (
-        f"\n{old_track_title} "
-        f"{CHANGES_SYMBOL} {new_disc}{new_track.track_num}: {new_track.title}"
-    )
+    return f"\n{old_track_title} -> {new_disc}{new_track.track_num}: {new_track.title}"
 
 
 def _apply_changes(

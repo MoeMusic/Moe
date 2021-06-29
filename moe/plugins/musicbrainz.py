@@ -6,16 +6,18 @@ https://python-musicbrainzngs.readthedocs.io/en/latest/api/
 """
 
 import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import musicbrainzngs
 import pkg_resources
+import questionary
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.track import Track
+from moe.plugins.add import prompt as add_prompt
 
 musicbrainzngs.set_useragent(
     "moe",
@@ -37,6 +39,18 @@ RELEASE_INCLUDES = [  # noqa: WPS407
     "work-level-rels",
     "work-rels",
 ]
+
+
+@moe.hookimpl
+def add_prompt_choice(prompt_choices: List[questionary.Choice]):
+    """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
+    prompt_choices.append(
+        questionary.Choice(
+            title="Enter Musicbrainz ID",
+            value=_enter_id,
+            shortcut_key="m",
+        )
+    )
 
 
 @moe.hookimpl
@@ -144,3 +158,18 @@ def _flatten_artist_credit(artist_credit: List[Dict]) -> str:
             full_artist += artist["artist"]["name"]
 
     return full_artist
+
+
+def _enter_id(
+    config: Config,
+    session: Session,
+    old_album: Album,
+    new_album: Album,
+) -> Optional[Album]:
+    """Re-run the add prompt with the inputted Musibrainz release."""
+    mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
+
+    release = _get_release_by_id(mb_id)
+    album = _create_album(release)
+
+    return add_prompt.run_prompt(config, session, old_album, album)

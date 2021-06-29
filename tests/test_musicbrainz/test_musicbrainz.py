@@ -182,3 +182,28 @@ class TestAdd:
             assert album.date == datetime.date(2010, 11, 22)
             assert album.mb_album_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
             assert album.title == "My Beautiful Dark Twisted Fantasy"
+
+    def test_prompt_choice(self, mock_mb_by_id, mock_mb_search, real_album, tmp_config):
+        """We can search from user input."""
+        cli_args = ["add", str(real_album.path)]
+        config = tmp_config(settings='default_plugins = ["add", "musicbrainz"]')
+
+        mock_q = Mock()
+        mock_q.ask.side_effect = [musicbrainz._enter_id, prompt._apply_changes]
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
+            mock_q = Mock()
+            mock_q.ask.return_value = "new id"
+            with patch("moe.plugins.add.prompt.questionary.text", return_value=mock_q):
+                cli.main(cli_args, config)
+
+        mock_mb_by_id.assert_called_with(
+            "new id", includes=musicbrainz.RELEASE_INCLUDES
+        )
+
+        with session_scope() as session:
+            album = session.query(Album).one()
+
+            assert album.artist == "Kanye West"
+            assert album.date == datetime.date(2010, 11, 22)
+            assert album.mb_album_id == "2fcfcaaa-6594-4291-b79f-2d354139e108"
+            assert album.title == "My Beautiful Dark Twisted Fantasy"
