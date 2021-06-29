@@ -1,8 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 💡 Have an idea for a new feature?
-    url: https://github.com/jtpavlock/moe/discussions/categories/ideas
-    about: Create a new idea discussion!
   - name: 🙇 Need help with moe?
     url: https://github.com/jtpavlock/moe/discussions/categories/q-a
     about: Ask for help with a Q&A discussion!
