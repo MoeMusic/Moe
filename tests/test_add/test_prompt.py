@@ -33,6 +33,8 @@ class TestRunPrompt:
         new_album.path = None
         for new_track in new_album.tracks:
             new_track.path = None
+        for new_extra in new_album.extras:
+            new_extra.album = None
 
         mock_q = Mock()
         mock_q.ask.return_value = prompt._apply_changes
@@ -42,8 +44,11 @@ class TestRunPrompt:
         assert add_album.title == new_album.title
         assert add_album.path == mock_album.path
 
+        assert add_album.tracks
         for track in add_album.tracks:
             assert track.path == mock_album.get_track(track.track_num).path
+
+        assert add_album.extras
 
     def test_abort_changes(self, mock_album, tmp_config):
         """If selected, abort the changes to the old album."""

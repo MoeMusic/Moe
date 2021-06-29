@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import sqlalchemy
-from sqlalchemy import Column, Date, Integer, String  # noqa: WPS458
+from sqlalchemy import Column, Date, Integer, String, and_, or_  # noqa: WPS458
 from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import UniqueConstraint
@@ -99,10 +99,19 @@ class Album(LibItem, Base):
                 setattr(self, key, value)
 
     def get_existing(self, session: Session) -> Optional["Album"]:
-        """Gets a matching Album in the library."""
+        """Gets a matching Album in the library either by its path or unique tags."""
         existing_album = (
             session.query(Album)
-            .filter_by(artist=self.artist, title=self.title, date=self.date)
+            .filter(
+                or_(
+                    and_(
+                        Album.artist == self.artist,
+                        Album.title == self.title,
+                        Album.date == self.date,
+                    ),
+                    Album.path == self.path,
+                )
+            )
             .options(joinedload("*"))
             .one_or_none()
         )
