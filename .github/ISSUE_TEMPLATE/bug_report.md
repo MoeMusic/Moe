@@ -47,8 +47,8 @@ Make sure to use verbose mode `(-vv)` and include the full output.
 ### Setup
 
 - OS:
-- Python version: <!-- `python -V` --> (write here)
-- Moe version: <!-- `moe --version` --> (write here)
+- Python version:
+- Moe version:
 
 ### Additional context
 
