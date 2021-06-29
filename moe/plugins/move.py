@@ -11,7 +11,6 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
-from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 log = logging.getLogger(__name__)
@@ -27,72 +26,96 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
 
 @moe.hookimpl(trylast=True)
 def post_args(config: Config, session: Session):
-    """Alters the location of any changed or new items in the session.
-
-    This hook is run after the CLI arguments have been executed.
-
-    Args:
-        config: Moe config.
-        session: Currrent db session.
-    """
-    for item in session.new.union(session.dirty):
-        if isinstance(item, LibItem):
-            _alter_item_loc(config, item)
-
-
-def _alter_item_loc(config: Config, item: LibItem):
-    """Alters the location of an item according to the given configuration.
-
-    By default, the item will be copied, overwriting any existing files.
-
-    Args:
-        config: Moe config.
-        item: Item to be moved.
-    """
-    if isinstance(item, Album):
-        album_dir = _create_album_dir(config, item)
-    elif isinstance(item, Track):
-        album_dir = _create_album_dir(config, item.album_obj)
-    else:
-        return
-
-    _copy_item(item, album_dir)
-
-
-def _copy_item(item: LibItem, album_dir: Path):
-    """Copies and formats the destination of a LibItem."""
-    if isinstance(item, Album):
-        _copy_album(item, album_dir)
-    elif isinstance(item, Track):
-        # copy the entire album to ensure there's only a single existing album path
-        _copy_album(item.album_obj, album_dir)
-
-
-def _create_album_dir(config: Config, album: Album) -> Path:
-    """Creates and formats an Album directory."""
-    album_track = album.tracks[0]
-
-    album_dir_fmt = "{albumartist}/{album} ({year})"  # noqa; FS003
+    """Moves altered or new items in the session after the CLI args have executed."""
     library_path = Path(config.settings.move.library_path).expanduser()
-    album_dir = library_path / album_dir_fmt.format(
-        albumartist=album_track.albumartist,
-        album=album_track.album,
-        year=album_track.year,
-    )
+
+    for item in session.new.union(session.dirty):
+        if isinstance(item, Album):
+            album = item
+        elif isinstance(item, Track):
+            album = item.album_obj
+        elif isinstance(item, Extra):
+            album = item.album
+        else:
+            return
+
+        _move_album(album, library_path)
+
+
+@moe.hookimpl
+def pre_add(config: Config, session: Session, album: Album):
+    """Copies and formats the path of an album prior to it being added."""
+    library_path = Path(config.settings.move.library_path).expanduser()
+
+    _copy_album(album, library_path)
+
+
+########################################################################################
+# Format paths
+########################################################################################
+def _get_album_dir(album: Album, root_dir: Path) -> Path:
+    """Returns a formatted album directory under ``root_dir``.
+
+    An album directory should contain, at a minimum, the album artist, title, and year
+    to ensure uniqueness.
+
+    Args:
+        album: Album used to format the directory.
+        root_dir: Directory to place the album directory under.
+
+    Returns:
+        Formatted album directory under ``root_dir``.
+    """
+    album_dir_name = f"{album.artist}/{album.title} ({album.year})"
+    return root_dir / album_dir_name
+
+
+def _get_extra_path(extra: Extra, album_dir: Path) -> Path:
+    """Returns a formatted track path under ``album_dir``."""
+    return album_dir / extra.path.name
+
+
+def _get_track_path(track: Track, album_dir: Path) -> Path:
+    """Returns a formatted track path under ``album_dir``.
+
+    The track path should contain, at a minimum, the track number and
+    disc (if more than one) to ensure uniqueness.
+
+    Args:
+        track: Track used to format the path.
+        album_dir: Directory to place the album directory under.
+
+    Returns:
+        Formatted album directory under ``root_dir``.
+    """
+    disc_dir_name = ""
+    if track.disc_total > 1:
+        disc_dir_name = f"Disc {track.disc:02}"
+    disc_dir = album_dir / disc_dir_name
+
+    track_filename = f"{track.track_num:02} - {track.title}.{track.file_ext}"
+    return disc_dir / track_filename
+
+
+########################################################################################
+# Copy
+# ####
+#
+# When copying an item, operate at the album-level with `_copy_album()`.
+########################################################################################
+def _copy_album(album: Album, root_dir: Path):
+    """Copies an album to a formatted dir under ``root_dir``.
+
+    Overwrites any existing files.
+
+    Args:
+        album: Album to copy
+        root_dir: Root directory to copy the album to.
+    """
+    album_dir = _get_album_dir(album, root_dir)
 
     album_dir.mkdir(parents=True, exist_ok=True)
-    return album_dir
 
-
-def _copy_album(album: Album, album_dir: Path):
-    """Copies an Album to ``album_dir``.
-
-    Overwrites any files at the destination.
-
-    Args:
-        album: Album to copy.
-        album_dir: Album directory destination.
-    """
     for track in album.tracks:
         _copy_track(track, album_dir)
 
@@ -103,51 +126,123 @@ def _copy_album(album: Album, album_dir: Path):
 
 
 def _copy_track(track: Track, album_dir: Path):
-    """Copies and formats the destination of a single track.
+    """Copies a track to a formatted destination under ``album_dir``.
 
-    Overwrites any file at the destination.
-
-    Note:
-        The track path should contain, at a minimum, the album artist, album title,
-        year, disc (if more than one), and track number to ensure uniqueness.
+    Overwrites any existing files.
 
     Args:
         track: Track to copy.
         album_dir: Album directory destination.
     """
-    disc_dir_name = ""
-    if track.disc_total > 1:
-        disc_dir_name = f"Disc {track.disc:02}"
-    disc_dir = album_dir / disc_dir_name
-    disc_dir.mkdir(exist_ok=True)
-
-    track_filename = f"{track.track_num:02} - {track.title}.{track.file_ext}"
-    track_dest = disc_dir / track_filename
+    track_dest = _get_track_path(track, album_dir)
 
     if track_dest == track.path:
         return
 
     log.info(f"Copying track '{track.path}' to '{track_dest}'.")
+    track_dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(track.path, track_dest)
 
     track.path = track_dest
 
 
 def _copy_extra(extra: Extra, album_dir: Path):
-    """Copies and formats the destination of an album extra file.
+    """Copies an extra to a formatted destination under ``album_dir``.
 
-    Overwrites any file at the destination.
+    Overwrites any existing files.
 
     Args:
         extra: Extra to copy.
         album_dir: Album directory to copy the extra to.
     """
-    extra_dest = album_dir / extra.path.name
+    extra_dest = _get_extra_path(extra, album_dir)
 
     if extra_dest == extra.path:
         return
 
     log.info(f"Copying extra '{extra}' to '{extra_dest}'.")
+    extra_dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(extra.path, extra_dest)
+
+    extra.path = extra_dest
+
+
+########################################################################################
+# Move
+# ####
+#
+# When moving an item, operate at the album-level with `_move_album()`.
+########################################################################################
+def _move_album(album: Album, root_dir: Path):
+    """Moves an album to a formatted dir under ``root_dir``.
+
+    Overwrites any existing files.
+
+    Args:
+        album: Album to copy
+        root_dir: Root directory to copy the album to.
+    """
+    album_dir = _get_album_dir(album, root_dir)
+
+    album_dir.mkdir(parents=True, exist_ok=True)
+
+    for track in album.tracks:
+        _move_track(track, album_dir)
+
+    for extra in album.extras:
+        _move_extra(extra, album_dir)
+
+    # remove any empty leftover directories
+    for old_path in album.path.rglob("*"):
+        try:
+            old_path.rmdir()
+        except OSError:
+            pass  # noqa: WPS420
+    try:
+        album.path.rmdir()
+    except OSError:
+        pass  # noqa: WPS420
+
+    album.path = album_dir
+
+
+def _move_track(track: Track, album_dir: Path):
+    """Moves a track to a formatted destination under ``album_dir``.
+
+    Overwrites any existing files.
+
+    Args:
+        track: Track to copy.
+        album_dir: Album directory destination.
+    """
+    track_dest = _get_track_path(track, album_dir)
+
+    if track_dest == track.path:
+        return
+
+    log.info(f"Moving track '{track.path}' to '{track_dest}'.")
+    track_dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(track.path, track_dest)
+
+    track.path = track_dest
+
+
+def _move_extra(extra: Extra, album_dir: Path):
+    """Moves an extra to a formatted destination under ``album_dir``.
+
+    Overwrites any existing files.
+
+    Args:
+        extra: Extra to copy.
+        album_dir: Album directory to copy the extra to.
+    """
+    extra_dest = _get_extra_path(extra, album_dir)
+
+    if extra_dest == extra.path:
+        return
+
+    log.info(f"Copying extra '{extra}' to '{extra_dest}'.")
+    extra_dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(extra.path, extra_dest)
 
     extra.path = extra_dest
