@@ -8,6 +8,7 @@ import logging
 from typing import Callable, List, NamedTuple, Optional, cast
 
 import pluggy
+import questionary
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -56,14 +57,36 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_prompt_choice(prompt_choices: List[PromptChoice]):
-        """Add a ``PromptChoice`` to be added as a user input option.
-
-        See ``PromptChoice`` for more info.
+    def add_prompt_choice(prompt_choices: List[questionary.Choice]):
+        """Add a user input choice to the prompt.
 
         Args:
             prompt_choices: List of prompt choices. To add a prompt choice, simply
-                append it to this list.
+                append it to this list. The prompt_choice is a ``questionary.Choice``
+                object.
+
+        Important:
+            Ensure to set the choice ``value`` to the function you want to be called
+            if the choice is selected by the user. The function should return the album
+            to be added to the library (or ``None`` if no album should be added) and
+            will be supplied the following keyword arguments:
+
+            ``config (Config)``: Moe config.
+            ``session (Session)``: Current db session.
+            ``old_album (Album)``: Old album with no changes applied.
+            ``new_album (Album)``: New album consisting of all the new changes.
+
+        Example:
+            Inside your hook implementation::
+
+                prompt_choices.append(
+                    questionary.Choice(
+                        title="Abort", value=_abort_changes, shortcut_key="b"
+                    )
+                )
+
+        For a full reference on ``questionary.Choice`` see:
+        https://questionary.readthedocs.io/en/stable/pages/api_reference.html#questionary.Choice
         """
 
 
@@ -76,10 +99,16 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def add_prompt_choice(prompt_choices: List[PromptChoice]):
+def add_prompt_choice(prompt_choices: List[questionary.Choice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
-    prompt_choices.append(PromptChoice("[A]pply", ["a", "apply"], func=_apply_changes))
-    prompt_choices.append(PromptChoice("aBort", ["b", "abort"], func=_abort_changes))
+    prompt_choices.append(
+        questionary.Choice(
+            title="Apply changes", value=_apply_changes, checked=True, shortcut_key="a"
+        )
+    )
+    prompt_choices.append(
+        questionary.Choice(title="Abort", value=_abort_changes, shortcut_key="b")
+    )
 
 
 def run_prompt(
@@ -105,28 +134,18 @@ def run_prompt(
 
     print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
-    prompt_choices: List[PromptChoice] = []
+    prompt_choices: List[questionary.Choice] = []
     config.plugin_manager.hook.add_prompt_choice(prompt_choices=prompt_choices)
-    prompt_choices.sort(key=lambda prompt: prompt.title.casefold())
 
-    user_prompt = "\n"
-    user_prompt += ", ".join(prompt_choice.title for prompt_choice in prompt_choices)
-    user_prompt += " ?> "
-
-    while True:  # noqa: WPS457
-        user_input = input(user_prompt).lower()  # noqa: WPS421
-        if user_input.isspace() or not user_input:
-            user_input = "apply"  # default is to apply changes
-        for prompt_choice in prompt_choices:
-            if user_input in map(str.lower, prompt_choice.selection_strs):
-                return prompt_choice.func(
-                    config=config,
-                    session=session,
-                    old_album=old_album,
-                    new_album=new_album,
-                    user_input=user_input,
-                )
-        log.warning(f"Invalid input: {user_input}")
+    prompt_choice_func = questionary.rawselect(
+        "What do you want to do?", choices=prompt_choices
+    ).ask()
+    return prompt_choice_func(
+        config=config,
+        session=session,
+        old_album=old_album,
+        new_album=new_album,
+    )
 
 
 def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
@@ -214,7 +233,6 @@ def _apply_changes(
     session: Session,
     old_album: Album,
     new_album: Album,
-    user_input: str,
 ) -> Optional[Album]:
     """Applies the album changes."""
     new_album.path = old_album.path
@@ -232,7 +250,6 @@ def _abort_changes(
     session: Session,
     old_album: Album,
     new_album: Album,
-    user_input: str,
 ) -> Optional[Album]:
     """Aborts the album changes."""
     return None  # noqa: WPS324

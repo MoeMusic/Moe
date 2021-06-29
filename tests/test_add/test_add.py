@@ -13,7 +13,7 @@ from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
-from moe.plugins.add import add
+from moe.plugins.add import add, prompt
 
 
 class ImportPlugin:
@@ -253,7 +253,7 @@ class TestAddItemFromFile:
 
 
 @pytest.mark.integration
-class TestPreAdd:
+class TestImportAlbum:
     """Test integration with the ``import_album`` hook and thus the add prompt."""
 
     def test_album(self, real_album, tmp_config):
@@ -262,7 +262,9 @@ class TestPreAdd:
         config = tmp_config(settings='default_plugins = ["add"]')
         config.plugin_manager.register(ImportPlugin)
 
-        with patch("builtins.input", lambda _: "a"):  # apply changes
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._apply_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             moe.cli.main(cli_args, config)
 
         with session_scope() as session:
