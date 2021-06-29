@@ -12,6 +12,7 @@ from moe import cli
 from moe.core.library.album import Album
 from moe.core.library.session import session_scope
 from moe.plugins import musicbrainz
+from moe.plugins.add import prompt
 
 
 class TestPreAdd:
@@ -169,7 +170,9 @@ class TestAdd:
         cli_args = ["add", str(real_album.path)]
         config = tmp_config(settings='default_plugins = ["add", "musicbrainz"]')
 
-        with patch("builtins.input", lambda _: "a"):  # apply changes
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._apply_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             cli.main(cli_args, config)
 
         with session_scope() as session:

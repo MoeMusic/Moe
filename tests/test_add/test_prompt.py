@@ -34,7 +34,9 @@ class TestRunPrompt:
         for new_track in new_album.tracks:
             new_track.path = None
 
-        with patch("builtins.input", side_effect="a"):
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._apply_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
 
         assert add_album.title == new_album.title
@@ -43,42 +45,6 @@ class TestRunPrompt:
         for track in add_album.tracks:
             assert track.path == mock_album.get_track(track.track_num).path
 
-    def test_invalid_input(self, mock_album, tmp_config):
-        """Keep asking for user input if invalid."""
-        config = tmp_config("default_plugins = ['add']")
-        new_album = copy.deepcopy(mock_album)
-        new_album.title = "new title"
-
-        # new albums won't have paths
-        with patch("builtins.input", side_effect=["invalid", "a"]):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
-
-        assert add_album.title == new_album.title
-
-    def test_default_whitespace(self, mock_album, tmp_config):
-        """If whitespace input, apply the changes to the old album."""
-        config = tmp_config("default_plugins = ['add']")
-        new_album = copy.deepcopy(mock_album)
-        new_album.title = "new title"
-        assert mock_album.title != new_album.title
-
-        with patch("builtins.input", side_effect=" "):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
-
-        assert add_album.title == new_album.title
-
-    def test_default_empty(self, mock_album, tmp_config):
-        """If no input, apply the changes to the old album."""
-        config = tmp_config("default_plugins = ['add']")
-        new_album = copy.deepcopy(mock_album)
-        new_album.title = "new title"
-        assert mock_album.title != new_album.title
-
-        with patch("builtins.input", lambda _: ""):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
-
-        assert add_album.title == new_album.title
-
     def test_abort_changes(self, mock_album, tmp_config):
         """If selected, abort the changes to the old album."""
         config = tmp_config("default_plugins = ['add']")
@@ -86,7 +52,9 @@ class TestRunPrompt:
         new_album.title = "new title"
         assert mock_album.title != new_album.title
 
-        with patch("builtins.input", side_effect="b"):
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._abort_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
 
         assert not add_album
@@ -103,7 +71,9 @@ class TestRunPrompt:
         tmp_session.add(existing_album)
         tmp_session.commit()
 
-        with patch("builtins.input", side_effect="a"):
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._apply_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             add_album = prompt.run_prompt(config, tmp_session, mock_album, new_album)
 
         add_album.merge(add_album.get_existing(tmp_session))
@@ -120,7 +90,9 @@ class TestRunPrompt:
         mock_album.tracks[1].track_num = 1
         new_album = copy.deepcopy(mock_album)
 
-        with patch("builtins.input", side_effect="a"):
+        mock_q = Mock()
+        mock_q.ask.return_value = prompt._apply_changes
+        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
             add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
 
         add_album.merge(add_album.get_existing(tmp_session))
