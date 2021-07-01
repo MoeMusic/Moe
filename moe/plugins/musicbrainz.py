@@ -21,7 +21,7 @@ from moe.plugins.add import prompt as add_prompt
 
 musicbrainzngs.set_useragent(
     "moe",
-    pkg_resources.get_distribution("moe").version,
+    pkg_resources.get_distribution("mrmoe").version,
     contact="https://mrmoe.readthedocs.io/en/latest/index.html",
 )
 

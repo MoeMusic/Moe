@@ -1,5 +1,8 @@
 [tool.poetry]
-name = "moe"
+name = "MrMoe"
+packages = [
+    { include = "moe" }
+]
 version = "0.2.0"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]

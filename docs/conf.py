@@ -23,7 +23,7 @@ import pkg_resources
 project = "Moe"
 copyright = "2021, Jacob Pavlock"
 author = "Jacob Pavlock"
-release = pkg_resources.get_distribution("moe").version
+release = pkg_resources.get_distribution("mrmoe").version
 
 
 # -- General configuration ---------------------------------------------------
