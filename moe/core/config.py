@@ -19,12 +19,12 @@ import sys
 from pathlib import Path
 from typing import cast
 
+import alembic.command
+import alembic.config
 import dynaconf
 import pluggy
 import sqlalchemy
 
-import alembic.command
-import alembic.config
 import moe
 from moe.core.library.session import Session
 
@@ -157,7 +157,10 @@ class Config:
 
         # create and update database tables
         if create_tables:
-            alembic_cfg = alembic.config.Config("alembic.ini")
+            config_path = Path(__file__)
+            alembic_cfg = alembic.config.Config(
+                config_path.parents[1] / "alembic" / "alembic.ini"
+            )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
                 alembic_cfg.attributes["connection"] = connection
