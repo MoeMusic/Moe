@@ -1,6 +1,6 @@
-## v0.2.1 - v0.2.2 (2021-07-01)
+## v0.2.1 - v0.2.3 (2021-07-02)
 
-Fix issues when installing from PYPI.
+Fix issues installing from PYPI. (Lesson learned to use [test.pypi.org](https://test.pypi.org) next time.)
 
 ## v0.2.0 (2021-07-01)
 
