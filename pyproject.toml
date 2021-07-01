@@ -3,7 +3,7 @@ name = "MrMoe"
 packages = [
     { include = "moe" }
 ]
-include = ["alembic.ini"]
+include = ["alembic/*", "alembic/versions/*"]
 version = "0.2.2"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
