@@ -1,3 +1,9 @@
+## v0.2.2 (2021-07-01)
+
+### Fix
+
+- **pypi**: fix alembic pypi issue
+
 ## v0.2.1 (2021-07-01)
 
 ### Fix
