@@ -1,3 +1,10 @@
+## v0.2.3 (2021-07-01)
+
+### Fix
+
+- **Fix-alembic-included-as-package-on-PYPI**: Alembic should not be considered a package, rather it is just a directory to include in the final distribution
+- **pypi**: fix alembic pypi issue
+
 ## v0.2.1 - v0.2.2 (2021-07-01)
 
 Fix issues when installing from PYPI.
