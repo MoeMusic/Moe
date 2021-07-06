@@ -171,7 +171,7 @@ def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
             unmatched_tracks.append(cast(Track, old_track))
             continue
 
-        tracklist_str += _fmt_track_change(old_track, new_track)
+        tracklist_str += "\n" + _fmt_track_change(old_track, new_track)
 
     if unmatched_tracks:
         tracklist_str += "\n\nUnmatched Tracks:\n"
@@ -195,7 +195,12 @@ def _fmt_track_change(old_track: Optional[Track], new_track: Track) -> str:
         old_track_title = "(missing)"
     track_change += old_track_title
 
-    return f"\n{old_track_title} -> {new_disc}{new_track.track_num}: {new_track.title}"
+    new_track_title = f"{new_disc}{new_track.track_num}: {new_track.title}"
+
+    if old_track_title != new_track_title:
+        track_change += f" -> {new_track_title}"
+
+    return track_change
 
 
 def _apply_changes(
