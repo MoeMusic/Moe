@@ -1,3 +1,9 @@
+## v0.3.1 (2021-07-06)
+
+### Fix
+
+- **add**: track file types now transferred when adding a new album via prompt
+
 ## v0.3.0 (2021-07-06)
 
 ### Feat
