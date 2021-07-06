@@ -5,36 +5,13 @@ Getting Started
 ************
 Installation
 ************
-Moe *should* work on any platform.
+See the :ref:`Installation Guide <Installation Guide>` to install Moe.
 
-.. important::
-    The following will install `Moe` for use in a development environment. `Moe` isn't currently intended for normal use.
-
-#. `Install poetry <https://python-poetry.org/docs/#installation>`_.
-#. Clone the repository
-
-    .. code-block:: bash
-
-        $ git clone https://github.com/jtpavlock/moe.git
-#. Install the project
-
-    .. code-block:: bash
-
-       $ cd Moe
-       $ poetry install
-#. Run Moe
-
-    .. code-block:: bash
-
-       $ poetry shell
-       $ moe
-
-.. note::
-    ``poetry shell`` will enter a virtual environment to interact with the project. To exit, just type ``exit`` in the shell. If you'd like to run ``moe`` or other commands without entering the virtual environment, prepend any commands with ``poetry run``.
-
-    .. code-block:: bash
-
-       $ poetry run moe
+****************
+Required Reading
+****************
+Before using Moe, you should understand that Moe mostly consists of *plugins* or self-contained features, that each provide a different way of interacting with music in your library.
+For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins comes with it's own commands and configuration options that let you define how Moe manages your music. Each configuration option has sensible defaults which means you *could* just run Moe out of the box, but I'd recommend taking a look at the following.
 
 .. _General Configuration:
 
@@ -61,7 +38,7 @@ Plugin Options
 ==============
 For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/plugins>`. Each plugin option should be specified under that plugin's section in the config.
 
-For example, to specify the config option ``library_path`` which is a ``move`` plugin option, we'd write the following in our config:
+For example, it's common to want to specify where Moe should move your music files once it's been added to the library. To do this, we'd check out the ``move`` plugin and find it has the ``library_path`` configuration option. To customize this option, we'd write the following in our config file.
 
     .. code-block:: toml
 
@@ -84,7 +61,7 @@ For example, to override the ``library_path`` variable, you can run Moe with:
 **********************
 Command-Line Interface
 **********************
-To run moe:
+Once you're confident you've configured everything to your liking, you're ready to run Moe.
 
     .. code-block:: bash
 

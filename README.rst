@@ -1,21 +1,18 @@
+###############
 Welcome to Moe!
-===============
+###############
+Moe is our resident Music-Organizer-Extraordinaire who's sole purpose is to give you full control over your music library. In other words, it's a commandline-interface for managing your music.
 
-Moe is our resident Music-Organizer-Extraordinaire who's sole purpose is to give you full control over your music library. In other words, it's a commandline-interface for managing your music akin to `beets <https://beets.readthedocs.io/en/stable/index.html>`_.
-
+*******************
 Development Warning
--------------------
-Moe is in *very* early stage development, and is still training for his goal to become your all-powerful music library assistant. You are more than welcome to poke around the codebase or `strike up a conversation <https://github.com/jtpavlock/moe/discussions>`_ about design ideas, or anything else really. If you do find any bugs though, I'd definitely appreciate you opening up a `ticket <https://github.com/jtpavlock/moe/issues/new?assignees=&labels=&template=bug-report.md>`_.
+*******************
+Moe is currently in early development, and is still training for his goal to become your all-powerful music library assistant. You are more than welcome to start using Moe, but don't be surprised if you find any bugs or a lack of features. If you do find any bugs, or would like to request a feature, I'd appreciate you `opening an issue <https://github.com/jtpavlock/Moe/issues/new/choose>`_.
 
 So what can Moe do right now?
------------------------------
-* Add music to your library.
+=============================
+* Add music to your library, fixing tags with metadata from Musicbrainz.
+* Organize, remove, list, and edit your music in the library.
+* Supports including extra files with an album e.g. log or playlist files.
+* Supports tags that can contain multiple values.
 
-  * Also copies the music to a set library path and organizes it by artist/album.
-* Remove music from your library.
-* List any music in your library.
-* Print out (basic) tags of your music.
-
-  * Multi-value tag support!
-
-Like I said, *very* early in development. If you're still here and want to test out Moe in his current state, check out the `documentattion <https://mrmoe.readthedocs.io/en/latest/index.html>`_.
+If you want to learn more, check out the `documentation <https://mrmoe.readthedocs.io/en/latest/index.html>`_.
