@@ -216,6 +216,7 @@ def _apply_changes(
             new_track.album_obj = None  # type: ignore # (causes mypy error)
         elif new_track:
             new_track.path = old_track.path
+            new_track.file_ext = old_track.file_ext
 
     for extra in old_album.extras:
         extra.album = new_album

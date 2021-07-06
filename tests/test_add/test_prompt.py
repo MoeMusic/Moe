@@ -45,8 +45,10 @@ class TestRunPrompt:
         assert add_album.path == mock_album.path
 
         assert add_album.tracks
-        for track in add_album.tracks:
-            assert track.path == mock_album.get_track(track.track_num).path
+        for added_track in add_album.tracks:
+            old_track = mock_album.get_track(added_track.track_num)
+            assert added_track.file_ext == old_track.file_ext
+            assert added_track.path == old_track.path
 
         assert add_album.extras
 
