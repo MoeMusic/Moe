@@ -1,69 +1,82 @@
-moe.plugins package
-===================
+Plugins
+=======
 
-Submodules
-----------
+Add
+---
 
-moe.plugins.add module
-----------------------
+``add`` submodule.
 
 .. automodule:: moe.plugins.add
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.edit module
------------------------
+Edit
+----
+
+``edit`` submodule.
 
 .. automodule:: moe.plugins.edit
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.info module
------------------------
+Info
+----
+
+``info`` submodule.
 
 .. automodule:: moe.plugins.info
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.list module
------------------------
+List
+----
+
+``list`` submodule.
 
 .. automodule:: moe.plugins.list
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.move module
------------------------
+Move
+----
+
+``move`` submodule.
 
 .. automodule:: moe.plugins.move
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.remove module
--------------------------
+Musicbrainz
+-----------
+
+``musicbrainz`` submodule.
+
+.. automodule:: moe.plugins.musicbrainz
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Remove
+------
+
+``remove`` submodule.
 
 .. automodule:: moe.plugins.remove
    :members:
    :undoc-members:
    :show-inheritance:
 
-moe.plugins.rm module
----------------------
+Write
+-----
+
+``write`` submodule.
 
 .. automodule:: moe.plugins.write
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: moe.plugins
    :members:
    :undoc-members:
    :show-inheritance:

@@ -19,6 +19,8 @@ from moe.core.library.album import Album
 from moe.core.library.track import Track
 from moe.plugins.add import prompt as add_prompt
 
+__all__: List[str] = []
+
 musicbrainzngs.set_useragent(
     "moe",
     pkg_resources.get_distribution("mrmoe").version,

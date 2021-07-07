@@ -20,7 +20,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
-            list.parse_args(config=Mock(), session=mock_session, args=args)
+            list._parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="track")
 
@@ -35,7 +35,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[mock_album]) as mock_query:
             mock_session = Mock()
 
-            list.parse_args(config=Mock(), session=mock_session, args=args)
+            list._parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="album")
 
@@ -51,7 +51,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[extra]) as mock_query:
             mock_session = Mock()
 
-            list.parse_args(config=Mock(), session=mock_session, args=args)
+            list._parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="extra")
 
@@ -64,7 +64,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            list.parse_args(config=Mock(), session=Mock(), args=args)
+            list._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 

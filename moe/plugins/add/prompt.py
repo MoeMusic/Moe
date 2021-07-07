@@ -8,7 +8,6 @@ import logging
 import operator
 from typing import List, Optional, cast
 
-import pluggy
 import questionary
 from sqlalchemy.orm.session import Session
 
@@ -18,53 +17,9 @@ from moe.core.library.album import Album
 from moe.core.library.track import Track
 from moe.plugins.add import match as add_match
 
+__all__ = ["run_prompt"]
+
 log = logging.getLogger(__name__)
-
-
-class Hooks:
-    """Add prompt hooks."""
-
-    @staticmethod
-    @moe.hookspec
-    def add_prompt_choice(prompt_choices: List[questionary.Choice]):
-        """Add a user input choice to the prompt.
-
-        Args:
-            prompt_choices: List of prompt choices. To add a prompt choice, simply
-                append it to this list. The prompt_choice is a ``questionary.Choice``
-                object.
-
-        Important:
-            Ensure to set the choice ``value`` to the function you want to be called
-            if the choice is selected by the user. The function should return the album
-            to be added to the library (or ``None`` if no album should be added) and
-            will be supplied the following keyword arguments:
-
-            ``config (Config)``: Moe config.
-            ``session (Session)``: Current db session.
-            ``old_album (Album)``: Old album with no changes applied.
-            ``new_album (Album)``: New album consisting of all the new changes.
-
-        Example:
-            Inside your hook implementation::
-
-                prompt_choices.append(
-                    questionary.Choice(
-                        title="Abort", value=_abort_changes, shortcut_key="b"
-                    )
-                )
-
-        For a full reference on ``questionary.Choice`` see:
-        https://questionary.readthedocs.io/en/stable/pages/api_reference.html#questionary.Choice
-        """
-
-
-@moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
-    """Registers `add` hookspecs to Moe."""
-    from moe.plugins.add.prompt import Hooks  # noqa: WPS433, WPS442
-
-    plugin_manager.add_hookspecs(Hooks)
 
 
 @moe.hookimpl

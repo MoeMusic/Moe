@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 
 import mediafile
-import pluggy
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -16,46 +15,13 @@ from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track, TrackError
 from moe.plugins.add import prompt
 
+__all__ = ["AddError"]
+
 log = logging.getLogger(__name__)
 
 
 class AddError(Exception):
     """Error adding an item to the library."""
-
-
-class Hooks:
-    """Add hooks."""
-
-    @staticmethod
-    @moe.hookspec
-    def import_album(config: Config, session: Session, album: Album) -> Album:
-        """Return an album with changes to be applied by the user via the prompt.
-
-        This hook is intended to be used to import metadata from an external source.
-        The user will then select one of the imported albums to apply the changes prior
-        to the album being added to the library.
-
-        Args:
-            config: Moe config.
-            session: Currrent db session.
-            album: Original album to alter.
-
-        Returns:
-            The new, altered album to compare against the original in the prompt.
-        """  # noqa: DAR202
-
-    @staticmethod
-    @moe.hookspec
-    def pre_add(config: Config, session: Session, album: Album):
-        """Provides an album prior to it being added to the library."""
-
-
-@moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
-    """Registers `add` hookspecs to Moe."""
-    from moe.plugins.add.add import Hooks  # noqa: WPS433, WPS442
-
-    plugin_manager.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -70,10 +36,10 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         nargs="+",
         help="dir to add an album or file to add a track",
     )
-    add_parser.set_defaults(func=parse_args)
+    add_parser.set_defaults(func=_parse_args)
 
 
-def parse_args(config: Config, session: Session, args: argparse.Namespace):
+def _parse_args(config: Config, session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
@@ -91,7 +57,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            add_item(config, session, path)
+            _add_item(config, session, path)
         except AddError as exc:
             log.error(exc)
             error_count += 1
@@ -100,7 +66,7 @@ def parse_args(config: Config, session: Session, args: argparse.Namespace):
         raise SystemExit(1)
 
 
-def add_item(config: Config, session: Session, item_path: Path):
+def _add_item(config: Config, session: Session, item_path: Path):
     """Adds a LibItem to the library from a given path.
 
     Args:

@@ -11,6 +11,8 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+__all__ = ["DbDupAlbumError", "DbDupLibItemError", "session_scope"]
+
 Session = sessionmaker()
 Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
 

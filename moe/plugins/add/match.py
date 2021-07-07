@@ -5,6 +5,8 @@ from typing import Dict, List, Optional, Tuple
 from moe.core.library.album import Album
 from moe.core.library.track import Track
 
+__all__: List[str] = []
+
 TrackMatch = Tuple[Optional[Track], Optional[Track]]
 TrackCoord = Tuple[
     Tuple[int, int], Tuple[int, int]

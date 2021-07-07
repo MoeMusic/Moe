@@ -6,7 +6,7 @@ import random
 from unittest.mock import MagicMock, Mock, patch
 
 from moe.core.library.album import Album
-from moe.plugins.add import prompt
+from moe.plugins import add
 
 
 class TestRunPrompt:
@@ -17,7 +17,7 @@ class TestRunPrompt:
         new_album = copy.deepcopy(mock_album)
         assert mock_album is not new_album
 
-        prompt.run_prompt(Mock(), Mock(), mock_album, new_album)
+        add.prompt.run_prompt(Mock(), Mock(), mock_album, new_album)
 
         captured_txt = capsys.readouterr()
         assert not captured_txt.out
@@ -37,9 +37,11 @@ class TestRunPrompt:
             new_extra.album = None
 
         mock_q = Mock()
-        mock_q.ask.return_value = prompt._apply_changes
+        mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
+            add_album = add.prompt.run_prompt(
+                config, MagicMock(), mock_album, new_album
+            )
 
         assert add_album.title == new_album.title
         assert add_album.path == mock_album.path
@@ -60,9 +62,11 @@ class TestRunPrompt:
         assert mock_album.title != new_album.title
 
         mock_q = Mock()
-        mock_q.ask.return_value = prompt._abort_changes
+        mock_q.ask.return_value = add.prompt._abort_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
+            add_album = add.prompt.run_prompt(
+                config, MagicMock(), mock_album, new_album
+            )
 
         assert not add_album
 
@@ -79,9 +83,11 @@ class TestRunPrompt:
         tmp_session.commit()
 
         mock_q = Mock()
-        mock_q.ask.return_value = prompt._apply_changes
+        mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = prompt.run_prompt(config, tmp_session, mock_album, new_album)
+            add_album = add.prompt.run_prompt(
+                config, tmp_session, mock_album, new_album
+            )
 
         add_album.merge(add_album.get_existing(tmp_session))
         tmp_session.merge(add_album)
@@ -98,9 +104,11 @@ class TestRunPrompt:
         new_album = copy.deepcopy(mock_album)
 
         mock_q = Mock()
-        mock_q.ask.return_value = prompt._apply_changes
+        mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = prompt.run_prompt(config, MagicMock(), mock_album, new_album)
+            add_album = add.prompt.run_prompt(
+                config, MagicMock(), mock_album, new_album
+            )
 
         add_album.merge(add_album.get_existing(tmp_session))
         tmp_session.merge(add_album)
@@ -134,7 +142,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
+        print(add.prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
     def test_unmatched_tracks(self, mock_album):
         """Print prompt for albums with non-matching tracks."""
@@ -146,7 +154,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
+        print(add.prompt._fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
     def test_multi_disc_album(self, mock_album):
         """Prompt supports multi_disc albums."""
@@ -155,4 +163,4 @@ class TestFmtAlbumChanges:
         mock_album.tracks[1].track_num = 1
         new_album = copy.deepcopy(mock_album)
 
-        print(prompt._fmt_album_changes(mock_album, new_album))  # noqa: WPS421
+        print(add.prompt._fmt_album_changes(mock_album, new_album))  # noqa: WPS421

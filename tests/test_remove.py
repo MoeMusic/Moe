@@ -21,7 +21,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=False, extra=False)
         tmp_session.add(mock_track)
 
-        remove.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -30,7 +30,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.add(mock_album)
 
-        remove.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Album).scalar()
 
@@ -44,7 +44,7 @@ class TestParseArgs:
         tmp_session.merge(real_album)
         assert real_album.extras
 
-        remove.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -53,7 +53,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.add(mock_album)
 
-        remove.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -63,7 +63,7 @@ class TestParseArgs:
         tmp_session.add(mock_album)
 
         assert mock_album.extras
-        remove.parse_args(config=Mock(), session=tmp_session, args=args)
+        remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -72,7 +72,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            remove.parse_args(config=Mock(), session=Mock(), args=args)
+            remove._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 

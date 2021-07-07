@@ -26,6 +26,8 @@ else:
         hybrid_property as typed_hybrid_property,
     )
 
+__all__ = ["Album"]
+
 
 class Album(LibItem, Base):
     """An album is a collection of tracks.

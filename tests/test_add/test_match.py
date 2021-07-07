@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from moe.plugins.add import match
+from moe.plugins import add
 
 
 class TestGetMatchingTracks:
@@ -13,7 +13,7 @@ class TestGetMatchingTracks:
         album_a = mock_album
         album_b = album_a
 
-        track_matches = match.get_matching_tracks(album_a, album_b)
+        track_matches = add.match.get_matching_tracks(album_a, album_b)
 
         for track_match in track_matches:
             assert None not in track_match
@@ -33,7 +33,9 @@ class TestGetMatchingTracks:
         album_a = mock_album
         album_b = album_a
 
-        track_matches = match.get_matching_tracks(album_a, album_b, match_threshold=1.1)
+        track_matches = add.match.get_matching_tracks(
+            album_a, album_b, match_threshold=1.1
+        )
 
         for track_match in track_matches:
             assert None in track_match
@@ -50,7 +52,7 @@ class TestGetMatchingTracks:
         track2 = mock_track_factory()
         assert track1.track_num != track2.track_num
 
-        track_matches = match.get_matching_tracks(
+        track_matches = add.match.get_matching_tracks(
             track1.album_obj, track2.album_obj, match_threshold=0
         )
 
@@ -65,7 +67,7 @@ class TestGetMatchingTracks:
         album_b = mock_album_factory()
         mock_track.album_obj = album_a
 
-        track_matches = match.get_matching_tracks(album_a, album_b)
+        track_matches = add.match.get_matching_tracks(album_a, album_b)
 
         assert (mock_track, None) in track_matches
 
@@ -75,7 +77,7 @@ class TestGetMatchingTracks:
         album_b = mock_album_factory()
         mock_track.album_obj = album_b
 
-        track_matches = match.get_matching_tracks(album_a, album_b)
+        track_matches = add.match.get_matching_tracks(album_a, album_b)
 
         assert (None, mock_track) in track_matches
 
@@ -100,7 +102,7 @@ class TestGetMatchingTracks:
             return 0
 
         with patch("moe.plugins.add.match.get_match_value", wraps=mock_get_value):
-            track_matches = match.get_matching_tracks(
+            track_matches = add.match.get_matching_tracks(
                 track1.album_obj, track3.album_obj
             )
 
@@ -122,7 +124,7 @@ class TestGetMatchValue:
         track2 = mock_track_factory()
         track1.track_num = track2.track_num
 
-        assert match.get_match_value(track1, track2) == 1
+        assert add.match.get_match_value(track1, track2) == 1
 
     def test_diff_track_num(self, mock_track_factory):
         """Tracks with a different track number should not be match."""
@@ -130,7 +132,7 @@ class TestGetMatchValue:
         track2 = mock_track_factory()
         assert track1.track_num != track2.track_num
 
-        assert match.get_match_value(track1, track2) == 0
+        assert add.match.get_match_value(track1, track2) == 0
 
     def test_diff_disc(self, mock_track_factory):
         """Tracks with the same track number on different discs should not match."""
@@ -141,4 +143,4 @@ class TestGetMatchValue:
         assert track1.track_num == track2.track_num
         assert track1.disc != track2.disc
 
-        assert match.get_match_value(track1, track2) == 0
+        assert add.match.get_match_value(track1, track2) == 0

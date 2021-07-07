@@ -4,6 +4,8 @@ from pathlib import Path
 
 import sqlalchemy
 
+__all__ = ["LibItem"]
+
 
 class LibItem:
     """Abstract base class for library items i.e. Albums, Extras, and Tracks."""
