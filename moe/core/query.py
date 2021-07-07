@@ -28,6 +28,8 @@ from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
+__all__: List[str] = ["QueryError", "query", "query_parser"]
+
 log = logging.getLogger(__name__)
 
 
@@ -35,6 +37,7 @@ class QueryError(Exception):
     """Error querying an item from the library."""
 
 
+# Argument parser for a query. This should be passed as a parent parser for a command.
 query_parser = argparse.ArgumentParser(
     add_help=False, formatter_class=argparse.RawTextHelpFormatter
 )

@@ -13,6 +13,8 @@ from moe.core import query
 from moe.core.config import Config
 from moe.core.library.track import LibItem
 
+__all__ = ["EditError"]
+
 log = logging.getLogger(__name__)
 
 
@@ -40,10 +42,10 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     add_parser.add_argument(
         "fv_terms", metavar="FIELD=VALUE", nargs="+", help="set FIELD to VALUE"
     )
-    add_parser.set_defaults(func=parse_args)
+    add_parser.set_defaults(func=_parse_args)
 
 
-def parse_args(
+def _parse_args(
     config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
 ):
     """Parses the given commandline arguments.

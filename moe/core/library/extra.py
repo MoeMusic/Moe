@@ -21,6 +21,8 @@ else:
         hybrid_property as typed_hybrid_property,
     )
 
+__all__ = ["Extra"]
+
 
 class Extra(LibItem, Base):  # noqa: WPS214
     """An Album can have any number of extra files such as logs, cues, etc.

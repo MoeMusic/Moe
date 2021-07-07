@@ -1,6 +1,7 @@
 """Writes tags to track files."""
 
 import logging
+from typing import List
 
 import mediafile
 from sqlalchemy.orm.session import Session
@@ -8,6 +9,8 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe.core.config import Config
 from moe.core.library.track import Track
+
+__all__: List[str] = []
 
 log = logging.getLogger(__name__)
 

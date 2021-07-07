@@ -14,6 +14,8 @@ import moe
 from moe.core.config import Config
 from moe.core.library.session import session_scope
 
+__all__ = ["Hooks"]
+
 log = logging.getLogger(__name__)
 
 

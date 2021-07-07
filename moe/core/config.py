@@ -28,6 +28,8 @@ import alembic.config
 import moe
 from moe.core.library.session import Session
 
+__all__ = ["Config", "Hooks"]
+
 log = logging.getLogger(__name__)
 
 DEFAULT_PLUGINS = (

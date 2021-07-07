@@ -3,6 +3,7 @@
 import logging
 import shutil
 from pathlib import Path
+from typing import List
 
 import dynaconf
 from sqlalchemy.orm.session import Session
@@ -12,6 +13,8 @@ from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.track import Track
+
+__all__: List[str] = []
 
 log = logging.getLogger(__name__)
 
