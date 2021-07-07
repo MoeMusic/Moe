@@ -3,12 +3,12 @@
 from typing import List
 
 import pluggy
-import questionary
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.plugins import add
 
 __all__ = ["Hooks"]
 
@@ -18,36 +18,21 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_prompt_choice(prompt_choices: List[questionary.Choice]):
+    def add_prompt_choice(prompt_choices: List["add.PromptChoice"]):
         """Add a user input choice to the prompt.
 
         Args:
             prompt_choices: List of prompt choices. To add a prompt choice, simply
-                append it to this list. The prompt_choice is a ``questionary.Choice``
-                object.
-
-        Important:
-            Ensure to set the choice ``value`` to the function you want to be called
-            if the choice is selected by the user. The function should return the album
-            to be added to the library (or ``None`` if no album should be added) and
-            will be supplied the following keyword arguments:
-
-            ``config (Config)``: Moe config.
-            ``session (Session)``: Current db session.
-            ``old_album (Album)``: Old album with no changes applied.
-            ``new_album (Album)``: New album consisting of all the new changes.
+                append it to this list.
 
         Example:
             Inside your hook implementation::
 
                 prompt_choices.append(
-                    questionary.Choice(
-                        title="Abort", value=_abort_changes, shortcut_key="b"
+                    PromptChoice(
+                        title="Abort", shortcut_key="x", func=_abort_changes
                     )
                 )
-
-        For a full reference on ``questionary.Choice`` see:
-        https://questionary.readthedocs.io/en/stable/pages/api_reference.html#questionary.Choice
         """
 
     @staticmethod
@@ -77,6 +62,6 @@ class Hooks:
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
-    from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+    from moe.plugins.add import Hooks  # noqa: WPS433, WPS442, WPS458
 
     plugin_manager.add_hookspecs(Hooks)

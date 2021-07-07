@@ -17,7 +17,7 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.track import Track
-from moe.plugins.add import prompt as add_prompt
+from moe.plugins import add
 
 __all__: List[str] = []
 
@@ -44,13 +44,13 @@ RELEASE_INCLUDES = [  # noqa: WPS407
 
 
 @moe.hookimpl
-def add_prompt_choice(prompt_choices: List[questionary.Choice]):
+def add_prompt_choice(prompt_choices: List[add.PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
-        questionary.Choice(
+        add.PromptChoice(
             title="Enter Musicbrainz ID",
-            value=_enter_id,
             shortcut_key="m",
+            func=_enter_id,
         )
     )
 
@@ -174,4 +174,4 @@ def _enter_id(
     release = _get_release_by_id(mb_id)
     album = _create_album(release)
 
-    return add_prompt.run_prompt(config, session, old_album, album)
+    return add.run_prompt(config, session, old_album, album)

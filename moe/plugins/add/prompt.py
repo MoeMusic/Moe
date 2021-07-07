@@ -6,7 +6,7 @@ added to the library.
 
 import logging
 import operator
-from typing import List, Optional, cast
+from typing import Callable, List, NamedTuple, Optional, cast
 
 import questionary
 from sqlalchemy.orm.session import Session
@@ -15,23 +15,44 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.track import Track
-from moe.plugins.add import match as add_match
+from moe.plugins import add
 
-__all__ = ["run_prompt"]
+__all__ = ["PromptChoice", "run_prompt"]
 
 log = logging.getLogger(__name__)
 
 
+class PromptChoice(NamedTuple):
+    """A single user-selectable choice for the album changes prompt.
+
+    Attributes:
+        title: Title of the prompt choice that is displayed to the user.
+        shortcut_key: Single character the user will use to select the choice.
+            You must be careful to ensure the key is not currently in use by another
+            PromptChoice.
+        func: Function to call upon this prompt choice being selected. The function
+            should return the album to be added to the library (or ``None`` if no album
+            should be added) and will be supplied the following keyword arguments:
+
+            ``config (Config)``: Moe config.
+            ``session (Session)``: Current db session.
+            ``old_album (Album)``: Old album with no changes applied.
+            ``new_album (Album)``: New album consisting of all the new changes.
+    """
+
+    title: str
+    shortcut_key: str
+    func: Callable
+
+
 @moe.hookimpl
-def add_prompt_choice(prompt_choices: List[questionary.Choice]):
+def add_prompt_choice(prompt_choices: List[PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
-        questionary.Choice(
-            title="Apply changes", value=_apply_changes, shortcut_key="a"
-        )
+        PromptChoice(title="Apply changes", shortcut_key="a", func=_apply_changes)
     )
     prompt_choices.append(
-        questionary.Choice(title="Abort", value=_abort_changes, shortcut_key="x")
+        PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
     )
 
 
@@ -58,12 +79,22 @@ def run_prompt(
 
     print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
-    prompt_choices: List[questionary.Choice] = []
+    prompt_choices: List[PromptChoice] = []
     config.plugin_manager.hook.add_prompt_choice(prompt_choices=prompt_choices)
     prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
+    questionary_choices: List[questionary.Choice] = []
+    for prompt_choice in prompt_choices:
+        questionary_choices.append(
+            questionary.Choice(
+                title=prompt_choice.title,
+                shortcut_key=prompt_choice.shortcut_key,
+                value=prompt_choice.func,
+            )
+        )
+
     prompt_choice_func = questionary.rawselect(
-        "What do you want to do?", choices=prompt_choices
+        "What do you want to do?", choices=questionary_choices
     ).ask()
     if prompt_choice_func:
         return prompt_choice_func(
@@ -114,7 +145,7 @@ def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
     """Formats the changes of the tracklist between two albums."""
     tracklist_str = ""
 
-    matches = add_match.get_matching_tracks(old_album, new_album)
+    matches = add.match.get_matching_tracks(old_album, new_album)
     matches.sort(
         key=lambda match: match[1].track_num + match[1].disc * len(matches)
         if match[1] is not None
@@ -166,7 +197,7 @@ def _apply_changes(
 ) -> Optional[Album]:
     """Applies the album changes."""
     new_album.path = old_album.path
-    for old_track, new_track in add_match.get_matching_tracks(old_album, new_album):
+    for old_track, new_track in add.match.get_matching_tracks(old_album, new_album):
         if not old_track:
             new_track.album_obj = None  # type: ignore # (causes mypy error)
         elif new_track:

@@ -10,6 +10,7 @@ Add
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 Edit
 ----
