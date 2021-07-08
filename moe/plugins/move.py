@@ -1,11 +1,13 @@
 """Any operations regarding altering the location of files in the library."""
 
+import functools
 import logging
 import shutil
 from pathlib import Path
-from typing import List
+from typing import Any, List, Optional
 
 import dynaconf
+import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -27,9 +29,20 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     )
 
 
-@moe.hookimpl(trylast=True)
-def post_args(config: Config, session: Session):
-    """Moves altered or new items in the session after the CLI args have executed."""
+def _move_session_items(
+    session: Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
+    instances: Optional[Any],
+    config: Config,
+):
+    """Moves any altered or new LibItem in a session.
+
+    Args:
+        session: Current db session.
+        flush_context: sqlalchemy obj which handles the details of the flush.
+        instances: List of objects passed to the ``flush()`` method.
+        config: Moe config.
+    """
     library_path = Path(config.settings.move.library_path).expanduser()
 
     for item in session.new.union(session.dirty):
@@ -43,6 +56,21 @@ def post_args(config: Config, session: Session):
             return
 
         _move_album(album, library_path)
+
+
+@moe.hookimpl
+def register_db_listener(config: Config, session: Session):
+    """Moves items prior to them being flushed to the database.
+
+    Also, will undo any filyesystem changes in case of a session rollback.
+
+    Args:
+        config: Moe config.
+        session: Current db session.
+    """
+    sqlalchemy.event.listen(
+        session, "before_flush", functools.partial(_move_session_items, config=config)
+    )
 
 
 @moe.hookimpl

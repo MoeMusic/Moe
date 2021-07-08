@@ -11,7 +11,7 @@ import sqlalchemy
 import moe
 from moe.core import query
 from moe.core.config import Config
-from moe.core.library.track import LibItem
+from moe.core.library.lib_item import LibItem
 
 __all__ = ["EditError"]
 
