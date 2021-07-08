@@ -9,6 +9,7 @@ from typing import List
 
 import pkg_resources
 import pluggy
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
@@ -54,21 +55,41 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_args(config: Config, session):
-        """Process any cleanup tasks after the CLI arguments have been executed.
+    def register_db_listener(config: Config, session: Session):
+        """Register a listener for database events.
+
+        Because Moe uses ``sqlalchemy``, any database events will be exposed through
+        sqlalchemy's ORM event API. For a full documentation on that, see
+        https://docs.sqlalchemy.org/en/14/orm/events.html
 
         Args:
             config: Moe config.
             session: Currrent db session.
 
-        Note:
-            A common use-case may be to process any items that are about to be committed
-            to the database. ``session.new.union(session.dirty)`` will return a set of
-            any changed or new objects (not just LibItems) to be added to the db.
+        Example:
+            To operate on items before they are committed to the database, you can
+            register a function that listens for the ``after_flush`` event. Then, within
+            the function, use ``session.new.union(session.dirty)`` to get a list of all
+            items to be persisted to the database::
 
-        Important:
-            Normal usage of this hook will not involve altering the state/fields of the
-            items that are about to be added to the database.
+                import sqlalchemy
+
+                def process_items(session, flush_context):
+                    for item in session.dirty.union(session.new):
+                        print(f"{item} was added to the database.")
+
+                @moe.hookimpl
+                def register_db_listener(config, session):
+                    sqlalchemy.event.listen(session, "after_flush", process_items)
+
+            If you wish to pass additional arguments to ``process_items``, you can take
+            advantage of ``functools.partial``::
+
+                sqlalchemy.event.listen(
+                    session,
+                    "after_flush",
+                    functools.partial(process_items, config=config)
+                )
         """
 
 
@@ -116,8 +137,8 @@ def _parse_args(args: List[str], config: Config):
     # call the sub-command's handler within a single session
     config.init_db()  # noqa: WPS437
     with session_scope() as session:
+        config.plugin_manager.hook.register_db_listener(config=config, session=session)
         parsed_args.func(config, session, args=parsed_args)
-        config.plugin_manager.hook.post_args(config=config, session=session)
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:

@@ -40,7 +40,7 @@ class TestWriteTags:
 
 
 @pytest.mark.integration
-class TestPostArgs:
+class TestDBListener:
     """Test integration with the ``post_args`` hook entry to the plugin."""
 
     def test_edit_track(self, real_track, tmp_config):
@@ -53,11 +53,38 @@ class TestPostArgs:
         """
         config = tmp_config(tmp_settings)
         config.init_db()
+        og_path = real_track.path
+
         with session_scope() as session:
             session.add(real_track)
 
         moe.cli.main(cli_args, config)
 
-        with session_scope() as post_session:
-            track = post_session.query(Track).one()
-            assert track.title == new_title
+        new_track = Track.from_tags(og_path)
+        assert new_track.title == new_title
+
+    def test_write_through_flush(self, real_album, tmp_config):
+        """If a flush occurs, ensure we still write all items that changed.
+
+        A database "flush" will occur if querying, or if editing an association
+        attribute. This test ensures we aren't just naively checking `session.dirty` to
+        get a list of all edited items.
+        """
+        new_genre = "new genre"
+        cli_args = ["edit", "*", f"genre={new_genre}"]
+
+        tmp_settings = """
+        default_plugins = ["edit", "write"]
+        """
+        config = tmp_config(tmp_settings)
+        config.init_db()
+        og_paths = [track.path for track in real_album.tracks]
+
+        with session_scope() as session:
+            session.merge(real_album)
+
+        moe.cli.main(cli_args, config)
+
+        new_tracks = [Track.from_tags(path) for path in og_paths]
+        for track in new_tracks:
+            assert track.genre == [new_genre]

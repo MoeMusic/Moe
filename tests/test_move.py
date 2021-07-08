@@ -168,8 +168,11 @@ class TestPreAdd:
 
 
 @pytest.mark.integration
-class TestPostArgs:
-    """Test integration with the ``post_args`` hook entry to the plugin."""
+class TestDBListener:
+    """Test registered database listeners.
+
+    Items are moved before they are flushed to the database.
+    """
 
     def test_edit_album(self, real_album, tmp_config, tmp_path):
         """Albums are moved to `library_path` after they are edited."""
