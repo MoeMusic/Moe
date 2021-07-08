@@ -191,7 +191,7 @@ class TestPostArgs:
             assert tmp_path not in extra.path.parents
 
         with session_scope() as pre_edit_session:
-            pre_edit_session.add(real_album)
+            pre_edit_session.merge(real_album)
 
         moe.cli.main(cli_args, config)
 

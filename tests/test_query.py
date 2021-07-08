@@ -196,7 +196,7 @@ class TestQuery:
 
     def test_extra_query(self, mock_album, tmp_session):
         """An extra query should return Extra objects."""
-        tmp_session.add(mock_album)
+        tmp_session.merge(mock_album)
 
         extras = query.query(
             f"album:'{mock_album.title}'", tmp_session, query_type="extra"
@@ -224,8 +224,8 @@ class TestQuery:
         track2 = mock_track_factory(year=2)
         track1.title = "_"
         track2.title = "b"
-        tmp_session.add(track1)
-        tmp_session.add(track2)
+        tmp_session.merge(track1)
+        tmp_session.merge(track2)
 
         assert len(query.query("title:/_", tmp_session)) == 1
 
@@ -246,8 +246,8 @@ class TestQuery:
         track1 = mock_track_factory(year=2)
         track2 = mock_track_factory(year=1)
 
-        tmp_session.add(track1)
-        tmp_session.add(track2)
+        tmp_session.merge(track1)
+        tmp_session.merge(track2)
 
         assert len(query.query("*", tmp_session)) == 2
 
