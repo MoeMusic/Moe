@@ -1,3 +1,9 @@
+## v0.3.5 (2021-07-08)
+
+### Fix
+
+- write and move properly oeprate on all altered items
+
 ## v0.3.4 (2021-07-08)
 
 ### Fix
