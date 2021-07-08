@@ -74,7 +74,7 @@ class TestFromTags:
         assert track.track_num == 1
 
 
-class TestDuplicate:
+class TestDupTrack:
     """Test behavior when there is an attempt to add a duplicate Track to the db.
 
     A duplicate Track is defined as a combination of it's album (obj), disc, and
@@ -118,3 +118,22 @@ class TestDuplicate:
         tmp_session.add(track1)
         track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
         tmp_session.merge(track2)
+
+
+class TestDupListField:
+    """Ensure duplicate list fields can be assigned/created without error."""
+
+    def test_genre(self, mock_track_factory, tmp_session):
+        """Duplicate genres don't error."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        track1.genre = ["pop"]
+        track2.genre = ["pop"]
+
+        tmp_session.add(track1)
+        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        tmp_session.merge(track2)
+
+        tracks = tmp_session.query(Track).all()
+        for track in tracks:
+            track.genre = ["new genre"]
