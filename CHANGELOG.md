@@ -1,3 +1,9 @@
+## v0.3.4 (2021-07-08)
+
+### Fix
+
+- **library**: error when adding duplicate genres
+
 ## v0.3.3 (2021-07-08)
 
 ### Refactor
