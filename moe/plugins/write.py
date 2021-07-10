@@ -45,11 +45,13 @@ def _write_tags(track: Track):
     audio_file.album = track.album
     audio_file.albumartist = track.albumartist
     audio_file.artist = track.artist
+    audio_file.date = track.date
+    audio_file.disc = track.disc
+    audio_file.disctotal = track.disc_total
     audio_file.genres = track.genre
-    audio_file.title = track.title
-    audio_file.track = track.track_num
-    audio_file.year = track.year
     audio_file.mb_trackid = track.mb_track_id
     audio_file.mb_albumid = track.mb_album_id
+    audio_file.title = track.title
+    audio_file.track = track.track_num
 
     audio_file.save()
