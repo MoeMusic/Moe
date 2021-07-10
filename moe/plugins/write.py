@@ -49,7 +49,7 @@ def _write_tags(track: Track):
     audio_file.disc = track.disc
     audio_file.disctotal = track.disc_total
     audio_file.genres = track.genre
-    audio_file.mb_trackid = track.mb_track_id
+    audio_file.mb_releasetrackid = track.mb_track_id
     audio_file.mb_albumid = track.mb_album_id
     audio_file.title = track.title
     audio_file.track = track.track_num

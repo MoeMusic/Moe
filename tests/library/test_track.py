@@ -70,6 +70,8 @@ class TestFromTags:
         assert track.disc_total == 2
         assert track.file_ext == "mp3"
         assert set(track.genre) == {"hip hop", "rock"}
+        assert track.mb_album_id == "1234"
+        assert track.mb_track_id == "123"
         assert track.title == "Full"
         assert track.track_num == 1
 

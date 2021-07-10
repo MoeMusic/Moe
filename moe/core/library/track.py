@@ -182,7 +182,7 @@ class Track(LibItem, Base):
             disc=audio_file.disc,
             file_ext=audio_file.type,
             genre=audio_file.genres,
-            mb_track_id=audio_file.mb_trackid,
+            mb_track_id=audio_file.mb_releasetrackid,
             title=audio_file.title,
         )
 
