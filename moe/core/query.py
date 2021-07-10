@@ -230,6 +230,8 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
 
     if field == "extra_path":
         attr = Extra.path
+    elif field == "album_path":
+        attr = Album.path
     else:
         # match track fields (all album fields should also be exposed by the Track)
         try:
@@ -248,6 +250,8 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
             return Album.path == Path(value)
         elif str(attr) == "Extra.path":
             return Extra.path == Path(value)  # type: ignore
+        elif str(attr) == "Album.path":
+            return Album.path == Path(value)  # type: ignore
 
         # normal string match query - should be case insensitive
         return attr.ilike(value, escape="/")  # type: ignore

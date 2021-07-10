@@ -56,7 +56,6 @@ class Track(LibItem, Base):
         album (str)
         albumartist (str)
         album_obj (Album): Corresponding Album object.
-        album_path (Path): Path of the album directory.
         artist (str)
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
@@ -89,7 +88,6 @@ class Track(LibItem, Base):
     _album_id: int = Column(Integer, ForeignKey("album._id"))
     album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
-    album_path: Path = association_proxy("album_obj", "path")
     albumartist: str = association_proxy("album_obj", "artist")
     date: datetime.date = association_proxy("album_obj", "date")
     disc_total: int = association_proxy("album_obj", "disc_total")
