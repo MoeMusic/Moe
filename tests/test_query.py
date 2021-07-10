@@ -105,9 +105,6 @@ class TestQuery:
         tmp_session.add(real_track)
 
         assert query.query(f"'album:{real_track.album}'", tmp_session)
-        assert query.query(
-            f"'album_path:{str(real_track.album_path.resolve())}'", tmp_session
-        )
         assert query.query(f"albumartist:{real_track.albumartist}", tmp_session)
         assert query.query(f"year:{real_track.year}", tmp_session)
 
@@ -258,3 +255,12 @@ class TestQuery:
         extra_path_str = str(real_album.extras.pop().path.resolve())
         assert query.query(f"'extra_path:{extra_path_str}'", tmp_session)
         assert query.query("'extra_path::.*'", tmp_session)
+
+    def test_album_path_query(self, real_album, tmp_session):
+        """We can query for Extra paths."""
+        tmp_session.merge(real_album)
+
+        assert query.query(
+            f"'album_path:{str(real_album.path.resolve())}'", tmp_session
+        )
+        assert query.query("'album_path::.*'", tmp_session)
