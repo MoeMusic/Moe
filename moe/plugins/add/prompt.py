@@ -205,7 +205,7 @@ def _apply_changes(
             new_track.file_ext = old_track.file_ext
 
     for extra in old_album.extras:
-        extra.album = new_album
+        extra.album_obj = new_album
 
     new_album.merge(old_album)
     return new_album

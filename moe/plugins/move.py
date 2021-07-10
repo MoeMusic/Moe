@@ -87,9 +87,7 @@ def _move_flushed_items(session: Session, flush_context: sqlalchemy.orm.UOWTrans
     for item in items_to_move:
         if isinstance(item, Album):
             _move_flushed_item(item)
-        elif isinstance(item, Extra) and item.album not in albums_to_move:
-            _move_flushed_item(item)
-        elif isinstance(item, Track) and item.album_obj not in albums_to_move:
+        elif isinstance(item, (Extra, Track)) and item.album_obj not in albums_to_move:
             _move_flushed_item(item)
 
 
@@ -148,7 +146,7 @@ def _get_album_dir(album: Album, root_dir: Path) -> Path:
 
 def _get_extra_path(extra: Extra) -> Path:
     """Returns a formatted extra path."""
-    return extra.album.path / extra.path.name
+    return extra.album_obj.path / extra.path.name
 
 
 def _get_track_path(track: Track) -> Path:

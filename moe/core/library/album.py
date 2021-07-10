@@ -65,7 +65,7 @@ class Album(LibItem, Base):
     )
     extras: "List[Extra]" = relationship(
         "Extra",
-        back_populates="album",
+        back_populates="album_obj",
         cascade="all, delete-orphan",
         collection_class=list,
     )
