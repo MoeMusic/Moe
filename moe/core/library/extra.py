@@ -27,7 +27,7 @@ class Extra(LibItem, Base):
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:
-        album (Album): Album the extra file belongs to.
+        album_obj (Album): Album the extra file belongs to.
         filename (str): Base file name of the extra file.
             Read-only. Set ``path`` instead.
         path (Path): Filesystem path of the extra file.
@@ -39,7 +39,7 @@ class Extra(LibItem, Base):
     path: Path = Column(PathType, nullable=False, unique=True)
 
     _album_id: int = Column(Integer, ForeignKey("album._id"))
-    album: Album = relationship("Album", back_populates="extras")
+    album_obj: Album = relationship("Album", back_populates="extras")
 
     def __init__(self, path: Path, album: Album):
         """Creates an extra.
@@ -49,7 +49,7 @@ class Extra(LibItem, Base):
             album: Album the extra file belongs to.
         """
         self.path = path
-        self.album = album
+        self.album_obj = album
 
     @typed_hybrid_property
     def filename(self) -> str:
@@ -60,27 +60,27 @@ class Extra(LibItem, Base):
         """Compares an Extra by it's attributes."""
         if isinstance(other, Extra):
             return (
-                self.album.artist == other.album.artist
-                and self.album.title == other.album.title
-                and self.album.year == other.album.year
-                and self.filename == other.filename
+                self.album_obj.artist == other.album_obj.artist
+                and self.album_obj.date == other.album_obj.date
+                and self.album_obj.title == other.album_obj.title
+                and self.path == other.path
             )
         return False
 
     def __lt__(self, other: "Extra") -> bool:
-        """Sort based on album then filename."""
-        if self.album == other.album:
-            return self.filename < other.filename
+        """Sort based on album then path."""
+        if self.album_obj == other.album_obj:
+            return self.path < other.path
 
-        return self.album < other.album
+        return self.album_obj < other.album_obj
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album}: {self.filename}"
+        return f"{self.album_obj}: {self.filename}"
 
     def __repr__(self):
         """Represents an Extra using its primary keys."""
         return (
             f"{self.__class__.__name__}("
-            f"{repr(self.album)}, filename={repr(self.filename)})"
+            f"{repr(self.album_obj)}, filename={repr(self.filename)})"
         )

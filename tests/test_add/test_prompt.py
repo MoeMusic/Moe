@@ -34,7 +34,7 @@ class TestRunPrompt:
         for new_track in new_album.tracks:
             new_track.path = None
         for new_extra in new_album.extras:
-            new_extra.album = None
+            new_extra.album_obj = None
 
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._apply_changes
