@@ -15,28 +15,44 @@ class TestWriteTags:
 
     def test_write_tags(self, real_track):
         """We can write track changes to the file."""
-        real_track.album = "Bigger, Better, Faster, More!"
-        real_track.albumartist = "4 Non Blondes"
-        real_track.artist = "4 Non Blondes"
-        real_track.mb_album_id = "123"
-        real_track.mb_track_id = "1234"
-        real_track.genre = {"alternative", "rock"}
-        real_track.title = "What's Up"
-        real_track.track_num = 3
-        real_track.date = datetime.date(1992, 1, 1)
+        album = "Bigger, Better, Faster, More!"
+        albumartist = "4 Non Blondes"
+        artist = "4 Non Blondes"
+        date = datetime.date(1996, 10, 13)
+        disc = 2
+        disc_total = 2
+        mb_album_id = "123"
+        mb_track_id = "1234"
+        genre = ["alternative", "rock"]
+        title = "What's Up"
+        track_num = 3
+
+        real_track.album = album
+        real_track.albumartist = albumartist
+        real_track.artist = artist
+        real_track.date = date
+        real_track.disc = disc
+        real_track.disc_total = disc_total
+        real_track.mb_album_id = mb_album_id
+        real_track.mb_track_id = mb_track_id
+        real_track.genre = genre
+        real_track.title = title
+        real_track.track_num = track_num
 
         moe_write._write_tags(real_track)
 
         new_track = Track.from_tags(path=real_track.path)
-        assert new_track.album == "Bigger, Better, Faster, More!"
-        assert new_track.albumartist == "4 Non Blondes"
-        assert new_track.artist == "4 Non Blondes"
-        assert set(new_track.genre) == {"alternative", "rock"}
-        assert new_track.mb_album_id == "123"
-        assert new_track.mb_track_id == "1234"
-        assert new_track.title == "What's Up"
-        assert new_track.track_num == 3
-        assert new_track.date == datetime.date(1992, 1, 1)
+        assert new_track.album == album
+        assert new_track.albumartist == albumartist
+        assert new_track.artist == artist
+        assert new_track.date == date
+        assert new_track.disc == disc
+        assert new_track.disc_total == disc_total
+        assert sorted(new_track.genre) == sorted(genre)
+        assert new_track.mb_album_id == mb_album_id
+        assert new_track.mb_track_id == mb_track_id
+        assert new_track.title == title
+        assert new_track.track_num == track_num
 
 
 @pytest.mark.integration
