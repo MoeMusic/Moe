@@ -70,7 +70,7 @@ class Album(LibItem, Base):
         collection_class=list,
     )
 
-    def __init__(  # noqa: WPS211
+    def __init__(
         self, artist: str, title: str, date: datetime.date, path: Path, **kwargs
     ):
         """Creates an album.
@@ -205,7 +205,7 @@ class Album(LibItem, Base):
         """Compares an Album by it's attributes."""
         if isinstance(other, Album):
             return (
-                self.artist == other.artist  # noqa: WPS222
+                self.artist == other.artist
                 and self.date == other.date
                 and self.mb_album_id == other.mb_album_id
                 and self.title == other.title

@@ -100,7 +100,7 @@ def _add_item(config: Config, session: Session, item_path: Path):
         config.plugin_manager.hook.pre_add(
             config=config, session=session, album=add_album
         )
-        session.merge(add_album)
+        add_album = session.merge(add_album)
 
 
 def _add_album(album_path: Path) -> Album:

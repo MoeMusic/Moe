@@ -48,8 +48,8 @@ class TestGetMatchingTracks:
 
     def test_high_threshold(self, mock_track_factory):
         """A zero threshold should always return a match."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = mock_track_factory(track_num=1)
+        track2 = mock_track_factory(track_num=2)
         assert track1.track_num != track2.track_num
 
         track_matches = add.match.get_matching_tracks(

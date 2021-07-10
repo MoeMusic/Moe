@@ -1,4 +1,4 @@
-"""A LibItem in the database and any related logic."""
+"""Shared functionality between library albums, extras, and tracks."""
 
 from pathlib import Path
 
@@ -9,6 +9,11 @@ __all__ = ["LibItem"]
 
 class LibItem:
     """Abstract base class for library items i.e. Albums, Extras, and Tracks."""
+
+    @property
+    def path(self):
+        """A library item's filesystem path."""
+        raise NotImplementedError
 
 
 class PathType(sqlalchemy.types.TypeDecorator):

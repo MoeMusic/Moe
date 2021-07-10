@@ -1,12 +1,11 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
-import os
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.schema import ForeignKey
 
 from moe.core.library.album import Album
 from moe.core.library.lib_item import LibItem, PathType
@@ -24,25 +23,23 @@ else:
 __all__ = ["Extra"]
 
 
-class Extra(LibItem, Base):  # noqa: WPS214
+class Extra(LibItem, Base):
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:
         album (Album): Album the extra file belongs to.
         filename (str): Base file name of the extra file.
+            Read-only. Set ``path`` instead.
         path (Path): Filesystem path of the extra file.
     """
 
     __tablename__ = "extras"
 
     _id: int = Column(Integer, primary_key=True)
-    _filename: str = Column(String, nullable=False)
-    _path: Path = Column(PathType, nullable=False, unique=True)
+    path: Path = Column(PathType, nullable=False, unique=True)
 
     _album_id: int = Column(Integer, ForeignKey("album._id"))
     album: Album = relationship("Album", back_populates="extras")
-
-    __table_args__ = (UniqueConstraint("_filename", "_album_id"),)
 
     def __init__(self, path: Path, album: Album):
         """Creates an extra.
@@ -57,26 +54,7 @@ class Extra(LibItem, Base):  # noqa: WPS214
     @typed_hybrid_property
     def filename(self) -> str:
         """Gets an Extra's filename."""
-        return cast(str, self._filename)
-
-    @filename.setter  # noqa: WPS440
-    def filename(self, new_name: str):  # noqa: WPS440
-        """Sets an Extra's filename and renames it on the filesystem."""
-        self._filename = new_name
-        new_path = self.path.parent / new_name
-        os.rename(self.path, new_path)
-        self.path = new_path
-
-    @typed_hybrid_property
-    def path(self) -> Path:
-        """Gets an Extra's path."""
-        return self._path
-
-    @path.setter  # noqa: WPS440
-    def path(self, new_path: Path):  # noqa: WPS440
-        """Sets an Extra's path."""
-        self._filename = new_path.name
-        self._path = new_path
+        return self.path.name
 
     def __eq__(self, other):
         """Compares an Extra by it's attributes."""
@@ -98,11 +76,11 @@ class Extra(LibItem, Base):  # noqa: WPS214
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album}: {self._filename}"
+        return f"{self.album}: {self.filename}"
 
     def __repr__(self):
         """Represents an Extra using its primary keys."""
         return (
             f"{self.__class__.__name__}("
-            f"{repr(self.album)}, filename={repr(self._filename)})"
+            f"{repr(self.album)}, filename={repr(self.filename)})"
         )

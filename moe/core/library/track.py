@@ -49,7 +49,7 @@ __table_args__ = ()
 T = TypeVar("T", bound="Track")  # noqa: WPS111
 
 
-class Track(LibItem, Base):  # noqa: WPS230, WPS214
+class Track(LibItem, Base):
     """A single track.
 
     Attributes:
@@ -190,7 +190,7 @@ class Track(LibItem, Base):  # noqa: WPS230, WPS214
         """Compares a Track by it's attributes."""
         if isinstance(other, Track):
             return (
-                self.album_obj.artist == other.album_obj.artist  # noqa: WPS222
+                self.album_obj.artist == other.album_obj.artist
                 and self.album_obj.date == other.album_obj.date
                 and self.album_obj.title == other.album_obj.title
                 and self.artist == other.artist
