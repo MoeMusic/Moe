@@ -17,7 +17,7 @@ import logging
 import re
 import shlex
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import sqlalchemy
 from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
@@ -228,10 +228,13 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
 
+    attr: Any
     if field == "extra_path":
         attr = Extra.path
     elif field == "album_path":
         attr = Album.path
+    elif field == "genre":
+        attr = Track.genres
     else:
         # match track fields (all album fields should also be exposed by the Track)
         try:

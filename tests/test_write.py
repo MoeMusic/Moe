@@ -23,7 +23,7 @@ class TestWriteTags:
         disc_total = 2
         mb_album_id = "123"
         mb_track_id = "1234"
-        genre = ["alternative", "rock"]
+        genres = ["alternative", "rock"]
         title = "What's Up"
         track_num = 3
 
@@ -35,7 +35,7 @@ class TestWriteTags:
         real_track.disc_total = disc_total
         real_track.mb_album_id = mb_album_id
         real_track.mb_track_id = mb_track_id
-        real_track.genre = genre
+        real_track.genres = genres
         real_track.title = title
         real_track.track_num = track_num
 
@@ -48,7 +48,7 @@ class TestWriteTags:
         assert new_track.date == date
         assert new_track.disc == disc
         assert new_track.disc_total == disc_total
-        assert sorted(new_track.genre) == sorted(genre)
+        assert set(new_track.genres) == set(genres)
         assert new_track.mb_album_id == mb_album_id
         assert new_track.mb_track_id == mb_track_id
         assert new_track.title == title
@@ -103,4 +103,4 @@ class TestDBListener:
 
         new_tracks = [Track.from_tags(path) for path in og_paths]
         for track in new_tracks:
-            assert track.genre == [new_genre]
+            assert track.genre == new_genre
