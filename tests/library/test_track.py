@@ -69,7 +69,7 @@ class TestFromTags:
         assert track.disc == 1
         assert track.disc_total == 2
         assert track.file_ext == "mp3"
-        assert set(track.genre) == {"hip hop", "rock"}
+        assert set(track.genres) == {"hip hop", "rock"}
         assert track.mb_album_id == "1234"
         assert track.mb_track_id == "123"
         assert track.title == "Full"
@@ -129,8 +129,8 @@ class TestDupListField:
         """Duplicate genres don't error."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
-        track1.genre = ["pop"]
-        track2.genre = ["pop"]
+        track1.genre = "pop"
+        track2.genre = "pop"
 
         tmp_session.add(track1)
         track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
@@ -138,4 +138,4 @@ class TestDupListField:
 
         tracks = tmp_session.query(Track).all()
         for track in tracks:
-            track.genre = ["new genre"]
+            track.genre = "new genre"

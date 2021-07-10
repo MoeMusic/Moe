@@ -61,7 +61,8 @@ class Track(LibItem, Base):
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
         file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
-        genre (List[str])
+        genre (str): String of all genres concatenated with ';'.
+        genres (List[str]): List of all genres.
         mb_album_id (str): Musicbrainz album aka release ID.
         mb_track_id (str): Musicbrainz track ID.
         path (Path): Filesystem path of the track file.
@@ -97,7 +98,7 @@ class Track(LibItem, Base):
     _genres: List[_Genre] = relationship(
         "_Genre", secondary=track_genre, collection_class=list
     )
-    genre: List[str] = association_proxy("_genres", "name")
+    genres: List[str] = association_proxy("_genres", "name")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -179,10 +180,24 @@ class Track(LibItem, Base):
             artist=audio_file.artist,
             disc=audio_file.disc,
             file_ext=audio_file.type,
-            genre=audio_file.genres,
+            genres=audio_file.genres,
             mb_track_id=audio_file.mb_releasetrackid,
             title=audio_file.title,
         )
+
+    @property
+    def genre(self) -> str:
+        """Returns a string of all genres concatenated with ';'."""
+        return ";".join(self.genres)
+
+    @genre.setter
+    def genre(self, genre_str: str):
+        """Sets a track's genre from a string.
+
+        Args:
+            genre_str: For more than one genre, they should be split with ';'.
+        """
+        self.genres = [genre.strip() for genre in genre_str.split(";")]
 
     def __eq__(self, other) -> bool:
         """Compares a Track by it's attributes."""
@@ -193,7 +208,7 @@ class Track(LibItem, Base):
                 and self.album_obj.title == other.album_obj.title
                 and self.artist == other.artist
                 and self.file_ext == other.file_ext
-                and set(self.genre) == set(other.genre)
+                and set(self.genres) == set(other.genres)
                 and self.mb_track_id == other.mb_track_id
                 and self.path == other.path
                 and self.title == other.title

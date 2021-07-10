@@ -123,10 +123,5 @@ def _edit_item(item: LibItem, term: str):
                 setattr(item, field, datetime.date.fromisoformat(value))
             except ValueError:
                 raise EditError("Date must be in format YYYY-MM-DD")
-    elif isinstance(
-        attr, sqlalchemy.ext.associationproxy._AssociationList  # noqa: WPS437
-    ):
-        list_value = [lv.strip() for lv in value.split(";")]
-        setattr(item, field, list_value)
     else:
         raise EditError(f"Editing field of type '{type(attr)}' not supported.")

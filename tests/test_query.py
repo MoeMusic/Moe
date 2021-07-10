@@ -231,12 +231,13 @@ class TestQuery:
 
         ``genre`` is a list of genres for a Track.
         """
-        mock_track.genre = ["hip hop", "rock"]
+        mock_track.genres = ["hip hop", "rock"]
         tmp_session.add(mock_track)
 
         assert query.query("'genre::.*'", tmp_session)
         assert query.query("'genre:hip hop'", tmp_session)
         assert query.query("genre:rock", tmp_session)
+        assert query.query("genre:rock 'genre:hip hop'", tmp_session)
 
     def test_wildcard_query(self, tmp_session, mock_track_factory):
         """'*' as a query should return all items."""

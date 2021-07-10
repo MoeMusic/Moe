@@ -93,8 +93,8 @@ class TestParseArgs:
 
         assert error.value.code == 1
 
-    def test_list_field(self, mock_track):
-        """We can edit list fields."""
+    def test_genre(self, mock_track):
+        """We can edit genres."""
         args = argparse.Namespace(
             fv_terms=["genre=a; b"], query="", album=False, extra=False
         )
@@ -106,7 +106,7 @@ class TestParseArgs:
 
             mock_query.assert_called_once_with("", mock_session, query_type="track")
 
-        assert mock_track.genre == ["a", "b"]
+        assert set(mock_track.genres) == {"a", "b"}
 
     def test_multiple_items(self, mock_track_factory):
         """All items returned from a query are edited."""
