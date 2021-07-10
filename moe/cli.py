@@ -135,7 +135,7 @@ def _parse_args(args: List[str], config: Config):
     _set_root_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
-    config.init_db()  # noqa: WPS437
+    config.init_db()
     with session_scope() as session:
         config.plugin_manager.hook.register_db_listener(config=config, session=session)
         parsed_args.func(config, session, args=parsed_args)
