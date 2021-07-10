@@ -1,3 +1,9 @@
+## v0.3.6 (2021-07-10)
+
+### Fix
+
+- **move**: don't move items until they've been added to the dB
+
 ## v0.3.5 (2021-07-08)
 
 ### Fix
