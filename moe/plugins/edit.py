@@ -79,7 +79,7 @@ def _parse_args(
         raise SystemExit(1)
 
 
-def _edit_item(item: LibItem, term: str):  # noqa: WPS231, WPS238
+def _edit_item(item: LibItem, term: str):
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:

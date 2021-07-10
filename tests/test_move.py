@@ -3,10 +3,12 @@
 from unittest.mock import patch
 
 import pytest
+import sqlalchemy
 
 import moe
+from moe.core.library.album import Album
 from moe.core.library.session import session_scope
-from moe.core.library.track import Album
+from moe.core.library.track import Track
 from moe.plugins import move
 
 
@@ -176,7 +178,7 @@ class TestDBListener:
 
     def test_edit_album(self, real_album, tmp_config, tmp_path):
         """Albums are moved to `library_path` after they are edited."""
-        cli_args = ["edit", "*", "album=whatever"]
+        cli_args = ["edit", "-a", "*", "title=whatever"]
         tmp_settings = f"""
         default_plugins = ["edit", "move"]
         [move]
@@ -208,3 +210,62 @@ class TestDBListener:
 
         for og_path in og_paths:
             assert not og_path.exists()
+
+    def test_edit_track(self, real_track, tmp_config):
+        """Tracks are moved after they are edited."""
+        new_title = "whatever"
+        cli_args = ["edit", "*", f"title={new_title}"]
+        tmp_settings = """
+        default_plugins = ["edit", "move"]
+        """
+        config = tmp_config(tmp_settings)
+        config.init_db()
+
+        og_path = real_track.path
+
+        with session_scope() as pre_edit_session:
+            pre_edit_session.merge(real_track)
+
+        moe.cli.main(cli_args, config)
+
+        with session_scope() as session:
+            track = session.query(Track).one()
+
+            assert new_title in track.path.name
+
+        assert not og_path.exists()
+
+    def test_db_error(self, real_album, tmp_config, tmp_path):
+        """Don't move the item if it isn't added to the database due to an error."""
+        cli_args = ["edit", "*", "track_num=1"]  # dup track_nums will cause a rollback
+        tmp_settings = f"""
+        default_plugins = ["edit", "move"]
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
+        config.init_db()
+
+        og_paths = [track.path for track in real_album.tracks]
+        og_paths += [extra.path for extra in real_album.extras]
+        og_paths.append(real_album.path)
+        for track in real_album.tracks:
+            assert tmp_path not in track.path.parents
+        for extra in real_album.extras:
+            assert tmp_path not in extra.path.parents
+
+        with session_scope() as pre_edit_session:
+            pre_edit_session.merge(real_album)
+
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            moe.cli.main(cli_args, config)
+
+        with session_scope() as session:
+            album = session.query(Album).one()
+
+            for new_track in album.tracks:
+                assert new_track.path in og_paths  # path not updated in db
+                assert new_track.path.exists()  # old path still exists
+            for new_extra in album.extras:
+                assert new_extra.path in og_paths  # path not updated in db
+                assert new_extra.path.exists()  # old path still exists

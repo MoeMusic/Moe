@@ -47,29 +47,6 @@ class TestParseArgs:
 
         assert mock_track.album == "new title"
 
-    def test_extra(self, real_album):
-        """We can edit an Extra's filename.
-
-        Editing an Extra's filename should also rename the file.
-        """
-        new_filename = "dumb_log.txt"
-        args = argparse.Namespace(
-            fv_terms=[f"filename={new_filename}"], query="", album=False, extra=True
-        )
-
-        extra = real_album.extras.pop()
-        old_path = extra.path
-        with patch("moe.core.query.query", return_value=[extra]) as mock_query:
-            mock_session = Mock()
-
-            edit._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_once_with("", mock_session, query_type="extra")
-
-        assert extra.filename == new_filename
-        assert extra.path.is_file()
-        assert not old_path.is_file()
-
     def test_int_field(self, mock_track):
         """We can edit integer fields."""
         args = argparse.Namespace(

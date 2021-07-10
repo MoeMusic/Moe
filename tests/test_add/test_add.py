@@ -171,7 +171,7 @@ class TestAddItemFromDir:
             track.title = "new_album"
 
         for extra_num, extra in enumerate(new_album.extras):
-            extra.filename = f"{extra_num} new_album"
+            extra.path = Path(f"{extra_num}.txt")
 
         assert new_album.mb_album_id != existing_album.mb_album_id
         assert new_album.tracks != existing_album.tracks

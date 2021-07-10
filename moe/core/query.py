@@ -209,9 +209,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _create_expression(  # noqa: WPS231
-    term: Dict[str, str]
-) -> sqlalchemy.sql.elements.ClauseElement:
+def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
