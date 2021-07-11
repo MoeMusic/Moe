@@ -166,7 +166,7 @@ def _get_track_path(track: Track) -> Path:
         disc_dir_name = f"Disc {track.disc:02}"
     disc_dir = track.album_obj.path / disc_dir_name
 
-    track_filename = f"{track.track_num:02} - {track.title}.{track.file_ext}"
+    track_filename = f"{track.track_num:02} - {track.title}{track.path.suffix}"
     return disc_dir / track_filename
 
 

@@ -99,7 +99,7 @@ def _edit_item(item: LibItem, term: str):
     except AttributeError:
         raise EditError(f"'{field}' is not a valid field.")
 
-    non_editable_fields = ["file_ext", "path"]
+    non_editable_fields = ["path"]
     if field in non_editable_fields:
         raise EditError(f"'{field}' is not an editable field.")
 
