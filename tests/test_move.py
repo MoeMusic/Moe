@@ -160,10 +160,14 @@ class TestPreAdd:
         with session_scope() as session:
             album = session.query(Album).one()
 
+            assert tmp_path in album.path.parents
+            assert album.path.exists()
             for new_track in album.tracks:
                 assert tmp_path in new_track.path.parents
+                assert new_track.path.exists()
             for new_extra in album.extras:
                 assert tmp_path in new_extra.path.parents
+                assert new_extra.path.exists()
 
         for og_path in og_paths:
             assert og_path.exists()
@@ -203,10 +207,13 @@ class TestDBListener:
         with session_scope() as session:
             album = session.query(Album).one()
 
+            assert album.path.exists()
             for new_track in album.tracks:
                 assert tmp_path in new_track.path.parents
+                assert new_track.path.exists()
             for new_extra in album.extras:
                 assert tmp_path in new_extra.path.parents
+                assert new_extra.path.exists()
 
         for og_path in og_paths:
             assert not og_path.exists()
@@ -231,6 +238,7 @@ class TestDBListener:
         with session_scope() as session:
             track = session.query(Track).one()
 
+            assert track.path.exists()
             assert new_title in track.path.name
 
         assert not og_path.exists()
