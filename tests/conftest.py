@@ -156,6 +156,9 @@ def mock_extra_factory() -> Callable[[], Extra]:
         Unique Extra object.
     """
 
+    def mock_lt(self, other):
+        return self.name < other.name
+
     def _mock_extra(album: Album = None, year: int = 1996):
         if not album:
             album = Album(
@@ -163,6 +166,8 @@ def mock_extra_factory() -> Callable[[], Extra]:
             )
 
         mock_path = MagicMock()
+
+        mock_path.__lt__ = mock_lt
         mock_path.name = f"{random.randint(1, 1000)}.txt"
         return Extra(mock_path, album)
 

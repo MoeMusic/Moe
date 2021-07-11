@@ -6,7 +6,7 @@ All fields and their values should be printed to stdout for any music queried.
 import argparse
 import types
 from collections import OrderedDict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import sqlalchemy
 
@@ -74,82 +74,100 @@ def _fmt_infos(items: List[LibItem]):
 
 def _fmt_info(item: LibItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
-    return "".join(f"{field}: {value}\n" for field, value in _item_dict(item).items())
-
-
-def _item_dict(item: LibItem) -> "Dict[str, Any]":
-    """Represents a LibItem as a dictionary.
-
-    Only relevant, non-empty attributes will be included in the dictionary.
-
-    Args:
-        item: Library item to represent
-
-    Returns:
-        Returns a dict representation of an Extra.
-        It will be in the form { attribute: value } and is sorted by attribute.
-
-    Raises:
-        NotImplementedError: No ``dict()`` method has been implemented for the item.
-    """
-    if isinstance(item, (Track, Extra)):
-        return _track_extra_dict(item)
+    if isinstance(item, Track):
+        return _fmt_track_info(item)
     elif isinstance(item, Album):
-        return _album_dict(item)
+        return _fmt_album_info(item)
+    elif isinstance(item, Extra):
+        return _fmt_extra_info(item)
 
-    raise NotImplementedError(f"``_item_dict()`` not yet implemented for {type(item)}")
-
-
-def _album_dict(album: Album) -> "Dict[str, Any]":
-    """Represents an Album as a dictionary.
-
-    The basis of an album's representation is the merged dictionary of its tracks.
-    If different values are present for any given attribute among tracks, then
-    the value becomes "Various". It also includes any extras, and removes any
-    values that are guaranteed to be unique between tracks, such as track number.
-
-    Args:
-        album: Album.
-
-    Returns:
-        A dict representation of an Album.
-        It will be in the form { attribute: value } and is sorted by attribute.
-    """
-    # access any element to set intial values
-    album_dict = _track_extra_dict(album.tracks[0])
-
-    # compare rest of album against initial values
-    for track in album.tracks[1:]:
-        track_dict = _track_extra_dict(track)
-        for key in {**track_dict, **album_dict}.keys():
-            if album_dict.get(key) != track_dict.get(key):
-                album_dict[key] = "Various"
-
-    album_dict["extras"] = [str(extra.path) for extra in album.extras]
-
-    # remove values that are always unique between tracks
-    album_dict.pop("path")
-    album_dict.pop("title")
-    album_dict.pop("track_num")
-
-    return album_dict
+    raise NotImplementedError
 
 
-def _track_extra_dict(item: Union[Extra, Track]) -> "Dict[str, Any]":
-    """Represents a Item or an Extra as a dictionary.
+def _fmt_album_info(album: Album) -> str:
+    """Formats an album's information for display.
 
-    Only public attributes that are not empty will be included. We also remove any
-    attributes that are not relevant to the music file e.g. sqlalchemy specific
-    attributes.
+    An album's information is represented by it's attributes (see `_get_base_dict()`)
+    plus lists of its tracks and extras.
 
     Args:
-        item: Track or Extra.
+        album: Album to format.
 
     Returns:
-        Returns a dict representation of a Item.
-        It will be in the form { attribute: value } and is sorted by attribute.
+        Formatted string representing the album's relevant information to the user.
     """
-    item_dict = OrderedDict()
+    base_dict = _get_base_dict(album)
+    base_dict.pop("extras")
+    base_dict.pop("tracks")
+    base_info = "\n".join(
+        f"{field}: {value}"
+        for field, value in OrderedDict(sorted(base_dict.items())).items()
+    )
+
+    tracks = "\nTracks\n"
+    tracks += "\n".join(track.title for track in sorted(album.tracks))
+
+    extras = "\nExtras\n"
+    extras += "\n".join(extra.filename for extra in sorted(album.extras))
+
+    return base_info + "\n" + tracks + "\n" + extras
+
+
+def _fmt_extra_info(extra: Extra) -> str:
+    """Formats a extra's information for display.
+
+    An extra's information is represented by it's attributes (see `_get_base_dict()`).
+
+    Args:
+        extra: Extra to format.
+
+    Returns:
+        Formatted string representing the extra's relevant information to the user.
+    """
+    base_dict = _get_base_dict(extra)
+    base_dict.pop("filename")
+
+    return "\n".join(
+        f"{field}: {value}"
+        for field, value in OrderedDict(sorted(base_dict.items())).items()
+    )
+
+
+def _fmt_track_info(track: Track) -> str:
+    """Formats a track's information for display.
+
+    A track's information is represented by it's attributes (see `_get_base_dict()`).
+
+    Args:
+        track: Track to format.
+
+    Returns:
+        Formatted string representing the track's relevant information to the user.
+    """
+    base_dict = OrderedDict(sorted(_get_base_dict(track).items()))
+    base_dict.pop("album_obj")
+    base_dict.pop("genres")
+
+    return "\n".join(
+        f"{field}: {value}"
+        for field, value in OrderedDict(sorted(base_dict.items())).items()
+    )
+
+
+def _get_base_dict(item: LibItem) -> Dict[str, Any]:
+    """Represents an item as a dictionary.
+
+    Only public attributes that are not empty will be included. Also, any attributes
+    that are not relevant to the user e.g. sqlalchemy specific attributes will
+    be removed.
+
+    Args:
+        item: Library item.
+
+    Returns:
+        Returns a dict representation of an Item in the form { attribute: value }.
+    """
+    item_dict = {}
     for attr in dir(item):  # noqa: WPS421
         if not attr.startswith("_") and attr != "metadata" and attr != "registry":
             value = getattr(item, attr)
