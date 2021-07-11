@@ -84,7 +84,7 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 Note that when using multiple terms, they are joined together using AND logic, meaning
 all terms must be true to return a match.
 
-For more information, see the docs.
+For more information on queries, see the docs.
 https://mrmoe.readthedocs.io/en/latest/query.html
 """  # noqa: WPS360
 

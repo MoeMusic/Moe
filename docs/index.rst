@@ -36,6 +36,7 @@ However, there are several shortcomings that spawned the creation of Moe.
    getting_started
    installation
    plugins/plugins
+   fields
    query
    developers/developers
 
