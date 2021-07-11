@@ -1,3 +1,9 @@
+## v0.3.9 (2021-07-11)
+
+### Refactor
+
+- **info**: album info now only prints album attributes
+
 ## v0.3.8 (2021-07-11)
 
 ### Refactor
