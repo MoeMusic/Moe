@@ -123,7 +123,7 @@ def pre_add(config: Config, session: Session, album: Album):
     """Copies and formats the path of an album prior to it being added."""
     library_path = Path(config.settings.move.library_path).expanduser()
 
-    _copy_album(album, library_path)
+    _copy_album(album, _get_album_dir(album, library_path))
 
 
 ########################################################################################
@@ -176,7 +176,7 @@ def _get_track_path(track: Track) -> Path:
 # Copy
 ########################################################################################
 def _copy_album(album: Album, dest: Path):
-    """Copies an album to a formatted dir under ``root_dir``.
+    """Copies an album to a given destination.
 
     Overwrites any existing files. Will create ``dest`` if it does not already exist.
     Copying an album will also copy all of it's tracks and extras.
