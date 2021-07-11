@@ -31,37 +31,18 @@ Arguments
     Query your library for items to edit. See the :doc:`query docs <../query>` for more info.
 
 ``FIELD=VALUE``
-    Set a track's field or an album's field if an album query is specified with the ``-a, --album`` option. If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
+    ``FIELD`` is any field for the type of query given. For example, if you are querying for albums with ``-a, --album``, ``field`` must be an album field.
+    ``VALUE`` is the value to set the field to.
 
-    The following is a list of all the available fields you can edit.
+    See the :doc:`fields page<../fields>` for all the available fields you can edit. The only exception is that you cannot edit the ``path`` of an item.
 
-    *Track fields*
+    .. note::
+        If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
 
-    * ``album``
-    * ``albumartist``
-    * ``artist``
-    * ``date`` Must be in YYYY-MM-DD format.
-    * ``disc``
-    * ``genre`` [*]_
-    * ``mb_album_id``
-    * ``mb_track_id``
-    * ``title``
-    * ``track_num``
+    .. note::
+        Editing a track's album-related field is equivalent to editing the field directly through the album. For example, the following commands will both edit an album's artist.
 
-    *Album fields*
+        .. code-block:: bash
 
-    * ``artist``
-    * ``date`` Must be in YYYY-MM-DD format.
-    * ``disc_total``
-    * ``mb_album_id``
-    * ``title``
-
-    .. [*] Supports multiple values.
-
-.. note::
-    Editing a track's album-related field is equivalent to editing the field directly through the album. For example, the following commands will both edit an album's artist.
-
-    .. code-block:: bash
-
-        moe edit [query] albumartist=2Pac
-        moe edit -a [query] artist=2Pac
+            moe edit [query] albumartist=2Pac
+            moe edit -a [query] artist=2Pac

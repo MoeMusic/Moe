@@ -3,9 +3,9 @@ Querying
 ########
 Many plugins use a "query" to search for music in your library.
 
-The query must be in the format ``field:value`` where field is a track's field to match and value is that field's value. Internally, this ``field:value`` pair is referred to as a single "term". The match is case-insensitive.
+The query must be in the format ``field:value`` where field is a :ref:`track's field <Track Fields>` to match and value is that field's value. Internally, this ``field:value`` pair is referred to as a single "term". The match is case-insensitive.
 
-Album queries, specified with the `-a, --album` option, will return albums that contain any tracks matching the given query. Similarly, extra queries, specified with the `-e, --extra` option, will return extras that are attached to albums that contain any tracks matching the given query.
+Album queries, specified with the ``-a, --album`` option, will return albums that contain any tracks matching the given query. Similarly, querying for extras, specified with the ``-e, --extra`` option, will return extras that are attached to albums that contain any tracks matching the given query.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
 term in quotes.
@@ -24,7 +24,7 @@ To match these special characters as normal, use ``/`` as an escape character.
 
 .. code-block:: bash
 
-    'title:100\%'
+    'title:100/%'
 
 The value can also be a regular expression. To enforce this, use two colons
 e.g. ``field::value.*``
@@ -50,22 +50,20 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
     When using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
 
 .. tip::
-    Normal queries may be faster when compared to regex queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
+    Normal queries may be faster when compared to regular expression queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
 
-The following is a list of all the available fields you can query.
+****************
+Supported Fields
+****************
 
-* ``album``
-* ``albumartist``
-* ``album_path`` Filesystem path of the album directory.
-* ``artist``
-* ``date`` Album release date.
-* ``disc``
-* ``disc_total``
-* ``extra_path`` Filesystem path of any attached extra files.
-* ``mb_album_id`` Musicbrainz album aka release ID.
-* ``mb_track_id`` Musicbrainz track ID.
-* ``genre``
-* ``path`` Filesystem path of the track file.
-* ``title``
-* ``track_num``
-* ``year`` Album release year.
+In addition to the :ref:`track fields <Track Fields>`, the following fields are also available to query:
+
+* ``album_path`` Path of an album directory.
+* ``extra_path`` Path of an extra.
+
+.. note::
+   When querying for a field that supports multiple values, query for one term per value. For example, to query for tracks with the genres 'hip hop' and 'pop', use:
+
+.. code-block:: bash
+
+    '"genre:hip hop" genre:pop'

@@ -43,6 +43,7 @@ class Album(LibItem, Base):
         path (Path): Filesystem path of the album directory.
         title (str)
         tracks (List[Track]): Album's corresponding tracks.
+        year (int): Album release year.
     """
 
     __tablename__ = "album"
