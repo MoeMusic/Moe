@@ -1,3 +1,9 @@
+## v0.3.7 (2021-07-11)
+
+### Fix
+
+- **move**: album copies to proper directory on add
+
 ## v0.3.6 (2021-07-10)
 
 ### Fix
