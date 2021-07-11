@@ -1,3 +1,9 @@
+## v0.3.10 (2021-07-11)
+
+### Fix
+
+- **info**: error accessing empty fields
+
 ## v0.3.9 (2021-07-11)
 
 ### Refactor
