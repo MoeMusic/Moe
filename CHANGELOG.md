@@ -1,3 +1,17 @@
+## v0.3.8 (2021-07-11)
+
+### Refactor
+
+- **track**: remove `file_ext` field
+- **track**: genre is now a concatenated string and genres is a list
+- **track**: don't expose `album_path` as a track field
+- **extra**: album -> album_obj
+
+### Fix
+
+- **track**: properly read musibrainz track id from file
+- **write**: write date, disc, and disc_total to track file
+
 ## v0.3.7 (2021-07-11)
 
 ### Fix
