@@ -26,10 +26,13 @@ class EditError(Exception):
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds the ``edit`` command to Moe's CLI."""
     epilog_help = """
-    The FIELD=VALUE argument sets a track's field or an album's field if an album query
-    is specified with the `-a` option. If the specified field supports multiple values,
-    then you can separate those values with a semicolon. For example,
-    `genre=hip hop;pop`.
+    The FIELD=VALUE argument sets a track's field, an album's field if an album query is
+    specified with `-a`, or an extra's field if an extra query is specified with `-e`.
+    If the specified field supports multiple values, then you can separate those values
+    with a semicolon. For example, `genre=hip hop;pop`.
+
+    For more information on editing, see the documentation
+    https://mrmoe.readthedocs.io/en/latest/plugins/edit.html
     """
 
     add_parser = cmd_parsers.add_parser(
@@ -97,7 +100,9 @@ def _edit_item(item: LibItem, term: str):
     try:
         attr = getattr(item, field)
     except AttributeError:
-        raise EditError(f"'{field}' is not a valid field.")
+        raise EditError(
+            f"'{field}' is not a valid {type(item).__name__.lower()} field."
+        )
 
     non_editable_fields = ["path"]
     if field in non_editable_fields:
