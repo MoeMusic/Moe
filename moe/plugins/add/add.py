@@ -17,7 +17,7 @@ from moe.plugins.add import prompt
 
 __all__ = ["AddError"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.add")
 
 
 class AddError(Exception):

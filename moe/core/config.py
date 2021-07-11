@@ -30,7 +30,7 @@ from moe.core.library.session import Session
 
 __all__ = ["Config", "Hooks"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.config")
 
 DEFAULT_PLUGINS = (
     "add",

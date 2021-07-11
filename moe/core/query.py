@@ -30,7 +30,7 @@ from moe.core.library.track import Track
 
 __all__: List[str] = ["QueryError", "query", "query_parser"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.query")
 
 
 class QueryError(Exception):
@@ -122,7 +122,8 @@ def query(
     if not items:
         log.warning(f"No items found for the query '{query_str}'.")
 
-    log.debug(f"Query '{query_str}' returned '{items}'.")
+    items_str = "".join(f"\n    {str(item)}" for item in items)
+    log.debug(f"Query '{query_str}' returned: {items_str}")
     return items
 
 
