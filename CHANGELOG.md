@@ -1,3 +1,9 @@
+## v0.3.11 (2021-07-11)
+
+### Refactor
+
+- **cli**: only print warnings or worse logs for external libraries
+
 ## v0.3.10 (2021-07-11)
 
 ### Fix
