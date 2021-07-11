@@ -17,7 +17,7 @@ from moe.core.library.session import session_scope
 
 __all__ = ["Hooks"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.cli")
 
 
 class Hooks:
@@ -181,6 +181,11 @@ def _set_root_log_lvl(args):
         logging.basicConfig(level="CRITICAL")
     else:
         logging.basicConfig(level="WARNING")
+
+    # always set external loggers to warning
+    for key in logging.Logger.manager.loggerDict:
+        if "moe" not in key:
+            logging.getLogger(key).setLevel(logging.WARNING)
 
 
 if __name__ == "__main__":

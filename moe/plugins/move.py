@@ -20,7 +20,7 @@ from moe.core.library.track import Track
 
 __all__: List[str] = []
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.move")
 
 
 @moe.hookimpl

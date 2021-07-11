@@ -19,7 +19,7 @@ from moe.plugins import add
 
 __all__ = ["PromptChoice", "run_prompt"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.add")
 
 
 class PromptChoice(NamedTuple):

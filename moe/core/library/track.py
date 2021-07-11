@@ -18,7 +18,7 @@ from moe.core.library.session import Base
 
 __all__ = ["Track", "TrackError"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.track")
 
 
 class TrackError(Exception):

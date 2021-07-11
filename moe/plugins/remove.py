@@ -12,7 +12,7 @@ from moe.core.config import Config
 
 __all__: List[str] = []
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.remove")
 
 
 @moe.hookimpl

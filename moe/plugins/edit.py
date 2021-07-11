@@ -15,7 +15,7 @@ from moe.core.library.lib_item import LibItem
 
 __all__ = ["EditError"]
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("moe.edit")
 
 
 class EditError(Exception):
