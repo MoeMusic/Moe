@@ -82,19 +82,13 @@ class TestAddItemFromDir:
         """Add any extras that are within the album directory."""
         mock_config = MagicMock()
         mock_config.plugin_manager.hook.import_album.return_value = []
-
-        cue_file = real_album.path / ".cue"
-        cue_file.touch()
-        playlist_file = real_album.path / ".m3u"
-        playlist_file.touch()
+        assert real_album.extras
 
         add.add._add_item(mock_config, tmp_session, real_album.path)
 
-        album = tmp_session.query(Album).one()
-        extra_paths = [extra.path for extra in album.extras]
-        assert cue_file in extra_paths
-        assert playlist_file in extra_paths
-        assert len(album.extras) == 3  # accounts for log file added in fixture
+        db_album = tmp_session.query(Album).one()
+        for extra in real_album.extras:
+            assert extra in db_album.extras
 
     def test_no_valid_tracks(self, tmp_session, tmp_path):
         """Error if given directory does not contain any valid tracks."""
