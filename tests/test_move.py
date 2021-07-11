@@ -71,6 +71,40 @@ class TestCopyAlbum:
         assert not mock_copy.called
 
 
+class TestCopyTrack:
+    """Tests ``_copy_track()``."""
+
+    def test_copy_track(self, real_track, tmp_path):
+        """We can copy a track."""
+        og_path = real_track.path
+        dest = tmp_path / real_track.path.name
+        assert og_path != dest
+
+        move._copy_track(real_track, dest)
+
+        assert og_path.exists()
+        assert real_track.path.exists()
+        assert og_path != real_track.path
+        assert real_track.path == dest
+
+
+class TestCopyExtra:
+    """Tests ``_copy_extra()``."""
+
+    def test_copy_extra(self, real_track, tmp_path):
+        """We can copy an extra."""
+        og_path = real_track.path
+        dest = tmp_path / real_track.path.name
+        assert og_path != dest
+
+        move._copy_track(real_track, dest)
+
+        assert og_path.exists()
+        assert real_track.path.exists()
+        assert og_path != real_track.path
+        assert real_track.path == dest
+
+
 class TestMoveAlbum:
     """Tests ``_move_album()``."""
 

@@ -82,12 +82,35 @@ class TestQuery:
             f"track_num:{mock_track.track_num} title:{mock_track.title}", tmp_session
         )
 
-    def test_path(self, real_track, tmp_session):
+    def test_regex(self, tmp_session, mock_track):
+        """Queries can use regular expression matching."""
+        tmp_session.add(mock_track)
+
+        assert query.query("title::.*", tmp_session)
+
+    def test_track_path(self, real_track, tmp_session):
         """We can query a track's path."""
         tmp_session.add(real_track)
 
         assert query.query(f"'path:{str(real_track.path.resolve())}'", tmp_session)
         assert query.query("'path::.*'", tmp_session)
+
+    def test_extra_path(self, real_album, tmp_session):
+        """We can query for Extra paths."""
+        tmp_session.merge(real_album)
+
+        extra_path_str = str(real_album.extras.pop().path.resolve())
+        assert query.query(f"'extra_path:{extra_path_str}'", tmp_session)
+        assert query.query("'extra_path::.*'", tmp_session)
+
+    def test_album_path(self, real_album, tmp_session):
+        """We can query for Extra paths."""
+        tmp_session.merge(real_album)
+
+        assert query.query(
+            f"'album_path:{str(real_album.path.resolve())}'", tmp_session
+        )
+        assert query.query("'album_path::.*'", tmp_session)
 
     def test_date(self, real_track, tmp_session):
         """We can query an album's date."""
@@ -96,7 +119,7 @@ class TestQuery:
         assert query.query(f"'date:{str(real_track.date)}'", tmp_session)
         assert query.query("'date::.*'", tmp_session)
 
-    def test_track_album_field_queries(self, real_track, tmp_session):
+    def test_track_album_field(self, real_track, tmp_session):
         """We should be able to query tracks that match album-related fields.
 
         These fields belong to the Album table and thus aren't normally exposed
@@ -105,7 +128,7 @@ class TestQuery:
         tmp_session.add(real_track)
 
         assert query.query(f"'album:{real_track.album}'", tmp_session)
-        assert query.query(f"albumartist:{real_track.albumartist}", tmp_session)
+        assert query.query(f"'albumartist:{real_track.albumartist}'", tmp_session)
         assert query.query(f"year:{real_track.year}", tmp_session)
 
     def test_case_insensitive_value(self, tmp_session, mock_track):
@@ -115,7 +138,6 @@ class TestQuery:
         tmp_session.add(mock_track)
 
         assert query.query("title:tmp", tmp_session)
-        assert query.query("album:tmp", tmp_session)  # Album field
 
     def test_case_insensitive_field(self, tmp_session, mock_track):
         """Fields should be able to be specified case-insensitive."""
@@ -124,26 +146,16 @@ class TestQuery:
         tmp_session.add(mock_track)
 
         assert query.query("Title:tmp", tmp_session)
-        assert query.query("Album:tmp", tmp_session)  # Album field
-
-    def test_regex(self, tmp_session, mock_track):
-        """Queries can use regular expression matching."""
-        tmp_session.add(mock_track)
-
-        assert query.query("title::.*", tmp_session)
-        assert query.query("album::.*", tmp_session)  # Album field
 
     def test_regex_non_str(self, tmp_session, mock_track):
         """Non string fields should be converted to strings for matching."""
         tmp_session.add(mock_track)
 
         assert query.query("track_num::.*", tmp_session)
-        assert query.query("year::.*", tmp_session)  # Album field
 
-    # this fails if we use `mock_track` for some reason
-    def test_invalid_regex(self, tmp_session, real_track):
+    def test_invalid_regex(self, tmp_session, mock_track):
         """Invalid regex queries should return an empty list."""
-        tmp_session.add(real_track)
+        tmp_session.add(mock_track)
 
         assert not query.query("title::[", tmp_session)
 
@@ -154,7 +166,6 @@ class TestQuery:
         tmp_session.add(mock_track)
 
         assert query.query("title::tmp", tmp_session)
-        assert query.query("album::tmp", tmp_session)  # Album field
 
     def test_track_query(self, tmp_session, mock_track):
         """A track query should return Track objects."""
@@ -180,17 +191,6 @@ class TestQuery:
         for album in albums:
             assert isinstance(album, Album)
 
-    def test_album_query_track_fields(self, tmp_session, mock_track):
-        """Album queries should still be filtered based off Track fields."""
-        mock_track.album = "ATLiens"
-        tmp_session.add(mock_track)
-
-        albums = query.query("album:ATLiens", tmp_session, query_type="album")
-
-        assert albums
-        for album in albums:
-            assert isinstance(album, Album)
-
     def test_extra_query(self, mock_album, tmp_session):
         """An extra query should return Extra objects."""
         tmp_session.merge(mock_album)
@@ -202,6 +202,17 @@ class TestQuery:
         assert extras
         for extra in extras:
             assert isinstance(extra, Extra)
+
+    def test_album_query_track_fields(self, tmp_session, mock_track):
+        """Album queries should still be filtered based off Track fields."""
+        mock_track.album = "ATLiens"
+        tmp_session.add(mock_track)
+
+        albums = query.query("album:ATLiens", tmp_session, query_type="album")
+
+        assert albums
+        for album in albums:
+            assert isinstance(album, Album)
 
     def test_like_query(self, tmp_session, mock_track):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
@@ -248,20 +259,3 @@ class TestQuery:
         tmp_session.merge(track2)
 
         assert len(query.query("*", tmp_session)) == 2
-
-    def test_extra_path_query(self, real_album, tmp_session):
-        """We can query for Extra paths."""
-        tmp_session.merge(real_album)
-
-        extra_path_str = str(real_album.extras.pop().path.resolve())
-        assert query.query(f"'extra_path:{extra_path_str}'", tmp_session)
-        assert query.query("'extra_path::.*'", tmp_session)
-
-    def test_album_path_query(self, real_album, tmp_session):
-        """We can query for Extra paths."""
-        tmp_session.merge(real_album)
-
-        assert query.query(
-            f"'album_path:{str(real_album.path.resolve())}'", tmp_session
-        )
-        assert query.query("'album_path::.*'", tmp_session)

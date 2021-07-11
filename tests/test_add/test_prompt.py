@@ -69,9 +69,7 @@ class TestRunPrompt:
 
         assert not add_album
 
-    def test_partial_album_exists_merge(
-        self, mock_album, mock_track_factory, tmp_config, tmp_session
-    ):
+    def test_partial_album_exists_merge(self, mock_album, tmp_config, tmp_session):
         """Merge existing tracks with those being added."""
         config = tmp_config("default_plugins = ['add']")
         existing_album = copy.deepcopy(mock_album)
