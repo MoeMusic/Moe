@@ -68,7 +68,6 @@ class TestFromTags:
         assert track.date == datetime.date(2020, 1, 12)
         assert track.disc == 1
         assert track.disc_total == 2
-        assert track.file_ext == "mp3"
         assert set(track.genres) == {"hip hop", "rock"}
         assert track.mb_album_id == "1234"
         assert track.mb_track_id == "123"

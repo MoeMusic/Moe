@@ -267,8 +267,6 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         except re.error:
             raise QueryError(f"Invalid regular expression: {value}")
 
-        return attr.op("regexp")(  # type: ignore
-            sqlalchemy.sql.expression.literal(value)
-        )
+        return attr.op("regexp")(sqlalchemy.sql.expression.literal(value))
 
     raise QueryError(f"Invalid query type: {separator}")

@@ -62,7 +62,6 @@ The following is a list of all the available fields you can query.
 * ``disc``
 * ``disc_total``
 * ``extra_path`` Filesystem path of any attached extra files.
-* ``file_ext`` Audio format extension e.g. mp3, flac, wav, etc.
 * ``mb_album_id`` Musicbrainz album aka release ID.
 * ``mb_track_id`` Musicbrainz track ID.
 * ``genre``

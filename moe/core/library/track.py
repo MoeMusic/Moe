@@ -60,7 +60,6 @@ class Track(LibItem, Base):
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
-        file_ext (str): Audio format extension e.g. mp3, flac, wav, etc.
         genre (str): String of all genres concatenated with ';'.
         genres (List[str]): List of all genres.
         mb_album_id (str): Musicbrainz album aka release ID.
@@ -80,7 +79,6 @@ class Track(LibItem, Base):
     _id: int = Column(Integer, primary_key=True)
     artist: str = Column(String, nullable=False, default="")
     disc: int = Column(Integer, nullable=False, default=1)
-    file_ext: str = Column(String, nullable=False, default="")
     mb_track_id: str = Column(String, nullable=False, default="")
     path: Path = Column(PathType, nullable=False, unique=True)
     title: str = Column(String, nullable=False, default="")
@@ -122,7 +120,6 @@ class Track(LibItem, Base):
         # set default values
         self.artist = ""
         self.disc = 1
-        self.file_ext = ""
         self.mb_track_id = ""
         self.title = ""
 
@@ -179,7 +176,6 @@ class Track(LibItem, Base):
             track_num=audio_file.track,
             artist=audio_file.artist,
             disc=audio_file.disc,
-            file_ext=audio_file.type,
             genres=audio_file.genres,
             mb_track_id=audio_file.mb_releasetrackid,
             title=audio_file.title,
@@ -207,7 +203,6 @@ class Track(LibItem, Base):
                 and self.album_obj.date == other.album_obj.date
                 and self.album_obj.title == other.album_obj.title
                 and self.artist == other.artist
-                and self.file_ext == other.file_ext
                 and set(self.genres) == set(other.genres)
                 and self.mb_track_id == other.mb_track_id
                 and self.path == other.path

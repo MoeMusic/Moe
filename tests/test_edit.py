@@ -145,7 +145,7 @@ class TestParseArgs:
     def test_non_editable_fields(self, mock_track):
         """Paths and file extensions shouldn't be edited."""
         args = argparse.Namespace(
-            fv_terms=["path=3", "file_ext=2"], query="", album=False, extra=False
+            fv_terms=["path=3"], query="", album=False, extra=False
         )
 
         with pytest.raises(SystemExit) as error:
@@ -157,7 +157,6 @@ class TestParseArgs:
                 mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert error.value.code != 0
-        assert mock_track.file_ext != "2"
         assert mock_track.path != "3"
 
     def test_invalid_track_field(self, mock_track):
