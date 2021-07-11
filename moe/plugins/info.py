@@ -64,7 +64,7 @@ def _fmt_infos(items: List[LibItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
-        out_str += _fmt_info(item)
+        out_str += _fmt_info(item) + "\n"
 
         if item is not items[-1]:
             out_str += "\n"
@@ -97,8 +97,8 @@ def _fmt_album_info(album: Album) -> str:
         Formatted string representing the album's relevant information to the user.
     """
     base_dict = _get_base_dict(album)
-    base_dict.pop("extras")
-    base_dict.pop("tracks")
+    base_dict.pop("extras", None)
+    base_dict.pop("tracks", None)
     base_info = "\n".join(
         f"{field}: {value}"
         for field, value in OrderedDict(sorted(base_dict.items())).items()
@@ -125,7 +125,7 @@ def _fmt_extra_info(extra: Extra) -> str:
         Formatted string representing the extra's relevant information to the user.
     """
     base_dict = _get_base_dict(extra)
-    base_dict.pop("filename")
+    base_dict.pop("filename", None)
 
     return "\n".join(
         f"{field}: {value}"
@@ -145,8 +145,8 @@ def _fmt_track_info(track: Track) -> str:
         Formatted string representing the track's relevant information to the user.
     """
     base_dict = OrderedDict(sorted(_get_base_dict(track).items()))
-    base_dict.pop("album_obj")
-    base_dict.pop("genres")
+    base_dict.pop("album_obj", None)
+    base_dict.pop("genres", None)
 
     return "\n".join(
         f"{field}: {value}"
