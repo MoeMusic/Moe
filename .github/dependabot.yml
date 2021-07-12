@@ -7,15 +7,15 @@ updates:
     directory: "/" # repository root
     schedule:
       interval: "daily"
+    labels: ["dependencies"]
     commit-message:
       prefix: "build(prod):"
       prefix-development: "build(dev):"
-      include: "scope"
 
   - package-ecosystem: "github-actions"
     directory: "/" # `.github/workflows`
     schedule:
       interval: "daily"
+    labels: ["dependencies"]
     commit-message:
       prefix: "ci:"
-      include: "scope"
