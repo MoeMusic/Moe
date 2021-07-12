@@ -1,8 +1,5 @@
 [tool.poetry]
-name = "MrMoe"
-packages = [
-    { include = "moe" }
-]
+name = "Moe"
 include = ["alembic/*", "alembic/versions/*"]
 version = "0.3.11"
 description = "The ultimate tool for managing your music library."
