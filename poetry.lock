@@ -167,7 +167,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "commitizen"
-version = "2.17.11"
+version = "2.17.12"
 description = "Python commitizen client tool"
 category = "dev"
 optional = false
@@ -1269,7 +1269,7 @@ docs = ["Sphinx"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.7, <3.10"
-content-hash = "14fd3689b82291b46c7483b316964ce4b0d68811e4d618617c66ac0e72d230c7"
+content-hash = "24fd48178150ff8139e4f9c2ce9f2cb3a342cec8fdd29e00e83d65fa7721b2c1"
 
 [metadata.files]
 alabaster = [
@@ -1332,8 +1332,8 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 commitizen = [
-    {file = "commitizen-2.17.11-py3-none-any.whl", hash = "sha256:581d8df80c6173f006ae67bc39bcaa14813df84c90e5ec2c5bb8e58169e4c31d"},
-    {file = "commitizen-2.17.11.tar.gz", hash = "sha256:30cbfe6ee17f598f02ae4f820d64cdf499d7b93e24a3f69f9e728103dd1c81c2"},
+    {file = "commitizen-2.17.12-py3-none-any.whl", hash = "sha256:3f545edcedcb636e3470b47b89b2f060e66ce6dd35f44733aeeaf31622bc7d4c"},
+    {file = "commitizen-2.17.12.tar.gz", hash = "sha256:86023ec0fbfe9ea10b2f90874da2b123830ce83eb24eb8a91522156dc50c25c6"},
 ]
 coverage = [
     {file = "coverage-5.5-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:b6d534e4b2ab35c9f93f46229363e17f63c53ad01330df9f2d6bd1187e5eaacf"},
