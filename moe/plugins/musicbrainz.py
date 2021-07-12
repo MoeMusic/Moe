@@ -23,7 +23,7 @@ __all__: List[str] = []
 
 musicbrainzngs.set_useragent(
     "moe",
-    pkg_resources.get_distribution("mrmoe").version,
+    pkg_resources.get_distribution("moe").version,
     contact="https://mrmoe.readthedocs.io/en/latest/index.html",
 )
 

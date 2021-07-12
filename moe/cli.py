@@ -143,7 +143,7 @@ def _parse_args(args: List[str], config: Config):
 
 def _create_arg_parser() -> argparse.ArgumentParser:
     """Creates the root argument parser."""
-    version = pkg_resources.get_distribution("mrmoe").version
+    version = pkg_resources.get_distribution("moe").version
 
     moe_parser = argparse.ArgumentParser()
     moe_parser.add_argument(
