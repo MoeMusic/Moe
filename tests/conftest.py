@@ -93,7 +93,7 @@ def mock_track_factory() -> Callable[[], Track]:
                 "OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock()
             )
         if not track_num:
-            track_num = random.randint(1, 1000)
+            track_num = random.randint(1, 10000)
         return Track(
             album=album,
             path=MagicMock(),
@@ -168,7 +168,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
         mock_path = MagicMock()
 
         mock_path.__lt__ = mock_lt
-        mock_path.name = f"{random.randint(1, 1000)}.txt"
+        mock_path.name = f"{random.randint(1, 10000)}.txt"
         return Extra(mock_path, album)
 
     return _mock_extra
@@ -293,7 +293,7 @@ def real_extra_factory(mock_extra_factory, tmp_path_factory) -> Callable[[], Ext
                 "Jacobs Awesome Band - Cool Song (2021)"
             )
 
-        filename = f"{random.randint(1, 1000)}.txt"
+        filename = f"{random.randint(1, 10000)}.txt"
         extra.path = extra.album_obj.path / filename
         extra.path.touch()
 
