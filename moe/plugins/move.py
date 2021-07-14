@@ -10,6 +10,7 @@ from typing import Any, List, Optional
 import dynaconf
 import sqlalchemy
 from sqlalchemy.orm.session import Session
+from unidecode import unidecode
 
 import moe
 from moe.core.config import Config
@@ -27,6 +28,9 @@ log = logging.getLogger("moe.move")
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     settings.validators.register(
+        dynaconf.Validator("MOVE.ASCIIFY_PATHS", must_exist=True, default=False)
+    )
+    settings.validators.register(
         dynaconf.Validator("MOVE.LIBRARY_PATH", must_exist=True, default="~/Music")
     )
 
@@ -40,11 +44,11 @@ def register_db_listener(config: Config, session: Session):
         session: Current db session.
     """
     sqlalchemy.event.listen(
-        session,
-        "before_flush",
-        functools.partial(_set_sess_item_paths, config=config),
+        session, "before_flush", functools.partial(_set_sess_item_paths, config=config)
     )
-    sqlalchemy.event.listen(session, "after_flush", _move_flushed_items)
+    sqlalchemy.event.listen(
+        session, "after_flush", functools.partial(_move_flushed_items, config=config)
+    )
 
 
 def _set_sess_item_paths(
@@ -63,22 +67,22 @@ def _set_sess_item_paths(
         instances: List of objects passed to the ``flush()`` method.
         config: Moe config.
     """
-    library_path = Path(config.settings.move.library_path).expanduser()
-
     for item in session.dirty.union(session.new):
         if isinstance(item, Album):
-            item.path = _get_album_path(item, library_path)
+            item.path = _fmt_album_path(item, config)
             for track in item.tracks:
-                track.path = _get_track_path(track)
+                track.path = _fmt_track_path(track, config)
             for extra in item.extras:
-                extra.path = _get_extra_path(extra)
-        elif isinstance(item, Track):
-            item.path = _get_track_path(item)
+                extra.path = _fmt_extra_path(extra, config)
         elif isinstance(item, Extra):
-            item.path = _get_extra_path(item)
+            item.path = _fmt_extra_path(item, config)
+        elif isinstance(item, Track):
+            item.path = _fmt_track_path(item, config)
 
 
-def _move_flushed_items(session: Session, flush_context: sqlalchemy.orm.UOWTransaction):
+def _move_flushed_items(
+    session: Session, flush_context: sqlalchemy.orm.UOWTransaction, config: Config
+):
     """Moves altered or new items after they are successfully flushed to the db."""
     # since moving an album involves moving all of its tracks and extras, it's possible
     # to move a track or extra twice if both it and its album exist in ``items_to_move``
@@ -86,12 +90,12 @@ def _move_flushed_items(session: Session, flush_context: sqlalchemy.orm.UOWTrans
     albums_to_move = [item for item in items_to_move if isinstance(item, Album)]
     for item in items_to_move:
         if isinstance(item, Album):
-            _move_flushed_item(item)
+            _move_flushed_item(item, config)
         elif isinstance(item, (Extra, Track)) and item.album_obj not in albums_to_move:
-            _move_flushed_item(item)
+            _move_flushed_item(item, config)
 
 
-def _move_flushed_item(item: LibItem):
+def _move_flushed_item(item: LibItem, config: Config):
     """Moves an item that has been flushed to the database."""
     item_path_history = sqlalchemy.inspect(item).attrs.path.history
     assert len(item_path_history.deleted) <= 1  # noqa: S101 # not sure if always True
@@ -108,8 +112,8 @@ def _move_flushed_item(item: LibItem):
 
     if isinstance(item, Album):
         for track_or_extra in item.tracks + item.extras:  # type: ignore
-            _move_flushed_item(track_or_extra)
-        _move_album(item, new_path)
+            _move_flushed_item(track_or_extra, config)
+        _move_album(item, new_path, config)
     elif isinstance(item, Track):
         _move_track(item, new_path)
     elif isinstance(item, Extra):
@@ -119,47 +123,66 @@ def _move_flushed_item(item: LibItem):
 @moe.hookimpl(trylast=True)
 def pre_add(config: Config, session: Session, album: Album):
     """Copies and formats the path of an album prior to it being added."""
-    library_path = Path(config.settings.move.library_path).expanduser()
-
-    _copy_album(album, _get_album_path(album, library_path))
+    _copy_album(album, _fmt_album_path(album, config), config)
 
 
 ########################################################################################
 # Format paths
 ########################################################################################
-def _get_album_path(album: Album, root_dir: Path) -> Path:
-    """Returns a formatted album directory under ``root_dir``.
+def _fmt_album_path(album: Album, config: Config) -> Path:
+    """Returns a formatted album directory according to the user configuration.
 
     An album directory should contain, at a minimum, the album artist, title, and year
     to ensure uniqueness.
 
     Args:
         album: Album used to format the directory.
-        root_dir: Directory to place the album directory under.
+        config: Moe config.
 
     Returns:
-        Formatted album directory under ``root_dir``.
+        Formatted album directory under the config ``library_path``.
     """
+    library_path = Path(config.settings.move.library_path).expanduser()
     album_dir_name = f"{album.artist}/{album.title} ({album.year})"
-    return root_dir / album_dir_name
+
+    album_path = library_path / album_dir_name
+
+    if config.settings.move.asciify_paths:
+        album_path = Path(unidecode(str(album_path)))
+
+    return album_path
 
 
-def _get_extra_path(extra: Extra) -> Path:
-    """Returns a formatted extra path."""
-    return extra.album_obj.path / extra.path.name
+def _fmt_extra_path(extra: Extra, config: Config) -> Path:
+    """Returns a formatted extra path according to the user configuration.
+
+    Args:
+        extra: Extra used to format the path.
+        config: Moe config.
+
+    Returns:
+        Formatted extra path under its album path.
+    """
+    extra_path = extra.album_obj.path / extra.path.name
+
+    if config.settings.move.asciify_paths:
+        extra_path = Path(unidecode(str(extra_path)))
+
+    return extra_path
 
 
-def _get_track_path(track: Track) -> Path:
-    """Returns a formatted track path.
+def _fmt_track_path(track: Track, config: Config) -> Path:
+    """Returns a formatted track path according to the user configuration.
 
     The track path should contain, at a minimum, the track number and
     disc (if more than one) to ensure uniqueness.
 
     Args:
         track: Track used to format the path.
+        config: Moe config.
 
     Returns:
-        Formatted track path.
+        Formatted track path under its album path.
     """
     disc_dir_name = ""
     if track.disc_total > 1:
@@ -167,13 +190,19 @@ def _get_track_path(track: Track) -> Path:
     disc_dir = track.album_obj.path / disc_dir_name
 
     track_filename = f"{track.track_num:02} - {track.title}{track.path.suffix}"
-    return disc_dir / track_filename
+
+    track_path = disc_dir / track_filename
+
+    if config.settings.move.asciify_paths:
+        track_path = Path(unidecode(str(track_path)))
+
+    return track_path
 
 
 ########################################################################################
 # Copy
 ########################################################################################
-def _copy_album(album: Album, dest: Path):
+def _copy_album(album: Album, dest: Path, config: Config):
     """Copies an album to a given destination.
 
     Overwrites any existing files. Will create ``dest`` if it does not already exist.
@@ -182,6 +211,7 @@ def _copy_album(album: Album, dest: Path):
     Args:
         album: Album to copy
         dest: Destination to copy the album to.
+        config: Moe config.
     """
     if album.path == dest:
         return
@@ -191,10 +221,10 @@ def _copy_album(album: Album, dest: Path):
     album.path = dest
 
     for track in album.tracks:
-        _copy_track(track, _get_track_path(track))
+        _copy_track(track, _fmt_track_path(track, config))
 
     for extra in album.extras:
-        _copy_extra(extra, _get_extra_path(extra))
+        _copy_extra(extra, _fmt_extra_path(extra, config))
 
 
 def _copy_track(track: Track, dest: Path):
@@ -238,7 +268,7 @@ def _copy_extra(extra: Extra, dest: Path):
 ########################################################################################
 # Move
 ########################################################################################
-def _move_album(album: Album, dest: Path):
+def _move_album(album: Album, dest: Path, config: Config):
     """Moves an album to a given destination.
 
     Overwrites any existing files. Will create ``dest`` if it does not already exist.
@@ -247,6 +277,7 @@ def _move_album(album: Album, dest: Path):
     Args:
         album: Album to move.
         dest: Destination to move the album to.
+        config: Moe config.
     """
     if album.path == dest:
         return
@@ -257,10 +288,10 @@ def _move_album(album: Album, dest: Path):
     album.path = dest
 
     for track in album.tracks:
-        _move_track(track, _get_track_path(track))
+        _move_track(track, _fmt_track_path(track, config))
 
     for extra in album.extras:
-        _move_extra(extra, _get_extra_path(extra))
+        _move_extra(extra, _fmt_extra_path(extra, config))
 
     # remove any empty leftover directories
     for old_path in old_album_dir.rglob("*"):
