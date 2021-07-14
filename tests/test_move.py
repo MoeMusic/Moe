@@ -15,7 +15,7 @@ from moe.plugins import move
 class TestCopyAlbum:
     """Tests ``_copy_album()``."""
 
-    def test_copy_album(self, real_album, tmp_path):
+    def test_copy_album(self, real_album, tmp_config, tmp_path):
         """We can copy an album that was added to the library."""
         og_paths = [track.path for track in real_album.tracks]
         og_paths += [extra.path for extra in real_album.extras]
@@ -25,7 +25,7 @@ class TestCopyAlbum:
         for og_extra in real_album.extras:
             assert tmp_path not in og_extra.path.parents
 
-        move._copy_album(real_album, tmp_path)
+        move._copy_album(real_album, tmp_path, tmp_config())
 
         for copied_track in real_album.tracks:
             assert tmp_path in copied_track.path.parents
@@ -36,7 +36,7 @@ class TestCopyAlbum:
         for og_path in og_paths:
             assert og_path.exists()
 
-    def test_copy_multi_disc_album(self, real_album, tmp_path):
+    def test_copy_multi_disc_album(self, real_album, tmp_config, tmp_path):
         """We can copy albums containing multiple discs."""
         real_album.tracks[1].disc = 2
         real_album.tracks[1].track_num = 1
@@ -50,7 +50,7 @@ class TestCopyAlbum:
         for og_extra in real_album.extras:
             assert tmp_path not in og_extra.path.parents
 
-        move._copy_album(real_album, tmp_path)
+        move._copy_album(real_album, tmp_path, tmp_config())
 
         for copied_track in real_album.tracks:
             assert tmp_path in copied_track.path.parents
@@ -61,12 +61,12 @@ class TestCopyAlbum:
         for og_path in og_paths:
             assert og_path.exists()
 
-    def test_file_src_eq_dst(self, real_album, tmp_path):
+    def test_file_src_eq_dst(self, real_album, tmp_config, tmp_path):
         """Do nothing if the Track or Extra destination is the same as the source."""
-        move._copy_album(real_album, tmp_path)
+        move._copy_album(real_album, tmp_path, tmp_config())
 
         with patch("shutil.copyfile") as mock_copy:
-            move._copy_album(real_album, tmp_path)
+            move._copy_album(real_album, tmp_path, tmp_config())
 
         assert not mock_copy.called
 
@@ -108,7 +108,7 @@ class TestCopyExtra:
 class TestMoveAlbum:
     """Tests ``_move_album()``."""
 
-    def test_move_album(self, real_album, tmp_path):
+    def test_move_album(self, real_album, tmp_config, tmp_path):
         """We can move an album that was added to the library."""
         og_paths = [track.path for track in real_album.tracks]
         og_paths += [extra.path for extra in real_album.extras]
@@ -118,7 +118,7 @@ class TestMoveAlbum:
         for og_extra in real_album.extras:
             assert tmp_path not in og_extra.path.parents
 
-        move._move_album(real_album, tmp_path)
+        move._move_album(real_album, tmp_path, tmp_config())
 
         for copied_track in real_album.tracks:
             assert tmp_path in copied_track.path.parents
@@ -129,7 +129,7 @@ class TestMoveAlbum:
         for og_path in og_paths:
             assert not og_path.exists()
 
-    def test_move_multi_disc_album(self, real_album, tmp_path):
+    def test_move_multi_disc_album(self, real_album, tmp_config, tmp_path):
         """We can copy albums containing multiple discs."""
         real_album.tracks[1].disc = 2
         real_album.tracks[1].track_num = 1
@@ -143,7 +143,7 @@ class TestMoveAlbum:
         for og_extra in real_album.extras:
             assert tmp_path not in og_extra.path.parents
 
-        move._move_album(real_album, tmp_path)
+        move._move_album(real_album, tmp_path, tmp_config())
 
         for copied_track in real_album.tracks:
             assert tmp_path in copied_track.path.parents
@@ -154,12 +154,12 @@ class TestMoveAlbum:
         for og_path in og_paths:
             assert not og_path.exists()
 
-    def test_file_src_eq_dst(self, real_album, tmp_path):
+    def test_file_src_eq_dst(self, real_album, tmp_config, tmp_path):
         """Do nothing if the Track or Extra destination is the same as the source."""
-        move._move_album(real_album, tmp_path)
+        move._move_album(real_album, tmp_path, tmp_config())
 
         with patch("shutil.move") as mock_copy:
-            move._move_album(real_album, tmp_path)
+            move._move_album(real_album, tmp_path, tmp_config())
 
         assert not mock_copy.called
 
@@ -311,3 +311,27 @@ class TestDBListener:
             for new_extra in album.extras:
                 assert new_extra.path in og_paths  # path not updated in db
                 assert new_extra.path.exists()  # old path still exists
+
+
+class TestItemPaths:
+    """Test various configuration options with creating item paths."""
+
+    def test_asciify_paths(self, real_album, tmp_config):
+        """Paths should not contain unicode characters if `asciify_paths` is true."""
+        tmp_settings = """
+        default_plugins = ["move"]
+        [move]
+        asciify_paths = true
+        """
+        config = tmp_config(tmp_settings)
+        non_ascii_title = "café"
+
+        real_album.title = non_ascii_title
+        str(move._fmt_album_path(real_album, config))
+
+        for track in real_album.tracks:
+            track.title = non_ascii_title
+            str(move._fmt_track_path(track, config))
+        for extra in real_album.extras:
+            extra.path = extra.path.parent / f"{non_ascii_title}"
+            str(move._fmt_extra_path(extra, config))
