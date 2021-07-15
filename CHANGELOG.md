@@ -1,3 +1,13 @@
+## v0.4.0 (2021-07-15)
+
+### Feat
+
+- **move**: add `asciify_paths` configuration option
+
+### Refactor
+
+- **move**: move/copying tracks & extras now requires a destination
+
 ## v0.3.12 (2021-07-12)
 
 ### Refactor
