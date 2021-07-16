@@ -13,7 +13,7 @@ This plugin is enabled by default, and provides the following configuration opti
 ``asciify_paths = false``
     Whether or not to convert all filesystem paths to ascii.
 
-    If ``true`` non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
+    If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
 
 ``library_path = "~/Music"``
     Tells Moe where to copy your added music to.
