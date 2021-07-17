@@ -149,7 +149,7 @@ class Track(LibItem, Base):
         missing_tags: List[str] = []
         if not audio_file.album:
             missing_tags.append("album")
-        if not audio_file.albumartist:
+        if not audio_file.albumartist and not audio_file.artist:
             missing_tags.append("albumartist")
         if not audio_file.track:
             missing_tags.append("track_num")
@@ -160,10 +160,20 @@ class Track(LibItem, Base):
                 f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
             )
 
+        # use artist as the backup for the albumartist if missing
+        if audio_file.albumartist:
+            albumartist = audio_file.albumartist
+        else:
+            log.debug(
+                f"'{path}' is missing an albumartist, using the artist"
+                f" '{audio_file.artist}' as a backup."
+            )
+            albumartist = audio_file.artist
+
         if not album_path:
             album_path = path.parent
         album = Album(
-            artist=audio_file.albumartist,
+            artist=albumartist,
             title=audio_file.album,
             date=audio_file.date,
             disc_total=audio_file.disctotal,
