@@ -15,7 +15,7 @@ So what can Moe do right now?
 * Supports including extra files with an album e.g. log or playlist files.
 * Supports tags with multiple values.
 
-If you want to learn more, check out the :doc:`Getting Started <getting_started>` page.
+If you want to learn more, check out the `Getting Started <https://mrmoe.readthedocs.io/en/latest/getting_started.html>`_ docs.
 
 ********
 Why Moe?
