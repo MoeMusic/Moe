@@ -1,3 +1,9 @@
+## v0.5.0 (2021-07-17)
+
+### Feat
+
+- **add**: use 'artist' as a backup for 'albumartist' if missing
+
 ## v0.4.2 (2021-07-17)
 
 ### Fix
