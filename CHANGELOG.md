@@ -1,3 +1,10 @@
+## v0.4.1 (2021-07-17)
+
+### Refactor
+
+- more appropriate names for sub-command parsers
+- abstract sqlalchemy orm events into new hook specifications
+
 ## v0.4.0 (2021-07-15)
 
 ### Feat
