@@ -1,11 +1,10 @@
 """Any operations regarding altering the location of files in the library."""
 
-import functools
 import logging
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List
 
 import dynaconf
 import sqlalchemy
@@ -35,39 +34,21 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     )
 
 
-@moe.hookimpl
-def register_db_listener(config: Config, session: Session):
-    """Sets item paths before they are flushed then moves them after a successful flush.
+@moe.hookimpl(trylast=True)
+def edit_new_items(config: Config, session: Session, items: List[LibItem]):
+    """Sets the path of any new or altered items in the library.
+
+    Once the items are successfully added to the library, they will be moved on the
+    filesystem in the ``process_new_items`` hook implementation.
 
     Args:
         config: Moe config.
-        session: Current db session.
+        session: Currrent db session.
+        items: Any new or changed items that have been committed to the database
+            during the current session.
+
     """
-    sqlalchemy.event.listen(
-        session, "before_flush", functools.partial(_set_sess_item_paths, config=config)
-    )
-    sqlalchemy.event.listen(
-        session, "after_flush", functools.partial(_move_flushed_items, config=config)
-    )
-
-
-def _set_sess_item_paths(
-    session: Session,
-    flush_context: sqlalchemy.orm.UOWTransaction,
-    instances: Optional[Any],
-    config: Config,
-):
-    """Sets the path of any new or altered items in the session.
-
-    Once the session is successfully flushed, the items will be moved on the filesystem.
-
-    Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
-        instances: List of objects passed to the ``flush()`` method.
-        config: Moe config.
-    """
-    for item in session.dirty.union(session.new):
+    for item in items:
         if isinstance(item, Album):
             item.path = _fmt_album_path(item, config)
             for track in item.tracks:
@@ -80,23 +61,21 @@ def _set_sess_item_paths(
             item.path = _fmt_track_path(item, config)
 
 
-def _move_flushed_items(
-    session: Session, flush_context: sqlalchemy.orm.UOWTransaction, config: Config
-):
-    """Moves altered or new items after they are successfully flushed to the db."""
+@moe.hookimpl
+def process_new_items(config: Config, session: Session, items: List[LibItem]):
+    """Moves altered or new items after they are added to the library."""
     # since moving an album involves moving all of its tracks and extras, it's possible
     # to move a track or extra twice if both it and its album exist in ``items_to_move``
-    items_to_move = session.new.union(session.dirty)
-    albums_to_move = [item for item in items_to_move if isinstance(item, Album)]
-    for item in items_to_move:
+    albums_to_move = [item for item in items if isinstance(item, Album)]
+    for item in items:
         if isinstance(item, Album):
-            _move_flushed_item(item, config)
+            _process_new_item(item, config)
         elif isinstance(item, (Extra, Track)) and item.album_obj not in albums_to_move:
-            _move_flushed_item(item, config)
+            _process_new_item(item, config)
 
 
-def _move_flushed_item(item: LibItem, config: Config):
-    """Moves an item that has been flushed to the database."""
+def _process_new_item(item: LibItem, config: Config):
+    """Moves an item that has been added to the database."""
     item_path_history = sqlalchemy.inspect(item).attrs.path.history
     assert len(item_path_history.deleted) <= 1  # noqa: S101 # not sure if always True
     try:
@@ -112,7 +91,7 @@ def _move_flushed_item(item: LibItem, config: Config):
 
     if isinstance(item, Album):
         for track_or_extra in item.tracks + item.extras:  # type: ignore
-            _move_flushed_item(track_or_extra, config)
+            _process_new_item(track_or_extra, config)
         _move_album(item, new_path, config)
     elif isinstance(item, Track):
         _move_track(item, new_path)

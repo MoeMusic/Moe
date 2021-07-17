@@ -4,11 +4,11 @@ import logging
 from typing import List
 
 import mediafile
-import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
+from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 __all__: List[str] = []
@@ -16,24 +16,19 @@ __all__: List[str] = []
 log = logging.getLogger("moe.write")
 
 
-def write_session_tracks(
-    session: Session, flush_context: sqlalchemy.orm.UOWTransaction
-):
-    """Writes tags to any altered or new Track in a session.
+@moe.hookimpl
+def process_new_items(config: Config, session: Session, items: List[LibItem]):
+    """Writes tags to any altered or new tracks in the library.
 
     Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
+        config: Moe config.
+        session: Currrent db session.
+        items: Any new or changed items that have been committed to the database
+            during the current session.
     """
-    for item in session.new.union(session.dirty):
+    for item in items:
         if isinstance(item, Track):
             _write_tags(item)
-
-
-@moe.hookimpl
-def register_db_listener(config: Config, session: Session):
-    """Write tags to any tracks being committed to the database."""
-    sqlalchemy.event.listen(session, "after_flush", write_session_tracks)
 
 
 def _write_tags(track: Track):
