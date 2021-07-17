@@ -35,17 +35,17 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     https://mrmoe.readthedocs.io/en/latest/plugins/edit.html
     """
 
-    add_parser = cmd_parsers.add_parser(
+    edit_parser = cmd_parsers.add_parser(
         "edit",
         description="Edits music in the library.",
         help="edit music in the library",
         parents=[query.query_parser],
         epilog=epilog_help,
     )
-    add_parser.add_argument(
+    edit_parser.add_argument(
         "fv_terms", metavar="FIELD=VALUE", nargs="+", help="set FIELD to VALUE"
     )
-    add_parser.set_defaults(func=_parse_args)
+    edit_parser.set_defaults(func=_parse_args)
 
 
 def _parse_args(

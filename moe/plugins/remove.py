@@ -18,14 +18,14 @@ log = logging.getLogger("moe.remove")
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds the ``remove`` command to Moe's CLI."""
-    add_parser = cmd_parsers.add_parser(
+    rm_parser = cmd_parsers.add_parser(
         "remove",
         aliases=["rm"],
         description="Removes music from the library.",
         help="remove music from the library",
         parents=[query.query_parser],
     )
-    add_parser.set_defaults(func=_parse_args)
+    rm_parser.set_defaults(func=_parse_args)
 
 
 def _parse_args(
