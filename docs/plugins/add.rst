@@ -3,6 +3,9 @@ Add
 ###
 Adds music to your library.
 
+.. note::
+    In order to add a track to your library, Moe requires each track to contain, at a minimum, a track number, an albumartist (or artist), and a date (or year).
+
 *************
 Configuration
 *************
