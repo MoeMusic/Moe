@@ -15,14 +15,14 @@ __all__: List[str] = []
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds the ``list`` command to Moe's CLI."""
-    add_parser = cmd_parsers.add_parser(
+    ls_parser = cmd_parsers.add_parser(
         "list",
         aliases=["ls"],
         description="Lists music in the library.",
         help="list music in the library",
         parents=[query.query_parser],
     )
-    add_parser.set_defaults(func=_parse_args)
+    ls_parser.set_defaults(func=_parse_args)
 
 
 def _parse_args(

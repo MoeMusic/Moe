@@ -24,13 +24,13 @@ __all__: List[str] = []
 @moe.hookimpl
 def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     """Adds the ``info`` command to Moe's CLI."""
-    add_parser = cmd_parsers.add_parser(
+    info_parser = cmd_parsers.add_parser(
         "info",
         description="Prints information about music in the library.",
         help="print info for music in the library",
         parents=[query.query_parser],
     )
-    add_parser.set_defaults(func=_parse_args)
+    info_parser.set_defaults(func=_parse_args)
 
 
 def _parse_args(
