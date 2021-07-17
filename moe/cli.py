@@ -32,10 +32,8 @@ class Hooks:
         """Add a sub-command to Moe's CLI.
 
         Args:
-            cmd_parsers: Contains all the sub-command parsers.
-
-        Note:
-            The sub-command should be added as an argparse parser to cmd_parsers.
+            cmd_parsers: Contains all the sub-command parsers. The new sub-command
+                should be added as an argparse parser to `cmd_parsers`.
 
         Example:
             Inside your hook implementation::
@@ -44,7 +42,7 @@ class Hooks:
                 my_parser.add_argument('bar', type=int)
                 my_parser.set_defaults(func=my_function)
 
-        Note:
+        Important:
             To specify a function to run when your command is passed, you need to
             define the ``func`` key using ``set_defaults`` as shown above.
             The function will be called like::
@@ -54,6 +52,20 @@ class Hooks:
                     session: sqlalchemy.orm.session.Session,  # database session
                     args: argparse.Namespace,  # parsed commandline arguments
                 )
+
+        Note:
+            If your command utilizes a `query`, you can specify ``query_parser`` as
+            a parent parser::
+
+                edit_parser = cmd_parsers.add_parser(
+                    "list",
+                    description="Lists music in the library.",
+                    parents=[query.query_parser],
+                )
+
+        See Also:
+            `The python documentation for adding sub-parsers.
+            <https://docs.python.org/3/library/argparse.html#sub-commands>`_
         """
 
     @staticmethod
@@ -67,7 +79,7 @@ class Hooks:
             items: Any new or changed items in the current session. The items and
                 their changes have not yet been committed to the library.
 
-        .. seealso::
+        See Also:
             The :meth:`process_new_items` hook if you wish to process any items after
             any final edits have been made and they have been successfully added to
             the library.
@@ -84,7 +96,7 @@ class Hooks:
             items: Any new or changed items that have been successfully added to the
                 library during the current session.
 
-        .. seealso::
+        See Also:
             The :meth:`edit_new_items` hook if you wish to edit the items.
         """
 
