@@ -123,8 +123,10 @@ def _add_album(album_path: Path) -> Album:
     for file_path in album_file_paths:
         try:
             album_tracks.append(Track.from_tags(path=file_path, album_path=album_path))
-        except (TrackError, mediafile.UnreadableFileError):
+        except mediafile.UnreadableFileError:
             extra_paths.append(file_path)
+        except TrackError as err:
+            log.error(err)
 
     if not album_tracks:
         raise AddError(f"No tracks found in album: {album_path}")
