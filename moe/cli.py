@@ -3,16 +3,19 @@
 """Entry point for the CLI."""
 
 import argparse
+import functools
 import logging
 import sys
-from typing import List
+from typing import Any, List, Optional
 
 import pkg_resources
 import pluggy
+import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
+from moe.core.library.lib_item import LibItem
 from moe.core.library.session import session_scope
 
 __all__ = ["Hooks"]
@@ -21,7 +24,7 @@ log = logging.getLogger("moe.cli")
 
 
 class Hooks:
-    """CLI hooks."""
+    """CLI hooks specifications."""
 
     @staticmethod
     @moe.hookspec
@@ -55,41 +58,34 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def register_db_listener(config: Config, session: Session):
-        """Register a listener for database events.
-
-        Because Moe uses ``sqlalchemy``, any database events will be exposed through
-        sqlalchemy's ORM event API. For a full documentation on that, see
-        https://docs.sqlalchemy.org/en/14/orm/events.html
+    def edit_new_items(config: Config, session: Session, items: List[LibItem]):
+        """Edit any new or changed items prior to them being added to the library.
 
         Args:
             config: Moe config.
             session: Currrent db session.
+            items: Any new or changed items in the current session. The items and
+                their changes have not yet been committed to the library.
 
-        Example:
-            To operate on items before they are committed to the database, you can
-            register a function that listens for the ``after_flush`` event. Then, within
-            the function, use ``session.new.union(session.dirty)`` to get a list of all
-            items to be persisted to the database::
+        .. seealso::
+            The :meth:`process_new_items` hook if you wish to process any items after
+            any final edits have been made and they have been successfully added to
+            the library.
+        """
 
-                import sqlalchemy
+    @staticmethod
+    @moe.hookspec
+    def process_new_items(config: Config, session: Session, items: List[LibItem]):
+        """Process any new or changed items after they have been added to the library.
 
-                def process_items(session, flush_context):
-                    for item in session.dirty.union(session.new):
-                        print(f"{item} was added to the database.")
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            items: Any new or changed items that have been successfully added to the
+                library during the current session.
 
-                @moe.hookimpl
-                def register_db_listener(config, session):
-                    sqlalchemy.event.listen(session, "after_flush", process_items)
-
-            If you wish to pass additional arguments to ``process_items``, you can take
-            advantage of ``functools.partial``::
-
-                sqlalchemy.event.listen(
-                    session,
-                    "after_flush",
-                    functools.partial(process_items, config=config)
-                )
+        .. seealso::
+            The :meth:`edit_new_items` hook if you wish to edit the items.
         """
 
 
@@ -137,7 +133,13 @@ def _parse_args(args: List[str], config: Config):
     # call the sub-command's handler within a single session
     config.init_db()
     with session_scope() as session:
-        config.plugin_manager.hook.register_db_listener(config=config, session=session)
+        sqlalchemy.event.listen(
+            session, "before_flush", functools.partial(_edit_new_items, config=config)
+        )
+        sqlalchemy.event.listen(
+            session, "after_flush", functools.partial(_process_new_items, config=config)
+        )
+
         parsed_args.func(config, session, args=parsed_args)
 
 
@@ -186,6 +188,50 @@ def _set_root_log_lvl(args):
     for key in logging.Logger.manager.loggerDict:
         if "moe" not in key:
             logging.getLogger(key).setLevel(logging.WARNING)
+
+
+def _edit_new_items(
+    session: Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
+    instances: Optional[Any],
+    config: Config,
+):
+    """Runs the ``edit_new_items`` hook specification.
+
+    This uses the sqlalchemy ORM event ``before_flush`` in the background to determine
+    the time of execution and to provide any new or changed items to the hook
+    implementations.
+
+    Args:
+        session: Current db session.
+        flush_context: sqlalchemy obj which handles the details of the flush.
+        instances: List of objects passed to the ``flush()`` method.
+        config: Moe config.
+    """
+    config.plugin_manager.hook.edit_new_items(
+        config=config, session=session, items=session.new.union(session.dirty)
+    )
+
+
+def _process_new_items(
+    session: Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
+    config: Config,
+):
+    """Runs the ``process_new_items`` hook specification.
+
+    This uses the sqlalchemy ORM event ``after_flush`` in the background to determine
+    the time of execution and to provide any new or changed items to the hook
+    implementations.
+
+    Args:
+        session: Current db session.
+        flush_context: sqlalchemy obj which handles the details of the flush.
+        config: Moe config.
+    """
+    config.plugin_manager.hook.process_new_items(
+        config=config, session=session, items=session.new.union(session.dirty)
+    )
 
 
 if __name__ == "__main__":
