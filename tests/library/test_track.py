@@ -5,9 +5,10 @@ from pathlib import Path
 
 import pytest
 
+import moe.plugins.write
 from moe.core.library.album import Album
 from moe.core.library.session import DbDupAlbumError, session_scope
-from moe.core.library.track import Track
+from moe.core.library.track import Track, TrackError
 
 
 class TestInit:
@@ -44,7 +45,7 @@ class TestAlbumSet:
     Thus, all tracks in the album will reflect the new value.
     """
 
-    def test_album_set(self, mock_track, tmp_path, tmp_session):
+    def test_album_set(self, mock_track, tmp_path):
         """Setting an album attribute maintains the same album object."""
         album1 = mock_track.album_obj
         mock_track.album = "TPAB"
@@ -58,7 +59,7 @@ class TestAlbumSet:
 class TestFromTags:
     """Test initialization from tags."""
 
-    def test_read_tags(self, tmp_session):
+    def test_read_tags(self):
         """We should initialize the track with tags from the file if present."""
         track = Track.from_tags(path=Path("tests/resources/full.mp3"))
 
@@ -73,6 +74,20 @@ class TestFromTags:
         assert track.mb_track_id == "123"
         assert track.title == "Full"
         assert track.track_num == 1
+
+    def test_no_reqd_tags(self):
+        """Raise `TrackError` if missing required tags."""
+        with pytest.raises(TrackError):
+            Track.from_tags(path=Path("tests/resources/empty.mp3"))
+
+    def test_albumartist_backup(self, real_track):
+        """Use artist as a backup for albumartist if missing."""
+        real_track.albumartist = ""
+        real_track.artist = "Backup"
+        moe.plugins.write._write_tags(real_track)
+
+        track = Track.from_tags(real_track.path)
+        assert track.albumartist
 
 
 class TestDupTrack:
