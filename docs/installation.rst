@@ -11,9 +11,9 @@ Installing
 #. `Install pipx <https://pypa.github.io/pipx/installation/>`_
 #. Install moe
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        $ pipx install moe
+    $ pipx install moe
 
 That's it! Check out the :doc:`Getting Started <getting_started>` page to start using Moe.
 
@@ -21,14 +21,14 @@ That's it! Check out the :doc:`Getting Started <getting_started>` page to start 
 Upgrading
 *********
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        $ pipx upgrade moe
+    $ pipx upgrade moe
 
 ************
 Uninstalling
 ************
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        $ pipx uninstall moe
+    $ pipx uninstall moe

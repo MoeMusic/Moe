@@ -25,7 +25,9 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
 
 All configuration options will presented in the following format
 
-    ``option = default_value``
+.. code-block:: toml
+
+    option = default_value
 
 Global Options
 ==============
@@ -40,10 +42,10 @@ For plugin specific configuration, see the respective plugin's page under :doc:`
 
 For example, it's common to want to specify where Moe should move your music files once it's been added to the library. To do this, we'd check out the ``move`` plugin and find it has the ``library_path`` configuration option. To customize this option, we'd write the following in our config file.
 
-    .. code-block:: toml
+.. code-block:: toml
 
-       [move]
-       library_path = "~/Music"
+    [move]
+    library_path = "~/Music"
 
 Overriding Config Values
 ========================
@@ -51,9 +53,9 @@ All configuration parameters can be overridden through environment variables. To
 
 For example, to override the ``library_path`` variable, you can run Moe with:
 
-    .. code-block:: bash
+.. code-block:: bash
 
-       $ MOE_MOVE.LIBRARY_PATH="~/Music2" moe
+    $ MOE_MOVE.LIBRARY_PATH="~/Music2" moe
 
 .. note::
    Notice since the ``library_path`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
@@ -63,8 +65,8 @@ Command-Line Interface
 **********************
 Once you're confident you've configured everything to your liking, you're ready to run Moe.
 
-    .. code-block:: bash
+.. code-block:: bash
 
-       $ moe
+    $ moe
 
 The help text of each command should be enough to get you started. For more info, see :doc:`plugins <plugins/plugins>`.

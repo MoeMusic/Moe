@@ -31,6 +31,9 @@ Unidecode = "^1.2.0"
 questionary = "^1.9.0"
 
 # necessary for extras
+# these should technically be dev-extras, but poetry doesn't support that yet
+# https://github.com/python-poetry/poetry/issues/1644
+furo = {version = "^2021.7.5-beta.38", optional = true}
 Sphinx = {version = "^4.0.2", optional = true}
 
 [tool.poetry.dev-dependencies]
@@ -43,14 +46,13 @@ mypy = "^0.910"
 pre-commit = "^2.6.0"
 pytest = "^6.0.1"
 pytest-cov = "^2.10.0"
-Sphinx = "^4.0.2"
 sqlalchemy2-stubs = "^0.0.2-alpha.1"
 wemake-python-styleguide = "^0.15"
 
 # needed because readthedocs doesn't natively support poetry
 # https://github.com/readthedocs/readthedocs.org/issues/4912
 [tool.poetry.extras]
-docs = ["Sphinx"]
+docs = ["Sphinx", "furo"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -71,5 +73,5 @@ markers = [
 ]
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.1"]
 build-backend = "poetry.masonry.api"
