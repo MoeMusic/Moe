@@ -1,3 +1,9 @@
+## v0.4.2 (2021-07-17)
+
+### Fix
+
+- **add**: invalid tracks aren't added as extras and are logged properly
+
 ## v0.4.1 (2021-07-17)
 
 ### Refactor
