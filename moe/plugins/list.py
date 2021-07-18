@@ -22,6 +22,12 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         help="list music in the library",
         parents=[query.query_parser],
     )
+    ls_parser.add_argument(
+        "-p",
+        "--paths",
+        action="store_true",
+        help="list paths",
+    )
     ls_parser.set_defaults(func=_parse_args)
 
 
@@ -50,4 +56,7 @@ def _parse_args(
         raise SystemExit(1)
 
     for item in items:
-        print(item)  # noqa: WPS421
+        if args.paths:
+            print(item.path)  # noqa: WPS421
+        else:
+            print(item)  # noqa: WPS421

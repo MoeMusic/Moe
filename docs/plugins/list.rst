@@ -13,7 +13,7 @@ Commandline
 ***********
 .. code-block:: bash
 
-    moe list [-h] [-a | -e] query
+    moe list [-h] [-a | -e] [-p] query
 
 Options
 =======
@@ -23,6 +23,8 @@ Options
     Query for matching albums instead of tracks.
 ``-e, --extra``
     Query for matching extras instead of tracks.
+``-p, --paths``
+    List item paths.
 
 Arguments
 =========
