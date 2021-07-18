@@ -1,3 +1,9 @@
+## v0.7.0 (2021-07-18)
+
+### Feat
+
+- **list**: add ability to list item paths
+
 ## v0.6.1 (2021-07-18)
 
 ### Fix
