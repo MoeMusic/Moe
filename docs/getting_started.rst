@@ -23,29 +23,11 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
 .. note::
     The configuration directory can be overwritten by setting the environment variable ``MOE_CONFIG_DIR``.
 
-All configuration options will presented in the following format
+Throughout this documentation, all configuration options will displayed in the following format
 
 .. code-block:: toml
 
     option = default_value
-
-Global Options
-==============
-Most configuration options reside in their relevant plugin, however there is currently one global option:
-
-``default_plugins = ["add", "edit", "info", "ls", "move", "musicbrainz", "rm", "write"]``
-    Overrides the list of default plugins.
-
-Plugin Options
-==============
-For plugin specific configuration, see the respective plugin's page under :doc:`plugins <plugins/plugins>`. Each plugin option should be specified under that plugin's section in the config.
-
-For example, it's common to want to specify where Moe should move your music files once it's been added to the library. To do this, we'd check out the ``move`` plugin and find it has the ``library_path`` configuration option. To customize this option, we'd write the following in our config file.
-
-.. code-block:: toml
-
-    [move]
-    library_path = "~/Music"
 
 Overriding Config Values
 ========================
@@ -59,6 +41,10 @@ For example, to override the ``library_path`` variable, you can run Moe with:
 
 .. note::
    Notice since the ``library_path`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
+
+Configuring Plugins
+===================
+Configuring Moe is mostly done by configuring the available plugins. For more information on the available configuration options, see the :doc:`plugins documentation <plugins/plugins>`.
 
 **********************
 Command-Line Interface
