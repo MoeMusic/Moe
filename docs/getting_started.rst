@@ -23,7 +23,7 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
 .. note::
     The configuration directory can be overwritten by setting the environment variable ``MOE_CONFIG_DIR``.
 
-Throughout this documentation, all configuration options will displayed in the following format
+Throughout this documentation, all configuration options will be displayed in the following format
 
 .. code-block:: toml
 

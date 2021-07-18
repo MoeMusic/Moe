@@ -9,7 +9,10 @@ These are the fields Moe keeps track of for tracks, albums, and extras in your l
 
 .. _Track Fields:
 
-.. csv-table:: Track Fields
+************
+Track Fields
+************
+.. csv-table::
     :header: "Field", "Description", "Notes"
     :widths: 20, 50, 50
 
@@ -27,7 +30,10 @@ These are the fields Moe keeps track of for tracks, albums, and extras in your l
     "track_num", "Track number", ""
     "year", "Album release year", ""
 
-.. csv-table:: Album Fields
+************
+Album Fields
+************
+.. csv-table::
     :header: "Field", "Description", "Notes"
     :widths: 20, 50, 50
 
@@ -39,7 +45,10 @@ These are the fields Moe keeps track of for tracks, albums, and extras in your l
     "title", "Album title", ""
     "year", "Album release year", ""
 
-.. csv-table:: Extra Fields
+************
+Extra Fields
+************
+.. csv-table::
     :header: "Field", "Description", "Notes"
     :widths: 20, 50, 50
 
