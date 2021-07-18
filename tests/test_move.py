@@ -409,17 +409,16 @@ class TestMoveCmd:
         moe.cli.main(cli_args, config)
 
         with session_scope() as new_session:
-            with new_session.no_autoflush:
-                albums = new_session.execute(sa.select(Album)).scalars().all()
+            albums = new_session.execute(sa.select(Album)).scalars().all()
 
-                for album in albums:
-                    assert tmp_path in album.path.parents
+            for album in albums:
+                assert tmp_path in album.path.parents
 
-                    for track in album.tracks:
-                        assert tmp_path in track.path.parents
+                for track in album.tracks:
+                    assert tmp_path in track.path.parents
 
-                    for extra in album.extras:
-                        assert tmp_path in extra.path.parents
+                for extra in album.extras:
+                    assert tmp_path in extra.path.parents
 
     def test_dry_run(self, real_album, tmp_config, tmp_path, tmp_session):
         """If `dry-run` is specified, don't actually move the items."""
@@ -434,7 +433,7 @@ class TestMoveCmd:
         move._parse_args(tmp_config(tmp_settings), tmp_session, args)
         tmp_session.commit()
 
-        db_album = tmp_session.execute(sa.select(Album)).scalar()
+        db_album = tmp_session.execute(sa.select(Album)).scalar_one()
 
         assert tmp_path not in db_album.path.parents
         for track in db_album.tracks:
