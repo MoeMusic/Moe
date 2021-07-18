@@ -2,13 +2,9 @@
 
 The `move` plugin provides the following features:
  * ``move`` command to "consolidate" or move items in the library to reflect changes in
-    your configuration.
+    your configuration or tags.
  * Any items added to the library will be copied to the location set by
     ``library_path`` in your configuration file.
- * Automatically moves any items as their path configurations change due to field
-    changes. For example, if you have a track at ``track_title.mp3``, and you change
-    the title to ``new_track_title``, the track file will be automatically moved to
-    ``new_track_title.mp3``.
 
 This plugin is enabled by default.
 """
@@ -29,7 +25,6 @@ import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.extra import Extra
-from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
 __all__: List[str] = []
@@ -108,75 +103,6 @@ def _parse_args(
     else:
         for album in albums:
             _move_album(album, _fmt_album_path(album, config), config)
-
-
-@moe.hookimpl(trylast=True)
-def edit_new_items(config: Config, session: Session, items: List[LibItem]):
-    """Sets the path of any new or altered items in the library.
-
-    Once the items are successfully added to the library, they will be moved on the
-    filesystem in the ``process_new_items`` hook implementation.
-
-    Args:
-        config: Moe config.
-        session: Currrent db session.
-        items: Any new or changed items that have been committed to the database
-            during the current session.
-
-    """
-    for item in items:
-        if isinstance(item, Album):
-            item.path = _fmt_album_path(item, config)
-            for track in item.tracks:
-                track.path = _fmt_track_path(track, config)
-            for extra in item.extras:
-                extra.path = _fmt_extra_path(extra, config)
-        elif isinstance(item, Extra):
-            item.path = _fmt_extra_path(item, config)
-        elif isinstance(item, Track):
-            item.path = _fmt_track_path(item, config)
-
-
-@moe.hookimpl
-def process_new_items(config: Config, session: Session, items: List[LibItem]):
-    """Moves altered or new items after they are added to the library."""
-    # since moving an album involves moving all of its tracks and extras, it's possible
-    # to move a track or extra twice if both it and its album exist in ``items_to_move``
-    albums_to_move = [item for item in items if isinstance(item, Album)]
-    for item in items:
-        if isinstance(item, Album):
-            _process_new_item(item, config)
-        elif isinstance(item, (Extra, Track)) and item.album_obj not in albums_to_move:
-            _process_new_item(item, config)
-
-
-def _process_new_item(item: LibItem, config: Config):
-    """Moves an item that has been added to the database."""
-    item_path_history = sa.inspect(item).attrs.path.history
-    assert len(item_path_history.deleted) <= 1  # noqa: S101 # not sure if always True
-    try:
-        og_path = item_path_history.deleted[0]
-    except IndexError:
-        return
-
-    # check if the item was already moved
-    if not og_path.exists():
-        return
-
-    new_path = item.path  # the item's path is the path we need to move to
-
-    # Temporarily (will not change in the db) set the item's path to the original
-    # path so the move functions know where to find the files on the filesystem.
-    sa.orm.attributes.set_committed_value(item, "path", og_path)
-
-    if isinstance(item, Album):
-        for track_or_extra in item.tracks + item.extras:  # type: ignore
-            _process_new_item(track_or_extra, config)
-        _move_album(item, new_path, config)
-    elif isinstance(item, Track):
-        _move_track(item, new_path)
-    elif isinstance(item, Extra):
-        _move_extra(item, new_path)
 
 
 @moe.hookimpl(trylast=True)

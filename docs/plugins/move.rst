@@ -4,10 +4,8 @@ Move
 Alters the location of files in your library.
 
 The `move` plugin provides the following features:
- * ``move`` command to "consolidate" or move items in the library to reflect changes in your configuration.
+ * ``move`` command to "consolidate" or move items in the library to reflect changes in your configuration or tags.
  * Any items added to the library will be copied to the location set by ``library_path`` in your configuration file.
- * Automatically moves any items as their path configurations change due to field changes.
-    For example, if you have a track at ``track_title.mp3``, and you change the title to ``new_track_title``, the track file will be automatically moved to ``new_track_title.mp3``.
 
 This plugin is enabled by default.
 
