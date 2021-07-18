@@ -1,9 +1,10 @@
 """Tests the ``move`` plugin."""
 
+import argparse
 from unittest.mock import patch
 
 import pytest
-import sqlalchemy
+import sqlalchemy as sa
 
 import moe
 from moe.core.library.album import Album
@@ -299,7 +300,7 @@ class TestDBListener:
         with session_scope() as pre_edit_session:
             pre_edit_session.merge(real_album)
 
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
+        with pytest.raises(sa.exc.IntegrityError):
             moe.cli.main(cli_args, config)
 
         with session_scope() as session:
@@ -335,3 +336,61 @@ class TestItemPaths:
         for extra in real_album.extras:
             extra.path = extra.path.parent / f"{non_ascii_title}"
             str(move._fmt_extra_path(extra, config))
+
+
+class TestMoveCmd:
+    """Test the ``move`` cli command."""
+
+    @pytest.mark.integration
+    def test_move(self, real_album_factory, tmp_config, tmp_path):
+        """Test all items in the library are moved when the command is invoked."""
+        cli_args = ["move"]
+        tmp_settings = f"""
+        default_plugins = ["move"]
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        config = tmp_config(tmp_settings)
+        config.init_db()
+
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+
+        with session_scope() as session:
+            session.merge(album1)
+            session.merge(album2)
+
+        moe.cli.main(cli_args, config)
+
+        with session_scope() as new_session:
+            albums = new_session.execute(sa.select(Album)).scalars().all()
+
+            for album in albums:
+                assert tmp_path in album.path.parents
+
+                for track in album.tracks:
+                    assert tmp_path in track.path.parents
+
+                for extra in album.extras:
+                    assert tmp_path in extra.path.parents
+
+    def test_dry_run(self, real_album, tmp_config, tmp_path, tmp_session):
+        """If `dry-run` is specified, don't actually move the items."""
+        tmp_settings = f"""
+        default_plugins = ["move"]
+        [move]
+        library_path = '''{tmp_path.resolve()}'''
+        """
+        real_album = tmp_session.merge(real_album)
+
+        args = argparse.Namespace(dry_run=True)
+        move._parse_args(tmp_config(tmp_settings), tmp_session, args)
+        tmp_session.commit()
+
+        db_album = tmp_session.execute(sa.select(Album)).scalar()
+
+        assert tmp_path not in db_album.path.parents
+        for track in db_album.tracks:
+            assert tmp_path not in track.path.parents
+        for extra in db_album.extras:
+            assert tmp_path not in extra.path.parents
