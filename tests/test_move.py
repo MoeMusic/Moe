@@ -92,18 +92,18 @@ class TestCopyTrack:
 class TestCopyExtra:
     """Tests ``_copy_extra()``."""
 
-    def test_copy_extra(self, real_track, tmp_path):
+    def test_copy_extra(self, real_extra, tmp_path):
         """We can copy an extra."""
-        og_path = real_track.path
-        dest = tmp_path / real_track.path.name
+        og_path = real_extra.path
+        dest = tmp_path / real_extra.path.name
         assert og_path != dest
 
-        move._copy_track(real_track, dest)
+        move._copy_extra(real_extra, dest)
 
         assert og_path.exists()
-        assert real_track.path.exists()
-        assert og_path != real_track.path
-        assert real_track.path == dest
+        assert real_extra.path.exists()
+        assert og_path != real_extra.path
+        assert real_extra.path == dest
 
 
 class TestMoveAlbum:
@@ -163,6 +163,40 @@ class TestMoveAlbum:
             move._move_album(real_album, tmp_path, tmp_config())
 
         assert not mock_copy.called
+
+
+class TestMoveTrack:
+    """Tests ``_move_track()``."""
+
+    def test_move_track(self, real_track, tmp_path):
+        """We can move a track."""
+        og_path = real_track.path
+        dest = tmp_path / real_track.path.name
+        assert og_path != dest
+
+        move._move_track(real_track, dest)
+
+        assert not og_path.exists()
+        assert real_track.path.exists()
+        assert og_path != real_track.path
+        assert real_track.path == dest
+
+
+class TestMoveExtra:
+    """Tests ``_move_extra()``."""
+
+    def test_move_extra(self, real_extra, tmp_path):
+        """We can move an extra."""
+        og_path = real_extra.path
+        dest = tmp_path / real_extra.path.name
+        assert og_path != dest
+
+        move._move_extra(real_extra, dest)
+
+        assert not og_path.exists()
+        assert real_extra.path.exists()
+        assert og_path != real_extra.path
+        assert real_extra.path == dest
 
 
 @pytest.mark.integration
@@ -363,16 +397,17 @@ class TestMoveCmd:
         moe.cli.main(cli_args, config)
 
         with session_scope() as new_session:
-            albums = new_session.execute(sa.select(Album)).scalars().all()
+            with new_session.no_autoflush:
+                albums = new_session.execute(sa.select(Album)).scalars().all()
 
-            for album in albums:
-                assert tmp_path in album.path.parents
+                for album in albums:
+                    assert tmp_path in album.path.parents
 
-                for track in album.tracks:
-                    assert tmp_path in track.path.parents
+                    for track in album.tracks:
+                        assert tmp_path in track.path.parents
 
-                for extra in album.extras:
-                    assert tmp_path in extra.path.parents
+                    for extra in album.extras:
+                        assert tmp_path in extra.path.parents
 
     def test_dry_run(self, real_album, tmp_config, tmp_path, tmp_session):
         """If `dry-run` is specified, don't actually move the items."""
