@@ -1,3 +1,9 @@
+## v0.6.0 (2021-07-18)
+
+### Feat
+
+- **move**: add the `move` command
+
 ## v0.5.0 (2021-07-17)
 
 ### Feat
