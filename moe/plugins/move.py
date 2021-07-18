@@ -349,11 +349,14 @@ def _move_album(album: Album, dest: Path, config: Config):
         _move_extra(extra, _fmt_extra_path(extra, config))
 
     # remove any empty leftover directories
-    for old_path in old_album_dir.rglob("*"):
+    for old_child in old_album_dir.rglob("*"):
         with suppress(OSError):
-            old_path.rmdir()
+            old_child.rmdir()
     with suppress(OSError):
         old_album_dir.rmdir()
+    for old_parent in old_album_dir.parents:
+        with suppress(OSError):
+            old_parent.rmdir()
 
 
 def _move_track(track: Track, dest: Path):

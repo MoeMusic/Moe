@@ -164,6 +164,18 @@ class TestMoveAlbum:
 
         assert not mock_copy.called
 
+    def test_rm_empty_leftover_dirs(self, real_album, tmp_config, tmp_path):
+        """Remove any leftover empty directories after a move."""
+        nested_album_dir = tmp_path / "should" / "be" / "removed"
+        real_album.disc_total = 2  # also remove empty child directories
+
+        move._move_album(real_album, nested_album_dir, tmp_config())
+        move._move_album(real_album, tmp_path, tmp_config())
+
+        for parent in nested_album_dir.parents:
+            if tmp_path in parent.parents and parent != tmp_path:
+                assert not parent.exists()
+
 
 class TestMoveTrack:
     """Tests ``_move_track()``."""
