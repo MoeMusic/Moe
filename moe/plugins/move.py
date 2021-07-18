@@ -1,5 +1,19 @@
-"""Any operations regarding altering the location of files in the library."""
+"""Alters the location of files in your library.
 
+The `move` plugin provides the following features:
+ * ``move`` command to "consolidate" or move items in the library to reflect changes in
+    your configuration.
+ * Any items added to the library will be copied to the location set by
+    ``library_path`` in your configuration file.
+ * Automatically moves any items as their path configurations change due to field
+    changes. For example, if you have a track at ``track_title.mp3``, and you change
+    the title to ``new_track_title``, the track file will be automatically moved to
+    ``new_track_title.mp3``.
+
+This plugin is enabled by default.
+"""
+
+import argparse
 import logging
 import shutil
 from contextlib import suppress
@@ -7,7 +21,7 @@ from pathlib import Path
 from typing import List
 
 import dynaconf
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm.session import Session
 from unidecode import unidecode
 
@@ -32,6 +46,68 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(
         dynaconf.Validator("MOVE.LIBRARY_PATH", must_exist=True, default="~/Music")
     )
+
+
+@moe.hookimpl
+def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+    """Adds the ``move`` command to Moe's CLI."""
+    move_parser = cmd_parsers.add_parser(
+        "move",
+        aliases=["mv"],
+        description="Moves items in the library according to the user configuration.",
+        help="move items in the library",
+    )
+    move_parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help="display what will be moved without actually moving the items",
+    )
+    move_parser.set_defaults(func=_parse_args)
+
+
+def _parse_args(
+    config: Config, session: sa.orm.session.Session, args: argparse.Namespace
+):
+    """Parses the given commandline arguments.
+
+    Items will be moved according to the given user configuration.
+
+    Args:
+        config: Configuration in use.
+        session: Current db session.
+        args: Commandline arguments to parse.
+
+    Raises:
+        SystemExit: Invalid field or field_value term format.
+    """
+    albums = session.execute(sa.select(Album)).scalars().all()
+
+    if args.dry_run:
+        dry_run_str = ""
+        for dry_album in albums:
+            album_dest = _fmt_album_path(dry_album, config)
+            if album_dest != dry_album.path:
+                dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
+
+            # temporarily set the album's path so track/extra dests use the right
+            # album directory
+            sa.orm.attributes.set_committed_value(dry_album, "path", album_dest)
+
+            for dry_track in dry_album.tracks:
+                track_dest = _fmt_track_path(dry_track, config)
+                if track_dest != dry_track.path:
+                    dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
+            for dry_extra in dry_album.extras:
+                extra_dest = _fmt_extra_path(dry_extra, config)
+                if extra_dest != dry_extra.path:
+                    dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
+
+        if dry_run_str:
+            print(dry_run_str.lstrip())  # noqa: WPS421
+    else:
+        for album in albums:
+            _move_album(album, _fmt_album_path(album, config), config)
 
 
 @moe.hookimpl(trylast=True)
@@ -76,18 +152,22 @@ def process_new_items(config: Config, session: Session, items: List[LibItem]):
 
 def _process_new_item(item: LibItem, config: Config):
     """Moves an item that has been added to the database."""
-    item_path_history = sqlalchemy.inspect(item).attrs.path.history
+    item_path_history = sa.inspect(item).attrs.path.history
     assert len(item_path_history.deleted) <= 1  # noqa: S101 # not sure if always True
     try:
         og_path = item_path_history.deleted[0]
     except IndexError:
         return
 
+    # check if the item was already moved
+    if not og_path.exists():
+        return
+
     new_path = item.path  # the item's path is the path we need to move to
 
     # Temporarily (will not change in the db) set the item's path to the original
     # path so the move functions know where to find the files on the filesystem.
-    sqlalchemy.orm.attributes.set_committed_value(item, "path", og_path)
+    sa.orm.attributes.set_committed_value(item, "path", og_path)
 
     if isinstance(item, Album):
         for track_or_extra in item.tracks + item.extras:  # type: ignore
@@ -192,12 +272,10 @@ def _copy_album(album: Album, dest: Path, config: Config):
         dest: Destination to copy the album to.
         config: Moe config.
     """
-    if album.path == dest:
-        return
-
     log.info(f"Copying album from '{album.path}' to '{dest}'.")
-    dest.mkdir(parents=True, exist_ok=True)
-    album.path = dest
+    if album.path != dest:
+        dest.mkdir(parents=True, exist_ok=True)
+        album.path = dest
 
     for track in album.tracks:
         _copy_track(track, _fmt_track_path(track, config))
@@ -258,13 +336,11 @@ def _move_album(album: Album, dest: Path, config: Config):
         dest: Destination to move the album to.
         config: Moe config.
     """
-    if album.path == dest:
-        return
-
     log.info(f"Moving album from '{album.path}' to '{dest}'.")
-    dest.mkdir(parents=True, exist_ok=True)
     old_album_dir = album.path
-    album.path = dest
+    if album.path != dest:
+        dest.mkdir(parents=True, exist_ok=True)
+        album.path = dest
 
     for track in album.tracks:
         _move_track(track, _fmt_track_path(track, config))
