@@ -1,3 +1,10 @@
+## v0.6.1 (2021-07-18)
+
+### Fix
+
+- **move**: remove ability to auto-move items on tag changes
+- **move**: remove leftover empty dirs after an album has been moved
+
 ## v0.6.0 (2021-07-18)
 
 ### Feat
