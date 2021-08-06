@@ -9,20 +9,20 @@ from moe.core.library.album import Album
 from moe.plugins import add
 
 
-class TestRunPrompt:
-    """Test running the prompt."""
+class TestImportPrompt:
+    """Test running the import prompt."""
 
     def test_same_album(self, capsys, mock_album):
         """Don't do anything if no album changes."""
         new_album = copy.deepcopy(mock_album)
         assert mock_album is not new_album
 
-        add.prompt.run_prompt(Mock(), Mock(), mock_album, new_album)
+        add.prompt.import_prompt(Mock(), Mock(), mock_album, new_album)
 
         captured_txt = capsys.readouterr()
         assert not captured_txt.out
 
-    def test_apply_changes(self, mock_album, tmp_config):
+    def test_apply_changes(self, mock_album, tmp_config, tmp_session):
         """If selected, apply the changes to the old album."""
         config = tmp_config("default_plugins = ['add']")
         new_album = copy.deepcopy(mock_album)
@@ -39,19 +39,18 @@ class TestRunPrompt:
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = add.prompt.run_prompt(
-                config, MagicMock(), mock_album, new_album
-            )
+            add.prompt.import_prompt(config, tmp_session, mock_album, new_album)
 
-        assert add_album.title == new_album.title
-        assert add_album.path == mock_album.path
+        mock_album = tmp_session.merge(mock_album)
+        assert mock_album.title == new_album.title
+        assert mock_album.path == mock_album.path
 
-        assert add_album.tracks
-        for added_track in add_album.tracks:
+        assert mock_album.tracks
+        for added_track in mock_album.tracks:
             old_track = mock_album.get_track(added_track.track_num)
             assert added_track.path == old_track.path
 
-        assert add_album.extras
+        assert mock_album.extras
 
     def test_abort_changes(self, mock_album, tmp_config):
         """If selected, abort the changes to the old album."""
@@ -63,11 +62,9 @@ class TestRunPrompt:
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._abort_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = add.prompt.run_prompt(
-                config, MagicMock(), mock_album, new_album
-            )
+            add.prompt.import_prompt(config, MagicMock(), mock_album, new_album)
 
-        assert not add_album
+        assert mock_album.is_unique(new_album)
 
     def test_partial_album_exists_merge(self, mock_album, tmp_config, tmp_session):
         """Merge existing tracks with those being added."""
@@ -82,12 +79,10 @@ class TestRunPrompt:
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = add.prompt.run_prompt(
-                config, tmp_session, mock_album, new_album
-            )
+            add.prompt.import_prompt(config, tmp_session, mock_album, new_album)
 
-        add_album.merge(add_album.get_existing(tmp_session))
-        tmp_session.merge(add_album)
+        mock_album.merge(mock_album.get_existing(tmp_session))
+        tmp_session.merge(mock_album)
 
         album = tmp_session.query(Album).one()
         assert len(album.tracks) == 2
@@ -103,12 +98,10 @@ class TestRunPrompt:
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._apply_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add_album = add.prompt.run_prompt(
-                config, MagicMock(), mock_album, new_album
-            )
+            add.prompt.import_prompt(config, MagicMock(), mock_album, new_album)
 
-        add_album.merge(add_album.get_existing(tmp_session))
-        tmp_session.merge(add_album)
+        mock_album.merge(mock_album.get_existing(tmp_session))
+        tmp_session.merge(mock_album)
 
         album = tmp_session.query(Album).one()
         assert album.disc_total == 2

@@ -6,7 +6,7 @@ Lists music in your library.
 *************
 Configuration
 *************
-This plugin is enabled by default.
+The ``list`` plugin is enabled by default.
 
 ***********
 Commandline

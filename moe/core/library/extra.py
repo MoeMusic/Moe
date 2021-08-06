@@ -57,7 +57,7 @@ class Extra(LibItem, Base):
         return self.path.name
 
     def fields(self) -> Tuple[str, ...]:
-        """Returns the public fields, or non-method attributes, of a Track."""
+        """Returns the public fields, or non-method attributes, of an Extra."""
         return "filename", "path"
 
     def __eq__(self, other):

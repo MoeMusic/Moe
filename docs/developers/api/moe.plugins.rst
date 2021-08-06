@@ -3,41 +3,19 @@ Plugins
 
 Add
 ---
-
-``add`` submodule.
-
 .. automodule:: moe.plugins.add
    :members:
-   :undoc-members:
+   :exclude-members: PromptChoice
    :show-inheritance:
-   :noindex:
+
+..
+    PromptChoice
+.. autoclass:: moe.plugins.add.PromptChoice
+
 
 Edit
 ----
-
-``edit`` submodule.
-
 .. automodule:: moe.plugins.edit
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Info
-----
-
-``info`` submodule.
-
-.. automodule:: moe.plugins.info
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-List
-----
-
-``list`` submodule.
-
-.. automodule:: moe.plugins.list
    :members:
    :undoc-members:
    :show-inheritance:

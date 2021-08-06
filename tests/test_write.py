@@ -11,7 +11,7 @@ from moe.plugins import write as moe_write
 
 
 class TestWriteTags:
-    """Tests the ability to write tags to a track file."""
+    """Tests `write_tags()`."""
 
     def test_write_tags(self, real_track):
         """We can write track changes to the file."""
@@ -39,7 +39,7 @@ class TestWriteTags:
         real_track.title = title
         real_track.track_num = track_num
 
-        moe_write._write_tags(real_track)
+        moe_write.write_tags(real_track)
 
         new_track = Track.from_tags(path=real_track.path)
         assert new_track.album == album
@@ -57,7 +57,7 @@ class TestWriteTags:
 
 @pytest.mark.integration
 class TestDBListener:
-    """Test integration with the ``post_args`` hook entry to the plugin."""
+    """Test integration with the `process_items` hook entry to the plugin."""
 
     def test_edit_track(self, real_track, tmp_config):
         """Any altered Tracks have their tags written."""

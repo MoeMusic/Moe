@@ -34,15 +34,14 @@ class TestParseArgs:
 
         assert not tmp_session.query(Album).scalar()
 
-    def test_extra(self, tmp_session, real_album):
+    def test_extra(self, tmp_session, mock_album):
         """Extras are removed from the database with valid query.
 
-        ``mock_album`` isn't working with this test. Likely something to do with
-        the Extra primary key ``_filename`` and how we are mocking filesytem paths.
+        `mock_album` is used because queries will not return anything if there are no
+        tracks in the database.
         """
         args = argparse.Namespace(query="*", album=False, extra=True)
-        tmp_session.merge(real_album)
-        assert real_album.extras
+        tmp_session.merge(mock_album)
 
         remove._parse_args(config=Mock(), session=tmp_session, args=args)
 
@@ -75,6 +74,37 @@ class TestParseArgs:
             remove._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
+
+
+class TestRemoveItem:
+    """Tests `remove_item()`."""
+
+    def test_track(self, tmp_session, mock_track):
+        """Tracks are removed from the database with valid query."""
+        tmp_session.add(mock_track)
+        tmp_session.commit()
+
+        remove.remove_item(mock_track, tmp_session)
+
+        assert not tmp_session.query(Track).scalar()
+
+    def test_album(self, tmp_session, mock_album):
+        """Albums are removed from the database with valid query."""
+        mock_album = tmp_session.merge(mock_album)
+        tmp_session.commit()
+
+        remove.remove_item(mock_album, tmp_session)
+
+        assert not tmp_session.query(Album).scalar()
+
+    def test_extra(self, tmp_session, mock_extra):
+        """Extras are removed from the database with valid query."""
+        tmp_session.add(mock_extra)
+        tmp_session.commit()
+
+        remove.remove_item(mock_extra, tmp_session)
+
+        assert not tmp_session.query(Extra).scalar()
 
 
 @pytest.mark.integration

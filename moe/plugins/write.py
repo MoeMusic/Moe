@@ -1,4 +1,11 @@
-"""Writes tags to track files."""
+"""Writes tags to track files.
+
+The ``move`` plugin will automatically write the tags of any altered or new items in the
+library.
+
+Note:
+    This plugin is enabled by default.
+"""
 
 import logging
 from typing import List
@@ -11,7 +18,7 @@ from moe.core.config import Config
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
-__all__: List[str] = []
+__all__ = ["write_tags"]
 
 log = logging.getLogger("moe.write")
 
@@ -28,10 +35,10 @@ def process_new_items(config: Config, session: Session, items: List[LibItem]):
     """
     for item in items:
         if isinstance(item, Track):
-            _write_tags(item)
+            write_tags(item)
 
 
-def _write_tags(track: Track):
+def write_tags(track: Track):
     """Write tags to a track's file."""
     log.info(f"Writing tags for '{track}'.")
 

@@ -3,16 +3,23 @@ Move
 ####
 Alters the location of files in your library.
 
-The `move` plugin provides the following features:
- * ``move`` command to "consolidate" or move items in the library to reflect changes in your configuration or tags.
- * Any items added to the library will be copied to the location set by ``library_path`` in your configuration file.
+The ``move`` plugin provides the following features:
 
-This plugin is enabled by default.
+* Any items added to your library will be copied to the location set by ``library_path`` in your configuration file.
+* Any items moved or copied will have their paths set to a default format. This default format cannot currently be configured, and is as follows:
+
+  * Albums: ``{library_path}/{albumartist} ({album_year})/``
+  * Tracks: ``{album_path}/{track_number} - {track_title}.{file_ext}``
+
+    If the album contains more than one disc, tracks will be formatted as:
+
+    ``{album_path}/Disc {disc#}/{track_number} - {track_title}.{file_ext}``
+  * Extras: ``{album_path}/{original_file_name}``
 
 *************
 Configuration
 *************
-This plugin provides the following configuration options:
+The ``move`` plugin is enabled by default and provides the following configuration options:
 
 ``asciify_paths = false``
     Whether or not to convert all filesystem paths to ascii.

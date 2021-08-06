@@ -8,6 +8,7 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.core.library.lib_item import LibItem
 from moe.plugins import add
 
 __all__ = ["Hooks"]
@@ -38,16 +39,19 @@ class Hooks:
     @staticmethod
     @moe.hookspec
     def import_album(config: Config, session: Session, album: Album) -> Album:
-        """Return an album with changes to be applied by the user via the prompt.
+        """Return an album with changes to be applied by the user via the import prompt.
 
         This hook is intended to be used to import metadata from an external source.
         The user will then select one of the imported albums to apply the changes prior
         to the album being added to the library.
 
+        Note:
+            This hook is run within the :meth:`pre_add` hook.
+
         Args:
             config: Moe config.
             session: Currrent db session.
-            album: Original album to alter.
+            album: Album being added to the library.
 
         Returns:
             The new, altered album to compare against the original in the prompt.
@@ -55,8 +59,45 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def pre_add(config: Config, session: Session, album: Album):
-        """Provides an album prior to it being added to the library."""
+    def pre_add(config: Config, session: Session, item: LibItem):
+        """Provides an item prior to it being added to the library.
+
+        Use this hook if you wish to change the item's metadata.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            item: Library item being added.
+
+        See Also:
+            * The :meth:`post_add` hook for any post-processing operations.
+            * The :meth:`~moe.cli.Hooks.edit_new_items` hook.
+              The difference between them is that the :meth:`pre_add` hook will only
+              operate on an `add` operation, while the
+              :meth:`~moe.cli.Hooks.edit_new_items` hook will run anytime an item is
+              changed or added.
+        """
+
+    @staticmethod
+    @moe.hookspec
+    def post_add(config: Config, session: Session, item: LibItem):
+        """Provides an item after it has been added to the library.
+
+        Use this hook if you want to operate on an item after its metadata has been set.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            item: Library item added.
+
+        See Also:
+            * The :meth:`pre_add` hook if you wish to alter item metadata.
+            * The :meth:`~moe.cli.Hooks.process_new_items` hook.
+              The difference between them is that the :meth:`post_add` hook will only
+              operate on an `add` operation, while the
+              :meth:`~moe.cli.Hooks.process_new_items` hook will run anytime an item is
+              changed or added.
+        """
 
 
 @moe.hookimpl

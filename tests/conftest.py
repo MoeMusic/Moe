@@ -219,7 +219,7 @@ def real_track_factory(
         track.path = track.album_obj.path / filename
         shutil.copyfile(empty_mp3_path, track.path)
 
-        moe_write._write_tags(track)
+        moe_write.write_tags(track)
         return track
 
     return _real_track

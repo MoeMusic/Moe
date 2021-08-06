@@ -14,22 +14,25 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
+from moe.core.library.extra import Extra
+from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 from moe.plugins import add
 
-__all__ = ["PromptChoice", "run_prompt"]
+__all__ = ["PromptChoice", "import_prompt"]
 
 log = logging.getLogger("moe.add")
 
 
 class PromptChoice(NamedTuple):
-    """A single user-selectable choice for the album changes prompt.
+    """A single, user-selectable choice for a CLI prompt.
 
     Attributes:
         title: Title of the prompt choice that is displayed to the user.
         shortcut_key: Single character the user will use to select the choice.
-            You must be careful to ensure the key is not currently in use by another
-            PromptChoice.
+
+            Important:
+                Ensure the key is not currently in use by another PromptChoice.
         func: Function to call upon this prompt choice being selected. The function
             should return the album to be added to the library (or ``None`` if no album
             should be added) and will be supplied the following keyword arguments:
@@ -56,9 +59,22 @@ def add_prompt_choice(prompt_choices: List[PromptChoice]):
     )
 
 
-def run_prompt(
-    config: Config, session: Session, old_album: Album, new_album: Album
-) -> Optional[Album]:
+@moe.hookimpl
+def pre_add(config: Config, session: Session, item: LibItem):
+    """Fixes album metadata via external sources prior to it being added to the lib."""
+    if isinstance(item, Album):
+        old_album = item
+    elif isinstance(item, (Extra, Track)):
+        old_album = item.album_obj
+
+    new_albums = config.plugin_manager.hook.import_album(
+        config=config, session=session, album=old_album
+    )
+    if new_albums:
+        import_prompt(config, session, old_album, new_albums[0])
+
+
+def import_prompt(config: Config, session: Session, old_album: Album, new_album: Album):
     """Runs the interactive prompt for the given album changes.
 
     Args:
@@ -97,14 +113,12 @@ def run_prompt(
         "What do you want to do?", choices=questionary_choices
     ).ask()
     if prompt_choice_func:
-        return prompt_choice_func(
+        prompt_choice_func(
             config=config,
             session=session,
             old_album=old_album,
             new_album=new_album,
         )
-
-    return None
 
 
 def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
@@ -194,7 +208,7 @@ def _apply_changes(
     session: Session,
     old_album: Album,
     new_album: Album,
-) -> Optional[Album]:
+):
     """Applies the album changes."""
     new_album.path = old_album.path
     for old_track, new_track in add.match.get_matching_tracks(old_album, new_album):
@@ -207,7 +221,6 @@ def _apply_changes(
         extra.album_obj = new_album
 
     new_album.merge(old_album)
-    return new_album
 
 
 def _abort_changes(
@@ -215,6 +228,6 @@ def _abort_changes(
     session: Session,
     old_album: Album,
     new_album: Album,
-) -> Optional[Album]:
+):
     """Aborts the album changes."""
-    return None  # noqa: WPS324
+    pass  # noqa: WPS420

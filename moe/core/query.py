@@ -28,7 +28,7 @@ from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 
-__all__: List[str] = ["QueryError", "query", "query_parser"]
+__all__: List[str] = ["QueryError", "query"]
 
 log = logging.getLogger("moe.query")
 

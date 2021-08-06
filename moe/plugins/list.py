@@ -1,4 +1,8 @@
-"""Lists music in the library."""
+"""Lists music in the library.
+
+Note:
+    This plugin is enabled by default.
+"""
 
 import argparse
 from typing import List

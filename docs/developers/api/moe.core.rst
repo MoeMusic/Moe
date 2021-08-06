@@ -3,6 +3,8 @@ Core
 
 ``core`` subpackage.
 
+Library
+-------
 .. toctree::
    :maxdepth: 4
 
