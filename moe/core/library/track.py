@@ -209,9 +209,7 @@ class Track(LibItem, Base):
         """Compares a Track by it's attributes."""
         if isinstance(other, Track):
             return (
-                self.album_obj.artist == other.album_obj.artist
-                and self.album_obj.date == other.album_obj.date
-                and self.album_obj.title == other.album_obj.title
+                not self.album_obj.is_unique(other.album_obj)
                 and self.artist == other.artist
                 and set(self.genres) == set(other.genres)
                 and self.mb_track_id == other.mb_track_id

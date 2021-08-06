@@ -60,9 +60,7 @@ class Extra(LibItem, Base):
         """Compares an Extra by it's attributes."""
         if isinstance(other, Extra):
             return (
-                self.album_obj.artist == other.album_obj.artist
-                and self.album_obj.date == other.album_obj.date
-                and self.album_obj.title == other.album_obj.title
+                not self.album_obj.is_unique(other.album_obj)
                 and self.path == other.path
             )
         return False
