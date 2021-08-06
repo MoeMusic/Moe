@@ -1,8 +1,14 @@
 """Musicbrainz integration plugin.
 
-For more information on the Musicbrainz API see the following:
-https://musicbrainz.org/doc/MusicBrainz_API/
-https://python-musicbrainzngs.readthedocs.io/en/latest/api/
+The ``musicbrainz`` plugin will import metadata from musicbrainz when adding a track or
+album to the library.
+
+Note:
+    This plugin is enabled by default.
+
+See Also:
+    * https://musicbrainz.org/doc/MusicBrainz_API/
+    * https://python-musicbrainzngs.readthedocs.io/en/latest/api/
 """
 
 import datetime
@@ -19,7 +25,7 @@ from moe.core.library.album import Album
 from moe.core.library.track import Track
 from moe.plugins import add
 
-__all__: List[str] = []
+__all__ = ["get_album_by_id", "get_matching_album"]
 
 musicbrainzngs.set_useragent(
     "moe",
@@ -55,6 +61,20 @@ def add_prompt_choice(prompt_choices: List[add.PromptChoice]):
     )
 
 
+def _enter_id(
+    config: Config,
+    session: Session,
+    old_album: Album,
+    new_album: Album,
+) -> Optional[Album]:
+    """Re-run the add prompt with the inputted Musibrainz release."""
+    mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
+
+    album = get_album_by_id(mb_id)
+
+    return add.import_prompt(config, session, old_album, album)
+
+
 @moe.hookimpl
 def import_album(config: Config, session: Session, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
@@ -68,23 +88,21 @@ def import_album(config: Config, session: Session, album: Album) -> Album:
         A new album containing all the corrected metadata from musicbrainz. This album
         is not complete, as it will not contain any references to the filesystem.
     """
-    release = _get_matching_release(album)
-
-    return _create_album(release)
+    return get_matching_album(album)
 
 
-def _get_matching_release(album: Album) -> Dict:
-    """Gets a matching musicbrainz release for a given album.
+def get_matching_album(album: Album) -> Album:
+    """Gets a matching musicbrainz album for a given album.
 
     Args:
         album: Album used to search for the release.
 
     Returns:
-        Dictionary of release information. See ``tests/resources/musicbrainz`` for
-        an idea of what this contains.
+        Dictionary of release information. See the ``tests/musicbrainz/resources``
+        directory for an idea of what this contains.
     """
     if album.mb_album_id:
-        return _get_release_by_id(album.mb_album_id)
+        return get_album_by_id(album.mb_album_id)
 
     search_criteria: Dict = {}
     search_criteria["artist"] = album.artist
@@ -94,11 +112,11 @@ def _get_matching_release(album: Album) -> Dict:
     releases = musicbrainzngs.search_releases(limit=1, **search_criteria)
 
     release = releases["release-list"][0]
-    return _get_release_by_id(release["id"])  # searching by id provides more info
+    return get_album_by_id(release["id"])  # searching by id provides more info
 
 
-def _get_release_by_id(release_id: str) -> Dict:
-    """Gets a musicbrainz release from it's ID.
+def get_album_by_id(release_id: str) -> Album:
+    """Gets a musicbrainz album from a release ID.
 
     Args:
         release_id: Musicbrainz release ID to search.
@@ -112,7 +130,7 @@ def _get_release_by_id(release_id: str) -> Dict:
     # https://python-musicbrainzngs.readthedocs.io/en/latest/api/#musicbrainzngs.get_release_by_id
 
     release = musicbrainzngs.get_release_by_id(release_id, includes=RELEASE_INCLUDES)
-    return release["release"]
+    return _create_album(release["release"])
 
 
 def _create_album(release: Dict) -> Album:
@@ -160,18 +178,3 @@ def _flatten_artist_credit(artist_credit: List[Dict]) -> str:
             full_artist += artist["artist"]["name"]
 
     return full_artist
-
-
-def _enter_id(
-    config: Config,
-    session: Session,
-    old_album: Album,
-    new_album: Album,
-) -> Optional[Album]:
-    """Re-run the add prompt with the inputted Musibrainz release."""
-    mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
-
-    release = _get_release_by_id(mb_id)
-    album = _create_album(release)
-
-    return add.run_prompt(config, session, old_album, album)

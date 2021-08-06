@@ -1,4 +1,7 @@
-"""Adds music to the library."""
+"""Adds music to the library.
+
+This module provides the main entry point into the add process via ``add_item()``.
+"""
 
 import argparse
 import logging
@@ -13,9 +16,8 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track, TrackError
-from moe.plugins.add import prompt
 
-__all__ = ["AddError"]
+__all__ = ["add_item", "AddError"]
 
 log = logging.getLogger("moe.add")
 
@@ -57,7 +59,7 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            _add_item(config, session, path)
+            add_item(config, session, path)
         except AddError as exc:
             log.error(exc)
             error_count += 1
@@ -66,7 +68,7 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
         raise SystemExit(1)
 
 
-def _add_item(config: Config, session: Session, item_path: Path):
+def add_item(config: Config, session: Session, item_path: Path):
     """Adds a LibItem to the library from a given path.
 
     Args:
@@ -80,27 +82,17 @@ def _add_item(config: Config, session: Session, item_path: Path):
     item: LibItem
     if item_path.is_file():
         item = _add_track(item_path)
-        old_album = item.album_obj
+        album = item.album_obj
     elif item_path.is_dir():
         item = _add_album(item_path)
-        old_album = item
+        album = item
     else:
         raise AddError(f"Path not found: {item_path}")
 
-    old_album.merge(old_album.get_existing(session), overwrite_album_info=False)
-    new_albums = config.plugin_manager.hook.import_album(
-        config=config, session=session, album=old_album
-    )
-    if new_albums:
-        add_album = prompt.run_prompt(config, session, old_album, new_albums[0])
-    else:
-        add_album = old_album
-
-    if add_album:
-        config.plugin_manager.hook.pre_add(
-            config=config, session=session, album=add_album
-        )
-        add_album = session.merge(add_album)
+    album.merge(album.get_existing(session), overwrite_album_info=False)
+    config.plugin_manager.hook.pre_add(config=config, session=session, item=item)
+    item = session.merge(item)
+    config.plugin_manager.hook.post_add(config=config, session=session, item=item)
 
 
 def _add_album(album_path: Path) -> Album:

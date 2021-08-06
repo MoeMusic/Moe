@@ -83,7 +83,7 @@ class TestFromTags:
         """Use artist as a backup for albumartist if missing."""
         real_track.albumartist = ""
         real_track.artist = "Backup"
-        moe.plugins.write._write_tags(real_track)
+        moe.plugins.write.write_tags(real_track)
 
         track = Track.from_tags(real_track.path)
         assert track.albumartist

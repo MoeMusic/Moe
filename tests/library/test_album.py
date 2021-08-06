@@ -66,7 +66,7 @@ class TestMerge:
         album2 = mock_album_factory()
         album1.date = album2.date
         album1.path = album2.path
-        album1.mb_album_id = "1234"
+        album1.mb_album_id = "1234"  # conflict field; should overwrite on album2
         assert not album1.is_unique(album2)
         assert album1.mb_album_id != album2.mb_album_id
 

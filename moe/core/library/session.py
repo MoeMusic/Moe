@@ -11,17 +11,13 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-__all__ = ["DbDupAlbumError", "DbDupLibItemError", "session_scope"]
+__all__ = ["DbDupAlbumError", "session_scope"]
 
 Session = sessionmaker()
 Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
 
 
-class DbDupLibItemError(Exception):
-    """Attempt to add a duplicate LibItem to the database."""
-
-
-class DbDupAlbumError(DbDupLibItemError):
+class DbDupAlbumError(Exception):
     """Attempt to add a duplicate Album to the database.
 
     A duplicate can be due to a duplicate path, or due to a duplicate combination of

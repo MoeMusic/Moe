@@ -1,16 +1,20 @@
-"""Removes music from the library."""
+"""Removes music from the library.
+
+Note:
+    This plugin is enabled by default.
+"""
 
 import argparse
 import logging
-from typing import List
 
-import sqlalchemy
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core import query
 from moe.core.config import Config
+from moe.core.library.lib_item import LibItem
 
-__all__: List[str] = []
+__all__ = ["remove_item"]
 
 log = logging.getLogger("moe.remove")
 
@@ -28,9 +32,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     rm_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(
-    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
-):
+def _parse_args(config: Config, session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
@@ -53,5 +55,10 @@ def _parse_args(
         raise SystemExit(1)
 
     for item in items:
-        log.info(f"Removing '{item}' from the library.")
-        session.delete(item)
+        remove_item(item, session)
+
+
+def remove_item(item: LibItem, session: Session):
+    """Removes an item from the library."""
+    log.info(f"Removing '{item}' from the library.")
+    session.delete(item)

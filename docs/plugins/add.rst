@@ -3,13 +3,15 @@ Add
 ###
 Adds music to your library.
 
+This plugin provides an ``add`` command that adds music to your library and corrects tags by importing metadata from external sources.
+
 .. note::
     In order to add a track to your library, Moe requires each track to contain, at a minimum, a track number, an albumartist (or artist), and a date (or year).
 
 *************
 Configuration
 *************
-This plugin is enabled by default.
+The ``add`` plugin is enabled by default.
 
 ***********
 Commandline

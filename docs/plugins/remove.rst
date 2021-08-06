@@ -3,10 +3,12 @@ Remove
 ######
 Removes music from your library.
 
+This plugin provides a ``remove`` command.
+
 *************
 Configuration
 *************
-This plugin is enabled by default.
+The ``remove`` plugin is enabled by default.
 
 ***********
 Commandline

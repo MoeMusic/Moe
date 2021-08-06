@@ -1,12 +1,12 @@
 ####
 Info
 ####
-Prints info about the music in your library. This includes any tags and other relevant information.
+Prints information about the music in your library via the ``info`` command. This includes any tags and other relevant information.
 
 *************
 Configuration
 *************
-This plugin is enabled by default.
+The ``info`` plugin is enabled by default.
 
 ***********
 Commandline

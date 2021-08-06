@@ -1,6 +1,9 @@
 """Prints information about music in the library.
 
 All fields and their values should be printed to stdout for any music queried.
+
+Note:
+    This plugin is enabled by default.
 """
 
 import argparse

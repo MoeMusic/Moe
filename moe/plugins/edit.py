@@ -1,4 +1,10 @@
-"""Edits music in the library."""
+"""Edits music in the library.
+
+Editing items is done through the ``edit_item()`` function.
+
+Note:
+    This plugin is enabled by default.
+"""
 
 import argparse
 import datetime
@@ -13,7 +19,7 @@ from moe.core import query
 from moe.core.config import Config
 from moe.core.library.lib_item import LibItem
 
-__all__ = ["EditError"]
+__all__ = ["edit_item", "EditError"]
 
 log = logging.getLogger("moe.edit")
 
@@ -71,9 +77,17 @@ def _parse_args(
 
     error_count = 0
     for term in args.fv_terms:
+        # term: FIELD=VALUE format used to set the item's `field` to `value`
+        try:
+            field, value = term.split("=")
+        except ValueError:
+            log.error(f"Invalid FIELD=VALUE format: {term}")
+            error_count += 1
+            continue
+
         for item in items:
             try:
-                _edit_item(item, term)
+                edit_item(item, field, value)
             except EditError as exc:
                 log.error(exc)
                 error_count += 1
@@ -82,21 +96,17 @@ def _parse_args(
         raise SystemExit(1)
 
 
-def _edit_item(item: LibItem, term: str):
+def edit_item(item: LibItem, field: str, value: str):
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:
-        item: LibItem to edit.
-        term: FIELD=VALUE format used to set the item's ``field`` to ``value``.
+        item: Library item to edit.
+        field: Item field to edit.
+        value: Value to set the item's field to.
 
     Raises:
         EditError: ``field`` is not a valid attribute or is not editable.
     """
-    try:
-        field, value = term.split("=")
-    except ValueError:
-        raise EditError(f"Invalid FIELD=VALUE format: {term}")
-
     try:
         attr = getattr(item, field)
     except AttributeError:
