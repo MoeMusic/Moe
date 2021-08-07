@@ -225,26 +225,24 @@ class TestAddItemFromFile:
 
         assert tmp_session.query(Track.path).filter_by(path=real_track.path).one()
 
-    def test_min_reqd_tags(self, tmp_session):
+    def test_min_reqd_tags(self, tmp_session, reqd_mp3_path):
         """We can add a track with only a track_num, album, albumartist, and year."""
         mock_config = MagicMock()
         mock_config.plugin_manager.hook.import_album.return_value = []
 
-        reqd_track_path = Path("tests/resources/reqd.mp3")
+        add.add._add_item(mock_config, tmp_session, reqd_mp3_path)
 
-        add.add._add_item(mock_config, tmp_session, reqd_track_path)
-
-        assert tmp_session.query(Track.path).filter_by(path=reqd_track_path).one()
+        assert tmp_session.query(Track.path).filter_by(path=reqd_mp3_path).one()
 
     def test_non_track_file(self):
         """Error if the file given is not a valid track."""
         with pytest.raises(add.AddError):
-            add.add._add_item(Mock(), Mock(), Path("tests/resources/log.txt"))
+            add.add._add_item(Mock(), Mock(), Path(__file__))
 
-    def test_track_missing_reqd_tags(self):
+    def test_track_missing_reqd_tags(self, empty_mp3_path):
         """Error if the track doesn't have all the required tags."""
         with pytest.raises(add.AddError):
-            add.add._add_item(Mock(), Mock(), Path("tests/resources/empty.mp3"))
+            add.add._add_item(Mock(), Mock(), empty_mp3_path)
 
     def test_duplicate_track(self, real_track, tmp_session, tmp_path):
         """Overwrite old track path with the new track if a duplicate is found."""
