@@ -3,6 +3,7 @@ import datetime
 import random
 import shutil
 import textwrap
+from pathlib import Path
 from typing import Callable, Iterator
 from unittest.mock import MagicMock
 
@@ -16,6 +17,8 @@ from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 from moe.plugins import write as moe_write
+
+RESOURCE_DIR = Path(__file__).parent / "resources"
 
 
 @pytest.fixture
@@ -181,7 +184,9 @@ def mock_extra(mock_extra_factory) -> Extra:
 
 
 @pytest.fixture
-def real_track_factory(mock_track_factory, tmp_path_factory) -> Callable[[], Track]:
+def real_track_factory(
+    empty_mp3_path, mock_track_factory, tmp_path_factory
+) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
     The track is copied to a temp location, so feel free to make any changes. Each
@@ -212,7 +217,7 @@ def real_track_factory(mock_track_factory, tmp_path_factory) -> Callable[[], Tra
 
         filename = f"{track.track_num} - {track.title}.mp3"
         track.path = track.album_obj.path / filename
-        shutil.copyfile("tests/resources/empty.mp3", track.path)
+        shutil.copyfile(empty_mp3_path, track.path)
 
         moe_write._write_tags(track)
         return track
@@ -306,3 +311,21 @@ def real_extra_factory(mock_extra_factory, tmp_path_factory) -> Callable[[], Ext
 def real_extra(real_extra_factory) -> Extra:
     """Creates a single Extra that exists on the filesystem."""
     return real_extra_factory()
+
+
+@pytest.fixture
+def empty_mp3_path() -> Path:
+    """Path to an mp3 file with no tags."""
+    return RESOURCE_DIR / "empty.mp3"
+
+
+@pytest.fixture
+def reqd_mp3_path() -> Path:
+    """Path to an mp3 file with the minimum required tags."""
+    return RESOURCE_DIR / "reqd.mp3"
+
+
+@pytest.fixture
+def full_mp3_path() -> Path:
+    """Path to an mp3 file with every tag."""
+    return RESOURCE_DIR / "full.mp3"

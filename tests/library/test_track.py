@@ -1,7 +1,6 @@
 """Tests a Track object."""
 
 import datetime
-from pathlib import Path
 
 import pytest
 
@@ -59,9 +58,9 @@ class TestAlbumSet:
 class TestFromTags:
     """Test initialization from tags."""
 
-    def test_read_tags(self):
+    def test_read_tags(self, full_mp3_path):
         """We should initialize the track with tags from the file if present."""
-        track = Track.from_tags(path=Path("tests/resources/full.mp3"))
+        track = Track.from_tags(full_mp3_path)
 
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
@@ -75,10 +74,10 @@ class TestFromTags:
         assert track.title == "Full"
         assert track.track_num == 1
 
-    def test_no_reqd_tags(self):
+    def test_no_reqd_tags(self, empty_mp3_path):
         """Raise `TrackError` if missing required tags."""
         with pytest.raises(TrackError):
-            Track.from_tags(path=Path("tests/resources/empty.mp3"))
+            Track.from_tags(empty_mp3_path)
 
     def test_albumartist_backup(self, real_track):
         """Use artist as a backup for albumartist if missing."""
