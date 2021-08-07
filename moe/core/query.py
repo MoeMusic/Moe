@@ -189,7 +189,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     # We use track_num as all tracks are guaranteed to have a track number.
     # '%' is an SQL LIKE query special character.
     if term == "*":
-        return {FIELD_GROUP: "track_num", SEPARATOR_GROUP: ":", VALUE_GROUP: "%"}
+        return {FIELD_GROUP: "_id", SEPARATOR_GROUP: ":", VALUE_GROUP: "%"}
 
     query_re = re.compile(
         rf"""
