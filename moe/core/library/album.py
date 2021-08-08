@@ -2,7 +2,7 @@
 
 import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import sqlalchemy
 from sqlalchemy import Column, Date, Integer, String, and_, or_  # noqa: WPS458
@@ -101,6 +101,20 @@ class Album(LibItem, Base):
             if value:
                 setattr(self, key, value)
 
+    def fields(self) -> Tuple[str, ...]:
+        """Returns the public fields, or non-method attributes, of an Album."""
+        return (
+            "artist",
+            "date",
+            "disc_total",
+            "extras",
+            "mb_album_id",
+            "path",
+            "title",
+            "tracks",
+            "year",
+        )
+
     def get_existing(self, session: Session) -> Optional["Album"]:
         """Gets a matching Album in the library either by its path or unique tags."""
         existing_album = (
@@ -152,7 +166,7 @@ class Album(LibItem, Base):
     def merge(self, other: Optional["Album"], overwrite_album_info=True):
         """Merges the current Album with another, overwriting the other if conflict.
 
-        Changes won't take effect until the album is merged into the session.
+        This only merges metadata i.e. not an album's path.
 
         Args:
             other: Other album to be merged into the current album.
@@ -164,13 +178,14 @@ class Album(LibItem, Base):
             return
 
         self._id = other._id
-
-        if not overwrite_album_info:
-            self.artist = other.artist
-            self.date = other.date
-            self.disc_total = other.disc_total
-            self.mb_album_id = other.mb_album_id
-            self.title = other.title
+        for field in self.fields():
+            if field not in {"path", "year", "tracks", "extras"}:
+                if overwrite_album_info:
+                    value = getattr(self, field)
+                    setattr(other, field, value)
+                else:
+                    value = getattr(other, field)
+                    setattr(self, field, value)
 
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num, other_track.disc)
@@ -205,14 +220,10 @@ class Album(LibItem, Base):
     def __eq__(self, other) -> bool:
         """Compares an Album by it's attributes."""
         if isinstance(other, Album):
-            return (
-                self.artist == other.artist
-                and self.date == other.date
-                and self.mb_album_id == other.mb_album_id
-                and self.title == other.title
-                and self.tracks == other.tracks
-                and self.extras == other.extras
-            )
+            for attr in self.fields():
+                if getattr(self, attr) != getattr(other, attr):
+                    return False
+            return True
         return False
 
     def __lt__(self, other: "Album") -> bool:

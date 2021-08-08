@@ -4,7 +4,6 @@ All fields and their values should be printed to stdout for any music queried.
 """
 
 import argparse
-import types
 from collections import OrderedDict
 from typing import Any, Dict, List
 
@@ -168,14 +167,9 @@ def _get_base_dict(item: LibItem) -> Dict[str, Any]:
         Returns a dict representation of an Item in the form { attribute: value }.
     """
     item_dict = {}
-    for attr in dir(item):  # noqa: WPS421
-        if not attr.startswith("_") and attr != "metadata" and attr != "registry":
-            value = getattr(item, attr)
-            if (
-                value
-                and not isinstance(value, types.MethodType)
-                and not isinstance(value, types.FunctionType)
-            ):
-                item_dict[attr] = value
+    for attr in item.fields():
+        value = getattr(item, attr)
+        if value:
+            item_dict[attr] = value
 
     return item_dict

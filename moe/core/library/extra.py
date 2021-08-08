@@ -1,7 +1,7 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
@@ -56,13 +56,22 @@ class Extra(LibItem, Base):
         """Gets an Extra's filename."""
         return self.path.name
 
+    def fields(self) -> Tuple[str, ...]:
+        """Returns the public fields, or non-method attributes, of a Track."""
+        return "filename", "path"
+
     def __eq__(self, other):
         """Compares an Extra by it's attributes."""
         if isinstance(other, Extra):
-            return (
-                not self.album_obj.is_unique(other.album_obj)
-                and self.path == other.path
-            )
+            if self.album_obj.is_unique(other.album_obj):
+                return False
+
+            for attr in self.fields():
+                if attr == "album_obj":  # prevent cyclic comparison
+                    continue
+                if getattr(self, attr) != getattr(other, attr):
+                    return False
+            return True
         return False
 
     def __lt__(self, other: "Extra") -> bool:
