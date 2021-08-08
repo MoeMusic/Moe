@@ -1,3 +1,12 @@
+## v0.7.1 (2021-08-08)
+
+### Refactor
+
+- **api**: introduce core api
+- **library**: add `fields` attribute to library items
+- **query**: "*" query now searches by track ID
+- **library**: take advantage of is_unique in __eq__
+
 ## v0.7.0 (2021-07-18)
 
 ### Feat
