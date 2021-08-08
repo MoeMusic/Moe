@@ -3,7 +3,7 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import List, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar
 
 import mediafile
 import sqlalchemy
@@ -205,18 +205,38 @@ class Track(LibItem, Base):
         """
         self.genres = [genre.strip() for genre in genre_str.split(";")]
 
+    def fields(self) -> Tuple[str, ...]:
+        """Returns the public fields, or non-method attributes, of a Track."""
+        return (
+            "album",
+            "albumartist",
+            "album_obj",
+            "artist",
+            "date",
+            "disc",
+            "disc_total",
+            "genre",
+            "genres",
+            "mb_album_id",
+            "mb_track_id",
+            "path",
+            "title",
+            "track_num",
+            "year",
+        )
+
     def __eq__(self, other) -> bool:
         """Compares a Track by it's attributes."""
         if isinstance(other, Track):
-            return (
-                not self.album_obj.is_unique(other.album_obj)
-                and self.artist == other.artist
-                and set(self.genres) == set(other.genres)
-                and self.mb_track_id == other.mb_track_id
-                and self.path == other.path
-                and self.title == other.title
-                and self.track_num == other.track_num
-            )
+            if self.album_obj.is_unique(other.album_obj):
+                return False
+
+            for attr in self.fields():
+                if attr == "album_obj":  # prevent cyclic comparison
+                    continue
+                if getattr(self, attr) != getattr(other, attr):
+                    return False
+            return True
         return False
 
     def __lt__(self, other) -> bool:
