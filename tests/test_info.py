@@ -80,7 +80,7 @@ class TestCommand:
         """A track's info is printed when the `info` command is invoked."""
         cli_args = ["info", "*"]
 
-        config = tmp_config(settings='default_plugins = ["info"]')
+        config = tmp_config(settings='default_plugins = ["cli", "info"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)

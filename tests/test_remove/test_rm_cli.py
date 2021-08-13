@@ -10,7 +10,7 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
-from moe.plugins import remove
+from moe.plugins import remove as moe_rm
 
 
 class TestParseArgs:
@@ -21,7 +21,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=False, extra=False)
         tmp_session.add(mock_track)
 
-        remove._parse_args(config=Mock(), session=tmp_session, args=args)
+        moe_rm.rm_cli._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -30,7 +30,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.merge(mock_album)
 
-        remove._parse_args(config=Mock(), session=tmp_session, args=args)
+        moe_rm.rm_cli._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Album).scalar()
 
@@ -43,7 +43,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=False, extra=True)
         tmp_session.merge(mock_album)
 
-        remove._parse_args(config=Mock(), session=tmp_session, args=args)
+        moe_rm.rm_cli._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -52,7 +52,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="*", album=True, extra=False)
         tmp_session.merge(mock_album)
 
-        remove._parse_args(config=Mock(), session=tmp_session, args=args)
+        moe_rm.rm_cli._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -62,7 +62,7 @@ class TestParseArgs:
         tmp_session.merge(mock_album)
 
         assert mock_album.extras
-        remove._parse_args(config=Mock(), session=tmp_session, args=args)
+        moe_rm.rm_cli._parse_args(config=Mock(), session=tmp_session, args=args)
 
         assert not tmp_session.query(Extra).scalar()
 
@@ -71,40 +71,9 @@ class TestParseArgs:
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            remove._parse_args(config=Mock(), session=Mock(), args=args)
+            moe_rm.rm_cli._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
-
-
-class TestRemoveItem:
-    """Tests `remove_item()`."""
-
-    def test_track(self, tmp_session, mock_track):
-        """Tracks are removed from the database with valid query."""
-        tmp_session.add(mock_track)
-        tmp_session.commit()
-
-        remove.remove_item(mock_track, tmp_session)
-
-        assert not tmp_session.query(Track).scalar()
-
-    def test_album(self, tmp_session, mock_album):
-        """Albums are removed from the database with valid query."""
-        mock_album = tmp_session.merge(mock_album)
-        tmp_session.commit()
-
-        remove.remove_item(mock_album, tmp_session)
-
-        assert not tmp_session.query(Album).scalar()
-
-    def test_extra(self, tmp_session, mock_extra):
-        """Extras are removed from the database with valid query."""
-        tmp_session.add(mock_extra)
-        tmp_session.commit()
-
-        remove.remove_item(mock_extra, tmp_session)
-
-        assert not tmp_session.query(Extra).scalar()
 
 
 @pytest.mark.integration
@@ -114,7 +83,7 @@ class TestCommand:
     def test_parse_args(self, real_track, tmp_path, tmp_config):
         """Music is removed from the library when the `remove` command is invoked."""
         cli_args = ["remove", "*"]
-        config = tmp_config(settings='default_plugins = ["remove"]')
+        config = tmp_config(settings='default_plugins = ["cli", "remove"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)

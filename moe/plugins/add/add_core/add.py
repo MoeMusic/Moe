@@ -3,11 +3,11 @@
 This module provides the main entry point into the add process via ``add_item()``.
 """
 
-import argparse
 import logging
 from pathlib import Path
 
 import mediafile
+import pluggy
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -16,58 +16,68 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track, TrackError
-from moe.plugins import add
 
 __all__ = ["add_item", "AddError"]
 
 log = logging.getLogger("moe.add")
 
 
-class AddError(Exception):
-    """Error adding an item to the library."""
+class Hooks:
+    """Add plugin hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def pre_add(config: Config, session: Session, item: LibItem):
+        """Provides an item prior to it being added to the library.
+
+        Use this hook if you wish to change the item's metadata.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            item: Library item being added.
+
+        See Also:
+            * The :meth:`post_add` hook for any post-processing operations.
+            * The :meth:`~moe.cli.Hooks.edit_new_items` hook.
+              The difference between them is that the :meth:`pre_add` hook will only
+              operate on an `add` operation, while the
+              :meth:`~moe.cli.Hooks.edit_new_items` hook will run anytime an item is
+              changed or added.
+        """
+
+    @staticmethod
+    @moe.hookspec
+    def post_add(config: Config, session: Session, item: LibItem):
+        """Provides an item after it has been added to the library.
+
+        Use this hook if you want to operate on an item after its metadata has been set.
+
+        Args:
+            config: Moe config.
+            session: Currrent db session.
+            item: Library item added.
+
+        See Also:
+            * The :meth:`pre_add` hook if you wish to alter item metadata.
+            * The :meth:`~moe.cli.Hooks.process_new_items` hook.
+              The difference between them is that the :meth:`post_add` hook will only
+              operate on an `add` operation, while the
+              :meth:`~moe.cli.Hooks.process_new_items` hook will run anytime an item is
+              changed or added.
+        """
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds the ``add`` command to Moe's CLI."""
-    add_parser = cmd_parsers.add_parser(
-        "add", description="Adds music to the library.", help="add music to the library"
-    )
-    add_parser.add_argument(
-        "paths",
-        metavar="path",
-        nargs="+",
-        type=Path,
-        help="dir to add an album or file to add a track",
-    )
-    add_parser.set_defaults(func=_parse_args)
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `add` hookspecs to Moe."""
+    from moe.plugins.add.add_core.add import Hooks  # noqa: WPS433, WPS442
+
+    plugin_manager.add_hookspecs(Hooks)
 
 
-def _parse_args(config: Config, session: Session, args: argparse.Namespace):
-    """Parses the given commandline arguments.
-
-    Tracks can be added as files or albums as directories.
-
-    Args:
-        config: Moe config.
-        session: Current db session.
-        args: Commandline arguments to parse.
-
-    Raises:
-        SystemExit: Path given does not exist.
-    """
-    error_count = 0
-    for path in args.paths:
-        try:
-            add_item(config, session, path)
-        except AddError as exc:
-            log.error(exc)
-            error_count += 1
-        except add.AbortImport:
-            error_count += 1
-
-    if error_count:
-        raise SystemExit(1)
+class AddError(Exception):
+    """Error adding an item to the library."""
 
 
 def add_item(config: Config, session: Session, item_path: Path):

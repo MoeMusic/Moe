@@ -6,7 +6,7 @@ import argparse
 import functools
 import logging
 import sys
-from typing import Any, List, Optional
+from typing import Any, Callable, List, NamedTuple, Optional
 
 import pkg_resources
 import pluggy
@@ -18,7 +18,7 @@ from moe.core.config import Config
 from moe.core.library.lib_item import LibItem
 from moe.core.library.session import session_scope
 
-__all__ = ["Hooks"]
+__all__ = ["PromptChoice", "query_parser"]
 
 log = logging.getLogger("moe.cli")
 
@@ -99,6 +99,45 @@ class Hooks:
         See Also:
             The :meth:`edit_new_items` hook if you wish to edit the items.
         """
+
+
+class PromptChoice(NamedTuple):
+    """A single, user-selectable choice for a CLI prompt.
+
+    Attributes:
+        title: Title of the prompt choice that is displayed to the user.
+        shortcut_key: Single character the user will use to select the choice.
+
+            Important:
+                Ensure the key is not currently in use by another PromptChoice.
+        func: Function to call upon this prompt choice being selected. The function
+            should return the album to be added to the library (or ``None`` if no album
+            should be added) and will be supplied the following keyword arguments:
+
+            ``config (Config)``: Moe config.
+            ``session (Session)``: Current db session.
+            ``old_album (Album)``: Old album with no changes applied.
+            ``new_album (Album)``: New album consisting of all the new changes.
+    """
+
+    title: str
+    shortcut_key: str
+    func: Callable
+
+
+# Argument parser for a query. This should be passed as a parent parser for a command.
+query_parser = argparse.ArgumentParser(
+    add_help=False, formatter_class=argparse.RawTextHelpFormatter
+)
+query_parser.add_argument("query", help="query the library for matching tracks")
+
+query_type_group = query_parser.add_mutually_exclusive_group()
+query_type_group.add_argument(
+    "-a", "--album", action="store_true", help="query for matching albums"
+)
+query_type_group.add_argument(
+    "-e", "--extra", action="store_true", help="query for matching extras"
+)
 
 
 @moe.hookimpl

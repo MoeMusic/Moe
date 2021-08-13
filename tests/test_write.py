@@ -65,7 +65,7 @@ class TestDBListener:
         cli_args = ["edit", "*", f"title={new_title}"]
 
         tmp_settings = """
-        default_plugins = ["edit", "write"]
+        default_plugins = ["cli", "edit", "write"]
         """
         config = tmp_config(tmp_settings)
         config.init_db()
@@ -90,7 +90,7 @@ class TestDBListener:
         cli_args = ["edit", "*", f"genre={new_genre}"]
 
         tmp_settings = """
-        default_plugins = ["edit", "write"]
+        default_plugins = ["cli", "edit", "write"]
         """
         config = tmp_config(tmp_settings)
         config.init_db()

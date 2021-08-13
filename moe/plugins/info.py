@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 import sqlalchemy
 
-import moe
+import moe.cli
 from moe.core import query
 from moe.core.config import Config
 from moe.core.library.album import Album
@@ -30,7 +30,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         "info",
         description="Prints information about music in the library.",
         help="print info for music in the library",
-        parents=[query.query_parser],
+        parents=[moe.cli.query_parser],
     )
     info_parser.set_defaults(func=_parse_args)
 

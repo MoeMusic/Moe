@@ -22,12 +22,10 @@ Note:
 #       in the import process.
 #    * `prompt`: CLI user prompts to interact with the adding process.
 
-from .add import *
-from .hooks import *
-from .match import *
-from .prompt import *
+from moe.plugins.add.add_core import add, match
+from moe.plugins.add.add_core.add import *
+from moe.plugins.add.add_core.match import *
 
 __all__ = []
-submodules = [add, match, prompt, hooks]  # type: ignore # noqa: F405
-for submodule in submodules:
-    __all__.extend(submodule.__all__)  # noqa: WPS609
+__all__.extend(add.__all__)  # noqa: WPS609
+__all__.extend(match.__all__)  # noqa: WPS609

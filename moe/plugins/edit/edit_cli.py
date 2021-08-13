@@ -1,31 +1,16 @@
-"""Edits music in the library.
-
-Editing items is done through the ``edit_item()`` function.
-
-Note:
-    This plugin is enabled by default.
-"""
+"""Adds the ``edit`` command to the cli."""
 
 import argparse
-import datetime
 import logging
-import re
-import sys
 
 import sqlalchemy
 
-import moe
+import moe.cli
 from moe.core import query
 from moe.core.config import Config
-from moe.core.library.lib_item import LibItem
-
-__all__ = ["edit_item", "EditError"]
+from moe.plugins import edit
 
 log = logging.getLogger("moe.edit")
-
-
-class EditError(Exception):
-    """Error editing an item in the library."""
 
 
 @moe.hookimpl
@@ -45,7 +30,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         "edit",
         description="Edits music in the library.",
         help="edit music in the library",
-        parents=[query.query_parser],
+        parents=[moe.cli.query_parser],
         epilog=epilog_help,
     )
     edit_parser.add_argument(
@@ -87,56 +72,10 @@ def _parse_args(
 
         for item in items:
             try:
-                edit_item(item, field, value)
-            except EditError as exc:
+                edit.edit_item(item, field, value)
+            except edit.EditError as exc:
                 log.error(exc)
                 error_count += 1
 
     if error_count:
         raise SystemExit(1)
-
-
-def edit_item(item: LibItem, field: str, value: str):
-    """Sets a LibItem's ``field`` to ``value``.
-
-    Args:
-        item: Library item to edit.
-        field: Item field to edit.
-        value: Value to set the item's field to.
-
-    Raises:
-        EditError: ``field`` is not a valid attribute or is not editable.
-    """
-    try:
-        attr = getattr(item, field)
-    except AttributeError:
-        raise EditError(
-            f"'{field}' is not a valid {type(item).__name__.lower()} field."
-        )
-
-    non_editable_fields = ["path"]
-    if field in non_editable_fields:
-        raise EditError(f"'{field}' is not an editable field.")
-
-    log.debug(f"Editing '{field}' to '{value}' for '{item}'.")
-    if isinstance(attr, str):
-        setattr(item, field, value)
-    elif isinstance(attr, int):
-        setattr(item, field, int(value))
-    elif isinstance(attr, datetime.date):
-        if (sys.version_info.major, sys.version_info.minor) < (3, 7):
-            if not re.match(
-                r"^\d{4}-([0]\d|1[0-2])-([0-2]\d|3[01])$", value  # noqa: FS003
-            ):
-                raise EditError("Date must be in format YYYY-MM-DD")
-            date = value.split("-")
-            setattr(
-                item, field, datetime.date(int(date[0]), int(date[1]), int(date[2]))
-            )
-        else:
-            try:
-                setattr(item, field, datetime.date.fromisoformat(value))
-            except ValueError:
-                raise EditError("Date must be in format YYYY-MM-DD")
-    else:
-        raise EditError(f"Editing field of type '{type(attr)}' not supported.")

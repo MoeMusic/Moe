@@ -1,81 +1,77 @@
-"""Interactive prompt for adding items to the library.
-
-Provides an interactive overview of changes to be made to an album prior to it being
-added to the library.
-"""
+"""Import prompt."""
 
 import logging
 import operator
-from typing import Callable, List, NamedTuple, Optional, cast
+from typing import List, Optional, cast
 
+import pluggy
 import questionary
 from sqlalchemy.orm.session import Session
 
-import moe
+import moe.cli
 from moe.core.config import Config
 from moe.core.library.album import Album
-from moe.core.library.extra import Extra
-from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
-from moe.plugins import add
-
-__all__ = ["AbortImport", "import_prompt", "PromptChoice"]
+from moe.plugins import add as moe_add
 
 log = logging.getLogger("moe.add")
+
+__all__ = ["AbortImport", "import_prompt"]
 
 
 class AbortImport(Exception):
     """Used to abort the import process."""
 
 
-class PromptChoice(NamedTuple):
-    """A single, user-selectable choice for a CLI prompt.
+class Hooks:
+    """Add plugin cli hook specifications."""
 
-    Attributes:
-        title: Title of the prompt choice that is displayed to the user.
-        shortcut_key: Single character the user will use to select the choice.
+    @staticmethod
+    @moe.hookspec
+    def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
+        """Add a user input choice to the prompt.
 
-            Important:
-                Ensure the key is not currently in use by another PromptChoice.
-        func: Function to call upon this prompt choice being selected. The function
-            should return the album to be added to the library (or ``None`` if no album
-            should be added) and will be supplied the following keyword arguments:
+        Args:
+            prompt_choices: List of prompt choices. To add a prompt choice, simply
+                append it to this list.
 
-            ``config (Config)``: Moe config.
-            ``session (Session)``: Current db session.
-            ``old_album (Album)``: Old album with no changes applied.
-            ``new_album (Album)``: New album consisting of all the new changes.
-    """
+        Example:
+            Inside your hook implementation::
 
-    title: str
-    shortcut_key: str
-    func: Callable
+                prompt_choices.append(
+                    PromptChoice(
+                        title="Abort", shortcut_key="x", func=_abort_changes
+                    )
+                )
+        """
 
 
 @moe.hookimpl
-def add_prompt_choice(prompt_choices: List[PromptChoice]):
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `import` cli hookspecs to Moe."""
+    from moe.plugins.moe_import.import_cli import Hooks  # noqa: WPS433, WPS442
+
+    plugin_manager.add_hookspecs(Hooks)
+
+
+@moe.hookimpl
+def process_candidates(config: Config, session: Session, old_album, candidate_albums):
+    """Use the user import prompt to select and process the imported candidates."""
+    if candidate_albums:
+        import_prompt(config, session, old_album, candidate_albums[0])
+
+
+@moe.hookimpl
+def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
-        PromptChoice(title="Apply changes", shortcut_key="a", func=_apply_changes)
+        moe.cli.PromptChoice(
+            title="Apply changes", shortcut_key="a", func=_apply_changes
+        )
     )
     prompt_choices.append(
-        PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
+        moe.cli.PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
     )
-
-
-@moe.hookimpl
-def pre_add(config: Config, session: Session, item: LibItem):
-    """Fixes album metadata via external sources prior to it being added to the lib."""
-    if isinstance(item, Album):
-        old_album = item
-    elif isinstance(item, (Extra, Track)):
-        old_album = item.album_obj
-
-    new_albums = config.plugin_manager.hook.import_album(
-        config=config, session=session, album=old_album
-    )
-    if new_albums:
-        import_prompt(config, session, old_album, new_albums[0])
 
 
 def import_prompt(config: Config, session: Session, old_album: Album, new_album: Album):
@@ -99,8 +95,8 @@ def import_prompt(config: Config, session: Session, old_album: Album, new_album:
 
     print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
 
-    prompt_choices: List[PromptChoice] = []
-    config.plugin_manager.hook.add_prompt_choice(prompt_choices=prompt_choices)
+    prompt_choices: List[moe.cli.PromptChoice] = []
+    config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
     prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
     questionary_choices: List[questionary.Choice] = []
@@ -163,7 +159,7 @@ def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
     """Formats the changes of the tracklist between two albums."""
     tracklist_str = ""
 
-    matches = add.match.get_matching_tracks(old_album, new_album)
+    matches = moe_add.get_matching_tracks(old_album, new_album)
     matches.sort(
         key=lambda match: match[1].track_num + match[1].disc * len(matches)
         if match[1] is not None
@@ -215,7 +211,7 @@ def _apply_changes(
 ):
     """Applies the album changes."""
     new_album.path = old_album.path
-    for old_track, new_track in add.match.get_matching_tracks(old_album, new_album):
+    for old_track, new_track in moe_add.get_matching_tracks(old_album, new_album):
         if not old_track:
             new_track.album_obj = None  # type: ignore # (causes mypy error)
         elif new_track:

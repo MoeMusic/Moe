@@ -12,7 +12,6 @@ Then, in your argument parsing function, call `query.query(args.query)`
 to get a list of Tracks matching the query from the library.
 """
 
-import argparse
 import logging
 import re
 import shlex
@@ -35,21 +34,6 @@ log = logging.getLogger("moe.query")
 
 class QueryError(Exception):
     """Error querying an item from the library."""
-
-
-# Argument parser for a query. This should be passed as a parent parser for a command.
-query_parser = argparse.ArgumentParser(
-    add_help=False, formatter_class=argparse.RawTextHelpFormatter
-)
-query_parser.add_argument("query", help="query the library for matching tracks")
-
-query_type_group = query_parser.add_mutually_exclusive_group()
-query_type_group.add_argument(
-    "-a", "--album", action="store_true", help="query for matching albums"
-)
-query_type_group.add_argument(
-    "-e", "--extra", action="store_true", help="query for matching extras"
-)
 
 
 HELP_STR = r"""

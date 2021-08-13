@@ -14,7 +14,7 @@ class TestSessionScope:
     def test_commit_on_systemexit(self, real_track, tmp_config):
         """If SystemExit intentionally raised, still commit the session."""
         cli_args = ["add", "bad_file", str(real_track.path)]
-        config = tmp_config(settings='default_plugins = ["add"]')
+        config = tmp_config(settings='default_plugins = ["add", "cli"]')
 
         with pytest.raises(SystemExit) as error:
             moe.cli.main(cli_args, config)
