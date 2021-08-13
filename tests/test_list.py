@@ -92,7 +92,7 @@ class TestCommand:
         """Music is listed from the library when the `list` command is invoked."""
         cli_args = ["list", "*"]
 
-        config = tmp_config(settings='default_plugins = ["list"]')
+        config = tmp_config(settings='default_plugins = ["cli", "list"]')
         config.init_db()
         with session_scope() as session:
             session.add(real_track)

@@ -1,4 +1,4 @@
-"""Musicbrainz integration plugin.
+"""Core musicbrainz api.
 
 The ``musicbrainz`` plugin will import metadata from musicbrainz when adding a track or
 album to the library.
@@ -12,18 +12,16 @@ See Also:
 """
 
 import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import musicbrainzngs
 import pkg_resources
-import questionary
 from sqlalchemy.orm.session import Session
 
 import moe
 from moe.core.config import Config
 from moe.core.library.album import Album
 from moe.core.library.track import Track
-from moe.plugins import add
 
 __all__ = ["get_album_by_id", "get_matching_album"]
 
@@ -50,33 +48,7 @@ RELEASE_INCLUDES = [  # noqa: WPS407
 
 
 @moe.hookimpl
-def add_prompt_choice(prompt_choices: List[add.PromptChoice]):
-    """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
-    prompt_choices.append(
-        add.PromptChoice(
-            title="Enter Musicbrainz ID",
-            shortcut_key="m",
-            func=_enter_id,
-        )
-    )
-
-
-def _enter_id(
-    config: Config,
-    session: Session,
-    old_album: Album,
-    new_album: Album,
-) -> Optional[Album]:
-    """Re-run the add prompt with the inputted Musibrainz release."""
-    mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
-
-    album = get_album_by_id(mb_id)
-
-    return add.import_prompt(config, session, old_album, album)
-
-
-@moe.hookimpl
-def import_album(config: Config, session: Session, album: Album) -> Album:
+def import_candidates(config: Config, session: Session, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
 
     Args:

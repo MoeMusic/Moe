@@ -1,7 +1,6 @@
-"""Tests the ``edit`` plugin."""
+"""Tests the cli ``edit`` plugin."""
 
 import argparse
-import datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,7 +8,7 @@ import pytest
 import moe
 from moe.core.library.session import session_scope
 from moe.core.library.track import Track
-from moe.plugins import edit
+from moe.plugins.edit import edit_cli
 
 
 class TestParseArgs:
@@ -26,7 +25,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[track1, track2]) as mock_query:
             mock_session = Mock()
 
-            edit._parse_args(config=Mock(), session=mock_session, args=args)
+            edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_once_with("", mock_session, query_type="track")
 
@@ -42,7 +41,7 @@ class TestParseArgs:
         with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
-            edit._parse_args(config=Mock(), session=mock_session, args=args)
+            edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
 
             mock_query.assert_called_with("", mock_session, query_type="track")
 
@@ -57,7 +56,7 @@ class TestParseArgs:
 
         with pytest.raises(SystemExit) as error:
             with patch("moe.core.query.query", return_value=[mock_track]):
-                edit._parse_args(config=Mock(), session=Mock(), args=args)
+                edit_cli._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -71,66 +70,12 @@ class TestParseArgs:
             with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
                 mock_session = Mock()
 
-                edit._parse_args(config=Mock(), session=mock_session, args=args)
+                edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
 
                 mock_query.assert_called_once_with("", mock_session, query_type="track")
 
         assert error.value.code != 0
         assert mock_track.track_num == 3
-
-
-class TestEditItem:
-    """Test `edit_item()`."""
-
-    def test_track(self, mock_track):
-        """We can edit a track's field."""
-        edit.edit_item(mock_track, "title", "new title")
-
-        assert mock_track.title == "new title"
-
-    def test_album(self, mock_album):
-        """We can edit an album's field."""
-        edit.edit_item(mock_album, "title", "new title")
-
-        assert mock_album.title == "new title"
-
-    def test_int_field(self, mock_track):
-        """We can edit integer fields."""
-        edit.edit_item(mock_track, "track_num", "3")
-
-        assert mock_track.track_num == 3
-
-    def test_date_field(self, mock_track):
-        """We can edit the date."""
-        edit.edit_item(mock_track, "date", "2020-11-01")
-
-        assert mock_track.date == datetime.date(2020, 11, 1)
-
-    def test_invalid_date_field(self, mock_track):
-        """Invalid dates should raise an EditError."""
-        with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "date", "2020")
-
-    def test_list_field(self, mock_track):
-        """We can edit list fields."""
-        edit.edit_item(mock_track, "genre", "a; b")
-
-        assert set(mock_track.genres) == {"a", "b"}
-
-    def test_non_editable_fields(self, mock_track):
-        """Editing paths is not currently supported."""
-        with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "path", "~")
-
-    def test_invalid_track_field(self, mock_track):
-        """Raise EditError if attempting to edit an invalid field."""
-        with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "lol", "bad field")
-
-    def test_invalid_album_field(self, mock_album):
-        """Raise SystemExit if attempting to edit an invalid field."""
-        with pytest.raises(edit.EditError):
-            edit.edit_item(mock_album, "lol", "bad field")
 
 
 @pytest.mark.integration
@@ -143,7 +88,7 @@ class TestCommand:
         assert real_track.title != new_title
         cli_args = ["edit", "*", f"title={new_title}"]
 
-        config = tmp_config(settings='default_plugins = ["edit"]')
+        config = tmp_config(settings='default_plugins = ["cli", "edit"]')
         config.init_db()
         with session_scope() as pre_edit_session:
             pre_edit_session.add(real_track)

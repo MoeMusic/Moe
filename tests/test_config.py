@@ -25,9 +25,9 @@ class TestInit:
 
         The config and cli "plugins" will always be registered.
         """
-        config = tmp_config(settings='default_plugins = ["ls", "edit"]')
+        config = tmp_config(settings='default_plugins = ["list", "write"]')
 
-        plugins = ["config", "cli", "ls", "edit"]
+        plugins = ["config", "list", "write"]
         for plugin_name, _ in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
 

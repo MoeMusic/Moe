@@ -1,0 +1,1 @@
+"""Test the edit plugin."""

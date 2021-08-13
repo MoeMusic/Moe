@@ -1,30 +1,5 @@
-"""Alters the location of items in your library.
+"""Core api for moving items."""
 
-The ``move`` plugin provides the following features:
-
-* Any items added to your library will be copied to the location set by ``library_path``
-  in your configuration file.
-* Any items moved or copied will have their paths set to a default format.
-  This default format cannot currently be configured, and is as follows:
-
-  * Albums: ``{library_path}/{albumartist} ({album_year})/``
-  * Tracks: ``{album_path}/{track_number} - {track_title}.{file_ext}``
-
-    If the album contains more than one disc, tracks will be formatted as:
-
-    ``{album_path}/Disc {disc#}/{track_number} - {track_title}.{file_ext}``
-  * Extras: ``{album_path}/{original_file_name}``
-
-API:
-    This plugin provides an interface for automatically formatting item paths as
-    specified above via ``fmt_item_path()``, moving items with ``move_item()``,
-    and copying items with ``copy_item()``.
-
-Note:
-    This plugin is enabled by default.
-"""
-
-import argparse
 import logging
 import shutil
 from contextlib import suppress
@@ -32,7 +7,6 @@ from pathlib import Path
 from typing import Union
 
 import dynaconf
-import sqlalchemy as sa
 from sqlalchemy.orm.session import Session
 from unidecode import unidecode
 
@@ -57,68 +31,6 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(
         dynaconf.Validator("MOVE.LIBRARY_PATH", must_exist=True, default="~/Music")
     )
-
-
-@moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
-    """Adds the ``move`` command to Moe's CLI."""
-    move_parser = cmd_parsers.add_parser(
-        "move",
-        aliases=["mv"],
-        description="Moves items in the library according to the user configuration.",
-        help="move items in the library",
-    )
-    move_parser.add_argument(
-        "-n",
-        "--dry-run",
-        action="store_true",
-        help="display what will be moved without actually moving the items",
-    )
-    move_parser.set_defaults(func=_parse_args)
-
-
-def _parse_args(
-    config: Config, session: sa.orm.session.Session, args: argparse.Namespace
-):
-    """Parses the given commandline arguments.
-
-    Items will be moved according to the given user configuration.
-
-    Args:
-        config: Configuration in use.
-        session: Current db session.
-        args: Commandline arguments to parse.
-
-    Raises:
-        SystemExit: Invalid field or field_value term format.
-    """
-    albums = session.execute(sa.select(Album)).scalars().all()
-
-    if args.dry_run:
-        dry_run_str = ""
-        for dry_album in albums:
-            album_dest = fmt_item_path(dry_album, config)
-            if album_dest != dry_album.path:
-                dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
-
-            # temporarily set the album's path so track/extra dests use the right
-            # album directory
-            sa.orm.attributes.set_committed_value(dry_album, "path", album_dest)
-
-            for dry_track in dry_album.tracks:
-                track_dest = fmt_item_path(dry_track, config)
-                if track_dest != dry_track.path:
-                    dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
-            for dry_extra in dry_album.extras:
-                extra_dest = fmt_item_path(dry_extra, config)
-                if extra_dest != dry_extra.path:
-                    dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
-
-        if dry_run_str:
-            print(dry_run_str.lstrip())  # noqa: WPS421
-    else:
-        for album in albums:
-            move_item(album, config)
 
 
 @moe.hookimpl

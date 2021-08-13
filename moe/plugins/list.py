@@ -9,7 +9,7 @@ from typing import List
 
 import sqlalchemy
 
-import moe
+import moe.cli
 from moe.core import query
 from moe.core.config import Config
 
@@ -24,7 +24,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         aliases=["ls"],
         description="Lists music in the library.",
         help="list music in the library",
-        parents=[query.query_parser],
+        parents=[moe.cli.query_parser],
     )
     ls_parser.add_argument(
         "-p",

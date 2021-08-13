@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import sqlalchemy
-from sqlalchemy import Column, Date, Integer, String, and_, or_  # noqa: WPS458
+from sqlalchemy import Column, Date, Integer, String, and_, or_
 from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import UniqueConstraint

@@ -16,6 +16,7 @@ from moe.core.library.session import session_scope
 from moe.core.library.track import Track
 from moe.plugins import add
 from moe.plugins import write as moe_write
+from moe.plugins.add import add_cli
 
 
 class ImportPlugin:
@@ -39,10 +40,10 @@ class TestParseArgs:
         """
         args = argparse.Namespace(paths=["bad file", str(real_track.path)])
 
-        with patch("moe.plugins.add.add.add_item") as add_item_mock:
+        with patch("moe.plugins.add.add_item") as add_item_mock:
             add_item_mock.side_effect = [add.AddError, tmp_session.add(real_track)]
             with pytest.raises(SystemExit) as error:
-                add.add._parse_args(Mock(), tmp_session, args)
+                add_cli._parse_args(Mock(), tmp_session, args)
 
         assert error.value.code != 0
         assert tmp_session.query(Track).one()
@@ -56,8 +57,8 @@ class TestParseArgs:
         track_path2 = real_track_factory().path
         args = argparse.Namespace(paths=[track_path1, track_path2])
 
-        with patch("moe.plugins.add.add.add_item") as add_item_mock:
-            add.add._parse_args(mock_config, mock_session, args)
+        with patch("moe.plugins.add.add_item") as add_item_mock:
+            add_cli._parse_args(mock_config, mock_session, args)
 
         calls = [
             call(mock_config, mock_session, track_path1),
@@ -262,33 +263,13 @@ class TestAddItemFromFile:
 
 
 @pytest.mark.integration
-class TestImportAlbum:
-    """Test integration with the ``import_album`` hook and thus the add prompt."""
-
-    def test_album(self, real_album, tmp_config):
-        """Prompt is run with a plugin implementing the ``import_album`` hook."""
-        cli_args = ["add", str(real_album.path)]
-        config = tmp_config(settings='default_plugins = ["add"]')
-        config.plugin_manager.register(ImportPlugin)
-
-        mock_q = Mock()
-        mock_q.ask.return_value = add.prompt._apply_changes
-        with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            moe.cli.main(cli_args, config)
-
-        with session_scope() as session:
-            album = session.query(Album).one()
-            assert album.title == "pre-add plugin"
-
-
-@pytest.mark.integration
 class TestCommand:
     """Test cli integration with the add command."""
 
     def test_file(self, real_track, tmp_config):
         """Tracks are added to the library when a file is passed to `add`."""
         cli_args = ["add", str(real_track.path)]
-        config = tmp_config(settings='default_plugins = ["add"]')
+        config = tmp_config(settings='default_plugins = ["add", "cli"]')
 
         moe.cli.main(cli_args, config)
 

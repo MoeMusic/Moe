@@ -7,7 +7,7 @@ from typing import List, Tuple, Type, TypeVar
 
 import mediafile
 import sqlalchemy
-from sqlalchemy import Column, Integer, String  # noqa: WPS458
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint

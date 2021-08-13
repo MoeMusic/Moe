@@ -11,11 +11,12 @@ Config object through a hook.
 """
 
 import importlib
-import importlib.util  # noqa: WPS458
+import importlib.util
 import logging
 import os
 import re
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import cast
 
@@ -34,7 +35,9 @@ log = logging.getLogger("moe.config")
 
 DEFAULT_PLUGINS = (
     "add",
+    "cli",
     "edit",
+    "import",
     "info",
     "list",
     "move",
@@ -222,11 +225,17 @@ class Config:
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
 
-        # cli is always registered
-        self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
+        self.plugins = self.settings.default_plugins
+
+        # the 'import' plugin maps to the 'moe_import' package
+        with suppress(ValueError):
+            import_index = self.plugins.index("import")
+            self.plugins[import_index] = "moe_import"
+
+        if "cli" in self.plugins:
+            self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
-        self.plugins = self.settings.default_plugins
         internal_plugin_path = Path(__file__).resolve().parents[1] / "plugins"
         self._register_plugin_dir(internal_plugin_path)
 
