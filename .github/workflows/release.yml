@@ -21,7 +21,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-            [Changelog](https://github.com/jtpavlock/Moe/blob/master/CHANGELOG.md)
+            [Changelog](https://github.com/MoeMusic/Moe/blob/master/CHANGELOG.md)
           draft: false
           prerelease: false
 

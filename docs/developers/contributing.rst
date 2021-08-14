@@ -10,7 +10,7 @@ Creating a dev environment
 
    .. code:: bash
 
-        $ git clone https://github.com/jtpavlock/moe.git
+        $ git clone https://github.com/MoeMusic/Moe.git
 
 #. Install the project
 

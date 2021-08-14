@@ -9,7 +9,7 @@ Please make sure to search existing feature requests or idea discussions to chec
 
 <!--
 If you don't have a clear idea of the new feature or the use case it would solve, or if it's more of a discussion, please open a new idea discussion instead.
-https://github.com/jtpavlock/Moe/discussions/categories/ideas
+https://github.com/MoeMusic/Moe/discussions/categories/ideas
 -->
 
 ### Describe the new feature

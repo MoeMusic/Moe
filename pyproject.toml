@@ -4,7 +4,7 @@ include = ["alembic/*", "alembic/versions/*"]
 version = "0.7.1"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
-repository = "https://github.com/jtpavlock/Moe"
+repository = "https://github.com/MoeMusic/Moe"
 documentation = "https://mrmoe.readthedocs.io/en/latest/index.html"
 classifiers=[
     "Development Status :: 3 - Alpha",

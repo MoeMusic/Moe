@@ -6,7 +6,7 @@ Moe is our resident Music-Organizer-Extraordinaire who's sole purpose is to give
 *******************
 Development Warning
 *******************
-Moe is currently in early development, and is still training for his goal to become your all-powerful music library assistant. You are more than welcome to start using Moe, but don't be surprised if you find any bugs or a lack of features. If you do find any bugs, or would like to request a feature, please feel free to `open an issue <https://github.com/jtpavlock/Moe/issues/new/choose>`_.
+Moe is currently in early development, and is still training for his goal to become your all-powerful music library assistant. You are more than welcome to start using Moe, but don't be surprised if you find any bugs or a lack of features. If you do find any bugs, or would like to request a feature, please feel free to `open an issue <https://github.com/MoeMusic/Moe/issues/new/choose>`_.
 
 So what can Moe do right now?
 =============================
