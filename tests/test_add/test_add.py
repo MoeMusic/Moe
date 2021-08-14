@@ -54,7 +54,7 @@ class TestParseArgs:
 
         track_path1 = real_track_factory().path
         track_path2 = real_track_factory().path
-        args = argparse.Namespace(paths=[str(track_path1), str(track_path2)])
+        args = argparse.Namespace(paths=[track_path1, track_path2])
 
         with patch("moe.plugins.add.add.add_item") as add_item_mock:
             add.add._parse_args(mock_config, mock_session, args)
