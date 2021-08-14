@@ -1,3 +1,9 @@
+## v0.7.2 (2021-08-14)
+
+### Refactor
+
+- **add**: take advantage of argparse pathlib type
+
 ## v0.7.1 (2021-08-08)
 
 ### Refactor
