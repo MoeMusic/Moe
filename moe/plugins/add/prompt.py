@@ -19,9 +19,13 @@ from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track
 from moe.plugins import add
 
-__all__ = ["PromptChoice", "import_prompt"]
+__all__ = ["AbortImport", "import_prompt", "PromptChoice"]
 
 log = logging.getLogger("moe.add")
+
+
+class AbortImport(Exception):
+    """Used to abort the import process."""
 
 
 class PromptChoice(NamedTuple):
@@ -230,4 +234,4 @@ def _abort_changes(
     new_album: Album,
 ):
     """Aborts the album changes."""
-    pass  # noqa: WPS420
+    raise AbortImport()

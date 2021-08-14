@@ -16,6 +16,7 @@ from moe.core.library.album import Album
 from moe.core.library.extra import Extra
 from moe.core.library.lib_item import LibItem
 from moe.core.library.track import Track, TrackError
+from moe.plugins import add
 
 __all__ = ["add_item", "AddError"]
 
@@ -61,6 +62,8 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
             add_item(config, session, path)
         except AddError as exc:
             log.error(exc)
+            error_count += 1
+        except add.AbortImport:
             error_count += 1
 
     if error_count:

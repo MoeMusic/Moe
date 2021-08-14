@@ -5,6 +5,8 @@ import datetime
 import random
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
 from moe.core.library.album import Album
 from moe.plugins import add
 
@@ -62,7 +64,8 @@ class TestImportPrompt:
         mock_q = Mock()
         mock_q.ask.return_value = add.prompt._abort_changes
         with patch("moe.plugins.add.prompt.questionary.rawselect", return_value=mock_q):
-            add.prompt.import_prompt(config, MagicMock(), mock_album, new_album)
+            with pytest.raises(add.AbortImport):
+                add.prompt.import_prompt(config, MagicMock(), mock_album, new_album)
 
         assert mock_album.is_unique(new_album)
 
