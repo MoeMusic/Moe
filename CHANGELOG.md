@@ -1,3 +1,9 @@
+## v0.7.3 (2021-08-14)
+
+### Fix
+
+- **add**: abort will now abort importing an item entirely
+
 ## v0.7.2 (2021-08-14)
 
 ### Refactor
