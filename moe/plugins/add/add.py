@@ -36,6 +36,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
         "paths",
         metavar="path",
         nargs="+",
+        type=Path,
         help="dir to add an album or file to add a track",
     )
     add_parser.set_defaults(func=_parse_args)
@@ -54,10 +55,8 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
     Raises:
         SystemExit: Path given does not exist.
     """
-    paths = [Path(arg_path) for arg_path in args.paths]
-
     error_count = 0
-    for path in paths:
+    for path in args.paths:
         try:
             add_item(config, session, path)
         except AddError as exc:
