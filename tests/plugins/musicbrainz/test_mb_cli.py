@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import tests.test_musicbrainz.resources as mb_rsrc
+import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe import cli
 from moe.core.library.album import Album
 from moe.core.library.session import session_scope
