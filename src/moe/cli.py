@@ -3,19 +3,15 @@
 """Entry point for the CLI."""
 
 import argparse
-import functools
 import logging
 import sys
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Callable, List, NamedTuple
 
 import pkg_resources
 import pluggy
-import sqlalchemy
-from sqlalchemy.orm.session import Session
 
 import moe
 from moe.config import Config, MoeSession
-from moe.library.lib_item import LibItem
 
 __all__ = ["PromptChoice", "query_parser"]
 
@@ -64,36 +60,6 @@ class Hooks:
         See Also:
             `The python documentation for adding sub-parsers.
             <https://docs.python.org/3/library/argparse.html#sub-commands>`_
-        """
-
-    @staticmethod
-    @moe.hookspec
-    def edit_new_items(config: Config, items: List[LibItem]):
-        """Edit any new or changed items prior to them being added to the library.
-
-        Args:
-            config: Moe config.
-            items: Any new or changed items in the current session. The items and
-                their changes have not yet been committed to the library.
-
-        See Also:
-            The :meth:`process_new_items` hook if you wish to process any items after
-            any final edits have been made and they have been successfully added to
-            the library.
-        """
-
-    @staticmethod
-    @moe.hookspec
-    def process_new_items(config: Config, items: List[LibItem]):
-        """Process any new or changed items after they have been added to the library.
-
-        Args:
-            config: Moe config.
-            items: Any new or changed items that have been successfully added to the
-                library during the current session.
-
-        See Also:
-            The :meth:`edit_new_items` hook if you wish to edit the items.
         """
 
 
@@ -179,16 +145,6 @@ def _parse_args(args: List[str], config: Config):
     # call the sub-command's handler within a single session
     cli_session = MoeSession()
     with cli_session.begin():
-        sqlalchemy.event.listen(
-            cli_session,
-            "before_flush",
-            functools.partial(_edit_new_items, config=config),
-        )
-        sqlalchemy.event.listen(
-            cli_session,
-            "after_flush",
-            functools.partial(_process_new_items, config=config),
-        )
 
         try:
             parsed_args.func(config, args=parsed_args)
@@ -242,50 +198,6 @@ def _set_root_log_lvl(args):
     for key in logging.Logger.manager.loggerDict:
         if "moe" not in key:
             logging.getLogger(key).setLevel(logging.WARNING)
-
-
-def _edit_new_items(
-    session: Session,
-    flush_context: sqlalchemy.orm.UOWTransaction,
-    instances: Optional[Any],
-    config: Config,
-):
-    """Runs the ``edit_new_items`` hook specification.
-
-    This uses the sqlalchemy ORM event ``before_flush`` in the background to determine
-    the time of execution and to provide any new or changed items to the hook
-    implementations.
-
-    Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
-        instances: List of objects passed to the ``flush()`` method.
-        config: Moe config.
-    """
-    config.plugin_manager.hook.edit_new_items(
-        config=config, session=session, items=session.new.union(session.dirty)
-    )
-
-
-def _process_new_items(
-    session: Session,
-    flush_context: sqlalchemy.orm.UOWTransaction,
-    config: Config,
-):
-    """Runs the ``process_new_items`` hook specification.
-
-    This uses the sqlalchemy ORM event ``after_flush`` in the background to determine
-    the time of execution and to provide any new or changed items to the hook
-    implementations.
-
-    Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
-        config: Moe config.
-    """
-    config.plugin_manager.hook.process_new_items(
-        config=config, session=session, items=session.new.union(session.dirty)
-    )
 
 
 if __name__ == "__main__":
