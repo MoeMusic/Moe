@@ -7,9 +7,11 @@ Note:
 """
 
 import argparse
+import logging
 from collections import OrderedDict
 from typing import Any, Dict, List
 
+import pluggy
 import sqlalchemy
 
 import moe.cli
@@ -21,6 +23,16 @@ from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
 __all__: List[str] = []
+
+log = logging.getLogger("moe.info")
+
+
+@moe.hookimpl
+def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+    """Depend on the cli plugin."""
+    if "cli" not in config.plugins:
+        plugin_manager.set_blocked("info")
+        log.warning("The 'info' plugin requires the 'cli' plugin to be enabled.")
 
 
 @moe.hookimpl

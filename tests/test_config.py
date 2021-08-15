@@ -38,101 +38,21 @@ class TestInit:
             assert config.config_dir == tmp_path
 
 
-class TestRegisterPluginDir:
-    """Test registering plugins from a directory."""
+class TestPlugins:
+    """Test setting up and registering plugins."""
 
-    def test_files(self, tmp_config, tmp_path):
-        """We can register plugin files within a directory."""
-        plugins = ["add", "move"]
-        tmp_settings = f"default_plugins = {plugins}"
-        config = tmp_config(tmp_settings)
-        (tmp_path / "add.py").touch()
-        (tmp_path / "move.py").touch()
+    def test_enabled_plugins(self, tmp_config):
+        """Only register enabled + default plugins.
 
-        # start with no plugins registered
-        for _, plugin in config.plugin_manager.list_name_plugin():
-            config.plugin_manager.unregister(plugin)
-
-        config._register_plugin_dir(tmp_path)
-        registered_plugins = {
-            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
-        }
-        assert set(plugins) == registered_plugins
-
-    def test_dirs(self, tmp_config, tmp_path):
-        """We can register plugin package directories within a directory.
-
-        Each file within the appropriate plugin directory should be added.
+        Note:
+            The config plugin will always be registered.
         """
-        plugins = ["add", "move"]
-        tmp_settings = f"default_plugins = {plugins}"
-        config = tmp_config(tmp_settings)
+        config = tmp_config(settings='default_plugins = ["cli", "list"]')
 
-        add_path = tmp_path / "add"
-        add_path.mkdir()
-        (add_path / "my_add.py").touch()
-        (add_path / "my_add2.py").touch()
-        (tmp_path / "move.py").touch()
+        plugins = ["config", "cli", "list"]
+        for plugin_name, plugin_module in config.plugin_manager.list_name_plugin():
+            assert plugin_name in plugins
+            assert plugin_module
 
-        # start with no plugins registered
-        for _, plugin in config.plugin_manager.list_name_plugin():
-            config.plugin_manager.unregister(plugin)
-
-        config._register_plugin_dir(tmp_path)
-
-        registered_plugins = [
-            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
-        ]
-
-        assert set(registered_plugins) == {"move", "my_add", "my_add2"}
-
-    def test_nested_dirs(self, tmp_config, tmp_path):
-        """We can register plugin package directories containing nested directories.
-
-        Each file within the appropriate plugin directory should be added.
-        """
-        plugins = ["add", "move"]
-        tmp_settings = f"default_plugins = {plugins}"
-        config = tmp_config(tmp_settings)
-
-        add_path = tmp_path / "add" / "nested" / "direc" / "tories"
-        add_path.mkdir(parents=True)
-        (add_path / "my_add.py").touch()
-        (add_path / "my_add2.py").touch()
-        (tmp_path / "move.py").touch()
-
-        # start with no plugins registered
-        for _, plugin in config.plugin_manager.list_name_plugin():
-            config.plugin_manager.unregister(plugin)
-
-        config._register_plugin_dir(tmp_path)
-
-        registered_plugins = [
-            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
-        ]
-
-        assert set(registered_plugins) == {"move", "my_add", "my_add2"}
-
-    def test_wrong_plugin_name(self, tmp_config, tmp_path):
-        """Don't add any files or directories that don't match our enabled plugins."""
-        plugins = ["not_add", "not_move"]
-        tmp_settings = f"default_plugins = {plugins}"
-        config = tmp_config(tmp_settings)
-
-        add_path = tmp_path / "add"
-        add_path.mkdir()
-        (add_path / "add.py").touch()
-        (add_path / "my_add2.py").touch()
-        (tmp_path / "move.py").touch()
-
-        # start with no plugins registered
-        for _, plugin in config.plugin_manager.list_name_plugin():
-            config.plugin_manager.unregister(plugin)
-
-        config._register_plugin_dir(tmp_path)
-
-        registered_plugins = [
-            plugin[0] for plugin in config.plugin_manager.list_name_plugin()
-        ]
-
-        assert not registered_plugins
+        for plugin in plugins:
+            assert config.plugin_manager.has_plugin(plugin)

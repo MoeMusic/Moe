@@ -41,7 +41,7 @@ class TestPrompt:
 
     def test_apply_changes(self, mock_album, tmp_config, tmp_session):
         """If selected, apply the changes to the old album."""
-        config = tmp_config("default_plugins = ['import']")
+        config = tmp_config("default_plugins = ['cli', 'import']")
         new_album = copy.deepcopy(mock_album)
         new_album.title = "new title"
         assert mock_album.title != new_album.title
@@ -74,7 +74,7 @@ class TestPrompt:
 
     def test_abort_changes(self, mock_album, tmp_config):
         """If selected, abort the changes to the old album."""
-        config = tmp_config("default_plugins = ['import']")
+        config = tmp_config("default_plugins = ['cli', 'import']")
         new_album = copy.deepcopy(mock_album)
         new_album.title = "new title"
         assert mock_album.title != new_album.title
@@ -92,7 +92,7 @@ class TestPrompt:
 
     def test_partial_album_exists_merge(self, mock_album, tmp_config, tmp_session):
         """Merge existing tracks with those being added."""
-        config = tmp_config("default_plugins = ['import']")
+        config = tmp_config("default_plugins = ['cli', 'import']")
         existing_album = copy.deepcopy(mock_album)
         new_album = copy.deepcopy(mock_album)
         existing_album.tracks.pop(0)
@@ -116,7 +116,7 @@ class TestPrompt:
 
     def test_multi_disc_album(self, mock_album, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
-        config = tmp_config("default_plugins = ['import']")
+        config = tmp_config("default_plugins = ['cli', 'import']")
         mock_album.disc_total = 2
         mock_album.tracks[1].disc = 2
         mock_album.tracks[1].track_num = 1

@@ -5,8 +5,10 @@ Note:
 """
 
 import argparse
+import logging
 from typing import List
 
+import pluggy
 import sqlalchemy
 
 import moe.cli
@@ -14,6 +16,16 @@ from moe import query
 from moe.config import Config
 
 __all__: List[str] = []
+
+log = logging.getLogger("moe.list")
+
+
+@moe.hookimpl
+def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+    """Depend on the cli plugin."""
+    if "cli" not in config.plugins:
+        plugin_manager.set_blocked("list")
+        log.warning("The 'list' plugin requires the 'cli' plugin to be enabled.")
 
 
 @moe.hookimpl

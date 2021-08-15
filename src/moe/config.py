@@ -18,7 +18,6 @@ import re
 import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import cast
 
 import dynaconf
 import pluggy
@@ -81,6 +80,55 @@ class Hooks:
 
                 from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
                 plugin_manager.add_hookspecs(Hooks)
+        """
+
+    @staticmethod
+    @moe.hookspec
+    def plugin_registration(
+        config: "Config", plugin_manager: pluggy.manager.PluginManager
+    ):
+        """Allows actions after the initial plugin registration.
+
+        In order for a module to implement and register plugin hooks, it must be
+        registered as a separate plugin with the ``plugin_manager``. A plugin can be
+        either just a module, or a full package.
+
+        If a plugin is a package, only it's ``__init__.py`` will be initially
+        registered, meaning only ``__init__.py`` will be able to run hook
+        implementations at start-up. This hook is provided so each plugin can register
+        it's individual sub-modules as appropriate.
+
+        Important:
+            Ensure any sub-modules you register as plugins are registered with the
+            original plugin name as the prefix. This helps prevent naming conflicts.
+
+        For example, see how the ``edit`` plugin conditionally enables its cli
+        sub-module::
+
+            @moe.hookimpl
+            def plugin_registration(config, plugin_manager):
+                if "cli" in config.plugins:
+                    plugin_manager.register(edit_cli, "edit_cli")
+
+        This hook can also be used as a way of checking for plugin dependencies by
+        inspecting the enabled plugins in the configuration.
+
+        For example, because the ``list`` plugin only exists as a cli plugin, it will
+        un-register itself and log a warning if the cli plugin is not enabled::
+
+            @moe.hookimpl
+            def plugin_registration(config, plugin_manager):
+                if "cli" not in config.plugins:
+                    plugin_manager.set_blocked("list")
+                    log.warning("You can't list stuff without a cli!")
+
+        See Also:
+            The ``PluginManager`` api documentation:
+            https://pluggy.readthedocs.io/en/latest/api_reference.html
+
+        Args:
+            config: Moe config.
+            plugin_manager: Plugin manager used to operate on plugins.
         """
 
 
@@ -224,7 +272,6 @@ class Config:
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
-
         self.plugins = self.settings.default_plugins
 
         # the 'import' plugin maps to the 'moe_import' package
@@ -236,46 +283,26 @@ class Config:
             self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
-        internal_plugin_path = Path(__file__).resolve().parent / "plugins"
-        self._register_plugin_dir(internal_plugin_path)
+        self._register_internal_plugins()
 
-        # register plugin hookspecs for all plugins
+        # register individual plugin sub-modules
+        self.plugin_manager.hook.plugin_registration(
+            config=self, plugin_manager=self.plugin_manager
+        )
+
+        # register plugin hookspecs for all enabled plugins
         self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
 
-    def _register_plugin_dir(self, plugin_dir: Path):
-        """Registers plugins in a given directory.
-
-        Assumes each plugin is a single file named ``{plugin_name}.py``, or is a
-        package directory named ``{plugin_name}/``. If the plugin is a package, it will
-        register each file in the dir as a new plugin.
+    def _register_internal_plugins(self):
+        """Registers internal Moe plugins.
 
         Only registers plugins that are enabled in the configuration.
-
-        Args:
-            plugin_dir: Path to search for plugin modules or packages.
         """
+        plugin_dir = Path(__file__).resolve().parent / "plugins"
+
         for plugin_path in plugin_dir.iterdir():
+            plugin_name = plugin_path.stem
+
             if plugin_path.stem in self.plugins:
-                self._register_plugin_path(plugin_path)
-
-    def _register_plugin_path(self, plugin_path: Path):
-        """Registers a plugin file or directory."""
-        if (
-            plugin_path.is_file()
-            and not plugin_path.name.startswith("_")
-            and plugin_path.suffix == ".py"
-        ):
-            plugin_spec = importlib.util.spec_from_file_location(
-                plugin_path.stem, plugin_path
-            )
-            if plugin_spec:
-                plugin_module = importlib.util.module_from_spec(plugin_spec)
-                cast(importlib.abc.Loader, plugin_spec.loader).exec_module(
-                    plugin_module
-                )
-
-                self.plugin_manager.register(plugin_module)
-        elif plugin_path.is_dir():
-            # register every file in a plugin's directory
-            for path in plugin_path.iterdir():
-                self._register_plugin_path(path)
+                plugin = importlib.import_module("moe.plugins." + plugin_name)
+                self.plugin_manager.register(plugin, plugin_name)

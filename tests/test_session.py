@@ -13,7 +13,7 @@ class TestSessionScope:
     @pytest.mark.integration
     def test_commit_on_systemexit(self, real_track, tmp_config):
         """If SystemExit intentionally raised, still commit the session."""
-        cli_args = ["add", "bad_file", str(real_track.path)]
+        cli_args = ["add", "bad file", str(real_track.path)]
         config = tmp_config(settings='default_plugins = ["add", "cli"]')
 
         with pytest.raises(SystemExit) as error:
