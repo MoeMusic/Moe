@@ -79,7 +79,7 @@ def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
     Yields:
         The temporary session.
     """
-    tmp_config(tmp_db=True)
+    tmp_config("default_plugins = []", tmp_db=True)
 
     session = MoeSession()
     with session.begin():
