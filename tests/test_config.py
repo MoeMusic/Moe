@@ -2,7 +2,10 @@
 
 from unittest.mock import patch
 
-from moe.config import Config
+import dynaconf
+
+import moe
+from moe.config import Config, ExtraPlugin
 
 
 class TestInit:
@@ -38,11 +41,23 @@ class TestInit:
             assert config.config_dir == tmp_path
 
 
+class ConfigPlugin:
+    """Plugin that implements the config hooks for testing."""
+
+    @staticmethod
+    @moe.hookimpl
+    def add_config_validator(settings):
+        """Add the `config_plugin` configuration option."""
+        settings.validators.register(
+            dynaconf.Validator("CONFIG_PLUGIN", must_exist=True, default="hello!")
+        )
+
+
 class TestPlugins:
     """Test setting up and registering plugins."""
 
-    def test_enabled_plugins(self, tmp_config):
-        """Only register enabled + default plugins.
+    def test_config_plugins(self, tmp_config):
+        """All plugins specified in the configuration are registered.
 
         Note:
             The config plugin will always be registered.
@@ -56,3 +71,19 @@ class TestPlugins:
 
         for plugin in plugins:
             assert config.plugin_manager.has_plugin(plugin)
+
+    def test_extra_plugins(self, tmp_config):
+        """Any given additional plugins are also registered."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
+
+        assert config.plugin_manager.has_plugin("config_plugin")
+
+
+class TestHooks:
+    """Test the config hook specifications."""
+
+    def test_add_config_validator(self, tmp_config):
+        """Ensure plugins can implement the `add_config_validator` hook."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
+
+        assert config.settings.config_plugin == "hello!"

@@ -21,8 +21,8 @@ __all__.extend(edit_core.__all__)  # noqa: WPS609
 
 
 @moe.hookimpl
-def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    plugin_manager.register(edit_core, "edit_core")
-    if "cli" in config.plugins:
-        plugin_manager.register(edit_cli, "edit_cli")
+    config.plugin_manager.register(edit_core, "edit_core")
+    if config.plugin_manager.has_plugin("cli"):
+        config.plugin_manager.register(edit_cli, "edit_cli")

@@ -15,11 +15,9 @@ class TestMerge:
         album1.path = album2.path
         assert not album1.is_unique(album2)
 
-        # should merge `mutual_extra`
-        mutual_extra1 = album1.path / "log.txt"
-        mutual_extra2 = album2.path / "log.txt"
-        Extra(mutual_extra1, album1)
-        Extra(mutual_extra2, album2)
+        mutual_extra = Extra(album1.path / "log.txt", album1)
+        Extra(album2.path / "log.txt", album2)  # should get overwritten
+        new_extra = Extra(album2.path / "new.txt", album2)  # should persist
 
         assert album1.extras != album2.extras
 
@@ -29,7 +27,8 @@ class TestMerge:
 
         db_album = tmp_session.query(Album).one()
 
-        assert mutual_extra1 not in db_album.extras
+        assert mutual_extra in db_album.extras
+        assert new_extra in db_album.extras
 
     def test_merge_tracks(self, mock_album_factory, mock_track, tmp_session):
         """Any track conflicts should be overwritten by the current album."""

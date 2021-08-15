@@ -22,8 +22,6 @@ Note:
 #       in the import process.
 #    * `prompt`: CLI user prompts to interact with the adding process.
 
-import pluggy
-
 import moe
 from moe.config import Config
 from moe.plugins.add.add_core import add, match
@@ -38,8 +36,8 @@ __all__.extend(match.__all__)  # noqa: WPS609
 
 
 @moe.hookimpl
-def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    plugin_manager.register(add, "add_core")
-    if "cli" in config.plugins:
-        plugin_manager.register(add_cli, "add_cli")
+    config.plugin_manager.register(add, "add_core")
+    if config.plugin_manager.has_plugin("cli"):
+        config.plugin_manager.register(add_cli, "add_cli")

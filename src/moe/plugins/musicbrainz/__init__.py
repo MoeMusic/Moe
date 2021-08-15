@@ -25,8 +25,8 @@ __all__.extend(mb_core.__all__)  # noqa: WPS609
 
 
 @moe.hookimpl
-def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    plugin_manager.register(mb_core, "mb_core")
-    if "cli" in config.plugins:
-        plugin_manager.register(mb_cli, "mb_cli")
+    config.plugin_manager.register(mb_core, "mb_core")
+    if config.plugin_manager.has_plugin("cli"):
+        config.plugin_manager.register(mb_cli, "mb_cli")
