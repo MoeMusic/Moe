@@ -8,8 +8,8 @@ from sqlalchemy.orm.session import Session
 
 import moe
 import moe.cli
-from moe.core.config import Config
-from moe.core.library.album import Album
+from moe.config import Config
+from moe.library.album import Album
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
 

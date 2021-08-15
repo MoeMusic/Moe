@@ -5,9 +5,9 @@ import datetime
 import pytest
 
 import moe.plugins.write
-from moe.core.library.album import Album
-from moe.core.library.session import DbDupAlbumError, session_scope
-from moe.core.library.track import Track, TrackError
+from moe.library.album import Album
+from moe.library.session import DbDupAlbumError, session_scope
+from moe.library.track import Track, TrackError
 
 
 class TestInit:

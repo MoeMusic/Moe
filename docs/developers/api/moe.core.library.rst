@@ -8,7 +8,7 @@ Album
 
 ``album`` submodule.
 
-.. automodule:: moe.core.library.album
+.. automodule:: moe.library.album
    :members:
    :exclude-members: year
    :show-inheritance:
@@ -18,7 +18,7 @@ Track
 
 ``track`` submodule.
 
-.. automodule:: moe.core.library.track
+.. automodule:: moe.library.track
    :members:
    :exclude-members: genre
    :show-inheritance:
@@ -29,7 +29,7 @@ Extra
 
 ``extra`` submodule.
 
-.. automodule:: moe.core.library.extra
+.. automodule:: moe.library.extra
    :members:
    :exclude-members: filename
    :show-inheritance:
@@ -39,7 +39,7 @@ Library Item
 
 ``lib_item`` submodule.
 
-.. automodule:: moe.core.library.lib_item
+.. automodule:: moe.library.lib_item
    :members:
    :exclude-members: cache_ok
    :show-inheritance:
@@ -49,6 +49,6 @@ Session
 
 ``session`` submodule.
 
-.. automodule:: moe.core.library.session
+.. automodule:: moe.library.session
    :members:
    :show-inheritance:

@@ -5,8 +5,8 @@ import datetime
 import pytest
 
 import moe
-from moe.core.library.session import session_scope
-from moe.core.library.track import Track
+from moe.library.session import session_scope
+from moe.library.track import Track
 from moe.plugins import write as moe_write
 
 

@@ -4,10 +4,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from moe.core import query
-from moe.core.library.album import Album
-from moe.core.library.extra import Extra
-from moe.core.library.track import Track
+from moe import query
+from moe.library.album import Album
+from moe.library.extra import Extra
+from moe.library.track import Track
 
 
 class TestParseTerm:

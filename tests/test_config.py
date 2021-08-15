@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from moe.core.config import Config
+from moe.config import Config
 
 
 class TestInit:

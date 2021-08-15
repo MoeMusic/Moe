@@ -2,8 +2,8 @@
 
 from typing import Dict, List, Optional, Tuple
 
-from moe.core.library.album import Album
-from moe.core.library.track import Track
+from moe.library.album import Album
+from moe.library.track import Track
 
 __all__: List[str] = ["get_matching_tracks", "get_match_value"]
 

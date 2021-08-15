@@ -8,7 +8,7 @@ from typing import List
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
+from moe.config import Config
 from moe.plugins import add as moe_add
 
 log = logging.getLogger("moe.add")

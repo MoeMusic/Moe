@@ -14,9 +14,9 @@ import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
-from moe.core.library.lib_item import LibItem
-from moe.core.library.session import session_scope
+from moe.config import Config
+from moe.library.lib_item import LibItem
+from moe.library.session import session_scope
 
 __all__ = ["PromptChoice", "query_parser"]
 

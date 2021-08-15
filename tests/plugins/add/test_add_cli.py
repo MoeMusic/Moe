@@ -10,10 +10,10 @@ import pytest
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
-from moe.core.library.album import Album
-from moe.core.library.session import session_scope
-from moe.core.library.track import Track
+from moe.config import Config
+from moe.library.album import Album
+from moe.library.session import session_scope
+from moe.library.track import Track
 from moe.plugins import add
 from moe.plugins import write as moe_write
 from moe.plugins.add import add_cli

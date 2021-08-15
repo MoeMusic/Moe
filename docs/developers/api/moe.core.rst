@@ -8,7 +8,7 @@ Library
 .. toctree::
    :maxdepth: 4
 
-   moe.core.library
+   moe.library
 
 
 Config
@@ -16,7 +16,7 @@ Config
 
 ``config`` submodule.
 
-.. automodule:: moe.core.config
+.. automodule:: moe.config
    :members:
    :undoc-members:
    :show-inheritance:
@@ -26,7 +26,7 @@ Query
 
 ``query`` submodule.
 
-.. automodule:: moe.core.query
+.. automodule:: moe.query
    :members:
    :undoc-members:
    :show-inheritance:

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from moe.core.library.album import Album
-from moe.core.library.track import Track
+from moe.library.album import Album
+from moe.library.track import Track
 from moe.plugins import add
 from moe.plugins import write as moe_write
 

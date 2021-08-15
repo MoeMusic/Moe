@@ -19,9 +19,9 @@ import pkg_resources
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
-from moe.core.library.album import Album
-from moe.core.library.track import Track
+from moe.config import Config
+from moe.library.album import Album
+from moe.library.track import Track
 
 __all__ = ["get_album_by_id", "get_matching_album"]
 

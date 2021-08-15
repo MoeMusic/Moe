@@ -2,9 +2,9 @@
 
 import pytest
 
-from moe.core.library.album import Album
-from moe.core.library.extra import Extra
-from moe.core.library.session import DbDupAlbumError, session_scope
+from moe.library.album import Album
+from moe.library.extra import Extra
+from moe.library.session import DbDupAlbumError, session_scope
 
 
 class TestMerge:

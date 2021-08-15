@@ -10,8 +10,8 @@ from typing import List
 import sqlalchemy
 
 import moe.cli
-from moe.core import query
-from moe.core.config import Config
+from moe import query
+from moe.config import Config
 
 __all__: List[str] = []
 

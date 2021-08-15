@@ -6,8 +6,8 @@ import pytest
 import sqlalchemy as sa
 
 import moe
-from moe.core.library.album import Album
-from moe.core.library.session import session_scope
+from moe.library.album import Album
+from moe.library.session import session_scope
 from moe.plugins import move as moe_move
 
 

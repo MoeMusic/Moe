@@ -6,10 +6,10 @@ from unittest.mock import Mock
 import pytest
 
 import moe
-from moe.core.library.album import Album
-from moe.core.library.extra import Extra
-from moe.core.library.session import session_scope
-from moe.core.library.track import Track
+from moe.library.album import Album
+from moe.library.extra import Extra
+from moe.library.session import session_scope
+from moe.library.track import Track
 from moe.plugins import remove as moe_rm
 
 

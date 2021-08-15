@@ -15,7 +15,7 @@ See Also:
 import pluggy
 
 import moe
-from moe.core.config import Config
+from moe.config import Config
 
 from . import mb_cli, mb_core
 from .mb_core import *
