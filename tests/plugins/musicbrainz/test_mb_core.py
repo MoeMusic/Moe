@@ -6,7 +6,7 @@ from unittest.mock import patch
 import musicbrainzngs  # noqa: F401
 import pytest
 
-import tests.test_musicbrainz.resources as mb_rsrc
+import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe.plugins import musicbrainz as moe_mb
 
 
