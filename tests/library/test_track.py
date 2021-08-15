@@ -58,7 +58,7 @@ class TestFromTags:
     """Test initialization from tags."""
 
     def test_read_tags(self, full_mp3_path):
-        """We should initialize the track with tags from the file if present."""
+        """We can initialize a track with tags from a file if present."""
         track = Track.from_tags(full_mp3_path)
 
         assert track.album == "The Lost Album"

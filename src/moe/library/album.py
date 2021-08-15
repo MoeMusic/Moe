@@ -175,6 +175,13 @@ class Album(LibItem, SABase):
             overwrite_album_info: If ``False``, the album metadata of the other album
                 will persist onto the current album. Only the tracks and extras will
                 be overwritten in this case.
+
+        Note:
+            The actual merging of the instances in the session will occur on a call to
+            ``session.merge``.
+
+        See Also:
+            https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.Session.merge
         """
         if not other:
             return

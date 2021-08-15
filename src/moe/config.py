@@ -19,7 +19,8 @@ import re
 import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, List, Optional
+from types import ModuleType
+from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import dynaconf
 import pluggy
@@ -34,7 +35,7 @@ from moe.library.lib_item import LibItem
 session_factory = sa.orm.sessionmaker()
 MoeSession = sa.orm.scoped_session(session_factory)
 
-__all__ = ["Config", "Hooks"]
+__all__ = ["Config", "ExtraPlugin", "Hooks"]
 
 log = logging.getLogger("moe.config")
 
@@ -120,9 +121,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def plugin_registration(
-        config: "Config", plugin_manager: pluggy.manager.PluginManager
-    ):
+    def plugin_registration(config: "Config"):
         """Allows actions after the initial plugin registration.
 
         In order for a module to implement and register plugin hooks, it must be
@@ -142,9 +141,9 @@ class Hooks:
         sub-module::
 
             @moe.hookimpl
-            def plugin_registration(config, plugin_manager):
-                if "cli" in config.plugins:
-                    plugin_manager.register(edit_cli, "edit_cli")
+            def plugin_registration(config):
+                if config.plugin_manager.has_plugin("cli"):
+                    config.plugin_manager.register(edit_cli, "edit_cli")
 
         This hook can also be used as a way of checking for plugin dependencies by
         inspecting the enabled plugins in the configuration.
@@ -153,9 +152,9 @@ class Hooks:
         un-register itself and log a warning if the cli plugin is not enabled::
 
             @moe.hookimpl
-            def plugin_registration(config, plugin_manager):
-                if "cli" not in config.plugins:
-                    plugin_manager.set_blocked("list")
+            def plugin_registration(config):
+                if not config.plugin_manager.has_plugin("cli"):
+                    config.plugin_manager.set_blocked("list")
                     log.warning("You can't list stuff without a cli!")
 
         See Also:
@@ -164,7 +163,6 @@ class Hooks:
 
         Args:
             config: Moe config.
-            plugin_manager: Plugin manager used to operate on plugins.
         """
 
 
@@ -174,6 +172,18 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(
         dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS))
     )
+
+
+class ExtraPlugin(NamedTuple):
+    """Used to specify extra plugins when initializing the config.
+
+    Attributes:
+        plugin: This is the class or module of the plugin to register.
+        name: Name to register the plugin under.
+    """
+
+    plugin: Union[Type, ModuleType]
+    name: str
 
 
 class Config:
@@ -187,7 +197,6 @@ class Config:
         config_file (Path): Filesystem path of the configuration settings file.
         engine (sa.engine.base.Engine): Database engine in use.
         plugin_manager (pluggy.manager.PluginManager): Manages plugin logic.
-        plugins (List[str]): Enabled plugins.
         settings (dynaconf.base.LazySettings): User configuration settings.
 
     Example:
@@ -204,6 +213,7 @@ class Config:
         self,
         config_dir: Path = Path.home() / ".config" / "moe",
         settings_filename: str = "config.toml",
+        extra_plugins: List[ExtraPlugin] = None,
         engine: Optional[sa.engine.base.Engine] = None,
         init_db=True,
     ):
@@ -213,6 +223,8 @@ class Config:
             config_dir: Filesystem path of the configuration directory where the
                 settings and database files will reside. The environment variable
                 ``MOE_CONFIG_DIR`` has precedence in setting this.
+            extra_plugins: Any extra plugins that should be enabled in addition to those
+                specified in the configuration.
             settings_filename: Name of the configuration settings file.
             engine: sqlalchemy database engine to use. Defaults to a sqlite db located
                 in the ``config_dir``.
@@ -225,6 +237,7 @@ class Config:
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         self.config_file = self.config_dir / settings_filename
+        self._extra_plugins = extra_plugins or []
         self._read_config()
 
         self.engine = engine
@@ -324,18 +337,22 @@ class Config:
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
-        self.plugins = self.settings.default_plugins
+        config_plugins = self.settings.default_plugins
 
         # the 'import' plugin maps to the 'moe_import' package
         with suppress(ValueError):
-            import_index = self.plugins.index("import")
-            self.plugins[import_index] = "moe_import"
+            import_index = config_plugins.index("import")
+            config_plugins[import_index] = "moe_import"
 
-        if "cli" in self.plugins:
+        if "cli" in config_plugins:
             self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
-        self._register_internal_plugins()
+        self._register_internal_plugins(config_plugins)
+
+        # register plugin hookimpls for all extra plugins
+        for extra_plugin in self._extra_plugins:
+            self.plugin_manager.register(extra_plugin.plugin, extra_plugin.name)
 
         # register individual plugin sub-modules
         self.plugin_manager.hook.plugin_registration(
@@ -345,17 +362,14 @@ class Config:
         # register plugin hookspecs for all enabled plugins
         self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
 
-    def _register_internal_plugins(self):
-        """Registers internal Moe plugins.
-
-        Only registers plugins that are enabled in the configuration.
-        """
+    def _register_internal_plugins(self, enabled_plugins):
+        """Registers all internal plugins in `enabled_plugins`."""
         plugin_dir = Path(__file__).resolve().parent / "plugins"
 
         for plugin_path in plugin_dir.iterdir():
             plugin_name = plugin_path.stem
 
-            if plugin_path.stem in self.plugins:
+            if plugin_path.stem in enabled_plugins:
                 plugin = importlib.import_module("moe.plugins." + plugin_name)
                 self.plugin_manager.register(plugin, plugin_name)
 

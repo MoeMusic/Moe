@@ -4,14 +4,14 @@ import random
 import shutil
 import textwrap
 from pathlib import Path
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator, List, Optional
 from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.orm
 
-from moe.config import Config, MoeSession
+from moe.config import Config, ExtraPlugin, MoeSession
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.track import Track
@@ -42,13 +42,17 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
         init_db: Whether or not to initialize the database.
         tmp_db: Whether or not to use a temporary (in-memory) database. If ``True``,
             the database will be initialized regardless of ``init_db``.
+        extra_plugins: Any additional plugins to enable.
 
     Returns:
         The configuration instance.
     """
 
     def _tmp_config(
-        settings: str = "", init_db: bool = False, tmp_db: bool = False
+        settings: str = "",
+        init_db: bool = False,
+        tmp_db: bool = False,
+        extra_plugins: List[ExtraPlugin] = None,
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if settings:
@@ -65,6 +69,7 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
         return Config(
             config_dir=config_dir,
             settings_filename="config.toml",
+            extra_plugins=extra_plugins,
             engine=engine,
             init_db=init_db,
         )
