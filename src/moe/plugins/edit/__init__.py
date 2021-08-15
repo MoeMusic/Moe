@@ -11,7 +11,7 @@ Note:
 import pluggy
 
 import moe
-from moe.core.config import Config
+from moe.config import Config
 
 from . import edit_cli, edit_core
 from .edit_core import *

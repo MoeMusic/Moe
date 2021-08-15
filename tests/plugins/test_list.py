@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import moe
-from moe.core.library.session import session_scope
+from moe.library.session import session_scope
 from moe.plugins import list
 
 
@@ -17,7 +17,7 @@ class TestParseArgs:
         """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="", album=False, extra=False, paths=False)
 
-        with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             list._parse_args(config=Mock(), session=mock_session, args=args)
@@ -32,7 +32,7 @@ class TestParseArgs:
         """Albums are printed to stdout with valid query."""
         args = argparse.Namespace(query="", album=True, extra=False, paths=False)
 
-        with patch("moe.core.query.query", return_value=[mock_album]) as mock_query:
+        with patch("moe.query.query", return_value=[mock_album]) as mock_query:
             mock_session = Mock()
 
             list._parse_args(config=Mock(), session=mock_session, args=args)
@@ -48,7 +48,7 @@ class TestParseArgs:
         args = argparse.Namespace(query="", album=False, extra=True, paths=False)
 
         extra = mock_album.extras.pop()
-        with patch("moe.core.query.query", return_value=[extra]) as mock_query:
+        with patch("moe.query.query", return_value=[extra]) as mock_query:
             mock_session = Mock()
 
             list._parse_args(config=Mock(), session=mock_session, args=args)
@@ -72,7 +72,7 @@ class TestParseArgs:
         """Tracks are printed to stdout with valid query."""
         args = argparse.Namespace(query="", album=False, extra=False, paths=True)
 
-        with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             list._parse_args(config=Mock(), session=mock_session, args=args)

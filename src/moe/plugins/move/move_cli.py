@@ -5,8 +5,8 @@ import argparse
 import sqlalchemy as sa
 
 import moe
-from moe.core.config import Config
-from moe.core.library.album import Album
+from moe.config import Config
+from moe.library.album import Album
 from moe.plugins import move as moe_move
 
 

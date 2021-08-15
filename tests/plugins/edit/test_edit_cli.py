@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 import moe
-from moe.core.library.session import session_scope
-from moe.core.library.track import Track
+from moe.library.session import session_scope
+from moe.library.track import Track
 from moe.plugins.edit import edit_cli
 
 
@@ -22,7 +22,7 @@ class TestParseArgs:
 
         track1 = mock_track_factory()
         track2 = mock_track_factory()
-        with patch("moe.core.query.query", return_value=[track1, track2]) as mock_query:
+        with patch("moe.query.query", return_value=[track1, track2]) as mock_query:
             mock_session = Mock()
 
             edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
@@ -38,7 +38,7 @@ class TestParseArgs:
             fv_terms=["track_num=3", "title=yo"], query="", album=False, extra=False
         )
 
-        with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
             mock_session = Mock()
 
             edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
@@ -55,7 +55,7 @@ class TestParseArgs:
         )
 
         with pytest.raises(SystemExit) as error:
-            with patch("moe.core.query.query", return_value=[mock_track]):
+            with patch("moe.query.query", return_value=[mock_track]):
                 edit_cli._parse_args(config=Mock(), session=Mock(), args=args)
 
         assert error.value.code != 0
@@ -67,7 +67,7 @@ class TestParseArgs:
         )
 
         with pytest.raises(SystemExit) as error:
-            with patch("moe.core.query.query", return_value=[mock_track]) as mock_query:
+            with patch("moe.query.query", return_value=[mock_track]) as mock_query:
                 mock_session = Mock()
 
                 edit_cli._parse_args(config=Mock(), session=mock_session, args=args)

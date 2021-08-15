@@ -9,9 +9,9 @@ import pytest
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
-from moe.core.library.album import Album
-from moe.core.library.session import session_scope
+from moe.config import Config
+from moe.library.album import Album
+from moe.library.session import session_scope
 from moe.plugins import moe_import
 
 

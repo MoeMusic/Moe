@@ -26,7 +26,7 @@ Note:
 import pluggy
 
 import moe
-from moe.core.config import Config
+from moe.config import Config
 
 from . import move_cli, move_core
 from .move_core import *

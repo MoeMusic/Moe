@@ -3,8 +3,8 @@
 
 import datetime
 
-from moe.core.library.album import Album
-from moe.core.library.track import Track
+from moe.library.album import Album
+from moe.library.track import Track
 
 # as returned by `musicbrainzngs.search_releases()`
 search = {

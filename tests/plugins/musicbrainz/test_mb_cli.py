@@ -6,8 +6,8 @@ import pytest
 
 import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe import cli
-from moe.core.library.album import Album
-from moe.core.library.session import session_scope
+from moe.library.album import Album
+from moe.library.session import session_scope
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
 

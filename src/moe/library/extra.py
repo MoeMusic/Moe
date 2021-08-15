@@ -7,9 +7,9 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 
-from moe.core.library.album import Album
-from moe.core.library.lib_item import LibItem, PathType
-from moe.core.library.session import Base
+from moe.library.album import Album
+from moe.library.lib_item import LibItem, PathType
+from moe.library.session import Base
 
 # Makes hybrid_property's have the same typing as a normal properties.
 # Use until the stubs are improved.

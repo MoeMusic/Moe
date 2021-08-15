@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy.orm.session import Session
 
-from moe.core.library.lib_item import LibItem
+from moe.library.lib_item import LibItem
 
 __all__ = ["remove_item"]
 

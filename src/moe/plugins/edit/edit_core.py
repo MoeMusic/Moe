@@ -5,7 +5,7 @@ import logging
 import re
 import sys
 
-from moe.core.library.lib_item import LibItem
+from moe.library.lib_item import LibItem
 
 __all__ = ["edit_item", "EditError"]
 

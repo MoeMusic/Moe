@@ -3,7 +3,7 @@
 To avoid namespace confusion when using a variable named config, typical usage of this
 module should just import the Config class directly::
 
-    from moe.core.config import Config
+    from moe.config import Config
     config = Config()
 
 This class shouldn't be accessed normally by a plugin, it should instead be passed a
@@ -27,7 +27,7 @@ import sqlalchemy
 import alembic.command
 import alembic.config
 import moe
-from moe.core.library.session import Session
+from moe.library.session import Session
 
 __all__ = ["Config", "Hooks"]
 
@@ -164,7 +164,7 @@ class Config:
         if create_tables:
             config_path = Path(__file__)
             alembic_cfg = alembic.config.Config(
-                config_path.parents[3] / "alembic" / "alembic.ini"
+                config_path.parents[2] / "alembic" / "alembic.ini"
             )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
@@ -220,7 +220,7 @@ class Config:
 
         # need to validate `config` specific settings separately so we have access to
         # the 'default_plugins' setting
-        self.plugin_manager.register(moe.core.config, name="config")
+        self.plugin_manager.register(moe.config, name="config")
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self.settings.validators.validate()
@@ -236,7 +236,7 @@ class Config:
             self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
-        internal_plugin_path = Path(__file__).resolve().parents[1] / "plugins"
+        internal_plugin_path = Path(__file__).resolve().parent / "plugins"
         self._register_plugin_dir(internal_plugin_path)
 
         # register plugin hookspecs for all plugins

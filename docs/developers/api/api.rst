@@ -9,5 +9,5 @@ API
    :maxdepth: 4
 
    moe.cli
-   moe.core
+   moe
    moe.plugins

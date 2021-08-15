@@ -12,9 +12,9 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
-from moe.core.library.album import Album
-from moe.core.library.lib_item import LibItem, PathType
-from moe.core.library.session import Base
+from moe.library.album import Album
+from moe.library.lib_item import LibItem, PathType
+from moe.library.session import Base
 
 __all__ = ["Track", "TrackError"]
 

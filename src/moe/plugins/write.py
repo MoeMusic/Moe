@@ -14,9 +14,9 @@ import mediafile
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.core.config import Config
-from moe.core.library.lib_item import LibItem
-from moe.core.library.track import Track
+from moe.config import Config
+from moe.library.lib_item import LibItem
+from moe.library.track import Track
 
 __all__ = ["write_tags"]
 

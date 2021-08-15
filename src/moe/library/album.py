@@ -10,13 +10,13 @@ from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import UniqueConstraint
 
-from moe.core.library.lib_item import LibItem, PathType
-from moe.core.library.session import Base
+from moe.library.lib_item import LibItem, PathType
+from moe.library.session import Base
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
-    from moe.core.library.extra import Extra  # noqa: F401, WPS433
-    from moe.core.library.track import Track  # noqa: F401, WPS433
+    from moe.library.extra import Extra  # noqa: F401, WPS433
+    from moe.library.track import Track  # noqa: F401, WPS433
 
     # Makes hybrid_property's have the same typing as a normal properties.
     # Use until the stubs are improved.
