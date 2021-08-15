@@ -7,9 +7,9 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 
+from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
-from moe.library.session import Base
 
 # Makes hybrid_property's have the same typing as a normal properties.
 # Use until the stubs are improved.
@@ -23,7 +23,7 @@ else:
 __all__ = ["Extra"]
 
 
-class Extra(LibItem, Base):
+class Extra(LibItem, SABase):
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:

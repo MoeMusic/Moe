@@ -3,8 +3,6 @@
 import argparse
 import logging
 
-import sqlalchemy
-
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -39,14 +37,11 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     edit_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(
-    config: Config, session: sqlalchemy.orm.session.Session, args: argparse.Namespace
-):
+def _parse_args(config: Config, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
         config: Configuration in use.
-        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -58,7 +53,7 @@ def _parse_args(
         query_type = "extra"
     else:
         query_type = "track"
-    items = query.query(args.query, session, query_type=query_type)
+    items = query.query(args.query, query_type=query_type)
 
     error_count = 0
     for term in args.fv_terms:

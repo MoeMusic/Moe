@@ -6,7 +6,6 @@ from typing import List, Optional, cast
 
 import pluggy
 import questionary
-from sqlalchemy.orm.session import Session
 
 import moe.cli
 from moe.config import Config
@@ -55,10 +54,10 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def process_candidates(config: Config, session: Session, old_album, candidate_albums):
+def process_candidates(config: Config, old_album, candidate_albums):
     """Use the user import prompt to select and process the imported candidates."""
     if candidate_albums:
-        import_prompt(config, session, old_album, candidate_albums[0])
+        import_prompt(config, old_album, candidate_albums[0])
 
 
 @moe.hookimpl
@@ -74,12 +73,11 @@ def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
     )
 
 
-def import_prompt(config: Config, session: Session, old_album: Album, new_album: Album):
+def import_prompt(config: Config, old_album: Album, new_album: Album):
     """Runs the interactive prompt for the given album changes.
 
     Args:
         config: Moe config.
-        session: Current db session.
         old_album: Original album to be added.
         new_album: New album with all metadata changes. Will be compared against
             ``old_album``.
@@ -90,7 +88,7 @@ def import_prompt(config: Config, session: Session, old_album: Album, new_album:
     if old_album == new_album:
         return old_album
 
-    existing_album = new_album.get_existing(session)
+    existing_album = new_album.get_existing()
     old_album.merge(existing_album, overwrite_album_info=False)
 
     print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
@@ -115,7 +113,6 @@ def import_prompt(config: Config, session: Session, old_album: Album, new_album:
     if prompt_choice_func:
         prompt_choice_func(
             config=config,
-            session=session,
             old_album=old_album,
             new_album=new_album,
         )
@@ -205,7 +202,6 @@ def _fmt_track_change(old_track: Optional[Track], new_track: Track) -> str:
 
 def _apply_changes(
     config: Config,
-    session: Session,
     old_album: Album,
     new_album: Album,
 ):
@@ -225,7 +221,6 @@ def _apply_changes(
 
 def _abort_changes(
     config: Config,
-    session: Session,
     old_album: Album,
     new_album: Album,
 ):

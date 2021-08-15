@@ -7,8 +7,6 @@ Note:
 import argparse
 from typing import List
 
-from sqlalchemy.orm.session import Session
-
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -30,12 +28,11 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     rm_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, session: Session, args: argparse.Namespace):
+def _parse_args(config: Config, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
         config: Configuration in use.
-        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -47,10 +44,10 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
         query_type = "extra"
     else:
         query_type = "track"
-    items = query.query(args.query, session, query_type=query_type)
+    items = query.query(args.query, query_type=query_type)
 
     if not items:
         raise SystemExit(1)
 
     for item in items:
-        moe_rm.remove_item(item, session)
+        moe_rm.remove_item(item)

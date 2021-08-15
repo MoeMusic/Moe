@@ -12,9 +12,9 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
+from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
-from moe.library.session import Base
 
 __all__ = ["Track", "TrackError"]
 
@@ -25,7 +25,7 @@ class TrackError(Exception):
     """Error creating a Track."""
 
 
-class _Genre(Base):
+class _Genre(SABase):
     """A track can have multiple genres."""
 
     __tablename__ = "genre"
@@ -38,7 +38,7 @@ class _Genre(Base):
 
 track_genre = Table(
     "track_genre",
-    Base.metadata,
+    SABase.metadata,
     Column("genre", String, ForeignKey("genre.name")),
     Column("track_id", Integer, ForeignKey("track._id")),
 )
@@ -49,7 +49,7 @@ __table_args__ = ()
 T = TypeVar("T", bound="Track")  # noqa: WPS111
 
 
-class Track(LibItem, Base):
+class Track(LibItem, SABase):
     """A single track.
 
     Attributes:

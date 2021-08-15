@@ -6,7 +6,6 @@ import pytest
 
 import moe.plugins.write
 from moe.library.album import Album
-from moe.library.session import DbDupAlbumError, session_scope
 from moe.library.track import Track, TrackError
 
 
@@ -25,7 +24,7 @@ class TestInit:
         track2 = mock_track_factory()
 
         tmp_session.merge(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        track2.album_obj.merge(track2.album_obj.get_existing())
         tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()
@@ -93,14 +92,9 @@ class TestDupTrack:
     """Test behavior when there is an attempt to add a duplicate Track to the db.
 
     A duplicate Track is defined as a combination of it's album (obj), disc, and
-    track number. If a duplicate is found when committing to the database, we should
-    raise a ``DbDupAlbumError``.
+    track number.
 
-    The reason a DbDupAlbumError is raised instead of a track-related error, is because
-    a duplicate Track must have a duplicate Album by definition of a Track's uniqueness
-    being defined by the album it belongs to.
-
-    To handle duplicates by tags, you should use ``album.get_existing(session)`` to get
+    To handle duplicates by tags, you should use ``album.get_existing()`` to get
     the existing album. At this point, you can either delete the existing album from the
     session using ``session.delete()``, or you can merge it with the current album
     using ``album.merge()``. Finally, to add the current track into the session,
@@ -108,21 +102,10 @@ class TestDupTrack:
 
     Note:
         This error will only occur upon the session being flushed or committed.
-        If you wish to catch this error, then you should use a new session scope
-        as shown in `test_dup_path()`. This will allow you to catch the error by
-        wrapping the `with` statement with a `try/except`.
+        If you wish to catch this error, then you should use a new session scope. This
+        will allow you to catch the error by wrapping the `with` statement with a
+        `try/except`.
     """
-
-    def test_dup(self, mock_track_factory, tmp_session):
-        """Duplicate tracks should raise a DbDupAlbumError."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-        track2.track_num = track1.track_num
-
-        with pytest.raises(DbDupAlbumError):
-            with session_scope() as session:
-                session.add(track1)
-                session.add(track2)
 
     def test_dup_fields_merge(self, mock_track_factory, tmp_session):
         """Duplicate errors should not occur if we merge the existing album."""
@@ -131,7 +114,7 @@ class TestDupTrack:
         track2.track_num = track1.track_num
 
         tmp_session.add(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        track2.album_obj.merge(track2.album_obj.get_existing())
         tmp_session.merge(track2)
 
 
@@ -146,7 +129,7 @@ class TestDupListField:
         track2.genre = "pop"
 
         tmp_session.add(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing(tmp_session))
+        track2.album_obj.merge(track2.album_obj.get_existing())
         tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()

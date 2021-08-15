@@ -4,39 +4,20 @@ import random
 import shutil
 import textwrap
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Optional
 from unittest.mock import MagicMock
 
 import pytest
-import sqlalchemy
-from sqlalchemy.orm.session import Session
+import sqlalchemy as sa
+import sqlalchemy.orm
 
-from moe.config import Config
+from moe.config import Config, MoeSession
 from moe.library.album import Album
 from moe.library.extra import Extra
-from moe.library.session import session_scope
 from moe.library.track import Track
 from moe.plugins import write as moe_write
 
 RESOURCE_DIR = Path(__file__).parent / "resources"
-
-
-@pytest.fixture
-def tmp_session() -> Iterator[Session]:
-    """Creates temporary Session instance for database interaction.
-
-    The database is a temporary sqlite instance created in memory.
-
-    Yields:
-        session: temp Session instance
-    """
-    engine = sqlalchemy.create_engine("sqlite:///:memory:")
-
-    config = Config(config_dir=MagicMock())
-    config.init_db(engine=engine)
-
-    with session_scope() as session:
-        yield session
 
 
 @pytest.fixture
@@ -46,28 +27,71 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
     This fixture must be declared, like a factory. If you want to use specific config
     settings, pass them in your declaration.
 
+    Example::
+        settings = f"library_path = '''~/Music'''"
+        config = tmp_config(settings)
+
     Note:
         Any paths should be surrounded with triple single quotes ('''). This tells
         toml to treat the path as a raw string, and prevents it from thinking Windows
         paths are full of escape characters.
 
-    Example::
-        settings = f"library_path = '''~/Music'''"
-        config = tmp_config(settings)
+    Args:
+        settings: Settings string to use. This has the same format as a normal
+            ``config.toml`` file.
+        init_db: Whether or not to initialize the database.
+        tmp_db: Whether or not to use a temporary (in-memory) database. If ``True``,
+            the database will be initialized regardless of ``init_db``.
 
     Returns:
         The configuration instance.
     """
 
-    def _tmp_config(settings: str = "") -> Config:
+    def _tmp_config(
+        settings: str = "", init_db: bool = False, tmp_db: bool = False
+    ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if settings:
             settings_path = config_dir / "config.toml"
             settings_path.write_text(textwrap.dedent(settings))
 
-        return Config(config_dir=config_dir, settings_filename="config.toml")
+        engine: Optional[sa.engine.base.Engine]
+        if tmp_db:
+            engine = sa.create_engine("sqlite:///:memory:")
+            init_db = True
+        else:
+            engine = None
+
+        return Config(
+            config_dir=config_dir,
+            settings_filename="config.toml",
+            engine=engine,
+            init_db=init_db,
+        )
 
     return _tmp_config
+
+
+@pytest.fixture
+def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
+    """Creates a temporary session.
+
+    Yields:
+        The temporary session.
+    """
+    tmp_config(tmp_db=True)
+
+    session = MoeSession()
+    with session.begin():
+        yield session
+
+    MoeSession.remove()
+
+
+@pytest.fixture(autouse=True)
+def clean_session():
+    """Ensure we aren't sharing sessions between tests."""
+    MoeSession.remove()
 
 
 @pytest.fixture

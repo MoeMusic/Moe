@@ -2,8 +2,7 @@
 
 import logging
 
-from sqlalchemy.orm.session import Session
-
+from moe.config import MoeSession
 from moe.library.lib_item import LibItem
 
 __all__ = ["remove_item"]
@@ -11,7 +10,9 @@ __all__ = ["remove_item"]
 log = logging.getLogger("moe.remove")
 
 
-def remove_item(item: LibItem, session: Session):
+def remove_item(item: LibItem):
     """Removes an item from the library."""
+    session = MoeSession()
+
     log.info(f"Removing '{item}' from the library.")
     session.delete(item)

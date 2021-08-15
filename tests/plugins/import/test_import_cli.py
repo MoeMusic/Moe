@@ -3,15 +3,13 @@
 import copy
 import datetime
 import random
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
-from sqlalchemy.orm.session import Session
 
 import moe
-from moe.config import Config
+from moe.config import Config, MoeSession
 from moe.library.album import Album
-from moe.library.session import session_scope
 from moe.plugins import moe_import
 
 
@@ -20,7 +18,7 @@ class ImportPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def import_candidates(config: Config, session: Session, album: Album) -> Album:
+    def import_candidates(config: Config, album: Album) -> Album:
         """Changes the album title."""
         album.title = "pre-add plugin"
         return album
@@ -34,7 +32,7 @@ class TestPrompt:
         new_album = copy.deepcopy(mock_album)
         assert mock_album is not new_album
 
-        moe_import.import_prompt(Mock(), Mock(), mock_album, new_album)
+        moe_import.import_prompt(Mock(), mock_album, new_album)
 
         captured_txt = capsys.readouterr()
         assert not captured_txt.out
@@ -59,7 +57,7 @@ class TestPrompt:
             "moe.plugins.moe_import.import_cli.questionary.rawselect",
             return_value=mock_q,
         ):
-            moe_import.import_prompt(config, tmp_session, mock_album, new_album)
+            moe_import.import_prompt(config, mock_album, new_album)
 
         mock_album = tmp_session.merge(mock_album)
         assert mock_album.title == new_album.title
@@ -86,7 +84,7 @@ class TestPrompt:
             return_value=mock_q,
         ):
             with pytest.raises(moe_import.AbortImport):
-                moe_import.import_prompt(config, MagicMock(), mock_album, new_album)
+                moe_import.import_prompt(config, mock_album, new_album)
 
         assert mock_album.is_unique(new_album)
 
@@ -98,7 +96,7 @@ class TestPrompt:
         existing_album.tracks.pop(0)
         mock_album.tracks.pop(1)
         tmp_session.add(existing_album)
-        tmp_session.commit()
+        tmp_session.flush()
 
         mock_q = Mock()
         mock_q.ask.return_value = moe_import.import_cli._apply_changes
@@ -106,9 +104,9 @@ class TestPrompt:
             "moe.plugins.moe_import.import_cli.questionary.rawselect",
             return_value=mock_q,
         ):
-            moe_import.import_prompt(config, tmp_session, mock_album, new_album)
+            moe_import.import_prompt(config, mock_album, new_album)
 
-        mock_album.merge(mock_album.get_existing(tmp_session))
+        mock_album.merge(mock_album.get_existing())
         tmp_session.merge(mock_album)
 
         album = tmp_session.query(Album).one()
@@ -128,9 +126,9 @@ class TestPrompt:
             "moe.plugins.moe_import.import_cli.questionary.rawselect",
             return_value=mock_q,
         ):
-            moe_import.import_prompt(config, MagicMock(), mock_album, new_album)
+            moe_import.import_prompt(config, mock_album, new_album)
 
-        mock_album.merge(mock_album.get_existing(tmp_session))
+        mock_album.merge(mock_album.get_existing())
         tmp_session.merge(mock_album)
 
         album = tmp_session.query(Album).one()
@@ -199,7 +197,9 @@ class TestImportAlbum:
     def test_album(self, real_album, tmp_config):
         """Prompt is run with a plugin implementing the ``import_album`` hook."""
         cli_args = ["add", str(real_album.path)]
-        config = tmp_config(settings='default_plugins = ["add", "cli", "import"]')
+        config = tmp_config(
+            settings='default_plugins = ["add", "cli", "import"]', init_db=True
+        )
         config.plugin_manager.register(ImportPlugin)
 
         mock_q = Mock()
@@ -210,6 +210,7 @@ class TestImportAlbum:
         ):
             moe.cli.main(cli_args, config)
 
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             album = session.query(Album).one()
             assert album.title == "pre-add plugin"

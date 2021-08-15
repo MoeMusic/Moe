@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import moe
-from moe.library.session import session_scope
+from moe.config import MoeSession
 from moe.plugins import info
 
 
@@ -20,11 +20,9 @@ class TestParseArgs:
         mock_track.albumartist = "test"
 
         with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-            mock_session = Mock()
+            info._parse_args(config=Mock(), args=args)
 
-            info._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_once_with("", mock_session, query_type="track")
+            mock_query.assert_called_once_with("", query_type="track")
 
         captured_text = capsys.readouterr()
 
@@ -36,11 +34,9 @@ class TestParseArgs:
         mock_album.title = "album title"
 
         with patch("moe.query.query", return_value=[mock_album]) as mock_query:
-            mock_session = Mock()
+            info._parse_args(config=Mock(), args=args)
 
-            info._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_once_with("", mock_session, query_type="album")
+            mock_query.assert_called_once_with("", query_type="album")
 
         captured_text = capsys.readouterr()
 
@@ -52,22 +48,20 @@ class TestParseArgs:
 
         extra = mock_album.extras.pop()
         with patch("moe.query.query", return_value=[extra]) as mock_query:
-            mock_session = Mock()
+            info._parse_args(config=Mock(), args=args)
 
-            info._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_once_with("", mock_session, query_type="extra")
+            mock_query.assert_called_once_with("", query_type="extra")
 
         captured_text = capsys.readouterr()
 
         assert captured_text.out
 
-    def test_exit_code(self, capsys):
+    def test_exit_code(self, capsys, tmp_session):
         """If no track infos are printed, we should return a non-zero exit code."""
         args = argparse.Namespace(query="bad", album=False, extra=False)
 
         with pytest.raises(SystemExit) as error:
-            info._parse_args(config=Mock(), session=Mock(), args=args)
+            info._parse_args(config=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -80,9 +74,9 @@ class TestCommand:
         """A track's info is printed when the `info` command is invoked."""
         cli_args = ["info", "*"]
 
-        config = tmp_config(settings='default_plugins = ["cli", "info"]')
-        config.init_db()
-        with session_scope() as session:
+        config = tmp_config(settings='default_plugins = ["cli", "info"]', init_db=True)
+        session = MoeSession()
+        with session.begin():
             session.add(real_track)
 
         moe.cli.main(cli_args, config)

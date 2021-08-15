@@ -1,6 +1,5 @@
 """Tests the core query module."""
 
-from unittest.mock import Mock
 
 import pytest
 
@@ -50,74 +49,70 @@ class TestQuery:
 
     def test_empty_query_str(self, tmp_session):
         """Empty queries should return an empty list."""
-        assert not query.query("title:nope", tmp_session)
+        assert not query.query("title:nope")
 
-    def test_invalid_query_str(self):
+    def test_invalid_query_str(self, tmp_session):
         """Invalid queries should return an empty list."""
-        assert not query.query("invalid", Mock())  # invalid pattern
+        assert not query.query("invalid")
 
-    def test_invalid_query_field(self):
+    def test_invalid_query_field(self, tmp_session):
         """Invalid queries should return an empty list."""
-        assert not query.query("invalid:a", Mock())  # invalid field
+        assert not query.query("invalid:a")
 
     def test_valid_query(self, mock_track, tmp_session):
         """Simplest query."""
         tmp_session.add(mock_track)
 
-        assert query.query(f"title:'{mock_track.title}'", tmp_session)
+        assert query.query(f"title:'{mock_track.title}'")
 
     def test_space_value(self, tmp_session, mock_track):
         """If a value has whitespace, it must be encolsed by quotes."""
         mock_track.title = "Holy cow"
         tmp_session.add(mock_track)
 
-        assert query.query("'title:Holy cow'", tmp_session)
+        assert query.query("'title:Holy cow'")
 
     def test_multiple_terms(self, tmp_session, mock_track):
         """We should be able to query for multiple terms at once."""
         mock_track.title = "C.R.E.A.M."
         tmp_session.add(mock_track)
 
-        assert query.query(
-            f"track_num:{mock_track.track_num} title:{mock_track.title}", tmp_session
-        )
+        assert query.query(f"track_num:{mock_track.track_num} title:{mock_track.title}")
 
     def test_regex(self, tmp_session, mock_track):
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
 
-        assert query.query("title::.*", tmp_session)
+        assert query.query("title::.*")
 
     def test_track_path(self, real_track, tmp_session):
         """We can query a track's path."""
         tmp_session.add(real_track)
 
-        assert query.query(f"'path:{str(real_track.path.resolve())}'", tmp_session)
-        assert query.query("'path::.*'", tmp_session)
+        assert query.query(f"'path:{str(real_track.path.resolve())}'")
+        assert query.query("'path::.*'")
 
     def test_extra_path(self, real_album, tmp_session):
         """We can query for Extra paths."""
         tmp_session.merge(real_album)
 
         extra_path_str = str(real_album.extras.pop().path.resolve())
-        assert query.query(f"'extra_path:{extra_path_str}'", tmp_session)
-        assert query.query("'extra_path::.*'", tmp_session)
+        assert query.query(f"'extra_path:{extra_path_str}'")
+        assert query.query("'extra_path::.*'")
 
     def test_album_path(self, real_album, tmp_session):
         """We can query for Extra paths."""
         tmp_session.merge(real_album)
 
-        assert query.query(
-            f"'album_path:{str(real_album.path.resolve())}'", tmp_session
-        )
-        assert query.query("'album_path::.*'", tmp_session)
+        assert query.query(f"'album_path:{str(real_album.path.resolve())}'")
+        assert query.query("'album_path::.*'")
 
     def test_date(self, real_track, tmp_session):
         """We can query an album's date."""
         tmp_session.add(real_track)
 
-        assert query.query(f"'date:{str(real_track.date)}'", tmp_session)
-        assert query.query("'date::.*'", tmp_session)
+        assert query.query(f"'date:{str(real_track.date)}'")
+        assert query.query("'date::.*'")
 
     def test_track_album_field(self, real_track, tmp_session):
         """We should be able to query tracks that match album-related fields.
@@ -127,9 +122,9 @@ class TestQuery:
         """
         tmp_session.add(real_track)
 
-        assert query.query(f"'album:{real_track.album}'", tmp_session)
-        assert query.query(f"'albumartist:{real_track.albumartist}'", tmp_session)
-        assert query.query(f"year:{real_track.year}", tmp_session)
+        assert query.query(f"'album:{real_track.album}'")
+        assert query.query(f"'albumartist:{real_track.albumartist}'")
+        assert query.query(f"year:{real_track.year}")
 
     def test_case_insensitive_value(self, tmp_session, mock_track):
         """Query values should be case-insensitive."""
@@ -137,7 +132,7 @@ class TestQuery:
         mock_track.album = "TMP"
         tmp_session.add(mock_track)
 
-        assert query.query("title:tmp", tmp_session)
+        assert query.query("title:tmp")
 
     def test_case_insensitive_field(self, tmp_session, mock_track):
         """Fields should be able to be specified case-insensitive."""
@@ -145,19 +140,19 @@ class TestQuery:
         mock_track.album = "tmp"
         tmp_session.add(mock_track)
 
-        assert query.query("Title:tmp", tmp_session)
+        assert query.query("Title:tmp")
 
     def test_regex_non_str(self, tmp_session, mock_track):
         """Non string fields should be converted to strings for matching."""
         tmp_session.add(mock_track)
 
-        assert query.query("track_num::.*", tmp_session)
+        assert query.query("track_num::.*")
 
     def test_invalid_regex(self, tmp_session, mock_track):
         """Invalid regex queries should return an empty list."""
         tmp_session.add(mock_track)
 
-        assert not query.query("title::[", tmp_session)
+        assert not query.query("title::[")
 
     def test_regex_case_insensitive(self, tmp_session, mock_track):
         """Regex queries should be case-insensitive."""
@@ -165,15 +160,13 @@ class TestQuery:
         mock_track.album = "TMP"
         tmp_session.add(mock_track)
 
-        assert query.query("title::tmp", tmp_session)
+        assert query.query("title::tmp")
 
     def test_track_query(self, tmp_session, mock_track):
         """A track query should return Track objects."""
         tmp_session.add(mock_track)
 
-        tracks = query.query(
-            f"title:'{mock_track.title}'", tmp_session, query_type="track"
-        )
+        tracks = query.query(f"title:'{mock_track.title}'", query_type="track")
 
         assert tracks
         for track in tracks:
@@ -183,9 +176,7 @@ class TestQuery:
         """An album query should return Album objects."""
         tmp_session.add(mock_track)
 
-        albums = query.query(
-            f"title:'{mock_track.title}'", tmp_session, query_type="album"
-        )
+        albums = query.query(f"title:'{mock_track.title}'", query_type="album")
 
         assert albums
         for album in albums:
@@ -195,9 +186,7 @@ class TestQuery:
         """An extra query should return Extra objects."""
         tmp_session.merge(mock_album)
 
-        extras = query.query(
-            f"album:'{mock_album.title}'", tmp_session, query_type="extra"
-        )
+        extras = query.query(f"album:'{mock_album.title}'", query_type="extra")
 
         assert extras
         for extra in extras:
@@ -208,7 +197,7 @@ class TestQuery:
         mock_track.album = "ATLiens"
         tmp_session.add(mock_track)
 
-        albums = query.query("album:ATLiens", tmp_session, query_type="album")
+        albums = query.query("album:ATLiens", query_type="album")
 
         assert albums
         for album in albums:
@@ -219,8 +208,8 @@ class TestQuery:
         tmp_session.add(mock_track)
         mock_track.track_num = 1
 
-        assert query.query("track_num:_", tmp_session)
-        assert query.query("track_num:%", tmp_session)
+        assert query.query("track_num:_")
+        assert query.query("track_num:%")
 
     def test_like_escape_query(self, tmp_session, mock_track_factory):
         r"""We should be able to escape the LIKE wildcard characters with '/'.
@@ -235,7 +224,7 @@ class TestQuery:
         tmp_session.merge(track1)
         tmp_session.merge(track2)
 
-        assert len(query.query("title:/_", tmp_session)) == 1
+        assert len(query.query("title:/_")) == 1
 
     def test_multi_value_query(self, tmp_session, mock_track):
         """We should be able to query multi-value fields transparently.
@@ -245,10 +234,10 @@ class TestQuery:
         mock_track.genres = ["hip hop", "rock"]
         tmp_session.add(mock_track)
 
-        assert query.query("'genre::.*'", tmp_session)
-        assert query.query("'genre:hip hop'", tmp_session)
-        assert query.query("genre:rock", tmp_session)
-        assert query.query("genre:rock 'genre:hip hop'", tmp_session)
+        assert query.query("'genre::.*'")
+        assert query.query("'genre:hip hop'")
+        assert query.query("genre:rock")
+        assert query.query("genre:rock 'genre:hip hop'")
 
     def test_wildcard_query(self, tmp_session, mock_track_factory):
         """'*' as a query should return all items."""
@@ -258,4 +247,4 @@ class TestQuery:
         tmp_session.merge(track1)
         tmp_session.merge(track2)
 
-        assert len(query.query("*", tmp_session)) == 2
+        assert len(query.query("*")) == 2

@@ -5,7 +5,7 @@ import argparse
 import sqlalchemy as sa
 
 import moe
-from moe.config import Config
+from moe.config import Config, MoeSession
 from moe.library.album import Album
 from moe.plugins import move as moe_move
 
@@ -28,21 +28,19 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     move_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(
-    config: Config, session: sa.orm.session.Session, args: argparse.Namespace
-):
+def _parse_args(config: Config, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Items will be moved according to the given user configuration.
 
     Args:
         config: Configuration in use.
-        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
+    session = MoeSession()
     albums = session.execute(sa.select(Album)).scalars().all()
 
     if args.dry_run:

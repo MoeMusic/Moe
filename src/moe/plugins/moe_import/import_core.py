@@ -3,7 +3,6 @@
 from typing import List
 
 import pluggy
-from sqlalchemy.orm.session import Session
 
 import moe
 from moe.config import Config
@@ -20,7 +19,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def import_candidates(config: Config, session: Session, album: Album) -> Album:
+    def import_candidates(config: Config, album: Album) -> Album:
         """Imports candidate albums from implemented sources based on the given album.
 
         This hook should be used to import metadata from an external source and return
@@ -32,7 +31,6 @@ class Hooks:
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             album: Album being added to the library.
 
         Returns:
@@ -41,9 +39,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(
-        config: Config, session: Session, old_album, candidate_albums
-    ):
+    def process_candidates(config: Config, old_album, candidate_albums):
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied
@@ -51,7 +47,6 @@ class Hooks:
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             old_album: Album being added to the library.
             candidate_albums: New candidate albums with imported metadata.
         """
@@ -66,7 +61,7 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def pre_add(config: Config, session: Session, item: LibItem):
+def pre_add(config: Config, item: LibItem):
     """Fixes album metadata via external sources prior to it being added to the lib."""
     if isinstance(item, Album):
         old_album = item
@@ -74,11 +69,10 @@ def pre_add(config: Config, session: Session, item: LibItem):
         old_album = item.album_obj
 
     candidate_albums = config.plugin_manager.hook.import_candidates(
-        config=config, session=session, album=old_album
+        config=config, album=old_album
     )
     config.plugin_manager.hook.process_candidates(
         config=config,
-        session=session,
         old_album=old_album,
         candidate_albums=candidate_albums,
     )

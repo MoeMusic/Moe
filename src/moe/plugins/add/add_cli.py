@@ -5,8 +5,6 @@ import logging
 from pathlib import Path
 from typing import List
 
-from sqlalchemy.orm.session import Session
-
 import moe
 from moe.config import Config
 from moe.plugins import add as moe_add
@@ -31,14 +29,13 @@ def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
     add_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, session: Session, args: argparse.Namespace):
+def _parse_args(config: Config, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
 
     Args:
         config: Moe config.
-        session: Current db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -49,7 +46,7 @@ def _parse_args(config: Config, session: Session, args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            moe_add.add_item(config, session, path)
+            moe_add.add_item(config, path)
         except moe_add.AddError as exc:
             log.error(exc)
             error_count += 1
