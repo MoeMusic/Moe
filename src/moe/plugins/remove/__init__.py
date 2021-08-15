@@ -18,3 +18,11 @@ from .rm_core import *
 
 __all__ = []
 __all__.extend(rm_core.__all__)  # noqa: WPS609
+
+
+@moe.hookimpl
+def plugin_registration(config: Config, plugin_manager: pluggy.manager.PluginManager):
+    """Only register the cli sub-plugin if the cli is enabled."""
+    plugin_manager.register(rm_core, "rm_core")
+    if "cli" in config.plugins:
+        plugin_manager.register(rm_cli, "rm_cli")
