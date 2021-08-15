@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 import sqlalchemy
 from sqlalchemy import Column, Date, Integer, String, and_, or_
 from sqlalchemy.orm import joinedload, relationship
-from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import UniqueConstraint
 
+from moe.config import MoeSession
+from moe.library import SABase
 from moe.library.lib_item import LibItem, PathType
-from moe.library.session import Base
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ else:
 __all__ = ["Album"]
 
 
-class Album(LibItem, Base):
+class Album(LibItem, SABase):
     """An album is a collection of tracks.
 
     Albums also house any attributes that are shared by tracks e.g. albumartist.
@@ -115,8 +115,10 @@ class Album(LibItem, Base):
             "year",
         )
 
-    def get_existing(self, session: Session) -> Optional["Album"]:
+    def get_existing(self) -> Optional["Album"]:
         """Gets a matching Album in the library either by its path or unique tags."""
+        session = MoeSession()
+
         existing_album = (
             session.query(Album)
             .filter(

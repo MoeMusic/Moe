@@ -6,8 +6,8 @@ import pytest
 
 import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe import cli
+from moe.config import MoeSession
 from moe.library.album import Album
-from moe.library.session import session_scope
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
 
@@ -30,7 +30,8 @@ class TestAdd:
         """We can import and add an album to the library."""
         cli_args = ["add", str(real_album.path)]
         config = tmp_config(
-            settings='default_plugins = ["add", "cli", "import", "musicbrainz"]'
+            settings='default_plugins = ["add", "cli", "import", "musicbrainz"]',
+            init_db=True,
         )
 
         mock_q = Mock()
@@ -42,7 +43,8 @@ class TestAdd:
             cli.main(cli_args, config)
 
         ref_album = mb_rsrc.full_release.album
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             db_album = session.query(Album).one()
 
             assert db_album.artist == ref_album.artist
@@ -54,7 +56,8 @@ class TestAdd:
         """We can search from user input."""
         cli_args = ["add", str(real_album.path)]
         config = tmp_config(
-            settings='default_plugins = ["add", "cli", "import", "musicbrainz"]'
+            settings='default_plugins = ["add", "cli", "import", "musicbrainz"]',
+            init_db=True,
         )
 
         mock_q = Mock()
@@ -79,7 +82,8 @@ class TestAdd:
         )
 
         ref_album = mb_rsrc.full_release.album
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             db_album = session.query(Album).one()
 
             assert db_album.artist == ref_album.artist

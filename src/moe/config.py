@@ -18,15 +18,18 @@ import re
 import sys
 from contextlib import suppress
 from pathlib import Path
+from typing import Optional
 
 import dynaconf
 import pluggy
-import sqlalchemy
+import sqlalchemy as sa
 
 import alembic.command
 import alembic.config
 import moe
-from moe.library.session import Session
+
+session_factory = sa.orm.sessionmaker()
+MoeSession = sa.orm.scoped_session(session_factory)
 
 __all__ = ["Config", "Hooks"]
 
@@ -149,7 +152,7 @@ class Config:
     Attributes:
         config_dir (Path): Filesystem path of the configuration directory.
         config_file (Path): Filesystem path of the configuration settings file.
-        engine (sqlalchemy.engine.base.Engine): Database engine in use.
+        engine (sa.engine.base.Engine): Database engine in use.
         plugin_manager (pluggy.manager.PluginManager): Manages plugin logic.
         plugins (List[str]): Enabled plugins.
         settings (dynaconf.base.LazySettings): User configuration settings.
@@ -168,6 +171,8 @@ class Config:
         self,
         config_dir: Path = Path.home() / ".config" / "moe",
         settings_filename: str = "config.toml",
+        engine: Optional[sa.engine.base.Engine] = None,
+        init_db=True,
     ):
         """Initializes the plugin manager and configuration directory.
 
@@ -176,6 +181,9 @@ class Config:
                 settings and database files will reside. The environment variable
                 ``MOE_CONFIG_DIR`` has precedence in setting this.
             settings_filename: Name of the configuration settings file.
+            engine: sqlalchemy database engine to use. Defaults to a sqlite db located
+                in the ``config_dir``.
+            init_db: Whether or not to initialize the database.
         """
         try:
             self.config_dir = Path(os.environ["MOE_CONFIG_DIR"])
@@ -186,27 +194,25 @@ class Config:
         self.config_file = self.config_dir / settings_filename
         self._read_config()
 
-    def init_db(
-        self, engine: sqlalchemy.engine.base.Engine = None, create_tables: bool = True
-    ):
+        self.engine = engine
+        if init_db:
+            self._init_db()
+
+    def _init_db(self, create_tables: bool = True):
         """Initializes the database.
 
         Moe uses sqlite by default.
 
         Args:
-            engine: sqlalchemy database engine to use.
-                Defaults to sqlite located at db_path.
             create_tables: Whether or not to create and update the db tables.
                 If doing db migrations manually, e.g. in alembic, this shuold be False.
         """
         db_path = self.config_dir / "library.db"
 
-        if engine:
-            self.engine = engine
-        else:
-            self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
+        if not self.engine:
+            self.engine = sa.create_engine("sqlite:///" + str(db_path))
 
-        Session.configure(bind=self.engine)
+        session_factory.configure(bind=self.engine)
 
         # create and update database tables
         if create_tables:
@@ -220,7 +226,7 @@ class Config:
                 alembic.command.upgrade(alembic_cfg, "head")
 
         # create regular expression function for sqlite queries
-        @sqlalchemy.event.listens_for(self.engine, "begin")  # noqa: WPS430
+        @sa.event.listens_for(self.engine, "begin")  # noqa: WPS430
         def sqlite_engine_connect(conn):  # noqa: WPS430
             if (sys.version_info.major, sys.version_info.minor) < (3, 8):
                 conn.connection.create_function("regexp", 2, _regexp)

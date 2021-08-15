@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import moe
-from moe.library.session import session_scope
+from moe.config import MoeSession
 from moe.library.track import Track
 from moe.plugins.edit import edit_cli
 
@@ -23,11 +23,9 @@ class TestParseArgs:
         track1 = mock_track_factory()
         track2 = mock_track_factory()
         with patch("moe.query.query", return_value=[track1, track2]) as mock_query:
-            mock_session = Mock()
+            edit_cli._parse_args(config=Mock(), args=args)
 
-            edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_once_with("", mock_session, query_type="track")
+            mock_query.assert_called_once_with("", query_type="track")
 
         assert track1.track_num == 3
         assert track2.track_num == 3
@@ -39,11 +37,9 @@ class TestParseArgs:
         )
 
         with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-            mock_session = Mock()
+            edit_cli._parse_args(config=Mock(), args=args)
 
-            edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
-
-            mock_query.assert_called_with("", mock_session, query_type="track")
+            mock_query.assert_called_with("", query_type="track")
 
         assert mock_track.track_num == 3
         assert mock_track.title == "yo"
@@ -56,7 +52,7 @@ class TestParseArgs:
 
         with pytest.raises(SystemExit) as error:
             with patch("moe.query.query", return_value=[mock_track]):
-                edit_cli._parse_args(config=Mock(), session=Mock(), args=args)
+                edit_cli._parse_args(config=Mock(), args=args)
 
         assert error.value.code != 0
 
@@ -68,11 +64,9 @@ class TestParseArgs:
 
         with pytest.raises(SystemExit) as error:
             with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-                mock_session = Mock()
+                edit_cli._parse_args(config=Mock(), args=args)
 
-                edit_cli._parse_args(config=Mock(), session=mock_session, args=args)
-
-                mock_query.assert_called_once_with("", mock_session, query_type="track")
+                mock_query.assert_called_once_with("", query_type="track")
 
         assert error.value.code != 0
         assert mock_track.track_num == 3
@@ -82,20 +76,22 @@ class TestParseArgs:
 class TestCommand:
     """Test cli integration with the `edit` command."""
 
-    def test_parse_args(self, real_track, tmp_config):
-        """Music is edited when the `edit` command is invoked."""
-        new_title = "Lovely Day"
-        assert real_track.title != new_title
-        cli_args = ["edit", "*", f"title={new_title}"]
 
-        config = tmp_config(settings='default_plugins = ["cli", "edit"]')
-        config.init_db()
-        with session_scope() as pre_edit_session:
-            pre_edit_session.add(real_track)
+def test_parse_args(real_track, tmp_config):
+    """Music is edited when the `edit` command is invoked."""
+    new_title = "Lovely Day"
+    assert real_track.title != new_title
+    cli_args = ["edit", "*", f"title={new_title}"]
 
-        moe.cli.main(cli_args, config)
+    config = tmp_config(settings='default_plugins = ["cli", "edit"]', init_db=True)
 
-        with session_scope() as post_edit_session:
-            edited_track = post_edit_session.query(Track).one()
+    session = MoeSession()
+    with session.begin():
+        session.add(real_track)
 
-            assert edited_track.title == new_title
+    moe.cli.main(cli_args, config)
+
+    with session.begin():
+        edited_track = session.query(Track).one()
+
+        assert edited_track.title == new_title

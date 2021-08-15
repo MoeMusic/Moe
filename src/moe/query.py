@@ -22,6 +22,7 @@ import sqlalchemy
 from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
+from moe.config import MoeSession
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
@@ -78,27 +79,23 @@ SEPARATOR_GROUP = "separator"
 VALUE_GROUP = "value"
 
 
-def query(
-    query_str: str, session: sqlalchemy.orm.session.Session, query_type: str = "track"
-) -> List[LibItem]:
+def query(query_str: str, query_type: str = "track") -> List[LibItem]:
     """Queries the database for the given query string.
 
     Args:
         query_str: Query string to parse. See HELP_STR for more info.
-        session: Current db session.
         query_type: Type of query. Should be one of "album", "extra", or "track"
 
     Returns:
         All tracks matching the query.
     """
     terms = shlex.split(query_str)
-
     if not terms:
         log.error(f"No query given.\n{HELP_STR}")
         return []
 
     try:
-        items = _create_query(session, terms, query_type).all()
+        items = _create_query(terms, query_type).all()
     except QueryError as exc:
         log.error(exc)
         return []
@@ -111,13 +108,10 @@ def query(
     return items
 
 
-def _create_query(
-    session: sqlalchemy.orm.session.Session, terms: List[str], query_type: str
-) -> sqlalchemy.orm.query.Query:
+def _create_query(terms: List[str], query_type: str) -> sqlalchemy.orm.query.Query:
     """Creates a query statement.
 
     Args:
-        session: Current db session.
         terms: Query terms to parse.
         query_type: Type of query. Should be one of "album", "extra", or "track"
 
@@ -127,6 +121,8 @@ def _create_query(
     Raises:
         QueryError: Invalid query terms or type.
     """
+    session = MoeSession()
+
     if query_type == "track":
         library_query = session.query(Track).join(Album)
     elif query_type == "album":

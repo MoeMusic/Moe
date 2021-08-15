@@ -6,8 +6,8 @@ import pytest
 import sqlalchemy as sa
 
 import moe
+from moe.config import MoeSession
 from moe.library.album import Album
-from moe.library.session import session_scope
 from moe.plugins import move as moe_move
 
 
@@ -25,16 +25,20 @@ def tmp_config_lib_path(tmp_config, tmp_path):
 class TestParseArgs:
     """Test the `move` command argument parser."""
 
-    def test_dry_run(self, real_album, tmp_config_lib_path, tmp_session):
+    def test_dry_run(self, real_album, tmp_config_lib_path, tmp_config):
         """If `dry-run` is specified, don't actually move the items."""
-        album_dest = moe_move.fmt_item_path(real_album, tmp_config_lib_path)
-        real_album = tmp_session.merge(real_album)
+        tmp_config(tmp_db=True)
+        session = MoeSession()
+        with session.begin():
+            album_dest = moe_move.fmt_item_path(real_album, tmp_config_lib_path)
+            real_album = session.merge(real_album)
+        MoeSession.remove()
 
         args = argparse.Namespace(dry_run=True)
-        moe_move.move_cli._parse_args(tmp_config_lib_path, tmp_session, args)
-        tmp_session.commit()
+        moe_move.move_cli._parse_args(tmp_config_lib_path, args)
 
-        db_album = tmp_session.execute(sa.select(Album)).scalar_one()
+        with session.begin():
+            db_album = session.execute(sa.select(Album)).scalar_one()
 
         assert db_album.path != album_dest
         for track in db_album.tracks:
@@ -50,12 +54,13 @@ class TestMoveCmd:
     def test_move(self, real_album_factory, tmp_config_lib_path):
         """Test all items in the library are moved when the command is invoked."""
         cli_args = ["move"]
-        tmp_config_lib_path.init_db()
+        tmp_config_lib_path._init_db()
+        session = MoeSession()
 
         album1 = real_album_factory()
         album2 = real_album_factory()
 
-        with session_scope() as session:
+        with session.begin():
             session.merge(album1)
             session.merge(album2)
 
@@ -68,8 +73,8 @@ class TestMoveCmd:
 
         moe.cli.main(cli_args, tmp_config_lib_path)
 
-        with session_scope() as new_session:
-            albums = new_session.execute(sa.select(Album)).scalars().all()
+        with session.begin():
+            albums = session.execute(sa.select(Album)).scalars().all()
 
             for album in albums:
                 assert album.path == moe_move.fmt_item_path(album, tmp_config_lib_path)
@@ -104,7 +109,7 @@ class TestPreAdd:
         [move]
         library_path = '''{tmp_path.resolve()}'''
         """
-        config = tmp_config(tmp_settings)
+        config = tmp_config(tmp_settings, init_db=True)
         album_dest = moe_move.fmt_item_path(real_album, config)
         assert real_album.path != album_dest
 
@@ -114,7 +119,8 @@ class TestPreAdd:
 
         moe.cli.main(cli_args, config)
 
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             album = session.query(Album).one()
 
             assert album.path == album_dest

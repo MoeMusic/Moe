@@ -14,9 +14,8 @@ import sqlalchemy
 from sqlalchemy.orm.session import Session
 
 import moe
-from moe.config import Config
+from moe.config import Config, MoeSession
 from moe.library.lib_item import LibItem
-from moe.library.session import session_scope
 
 __all__ = ["PromptChoice", "query_parser"]
 
@@ -49,7 +48,6 @@ class Hooks:
 
                 func(
                     config: moe.Config,  # user config
-                    session: sqlalchemy.orm.session.Session,  # database session
                     args: argparse.Namespace,  # parsed commandline arguments
                 )
 
@@ -70,12 +68,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_new_items(config: Config, session: Session, items: List[LibItem]):
+    def edit_new_items(config: Config, items: List[LibItem]):
         """Edit any new or changed items prior to them being added to the library.
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             items: Any new or changed items in the current session. The items and
                 their changes have not yet been committed to the library.
 
@@ -87,12 +84,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_new_items(config: Config, session: Session, items: List[LibItem]):
+    def process_new_items(config: Config, items: List[LibItem]):
         """Process any new or changed items after they have been added to the library.
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             items: Any new or changed items that have been successfully added to the
                 library during the current session.
 
@@ -115,7 +111,6 @@ class PromptChoice(NamedTuple):
             should be added) and will be supplied the following keyword arguments:
 
             ``config (Config)``: Moe config.
-            ``session (Session)``: Current db session.
             ``old_album (Album)``: Old album with no changes applied.
             ``new_album (Album)``: New album consisting of all the new changes.
     """
@@ -182,16 +177,24 @@ def _parse_args(args: List[str], config: Config):
     _set_root_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
-    config.init_db()
-    with session_scope() as session:
+    cli_session = MoeSession()
+    with cli_session.begin():
         sqlalchemy.event.listen(
-            session, "before_flush", functools.partial(_edit_new_items, config=config)
+            cli_session,
+            "before_flush",
+            functools.partial(_edit_new_items, config=config),
         )
         sqlalchemy.event.listen(
-            session, "after_flush", functools.partial(_process_new_items, config=config)
+            cli_session,
+            "after_flush",
+            functools.partial(_process_new_items, config=config),
         )
 
-        parsed_args.func(config, session, args=parsed_args)
+        try:
+            parsed_args.func(config, args=parsed_args)
+        except SystemExit as err:
+            cli_session.commit()
+            raise err
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:

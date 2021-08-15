@@ -11,7 +11,6 @@ import logging
 from typing import List
 
 import mediafile
-from sqlalchemy.orm.session import Session
 
 import moe
 from moe.config import Config
@@ -24,12 +23,11 @@ log = logging.getLogger("moe.write")
 
 
 @moe.hookimpl
-def process_new_items(config: Config, session: Session, items: List[LibItem]):
+def process_new_items(config: Config, items: List[LibItem]):
     """Writes tags to any altered or new tracks in the library.
 
     Args:
         config: Moe config.
-        session: Currrent db session.
         items: Any new or changed items that have been committed to the database
             during the current session.
     """

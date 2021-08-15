@@ -1,10 +1,7 @@
 """Tests an Album object."""
 
-import pytest
-
 from moe.library.album import Album
 from moe.library.extra import Extra
-from moe.library.session import DbDupAlbumError, session_scope
 
 
 class TestMerge:
@@ -27,7 +24,7 @@ class TestMerge:
         assert album1.extras != album2.extras
 
         tmp_session.merge(album1)
-        album2.merge(album2.get_existing(tmp_session))
+        album2.merge(album2.get_existing())
         tmp_session.merge(album2)
 
         db_album = tmp_session.query(Album).one()
@@ -50,7 +47,7 @@ class TestMerge:
         assert album1.tracks != album2.tracks
 
         tmp_session.merge(album1)
-        existing_album = album2.get_existing(tmp_session)
+        existing_album = album2.get_existing()
         album2.merge(existing_album)
         tmp_session.merge(album2)
 
@@ -71,7 +68,7 @@ class TestMerge:
         assert album1.mb_album_id != album2.mb_album_id
 
         tmp_session.merge(album1)
-        album2.merge(album2.get_existing(tmp_session), overwrite_album_info=True)
+        album2.merge(album2.get_existing(), overwrite_album_info=True)
         tmp_session.merge(album2)
 
         db_album = tmp_session.query(Album).one()
@@ -88,7 +85,7 @@ class TestMerge:
         assert album1.mb_album_id != album2.mb_album_id
 
         tmp_session.merge(album1)
-        album2.merge(album2.get_existing(tmp_session), overwrite_album_info=False)
+        album2.merge(album2.get_existing(), overwrite_album_info=False)
         tmp_session.merge(album2)
 
         db_album = tmp_session.query(Album).one()
@@ -98,13 +95,8 @@ class TestMerge:
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Album to the db.
 
-    A duplicate Album can be defined as a combination of the artist, title, and date.
-    If a duplicate is found when committing to the database, we should raise a
-    ``DbDupAlbumError``.
-
-    A duplicate can also be because two Albums have the same path.
-    If a duplicate is found when committing to the database, we should raise a
-    ``DbDupAlbumPathError``.
+    A duplicate Album can be defined as a combination of the artist, title, and date, or
+    by having the same path.
 
     To handle duplicates by tags, you should use ``album.get_existing(session)`` to get
     the existing album. At this point, you can either delete the existing album from the
@@ -114,21 +106,10 @@ class TestDuplicate:
 
     Note:
         This error will only occur upon the session being flushed or committed.
-        If you wish to catch this error, then you should use a new session scope
-        as shown in `test_dup()`. This will allow you to catch the error by wrapping
-        the `with` statement with a `try/except`.
+        If you wish to catch this error, then you should use a new session scope. This
+        will allow you to catch the error by wrapping the `with` statement with a
+        `try/except`.
     """
-
-    def test_dup(self, mock_album_factory, tmp_session):
-        """Duplicate albums should raise a DbDupAlbumError."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-        album1.date = album2.date
-
-        with pytest.raises(DbDupAlbumError):
-            with session_scope() as session:
-                session.add(album1)
-                session.add(album2)
 
     def test_dup_deleted(self, real_album_factory, tmp_session):
         """Duplicate errors should not occur if the existing album is deleted."""
@@ -140,14 +121,13 @@ class TestDuplicate:
         album1.tracks.pop(0)
         album1.extras.pop(0)
 
-        with session_scope() as session:
-            session.add(album1)
-            session.delete(album2.get_existing(session))
-            session.merge(album2)
+        tmp_session.add(album1)
+        tmp_session.delete(album2.get_existing())
+        tmp_session.merge(album2)
 
-            db_album = session.query(Album).one()
-            assert sorted(db_album.tracks) == sorted(album2.tracks)
-            assert sorted(db_album.extras) == sorted(album2.extras)
+        db_album = tmp_session.query(Album).one()
+        assert sorted(db_album.tracks) == sorted(album2.tracks)
+        assert sorted(db_album.extras) == sorted(album2.extras)
 
     def test_dup_merge(self, real_album_factory, tmp_session):
         """Duplicate errors should not occur if the existing album is merged."""
@@ -159,25 +139,10 @@ class TestDuplicate:
         album1.tracks.pop(0)
         album1.extras.pop(0)
 
-        with session_scope() as session:
-            session.add(album1)
-            album2.merge(album2.get_existing(session))
-            session.merge(album2)
+        tmp_session.add(album1)
+        album2.merge(album2.get_existing())
+        tmp_session.merge(album2)
 
-            db_album = session.query(Album).one()
-            assert sorted(db_album.tracks) == sorted(album2.tracks)
-            assert sorted(db_album.extras) == sorted(album2.extras)
-
-    def test_dup_path(self, mock_album_factory, tmp_session):
-        """Duplicate albums can also be defined as having the same path.
-
-        These should also raise the same DbDupTrackError.
-        """
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-        album2.path = album1.path
-
-        with pytest.raises(DbDupAlbumError):
-            with session_scope() as session:
-                session.add(album1)
-                session.add(album2)
+        db_album = tmp_session.query(Album).one()
+        assert sorted(db_album.tracks) == sorted(album2.tracks)
+        assert sorted(db_album.extras) == sorted(album2.extras)

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Union
 
 import dynaconf
-from sqlalchemy.orm.session import Session
 from unidecode import unidecode
 
 import moe
@@ -34,7 +33,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
 
 
 @moe.hookimpl
-def post_add(config: Config, session: Session, item: LibItem):
+def post_add(config: Config, item: LibItem):
     """Copies and formats the path of an item after it has been added to the library."""
     # copy the whole album in case album attributes have changed
     if isinstance(item, Album):

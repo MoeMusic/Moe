@@ -5,7 +5,7 @@ import datetime
 import pytest
 
 import moe
-from moe.library.session import session_scope
+from moe.config import MoeSession
 from moe.library.track import Track
 from moe.plugins import write as moe_write
 
@@ -67,11 +67,11 @@ class TestDBListener:
         tmp_settings = """
         default_plugins = ["cli", "edit", "write"]
         """
-        config = tmp_config(tmp_settings)
-        config.init_db()
+        config = tmp_config(tmp_settings, init_db=True)
         og_path = real_track.path
 
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             session.add(real_track)
 
         moe.cli.main(cli_args, config)
@@ -92,11 +92,11 @@ class TestDBListener:
         tmp_settings = """
         default_plugins = ["cli", "edit", "write"]
         """
-        config = tmp_config(tmp_settings)
-        config.init_db()
+        config = tmp_config(tmp_settings, init_db=True)
         og_paths = [track.path for track in real_album.tracks]
 
-        with session_scope() as session:
+        session = MoeSession()
+        with session.begin():
             session.merge(real_album)
 
         moe.cli.main(cli_args, config)

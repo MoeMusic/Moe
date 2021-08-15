@@ -8,10 +8,9 @@ from pathlib import Path
 
 import mediafile
 import pluggy
-from sqlalchemy.orm.session import Session
 
 import moe
-from moe.config import Config
+from moe.config import Config, MoeSession
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
@@ -27,14 +26,13 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def pre_add(config: Config, session: Session, item: LibItem):
+    def pre_add(config: Config, item: LibItem):
         """Provides an item prior to it being added to the library.
 
         Use this hook if you wish to change the item's metadata.
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             item: Library item being added.
 
         See Also:
@@ -48,14 +46,13 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def post_add(config: Config, session: Session, item: LibItem):
+    def post_add(config: Config, item: LibItem):
         """Provides an item after it has been added to the library.
 
         Use this hook if you want to operate on an item after its metadata has been set.
 
         Args:
             config: Moe config.
-            session: Currrent db session.
             item: Library item added.
 
         See Also:
@@ -80,17 +77,18 @@ class AddError(Exception):
     """Error adding an item to the library."""
 
 
-def add_item(config: Config, session: Session, item_path: Path):
+def add_item(config: Config, item_path: Path):
     """Adds a LibItem to the library from a given path.
 
     Args:
         config: Moe config.
-        session: Current db session.
         item_path: Filesystem path of the item.
 
     Raises:
         AddError: Unable to add the item to the library.
     """
+    session = MoeSession()
+
     item: LibItem
     if item_path.is_file():
         item = _add_track(item_path)
@@ -101,10 +99,10 @@ def add_item(config: Config, session: Session, item_path: Path):
     else:
         raise AddError(f"Path not found: {item_path}")
 
-    album.merge(album.get_existing(session), overwrite_album_info=False)
-    config.plugin_manager.hook.pre_add(config=config, session=session, item=item)
+    album.merge(album.get_existing(), overwrite_album_info=False)
+    config.plugin_manager.hook.pre_add(config=config, item=item)
     item = session.merge(item)
-    config.plugin_manager.hook.post_add(config=config, session=session, item=item)
+    config.plugin_manager.hook.post_add(config=config, item=item)
 
 
 def _add_album(album_path: Path) -> Album:

@@ -16,7 +16,6 @@ from typing import Dict, List
 
 import musicbrainzngs
 import pkg_resources
-from sqlalchemy.orm.session import Session
 
 import moe
 from moe.config import Config
@@ -48,12 +47,11 @@ RELEASE_INCLUDES = [  # noqa: WPS407
 
 
 @moe.hookimpl
-def import_candidates(config: Config, session: Session, album: Album) -> Album:
+def import_candidates(config: Config, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
 
     Args:
         config: Moe config.
-        session: Current db session.
         album: Original album used to search musicbrainz for a matching album.
 
     Returns:

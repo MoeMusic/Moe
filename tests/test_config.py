@@ -10,13 +10,13 @@ class TestInit:
 
     def test_config_dir_dne(self, tmp_path):
         """Should create the config directory if it doesn't exist."""
-        config = Config(tmp_path / "doesn't exist")
+        config = Config(tmp_path / "doesn't exist", init_db=False)
 
         assert config.config_dir.is_dir()
 
     def test_config_file_dne(self, tmp_path):
         """Should create an empty config file if it doesn't exist."""
-        Config(config_dir=tmp_path, settings_filename="config.toml")
+        Config(config_dir=tmp_path, settings_filename="config.toml", init_db=False)
 
         assert (tmp_path / "config.toml").is_file()
 
@@ -34,7 +34,7 @@ class TestInit:
     def test_config_dir_env(self, tmp_path):
         """The configuration directory can be set with an env var."""
         with patch.dict("os.environ", {"MOE_CONFIG_DIR": str(tmp_path)}):
-            config = Config()
+            config = Config(init_db=False)
             assert config.config_dir == tmp_path
 
 
