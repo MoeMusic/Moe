@@ -1,4 +1,4 @@
-"""Imports metadata."""
+"""Imports metadata for music in your library."""
 
 import sys
 

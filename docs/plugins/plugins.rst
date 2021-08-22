@@ -32,11 +32,12 @@ These are all the plugins that are enabled by default.
 .. toctree::
    :maxdepth: 1
 
-   Add <add>
-   Edit <edit>
-   Info <info>
-   List <list>
-   Move <move>
-   Musicbrainz <musicbrainz>
-   Remove <remove>
-   Write <write>
+   add
+   edit
+   import
+   info
+   list
+   move
+   musicbrainz
+   remove
+   write

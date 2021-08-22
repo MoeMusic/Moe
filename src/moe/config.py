@@ -6,8 +6,8 @@ module should just import the Config class directly::
     from moe.config import Config
     config = Config()
 
-This class shouldn't be accessed normally by a plugin, it should instead be passed a
-Config object through a hook.
+A configuration shuold only be instantiated once per instance of Moe. Plugins should
+pass along that instance through their hooks.
 """
 
 import functools
@@ -54,7 +54,7 @@ DEFAULT_PLUGINS = (
 
 
 class Hooks:
-    """Config hooks."""
+    """Config hook specifications."""
 
     @staticmethod
     @moe.hookspec
@@ -71,7 +71,8 @@ class Hooks:
                     Validator("MOVE.LIBRARY_PATH", must_exist=True)
                 )
 
-        See https://www.dynaconf.com/validation/#validation for more info.
+        See Also:
+            https://www.dynaconf.com/validation/#validation for more info.
         """
 
     @staticmethod
