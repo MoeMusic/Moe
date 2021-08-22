@@ -35,7 +35,7 @@ from moe.library.lib_item import LibItem
 session_factory = sa.orm.sessionmaker()
 MoeSession = sa.orm.scoped_session(session_factory)
 
-__all__ = ["Config", "ExtraPlugin", "Hooks"]
+__all__ = ["Config", "ExtraPlugin"]
 
 log = logging.getLogger("moe.config")
 

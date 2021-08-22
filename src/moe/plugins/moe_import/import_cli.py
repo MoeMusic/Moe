@@ -54,10 +54,10 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def process_candidates(config: Config, old_album, candidate_albums):
-    """Use the user import prompt to select and process the imported candidates."""
-    if candidate_albums:
-        import_prompt(config, old_album, candidate_albums[0])
+def process_candidates(config: Config, old_album: Album, candidates):
+    """Use the import prompt to select and process the imported candidate albums."""
+    if candidates:
+        import_prompt(config, old_album, candidates[0])
 
 
 @moe.hookimpl
@@ -73,7 +73,11 @@ def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
     )
 
 
-def import_prompt(config: Config, old_album: Album, new_album: Album):
+def import_prompt(
+    config: Config,
+    old_album: Album,
+    new_album: Album,
+):
     """Runs the interactive prompt for the given album changes.
 
     Args:
@@ -97,25 +101,34 @@ def import_prompt(config: Config, old_album: Album, new_album: Album):
     config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
     prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
+    user_input = _get_input(prompt_choices)
+
+    for prompt_choice in prompt_choices:
+        if prompt_choice.shortcut_key == user_input:
+            prompt_choice.func(  # type: ignore
+                config=config,
+                old_album=old_album,
+                new_album=new_album,
+            )
+
+
+def _get_input(
+    prompt_choices: List[moe.cli.PromptChoice],
+) -> moe.cli.PromptChoice.func_type:
+    """Prompts the user for input using the given prompt choices."""
     questionary_choices: List[questionary.Choice] = []
     for prompt_choice in prompt_choices:
         questionary_choices.append(
             questionary.Choice(
                 title=prompt_choice.title,
                 shortcut_key=prompt_choice.shortcut_key,
-                value=prompt_choice.func,
+                value=prompt_choice.shortcut_key,
             )
         )
 
-    prompt_choice_func = questionary.rawselect(
+    return questionary.rawselect(
         "What do you want to do?", choices=questionary_choices
     ).ask()
-    if prompt_choice_func:
-        prompt_choice_func(
-            config=config,
-            old_album=old_album,
-            new_album=new_album,
-        )
 
 
 def _fmt_album_changes(old_album: Album, new_album: Album) -> str:

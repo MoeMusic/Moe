@@ -1,96 +1,95 @@
 """Tests the ``remove`` plugin."""
 
-import argparse
-from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 import moe
-from moe.config import MoeSession
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.track import Track
-from moe.plugins import remove as moe_rm
 
 
-class TestParseArgs:
-    """Test the plugin argument parser."""
+@pytest.fixture
+def mock_rm():
+    """Mock the `remove_item()` api call."""
+    with patch("moe.plugins.remove.remove_item", autospec=True) as mock_rm:
+        yield mock_rm
 
-    def test_track(self, tmp_session, mock_track):
+
+@pytest.fixture
+def tmp_rm_config(tmp_config):
+    """A temporary config for the edit plugin with the cli."""
+    return tmp_config('default_plugins = ["cli", "remove"]')
+
+
+class TestCommand:
+    """Test the `remove` command."""
+
+    def test_track(self, mock_track, mock_query, mock_rm, tmp_rm_config):
         """Tracks are removed from the database with valid query."""
-        args = argparse.Namespace(query="*", album=False, extra=False)
-        tmp_session.add(mock_track)
+        cli_args = ["remove", "*"]
+        mock_query.return_value = [mock_track]
 
-        moe_rm.rm_cli._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_rm_config)
 
-        assert not tmp_session.query(Track).scalar()
+        mock_query.assert_called_once_with("*", query_type="track")
+        mock_rm.assert_called_once_with(mock_track)
 
-    def test_album(self, tmp_session, mock_album):
+    def test_album(self, mock_album, mock_query, mock_rm, tmp_rm_config):
         """Albums are removed from the database with valid query."""
-        args = argparse.Namespace(query="*", album=True, extra=False)
-        tmp_session.merge(mock_album)
+        cli_args = ["remove", "-a", "*"]
+        mock_query.return_value = [mock_album]
 
-        moe_rm.rm_cli._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_rm_config)
 
-        assert not tmp_session.query(Album).scalar()
+        mock_query.assert_called_once_with("*", query_type="album")
+        mock_rm.assert_called_once_with(mock_album)
 
-    def test_extra(self, tmp_session, mock_album):
-        """Extras are removed from the database with valid query.
+    def test_extra(self, mock_extra, mock_query, mock_rm, tmp_rm_config):
+        """Extras are removed from the database with valid query."""
+        cli_args = ["remove", "-e", "*"]
+        mock_query.return_value = [mock_extra]
 
-        `mock_album` is used because queries will not return anything if there are no
-        tracks in the database.
-        """
-        args = argparse.Namespace(query="*", album=False, extra=True)
-        tmp_session.merge(mock_album)
+        moe.cli.main(cli_args, tmp_rm_config)
 
-        moe_rm.rm_cli._parse_args(config=Mock(), args=args)
+        mock_query.assert_called_once_with("*", query_type="extra")
+        mock_rm.assert_called_once_with(mock_extra)
 
-        assert not tmp_session.query(Extra).scalar()
+    def test_multiple_items(
+        self, mock_track_factory, mock_query, mock_rm, tmp_rm_config
+    ):
+        """All items returned from the query are removed."""
+        cli_args = ["remove", "*"]
+        mock_tracks = [mock_track_factory(), mock_track_factory()]
+        mock_query.return_value = mock_tracks
 
-    def test_album_tracks(self, tmp_session, mock_album):
-        """Removing an album should also remove all of its tracks."""
-        args = argparse.Namespace(query="*", album=True, extra=False)
-        tmp_session.merge(mock_album)
+        moe.cli.main(cli_args, tmp_rm_config)
 
-        moe_rm.rm_cli._parse_args(config=Mock(), args=args)
+        for mock_track in mock_tracks:
+            mock_rm.assert_any_call(mock_track)
+        assert mock_rm.call_count == 2
 
-        assert not tmp_session.query(Track).scalar()
-
-    def test_album_extras(self, tmp_session, mock_album):
-        """Removing an album should also remove all of its extras."""
-        args = argparse.Namespace(query="*", album=True, extra=False)
-        tmp_session.merge(mock_album)
-
-        assert mock_album.extras
-        moe_rm.rm_cli._parse_args(config=Mock(), args=args)
-
-        assert not tmp_session.query(Extra).scalar()
-
-    def test_exit_code(self):
+    def test_exit_code(self, mock_query, mock_rm, tmp_rm_config):
         """Return a non-zero exit code if no items are removed."""
-        args = argparse.Namespace(query="bad", album=False, extra=False)
+        cli_args = ["remove", "*"]
+        mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            moe_rm.rm_cli._parse_args(config=Mock(), args=args)
+            moe.cli.main(cli_args, tmp_rm_config)
 
         assert error.value.code != 0
+        mock_rm.assert_not_called()
 
 
-@pytest.mark.integration
-class TestCommand:
-    """Test cli integration with the remove command."""
+class TestPluginRegistration:
+    """Test the `plugin_registration` hook implementation."""
 
-    def test_parse_args(self, real_track, tmp_path, tmp_config):
-        """Music is removed from the library when the `remove` command is invoked."""
-        cli_args = ["remove", "*"]
-        config = tmp_config(
-            settings='default_plugins = ["cli", "remove"]', init_db=True
-        )
+    def test_no_cli(self, tmp_config):
+        """Don't enable the remove cli plugin if the `cli` plugin is not enabled."""
+        config = tmp_config(settings='default_plugins = ["remove"]')
 
-        session = MoeSession()
-        with session.begin():
-            session.add(real_track)
+        assert not config.plugin_manager.has_plugin("remove_cli")
 
-        moe.cli.main(cli_args, config)
+    def test_cli(self, tmp_config):
+        """Enable the remove cli plugin if the `cli` plugin is enabled."""
+        config = tmp_config(settings='default_plugins = ["remove", "cli"]')
 
-        assert not session.query(Track).scalar()
+        assert config.plugin_manager.has_plugin("remove_cli")

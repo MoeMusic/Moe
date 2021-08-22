@@ -23,6 +23,6 @@ __all__.extend(rm_core.__all__)  # noqa: WPS609
 @moe.hookimpl
 def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.plugin_manager.register(rm_core, "rm_core")
+    config.plugin_manager.register(rm_core, "remove_core")
     if config.plugin_manager.has_plugin("cli"):
-        config.plugin_manager.register(rm_cli, "rm_cli")
+        config.plugin_manager.register(rm_cli, "remove_cli")

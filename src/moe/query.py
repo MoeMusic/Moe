@@ -19,8 +19,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import sqlalchemy
-from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from moe.config import MoeSession
 from moe.library.album import Album
@@ -225,13 +223,8 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
 
     if separator == ":":
         # path matching
-        if isinstance(attr, InstrumentedAttribute) and attr == Track.path:
+        if str(attr) == "Track.path":
             return Track.path == Path(value)
-        elif (
-            isinstance(attr, ColumnAssociationProxyInstance)
-            and attr.attr[1] == Album.path
-        ):
-            return Album.path == Path(value)
         elif str(attr) == "Extra.path":
             return Extra.path == Path(value)  # type: ignore
         elif str(attr) == "Album.path":

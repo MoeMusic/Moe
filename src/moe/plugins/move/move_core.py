@@ -41,13 +41,13 @@ def post_add(config: Config, item: LibItem):
     elif isinstance(item, (Extra, Track)):
         album = item.album_obj
 
-    copy_item(album, config)
+    copy_item(config, album)
 
 
 ########################################################################################
 # Format paths
 ########################################################################################
-def fmt_item_path(item: LibItem, config: Config) -> Path:
+def fmt_item_path(config: Config, item: LibItem) -> Path:
     """Returns a formatted item path according to the user configuration.
 
     Args:
@@ -58,11 +58,11 @@ def fmt_item_path(item: LibItem, config: Config) -> Path:
         Formatted item path under the config ``library_path``.
     """
     if isinstance(item, Album):
-        new_path = _fmt_album_path(item, config)
+        new_path = _fmt_album_path(config, item)
     elif isinstance(item, Extra):
-        new_path = _fmt_extra_path(item, config)
+        new_path = _fmt_extra_path(config, item)
     elif isinstance(item, Track):
-        new_path = _fmt_track_path(item, config)
+        new_path = _fmt_track_path(config, item)
 
     if config.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))
@@ -70,7 +70,7 @@ def fmt_item_path(item: LibItem, config: Config) -> Path:
     return new_path
 
 
-def _fmt_album_path(album: Album, config: Config) -> Path:
+def _fmt_album_path(config: Config, album: Album) -> Path:
     """Returns a formatted album directory according to the user configuration.
 
     An album directory should contain, at a minimum, the album artist, title, and year
@@ -89,12 +89,12 @@ def _fmt_album_path(album: Album, config: Config) -> Path:
     return library_path / album_dir_name
 
 
-def _fmt_extra_path(extra: Extra, config: Config) -> Path:
+def _fmt_extra_path(config: Config, extra: Extra) -> Path:
     """Returns a formatted extra path according to the user configuration."""
     return extra.album_obj.path / extra.path.name
 
 
-def _fmt_track_path(track: Track, config: Config) -> Path:
+def _fmt_track_path(config: Config, track: Track) -> Path:
     """Returns a formatted track path according to the user configuration.
 
     The track path should contain, at a minimum, the track number and
@@ -120,7 +120,7 @@ def _fmt_track_path(track: Track, config: Config) -> Path:
 ########################################################################################
 # Copy
 ########################################################################################
-def copy_item(item: LibItem, config: Config):
+def copy_item(config: Config, item: LibItem):
     """Copies an item to a destination as determined by the user configuration.
 
     Overwrites any existing files. Will create the destination if it does not already
@@ -131,12 +131,12 @@ def copy_item(item: LibItem, config: Config):
         config: Moe config.
     """
     if isinstance(item, Album):
-        _copy_album(item, config)
+        _copy_album(config, item)
     elif isinstance(item, (Extra, Track)):
-        _copy_file_item(item, config)
+        _copy_file_item(config, item)
 
 
-def _copy_album(album: Album, config: Config):
+def _copy_album(config: Config, album: Album):
     """Copies an album to a destination as determined by the user configuration.
 
     Copying an album will also copy all of it's tracks and extras.
@@ -145,7 +145,7 @@ def _copy_album(album: Album, config: Config):
         album: Album to copy
         config: Moe config.
     """
-    dest = fmt_item_path(album, config)
+    dest = fmt_item_path(config, album)
 
     log.info(f"Copying album from '{album.path}' to '{dest}'.")
     if album.path != dest:
@@ -153,15 +153,15 @@ def _copy_album(album: Album, config: Config):
         album.path = dest
 
     for track in album.tracks:
-        _copy_file_item(track, config)
+        _copy_file_item(config, track)
 
     for extra in album.extras:
-        _copy_file_item(extra, config)
+        _copy_file_item(config, extra)
 
 
-def _copy_file_item(item: Union[Extra, Track], config: Config):
+def _copy_file_item(config: Config, item: Union[Extra, Track]):
     """Copies an extra or track to a destination as determined by the user config."""
-    dest = fmt_item_path(item, config)
+    dest = fmt_item_path(config, item)
     if dest == item.path:
         return
 
@@ -175,7 +175,7 @@ def _copy_file_item(item: Union[Extra, Track], config: Config):
 ########################################################################################
 # Move
 ########################################################################################
-def move_item(item: LibItem, config: Config):
+def move_item(config: Config, item: LibItem):
     """Moves an item to a destination as determined by the user configuration.
 
     Overwrites any existing files. Will create the destination if it does not already
@@ -186,12 +186,12 @@ def move_item(item: LibItem, config: Config):
         config: Moe config.
     """
     if isinstance(item, Album):
-        _move_album(item, config)
+        _move_album(config, item)
     elif isinstance(item, (Extra, Track)):
-        _move_file_item(item, config)
+        _move_file_item(config, item)
 
 
-def _move_album(album: Album, config: Config):
+def _move_album(config: Config, album: Album):
     """Moves an album to a given destination.
 
     - Overwrites any existing files.
@@ -203,7 +203,7 @@ def _move_album(album: Album, config: Config):
         album: Album to move.
         config: Moe config.
     """
-    dest = fmt_item_path(album, config)
+    dest = fmt_item_path(config, album)
     old_album_dir = album.path
 
     log.info(f"Moving album from '{album.path}' to '{dest}'.")
@@ -212,10 +212,10 @@ def _move_album(album: Album, config: Config):
         album.path = dest
 
     for track in album.tracks:
-        _move_file_item(track, config)
+        _move_file_item(config, track)
 
     for extra in album.extras:
-        _move_file_item(extra, config)
+        _move_file_item(config, extra)
 
     # remove any empty leftover directories
     for old_child in old_album_dir.rglob("*"):
@@ -228,9 +228,9 @@ def _move_album(album: Album, config: Config):
             old_parent.rmdir()
 
 
-def _move_file_item(item: Union[Extra, Track], config: Config):
+def _move_file_item(config: Config, item: Union[Extra, Track]):
     """Moves an extra or track to a destination as determined by the user config."""
-    dest = fmt_item_path(item, config)
+    dest = fmt_item_path(config, item)
     if dest == item.path:
         return
 

@@ -1,7 +1,7 @@
 """Integrates musicbrainz with the import prompt."""
 
 
-from typing import List, Optional
+from typing import List
 
 import questionary
 
@@ -29,10 +29,10 @@ def _enter_id(
     config: Config,
     old_album: Album,
     new_album: Album,
-) -> Optional[Album]:
+):
     """Re-run the add prompt with the inputted Musibrainz release."""
     mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
 
     album = moe_mb.get_album_by_id(mb_id)
 
-    return moe_import.import_prompt(config, old_album, album)
+    moe_import.import_prompt(config, old_album, album)

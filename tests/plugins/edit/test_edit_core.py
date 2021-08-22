@@ -59,3 +59,13 @@ class TestEditItem:
         """Raise SystemExit if attempting to edit an invalid field."""
         with pytest.raises(edit.EditError):
             edit.edit_item(mock_album, "lol", "bad field")
+
+
+class TestPluginRegistration:
+    """Test the `plugin_registration` hook implementation."""
+
+    def test_edit_core(self, tmp_config):
+        """Enable the edit core plugin if specified in the config."""
+        config = tmp_config(settings='default_plugins = ["edit"]')
+
+        assert config.plugin_manager.has_plugin("edit_core")
