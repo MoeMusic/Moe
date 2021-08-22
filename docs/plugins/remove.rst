@@ -3,8 +3,6 @@ Remove
 ######
 Removes music from your library.
 
-This plugin provides a ``remove`` command.
-
 *************
 Configuration
 *************

@@ -1,12 +1,4 @@
-"""Edits music in the library.
-
-Plugin contents:
-    ``edit_cli.py``: Adds the ``edit`` command to the cli.
-    ``edit_core.py`` : API interface for editing the library.
-
-Note:
-    This plugin is enabled by default.
-"""
+"""Edits music in the library."""
 
 import pluggy
 

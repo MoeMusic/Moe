@@ -23,7 +23,7 @@ class AbortImport(Exception):
 
 
 class Hooks:
-    """Add plugin cli hook specifications."""
+    """Import plugin cli hook specifications."""
 
     @staticmethod
     @moe.hookspec

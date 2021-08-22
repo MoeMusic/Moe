@@ -1,11 +1,4 @@
-"""Writes tags to track files.
-
-The ``move`` plugin will automatically write the tags of any altered or new items in the
-library.
-
-Note:
-    This plugin is enabled by default.
-"""
+"""Writes tags to track files."""
 
 import logging
 from typing import List

@@ -37,10 +37,10 @@ class Hooks:
 
         See Also:
             * The :meth:`post_add` hook for any post-processing operations.
-            * The :meth:`~moe.cli.Hooks.edit_new_items` hook.
+            * The :meth:`~moe.config.Hooks.edit_new_items` hook.
               The difference between them is that the :meth:`pre_add` hook will only
               operate on an `add` operation, while the
-              :meth:`~moe.cli.Hooks.edit_new_items` hook will run anytime an item is
+              :meth:`~moe.config.Hooks.edit_new_items` hook will run anytime an item is
               changed or added.
         """
 
@@ -57,11 +57,11 @@ class Hooks:
 
         See Also:
             * The :meth:`pre_add` hook if you wish to alter item metadata.
-            * The :meth:`~moe.cli.Hooks.process_new_items` hook.
+            * The :meth:`~moe.config.Hooks.process_new_items` hook.
               The difference between them is that the :meth:`post_add` hook will only
               operate on an `add` operation, while the
-              :meth:`~moe.cli.Hooks.process_new_items` hook will run anytime an item is
-              changed or added.
+              :meth:`~moe.config.Hooks.process_new_items` hook will run anytime an item
+              is changed or added.
         """
 
 

@@ -3,8 +3,6 @@ Edit
 ####
 Edits music in your library.
 
-This plugin provides an ``edit`` command for editing items in your library.
-
 *************
 Configuration
 *************

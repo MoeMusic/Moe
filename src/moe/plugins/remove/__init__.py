@@ -1,12 +1,4 @@
-"""Removes music in the library.
-
-Plugin contents:
-    ``rm_cli.py``: Adds the ``remove`` command to the cli.
-    ``rm_core.py`` : API interface for removing items.
-
-Note:
-    This plugin is enabled by default.
-"""
+"""Removes music from the library."""
 
 import pluggy
 

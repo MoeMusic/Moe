@@ -21,7 +21,7 @@ log = logging.getLogger("moe.cli")
 
 
 class Hooks:
-    """CLI hooks specifications."""
+    """General CLI hook specifications."""
 
     @staticmethod
     @moe.hookspec
@@ -56,7 +56,7 @@ class Hooks:
                 edit_parser = cmd_parsers.add_parser(
                     "list",
                     description="Lists music in the library.",
-                    parents=[query.query_parser],
+                    parents=[moe.cli.query_parser],
                 )
 
         See Also:
@@ -79,9 +79,9 @@ class PromptChoice:
             should return the album to be added to the library (or ``None`` if no album
             should be added) and will be supplied the following keyword arguments:
 
-            ``config (Config)``: Moe config.
-            ``old_album (Album)``: Old album with no changes applied.
-            ``new_album (Album)``: New album consisting of all the new changes.
+            * ``config``: Moe config.
+            * ``old_album``: Old album with no changes applied.
+            * ``new_album``: New album consisting of all the new changes.
     """
 
     func_type = Callable[[Config, Album, Album], None]
