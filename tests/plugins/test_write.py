@@ -1,13 +1,25 @@
 """Tests the ``write`` plugin."""
 
 import datetime
+from unittest.mock import patch
 
 import pytest
 
-import moe
-from moe.config import MoeSession
 from moe.library.track import Track
 from moe.plugins import write as moe_write
+
+
+@pytest.fixture
+def mock_write():
+    """Mock the `write_tags` api call."""
+    with patch("moe.plugins.write.write_tags", autospec=True) as mock_edit:
+        yield mock_edit
+
+
+@pytest.fixture
+def tmp_write_config(tmp_config):
+    """Mock the `write_tags` api call."""
+    return tmp_config("default_plugins = ['write']")
 
 
 class TestWriteTags:
@@ -55,52 +67,43 @@ class TestWriteTags:
         assert new_track.track_num == track_num
 
 
-@pytest.mark.integration
-class TestDBListener:
-    """Test integration with the `process_items` hook entry to the plugin."""
+class TestProcessNewItems:
+    """Test the `process_new_items` hook implementation."""
 
-    def test_edit_track(self, real_track, tmp_config):
+    def test_process_track(self, mock_track, mock_write, tmp_write_config):
         """Any altered Tracks have their tags written."""
-        new_title = "Summertime"
-        cli_args = ["edit", "*", f"title={new_title}"]
+        tmp_write_config.plugin_manager.hook.process_new_items(
+            config=tmp_write_config, items=[mock_track]
+        )
 
-        tmp_settings = """
-        default_plugins = ["cli", "edit", "write"]
-        """
-        config = tmp_config(tmp_settings, init_db=True)
-        og_path = real_track.path
+        mock_write.assert_called_once_with(mock_track)
 
-        session = MoeSession()
-        with session.begin():
-            session.add(real_track)
+    def test_process_extra(self, mock_extra, mock_write, tmp_write_config):
+        """Any altered extras are ignored."""
+        tmp_write_config.plugin_manager.hook.process_new_items(
+            config=tmp_write_config, items=[mock_extra]
+        )
 
-        moe.cli.main(cli_args, config)
+        mock_write.assert_not_called()
 
-        new_track = Track.from_tags(og_path)
-        assert new_track.title == new_title
+    def test_process_album(self, mock_album, mock_write, tmp_write_config):
+        """Any altered albums are ignored."""
+        tmp_write_config.plugin_manager.hook.process_new_items(
+            config=tmp_write_config, items=[mock_album]
+        )
 
-    def test_write_through_flush(self, real_album, tmp_config):
-        """If a flush occurs, ensure we still write all items that changed.
+        mock_write.assert_not_called()
 
-        A database "flush" will occur if querying, or if editing an association
-        attribute. This test ensures we aren't just naively checking `session.dirty` to
-        get a list of all edited items.
-        """
-        new_genre = "new genre"
-        cli_args = ["edit", "*", f"genre={new_genre}"]
+    def test_process_multiple_tracks(
+        self, mock_track_factory, mock_write, tmp_write_config
+    ):
+        """All altered tracks are written."""
+        mock_tracks = [mock_track_factory(), mock_track_factory()]
 
-        tmp_settings = """
-        default_plugins = ["cli", "edit", "write"]
-        """
-        config = tmp_config(tmp_settings, init_db=True)
-        og_paths = [track.path for track in real_album.tracks]
+        tmp_write_config.plugin_manager.hook.process_new_items(
+            config=tmp_write_config, items=mock_tracks
+        )
 
-        session = MoeSession()
-        with session.begin():
-            session.merge(real_album)
-
-        moe.cli.main(cli_args, config)
-
-        new_tracks = [Track.from_tags(path) for path in og_paths]
-        for track in new_tracks:
-            assert track.genre == new_genre
+        for mock_track in mock_tracks:
+            mock_write.assert_any_call(mock_track)
+        assert mock_write.call_count == 2

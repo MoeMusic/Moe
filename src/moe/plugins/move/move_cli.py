@@ -1,11 +1,13 @@
 """Adds the ``move`` command to the cli."""
 
 import argparse
+from typing import List, cast
 
 import sqlalchemy as sa
 
 import moe
-from moe.config import Config, MoeSession
+from moe import query
+from moe.config import Config
 from moe.library.album import Album
 from moe.plugins import move as moe_move
 
@@ -40,13 +42,12 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
-    session = MoeSession()
-    albums = session.execute(sa.select(Album)).scalars().all()
+    albums = cast(List[Album], query.query("*", query_type="album"))
 
     if args.dry_run:
         dry_run_str = ""
         for dry_album in albums:
-            album_dest = moe_move.fmt_item_path(dry_album, config)
+            album_dest = moe_move.fmt_item_path(config, dry_album)
             if album_dest != dry_album.path:
                 dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
 
@@ -55,11 +56,11 @@ def _parse_args(config: Config, args: argparse.Namespace):
             sa.orm.attributes.set_committed_value(dry_album, "path", album_dest)
 
             for dry_track in dry_album.tracks:
-                track_dest = moe_move.fmt_item_path(dry_track, config)
+                track_dest = moe_move.fmt_item_path(config, dry_track)
                 if track_dest != dry_track.path:
                     dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
             for dry_extra in dry_album.extras:
-                extra_dest = moe_move.fmt_item_path(dry_extra, config)
+                extra_dest = moe_move.fmt_item_path(config, dry_extra)
                 if extra_dest != dry_extra.path:
                     dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
 
@@ -67,4 +68,4 @@ def _parse_args(config: Config, args: argparse.Namespace):
             print(dry_run_str.lstrip())  # noqa: WPS421
     else:
         for album in albums:
-            moe_move.move_item(album, config)
+            moe_move.move_item(config, album)

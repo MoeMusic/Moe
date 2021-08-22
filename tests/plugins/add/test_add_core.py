@@ -3,104 +3,103 @@
 import copy
 import shutil
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
+import moe
+from moe.config import Config, ExtraPlugin
 from moe.library.album import Album
+from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import add
 from moe.plugins import write as moe_write
 
 
+@pytest.fixture
+def tmp_add_config(tmp_config) -> Config:
+    """A temporary config for the edit plugin with the cli."""
+    return tmp_config('default_plugins = ["add"]', tmp_db=True)
+
+
 class TestAddItemFromDir:
     """Test a directory given to ``add_item()`` to add as an album."""
 
-    def test_dir_album(self, real_album, tmp_session):
+    def test_dir_album(self, real_album, tmp_session, tmp_add_config):
         """If a directory given, add to library as an album."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
-        add.add.add_item(mock_config, real_album.path)
+        add.add_item(tmp_add_config, real_album.path)
 
         assert tmp_session.query(Album).filter_by(path=real_album.path).one()
 
-    def test_extras(self, real_album, tmp_session):
+    def test_extras(self, real_album, tmp_session, tmp_add_config):
         """Add any extras that are within the album directory."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-        assert real_album.extras
-
-        add.add.add_item(mock_config, real_album.path)
+        add.add_item(tmp_add_config, real_album.path)
 
         db_album = tmp_session.query(Album).one()
         for extra in real_album.extras:
             assert extra in db_album.extras
 
-    def test_no_valid_tracks(self, tmp_session, tmp_path):
+    def test_no_valid_tracks(self, tmp_path, tmp_session, tmp_add_config):
         """Error if given directory does not contain any valid tracks."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         album_path = tmp_path / "empty"
         album_path.mkdir()
 
         with pytest.raises(add.AddError):
-            add.add.add_item(mock_config, album_path)
+            add.add_item(tmp_add_config, album_path)
 
         assert not tmp_session.query(Album).scalar()
 
-    def test_different_tracks(self, real_track_factory, tmp_path, tmp_session):
+    def test_track_error(self, empty_mp3_path, real_album, tmp_session, tmp_add_config):
+        """Ignore (just log) any tracks that are unable to be created."""
+        new_path = shutil.copyfile(
+            empty_mp3_path, real_album.path / empty_mp3_path.name
+        )
+
+        add.add_item(tmp_add_config, real_album.path)
+
+        assert not tmp_session.query(Track.path).filter_by(path=new_path).scalar()
+
+    def test_different_tracks(
+        self, tmp_path, real_track_factory, tmp_session, tmp_add_config
+    ):
         """Error if tracks have different album attributes.
 
         All tracks in a given directory should belong to the same album.
         """
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         tmp_album_path = tmp_path / "tmp_album"
         tmp_album_path.mkdir()
         shutil.copy(real_track_factory(year=1).path, tmp_album_path)
         shutil.copy(real_track_factory(year=2).path, tmp_album_path)
 
         with pytest.raises(add.AddError):
-            add.add.add_item(mock_config, tmp_album_path)
+            add.add_item(tmp_add_config, tmp_album_path)
 
         assert not tmp_session.query(Album).scalar()
 
-    def test_duplicate_tracks(self, real_album, tmp_session):
+    def test_duplicate_tracks(self, real_album, tmp_session, tmp_add_config):
         """Don't fail album add if a track (by tags) already exists in the library."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         tmp_session.merge(real_album.tracks[0])
 
-        add.add.add_item(mock_config, real_album.path)
+        add.add_item(tmp_add_config, real_album.path)
 
         assert tmp_session.query(Album).filter_by(path=real_album.path).one()
 
-    def test_duplicate_album(self, real_album, tmp_session):
+    def test_duplicate_album(self, real_album, tmp_session, tmp_add_config):
         """We merge an existing album by it's path."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         dup_album = copy.deepcopy(real_album)
         dup_album.title = "diff"
         tmp_session.merge(dup_album)
 
-        add.add.add_item(mock_config, real_album.path)
+        add.add_item(tmp_add_config, real_album.path)
 
         assert tmp_session.query(Album).filter_by(path=real_album.path).one()
 
-    def test_merge_existing(self, real_album_factory, tmp_session):
+    def test_merge_existing(self, real_album_factory, tmp_session, tmp_add_config):
         """Merge the album to be added with an existing album in the library.
 
         The album info should be kept (likely to be more accurate), however, any tracks
         or extras should be overwritten.
         """
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         new_album = real_album_factory()
         existing_album = real_album_factory()
         new_album.date = existing_album.date
@@ -120,18 +119,15 @@ class TestAddItemFromDir:
 
         tmp_session.merge(existing_album)
         with patch("moe.plugins.add.add._add_album", return_value=new_album):
-            add.add.add_item(mock_config, new_album.path)
+            add.add_item(tmp_add_config, new_album.path)
 
         db_album = tmp_session.query(Album).one()
         assert db_album.mb_album_id == existing_album.mb_album_id
         assert sorted(db_album.tracks) == sorted(new_album.tracks)
         assert sorted(db_album.extras) == sorted(new_album.extras)
 
-    def test_add_multi_disc(self, real_album, tmp_session):
+    def test_add_multi_disc(self, real_album, tmp_session, tmp_add_config):
         """We can add a multi-disc album."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         track1 = real_album.tracks[0]
         track2 = real_album.tracks[1]
         track1.disc = 1
@@ -149,7 +145,7 @@ class TestAddItemFromDir:
         track1.path = track1_path
         track2.path = track2_path
 
-        add.add.add_item(mock_config, real_album.path)
+        add.add_item(tmp_add_config, real_album.path)
 
         album = tmp_session.query(Album).filter_by(path=real_album.path).one()
 
@@ -160,48 +156,112 @@ class TestAddItemFromDir:
 class TestAddItemFromFile:
     """Test a file argument given to add as a track."""
 
-    def test_path_not_found(self):
-        """Raise SystemExit if the path to add does not exist."""
-        with pytest.raises(add.AddError):
-            add.add.add_item(Mock(), Path("does not exist"))
-
-    def test_file_track(self, real_track, tmp_session):
+    def test_file_track(self, real_track, tmp_session, tmp_add_config):
         """If a file given, add to library as a Track."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
-        add.add.add_item(mock_config, real_track.path)
+        add.add_item(tmp_add_config, real_track.path)
 
         assert tmp_session.query(Track.path).filter_by(path=real_track.path).one()
 
-    def test_min_reqd_tags(self, tmp_session, reqd_mp3_path):
+    def test_min_reqd_tags(self, reqd_mp3_path, tmp_session, tmp_add_config):
         """We can add a track with only a track_num, album, albumartist, and year."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
-        add.add.add_item(mock_config, reqd_mp3_path)
+        add.add_item(tmp_add_config, reqd_mp3_path)
 
         assert tmp_session.query(Track.path).filter_by(path=reqd_mp3_path).one()
 
     def test_non_track_file(self):
         """Error if the file given is not a valid track."""
         with pytest.raises(add.AddError):
-            add.add.add_item(Mock(), Path(__file__))
+            add.add_item(Mock(), Path(__file__))
 
-    def test_track_missing_reqd_tags(self, empty_mp3_path):
+    def test_track_missing_reqd_tags(self, empty_mp3_path, tmp_add_config):
         """Error if the track doesn't have all the required tags."""
         with pytest.raises(add.AddError):
-            add.add.add_item(Mock(), empty_mp3_path)
+            add.add_item(tmp_add_config, empty_mp3_path)
 
-    def test_duplicate_track(self, real_track, tmp_session, tmp_path):
+    def test_duplicate_track(self, tmp_path, real_track, tmp_session, tmp_add_config):
         """Overwrite old track path with the new track if a duplicate is found."""
-        mock_config = MagicMock()
-        mock_config.plugin_manager.hook.import_album.return_value = []
-
         new_track_path = tmp_path / "full2"
         shutil.copyfile(real_track.path, new_track_path)
         tmp_session.add(real_track)
 
-        add.add.add_item(mock_config, new_track_path)
+        add.add_item(tmp_add_config, new_track_path)
 
         assert tmp_session.query(Track.path).filter_by(path=new_track_path).one()
+
+
+class AddPlugin:
+    """Test plugin that implements the add hookspecs."""
+
+    @staticmethod
+    @moe.hookimpl
+    def pre_add(config: Config, item: LibItem):
+        """Changes the album title."""
+        if isinstance(item, Track):
+            item.title = "pre_add"
+
+    @staticmethod
+    @moe.hookimpl
+    def post_add(config: Config, item: LibItem):
+        """Apply the new title onto the old album."""
+        if isinstance(item, Track):
+            item.genre = "post_add"
+
+
+class TestAddItem:
+    """General functionality of `add_item`."""
+
+    def test_hooks(self, real_track, tmp_config, tmp_session):
+        """The pre and post add hooks are called when adding an item."""
+        config = tmp_config(
+            "default_plugins = ['add']",
+            extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
+            tmp_db=True,
+        )
+
+        add.add_item(config, real_track.path)
+
+        db_track = tmp_session.query(Track).one()
+
+        assert db_track.title == "pre_add"
+        assert db_track.genre == "post_add"
+
+    def test_path_not_found(self):
+        """Raise SystemExit if the path to add does not exist."""
+        with pytest.raises(add.AddError):
+            add.add_item(Mock(), Path("does not exist"))
+
+
+class TestHookSpecs:
+    """Test the various hook specifications."""
+
+    def test_pre_add(self, mock_track, tmp_config):
+        """Ensure plugins can implement the `pre_add` hook."""
+        config = tmp_config(
+            "default_plugins = ['add']",
+            extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
+        )
+
+        config.plugin_manager.hook.pre_add(config=config, item=mock_track)
+
+        assert mock_track.title == "pre_add"
+
+    def test_post_add(self, mock_track, tmp_config):
+        """Ensure plugins can implement the `pre_add` hook."""
+        config = tmp_config(
+            "default_plugins = ['add']",
+            extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
+        )
+
+        config.plugin_manager.hook.post_add(config=config, item=mock_track)
+
+        assert mock_track.genre == "post_add"
+
+
+class TestPluginRegistration:
+    """Test the `plugin_registration` hook implementation."""
+
+    def test_add_core(self, tmp_config):
+        """Enable the add core plugin if specified in the config."""
+        config = tmp_config(settings='default_plugins = ["add"]')
+
+        assert config.plugin_manager.has_plugin("add_core")

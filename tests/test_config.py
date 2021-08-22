@@ -3,9 +3,11 @@
 from unittest.mock import patch
 
 import dynaconf
+import pytest
 
 import moe
 from moe.config import Config, ExtraPlugin
+from moe.library.track import Track
 
 
 class TestInit:
@@ -41,18 +43,6 @@ class TestInit:
             assert config.config_dir == tmp_path
 
 
-class ConfigPlugin:
-    """Plugin that implements the config hooks for testing."""
-
-    @staticmethod
-    @moe.hookimpl
-    def add_config_validator(settings):
-        """Add the `config_plugin` configuration option."""
-        settings.validators.register(
-            dynaconf.Validator("CONFIG_PLUGIN", must_exist=True, default="hello!")
-        )
-
-
 class TestPlugins:
     """Test setting up and registering plugins."""
 
@@ -74,11 +64,47 @@ class TestPlugins:
 
     def test_extra_plugins(self, tmp_config):
         """Any given additional plugins are also registered."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
+        config = tmp_config(extra_plugins=[ExtraPlugin(TestPlugins, "config_plugin")])
 
         assert config.plugin_manager.has_plugin("config_plugin")
 
 
+class ConfigPlugin:
+    """Plugin that implements the config hooks for testing."""
+
+    @staticmethod
+    @moe.hookimpl
+    def edit_new_items(config, items):
+        """Edit the incoming items."""
+        for item in items:
+            if isinstance(item, Track):
+                item.title = "config"
+
+    @staticmethod
+    @moe.hookimpl
+    def process_new_items(config, items):
+        """Process the incoming items."""
+        for item in items:
+            if isinstance(item, Track):
+                item.track_num = 3
+
+    @staticmethod
+    @moe.hookimpl
+    def add_config_validator(settings):
+        """Add the `config_plugin` configuration option."""
+        settings.validators.register(
+            dynaconf.Validator("CONFIG_PLUGIN", must_exist=True, default="hello!")
+        )
+
+    @staticmethod
+    @moe.hookimpl
+    def plugin_registration(config):
+        """Alter the `config_dir` at plugin registration."""
+        config.plugin_manager.unregister(ConfigPlugin)
+        config.plugin_manager.register(ConfigPlugin, "config2")
+
+
+@pytest.mark.integration
 class TestHooks:
     """Test the config hook specifications."""
 
@@ -87,3 +113,38 @@ class TestHooks:
         config = tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
 
         assert config.settings.config_plugin == "hello!"
+
+    def test_edit_new_items(self, mock_track, tmp_config, tmp_session):
+        """Ensure plugins can implement the `edit_new_items` hook."""
+        tmp_config(
+            "default_plugins = []",
+            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
+            tmp_db=True,
+        )
+
+        tmp_session.add(mock_track)
+        tmp_session.flush()
+
+        assert mock_track.title == "config"
+
+    def test_process_new_items(self, mock_track, tmp_config, tmp_session):
+        """Ensure plugins can implement the `add_hooks` hook."""
+        tmp_config(
+            "default_plugins = []",
+            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
+            tmp_db=True,
+        )
+
+        tmp_session.add(mock_track)
+        tmp_session.flush()
+
+        assert mock_track.track_num == 3
+
+    def test_plugin_registration(self, tmp_config):
+        """Ensure plugins can implement the `plugin_registration` hook."""
+        config = tmp_config(
+            "default_plugins = []",
+            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
+        )
+
+        assert config.plugin_manager.has_plugin("config2")

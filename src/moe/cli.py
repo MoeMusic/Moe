@@ -5,13 +5,15 @@
 import argparse
 import logging
 import sys
-from typing import Callable, List, NamedTuple
+from dataclasses import dataclass
+from typing import Callable, List
 
 import pkg_resources
 import pluggy
 
 import moe
 from moe.config import Config, MoeSession
+from moe.library.album import Album
 
 __all__ = ["PromptChoice", "query_parser"]
 
@@ -63,7 +65,8 @@ class Hooks:
         """
 
 
-class PromptChoice(NamedTuple):
+@dataclass
+class PromptChoice:
     """A single, user-selectable choice for a CLI prompt.
 
     Attributes:
@@ -81,9 +84,11 @@ class PromptChoice(NamedTuple):
             ``new_album (Album)``: New album consisting of all the new changes.
     """
 
+    func_type = Callable[[Config, Album, Album], None]
+
     title: str
     shortcut_key: str
-    func: Callable
+    func: func_type
 
 
 # Argument parser for a query. This should be passed as a parent parser for a command.
@@ -145,7 +150,6 @@ def _parse_args(args: List[str], config: Config):
     # call the sub-command's handler within a single session
     cli_session = MoeSession()
     with cli_session.begin():
-
         try:
             parsed_args.func(config, args=parsed_args)
         except SystemExit as err:

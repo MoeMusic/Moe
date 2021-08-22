@@ -11,7 +11,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
-__all__: List[str] = []
+__all__ = ["import_album"]
 
 
 class Hooks:
@@ -39,7 +39,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(config: Config, old_album, candidate_albums):
+    def process_candidates(config: Config, old_album: Album, candidates: List[Album]):
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied
@@ -48,7 +48,7 @@ class Hooks:
         Args:
             config: Moe config.
             old_album: Album being added to the library.
-            candidate_albums: New candidate albums with imported metadata.
+            candidates: New candidate albums with imported metadata.
         """
 
 
@@ -64,15 +64,20 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 def pre_add(config: Config, item: LibItem):
     """Fixes album metadata via external sources prior to it being added to the lib."""
     if isinstance(item, Album):
-        old_album = item
+        album = item
     elif isinstance(item, (Extra, Track)):
-        old_album = item.album_obj
+        album = item.album_obj
 
-    candidate_albums = config.plugin_manager.hook.import_candidates(
-        config=config, album=old_album
+    import_album(config, album)
+
+
+def import_album(config: Config, album: Album):
+    """Imports album metadata for an album."""
+    candidates = config.plugin_manager.hook.import_candidates(
+        config=config, album=album
     )
     config.plugin_manager.hook.process_candidates(
         config=config,
-        old_album=old_album,
-        candidate_albums=candidate_albums,
+        old_album=album,
+        candidates=candidates,
     )

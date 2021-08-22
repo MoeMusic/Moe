@@ -1,84 +1,87 @@
 """Tests the ``info`` plugin."""
 
-import argparse
-from unittest.mock import Mock, patch
-
 import pytest
 
 import moe
-from moe.config import MoeSession
-from moe.plugins import info
+from moe.config import Config
 
 
-class TestParseArgs:
-    """Test the plugin argument parser."""
+@pytest.fixture
+def tmp_info_config(tmp_config) -> Config:
+    """A temporary config for the info plugin with the cli."""
+    return tmp_config('default_plugins = ["cli", "info"]')
 
-    def test_track(self, capsys, mock_track):
+
+class TestCommand:
+    """Test the plugin argument parser.
+
+    To see the actual ouput of any of the tests, comment out
+    `assert capsys.readouterr().out` and add `assert 0` to the end of the test.
+    """
+
+    def test_track(self, capsys, mock_track, mock_query, tmp_info_config):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=False, extra=False)
+        cli_args = ["info", "*"]
+        mock_query.return_value = [mock_track]
 
-        mock_track.albumartist = "test"
+        moe.cli.main(cli_args, tmp_info_config)
 
-        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-            info._parse_args(config=Mock(), args=args)
+        mock_query.assert_called_once_with("*", query_type="track")
+        assert capsys.readouterr().out
 
-            mock_query.assert_called_once_with("", query_type="track")
-
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out
-
-    def test_album(self, capsys, mock_album):
+    def test_album(self, capsys, mock_album, mock_query, tmp_info_config):
         """Albums are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=True, extra=False)
-        mock_album.title = "album title"
+        cli_args = ["info", "-a", "*"]
+        mock_query.return_value = [mock_album]
 
-        with patch("moe.query.query", return_value=[mock_album]) as mock_query:
-            info._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_info_config)
 
-            mock_query.assert_called_once_with("", query_type="album")
+        mock_query.assert_called_once_with("*", query_type="album")
+        assert capsys.readouterr().out
 
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out
-
-    def test_extra(self, capsys, mock_album):
+    def test_extra(self, capsys, mock_extra, mock_query, tmp_info_config):
         """Extras are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=False, extra=True)
+        cli_args = ["info", "-e", "*"]
+        mock_query.return_value = [mock_extra]
 
-        extra = mock_album.extras.pop()
-        with patch("moe.query.query", return_value=[extra]) as mock_query:
-            info._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_info_config)
 
-            mock_query.assert_called_once_with("", query_type="extra")
+        mock_query.assert_called_once_with("*", query_type="extra")
+        assert capsys.readouterr().out
 
-        captured_text = capsys.readouterr()
+    def test_multiple_items(
+        self, capsys, mock_track_factory, mock_query, tmp_info_config
+    ):
+        """All items returned from the query are printed."""
+        cli_args = ["info", "*"]
+        mock_query.return_value = [mock_track_factory(), mock_track_factory()]
 
-        assert captured_text.out
+        moe.cli.main(cli_args, tmp_info_config)
 
-    def test_exit_code(self, capsys, tmp_session):
-        """If no track infos are printed, we should return a non-zero exit code."""
-        args = argparse.Namespace(query="bad", album=False, extra=False)
+        assert capsys.readouterr().out
+
+    def test_no_items(self, capsys, mock_query, tmp_info_config):
+        """If no item infos are printed, we should return a non-zero exit code."""
+        cli_args = ["info", "*"]
+        mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            info._parse_args(config=Mock(), args=args)
+            moe.cli.main(cli_args, tmp_info_config)
 
         assert error.value.code != 0
 
 
-@pytest.mark.integration
-class TestCommand:
-    """Test cli integration with the info command."""
+class TestPluginRegistration:
+    """Test the `plugin_registration` hook implementation."""
 
-    def test_parse_args(self, capsys, real_track, tmp_config):
-        """A track's info is printed when the `info` command is invoked."""
-        cli_args = ["info", "*"]
+    def test_no_cli(self, tmp_config):
+        """Don't enable the info cli plugin if the `cli` plugin is not enabled."""
+        config = tmp_config(settings='default_plugins = ["info"]')
 
-        config = tmp_config(settings='default_plugins = ["cli", "info"]', init_db=True)
-        session = MoeSession()
-        with session.begin():
-            session.add(real_track)
+        assert not config.plugin_manager.has_plugin("info")
 
-        moe.cli.main(cli_args, config)
+    def test_cli(self, tmp_config):
+        """Enable the info cli plugin if the `cli` plugin is enabled."""
+        config = tmp_config(settings='default_plugins = ["info", "cli"]')
 
-        assert capsys.readouterr().out
+        assert config.plugin_manager.has_plugin("info")

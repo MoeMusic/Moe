@@ -4,14 +4,15 @@ import random
 import shutil
 import textwrap
 from pathlib import Path
+from types import FunctionType
 from typing import Callable, Iterator, List, Optional
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.orm
 
-from moe.config import Config, ExtraPlugin, MoeSession
+from moe.config import Config, ExtraPlugin, MoeSession, session_factory
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.track import Track
@@ -21,7 +22,9 @@ RESOURCE_DIR = Path(__file__).parent / "resources"
 
 
 @pytest.fixture
-def tmp_config(tmp_path_factory) -> Callable[[], Config]:
+def tmp_config(
+    tmp_path_factory,
+) -> Iterator[Callable[[str, bool, bool, List[ExtraPlugin]], Config]]:
     """Instantiates a temporary configuration.
 
     This fixture must be declared, like a factory. If you want to use specific config
@@ -44,7 +47,7 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
             the database will be initialized regardless of ``init_db``.
         extra_plugins: Any additional plugins to enable.
 
-    Returns:
+    Yields:
         The configuration instance.
     """
 
@@ -74,17 +77,25 @@ def tmp_config(tmp_path_factory) -> Callable[[], Config]:
             init_db=init_db,
         )
 
-    return _tmp_config
+    yield _tmp_config
+    session_factory.configure(bind=None)  # reset the database in between tests
 
 
 @pytest.fixture
 def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
     """Creates a temporary session.
 
+    If you are also using `tmp_config` in your test, ensure to specify `tmp_db=True`
+    when creating the `tmp_config` instance.
+
     Yields:
         The temporary session.
     """
-    tmp_config("default_plugins = []", tmp_db=True)
+    try:
+        MoeSession().get_bind()
+    except sa.exc.UnboundExecutionError:
+        MoeSession.remove()
+        tmp_config("default_plugins = []", tmp_db=True)
 
     session = MoeSession()
     with session.begin():
@@ -97,6 +108,21 @@ def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
 def clean_session():
     """Ensure we aren't sharing sessions between tests."""
     MoeSession.remove()
+
+
+@pytest.fixture
+def mock_query() -> Iterator[FunctionType]:
+    """Mock a database query call.
+
+    Use ``mock_query.return_value` to set the return value of a query.
+
+    Assumes `query` is imported as `moe.query`.
+
+    Yields:
+        Mock query
+    """
+    with patch("moe.query.query", autospec=True) as mock_query:
+        yield mock_query
 
 
 @pytest.fixture

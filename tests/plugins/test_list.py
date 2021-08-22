@@ -1,94 +1,95 @@
 """Tests the ``list`` plugin."""
 
-import argparse
-from unittest.mock import Mock, patch
-
 import pytest
 
 import moe
-from moe.config import MoeSession
-from moe.plugins import list
+from moe.config import Config
+
+
+@pytest.fixture
+def tmp_list_config(tmp_config) -> Config:
+    """A temporary config for the list plugin with the cli."""
+    return tmp_config('default_plugins = ["cli", "list"]')
 
 
 class TestParseArgs:
     """Test the plugin argument parser."""
 
-    def test_track(self, capsys, mock_track):
+    def test_track(self, capsys, mock_track, mock_query, tmp_list_config):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=False, extra=False, paths=False)
+        cli_args = ["list", "*"]
+        mock_query.return_value = [mock_track]
 
-        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-            list._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_list_config)
 
-            mock_query.assert_called_once_with("", query_type="track")
+        mock_query.assert_called_once_with("*", query_type="track")
+        assert capsys.readouterr().out.strip("\n") == str(mock_track)
 
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out.strip() == str(mock_track).strip()
-
-    def test_album(self, capsys, mock_album):
+    def test_album(self, capsys, mock_album, mock_query, tmp_list_config):
         """Albums are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=True, extra=False, paths=False)
+        cli_args = ["list", "-a", "*"]
+        mock_query.return_value = [mock_album]
 
-        with patch("moe.query.query", return_value=[mock_album]) as mock_query:
-            list._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_list_config)
 
-            mock_query.assert_called_once_with("", query_type="album")
+        mock_query.assert_called_once_with("*", query_type="album")
+        assert capsys.readouterr().out.strip("\n") == str(mock_album)
 
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out.strip() == str(mock_album).strip()
-
-    def test_extra(self, capsys, mock_album):
+    def test_extra(self, capsys, mock_extra, mock_query, tmp_list_config):
         """Extras are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=False, extra=True, paths=False)
+        cli_args = ["list", "-e", "*"]
+        mock_query.return_value = [mock_extra]
 
-        extra = mock_album.extras.pop()
-        with patch("moe.query.query", return_value=[extra]) as mock_query:
-            list._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_list_config)
 
-            mock_query.assert_called_once_with("", query_type="extra")
+        mock_query.assert_called_once_with("*", query_type="extra")
+        assert capsys.readouterr().out.strip("\n") == str(mock_extra)
 
-        captured_text = capsys.readouterr()
+    def test_multiple_items(
+        self, capsys, mock_track_factory, mock_query, tmp_list_config
+    ):
+        """All items returned from the query are printed."""
+        cli_args = ["list", "*"]
+        mock_tracks = [mock_track_factory(), mock_track_factory()]
+        mock_query.return_value = mock_tracks
 
-        assert captured_text.out.strip() == str(extra).strip()
+        moe.cli.main(cli_args, tmp_list_config)
 
-    def test_exit_code(self, capsys, tmp_session):
+        out_str = "\n".join(str(mock_track) for mock_track in mock_tracks)
+        assert capsys.readouterr().out.strip("\n") == out_str
+
+    def test_no_items(self, capsys, mock_query, tmp_list_config):
         """If no tracks are printed, we should return a non-zero exit code."""
-        args = argparse.Namespace(query="bad", album=False, extra=False, paths=False)
+        cli_args = ["list", "*"]
+        mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            list._parse_args(config=Mock(), args=args)
+            moe.cli.main(cli_args, tmp_list_config)
 
         assert error.value.code != 0
 
-    def test_paths(self, capsys, mock_track):
+    def test_paths(self, capsys, mock_track, mock_query, tmp_list_config):
         """Tracks are printed to stdout with valid query."""
-        args = argparse.Namespace(query="", album=False, extra=False, paths=True)
+        cli_args = ["list", "-p", "*"]
+        mock_query.return_value = [mock_track]
 
-        with patch("moe.query.query", return_value=[mock_track]) as mock_query:
-            list._parse_args(config=Mock(), args=args)
+        moe.cli.main(cli_args, tmp_list_config)
 
-            mock_query.assert_called_once_with("", query_type="track")
-
-        captured_text = capsys.readouterr()
-
-        assert captured_text.out.strip() == str(mock_track.path).strip()
+        mock_query.assert_called_once_with("*", query_type="track")
+        assert capsys.readouterr().out.strip("\n") == str(mock_track.path)
 
 
-@pytest.mark.integration
-class TestCommand:
-    """Test cli integration with the list command."""
+class TestPluginRegistration:
+    """Test the `plugin_registration` hook implementation."""
 
-    def test_parse_args(self, capsys, real_track, tmp_config):
-        """Music is listed from the library when the `list` command is invoked."""
-        cli_args = ["list", "*"]
+    def test_no_cli(self, tmp_config):
+        """Don't enable the list cli plugin if the `cli` plugin is not enabled."""
+        config = tmp_config(settings='default_plugins = ["list"]')
 
-        config = tmp_config(settings='default_plugins = ["cli", "list"]', init_db=True)
-        session = MoeSession()
-        with session.begin():
-            session.add(real_track)
+        assert not config.plugin_manager.has_plugin("list")
 
-        moe.cli.main(cli_args, config)
+    def test_cli(self, tmp_config):
+        """Enable the list cli plugin if the `cli` plugin is enabled."""
+        config = tmp_config(settings='default_plugins = ["list", "cli"]')
 
-        assert capsys.readouterr().out
+        assert config.plugin_manager.has_plugin("list")
