@@ -190,9 +190,6 @@ class ExtraPlugin(NamedTuple):
 class Config:
     """Initializes moe configuration settings and database.
 
-    Note:
-        `init_db()` is not included in `__init__()` for testing purposes.
-
     Attributes:
         config_dir (Path): Filesystem path of the configuration directory.
         config_file (Path): Filesystem path of the configuration settings file.
@@ -265,7 +262,7 @@ class Config:
         if create_tables:
             config_path = Path(__file__)
             alembic_cfg = alembic.config.Config(
-                config_path.parents[2] / "alembic" / "alembic.ini"
+                config_path.parents[1] / "alembic" / "alembic.ini"
             )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
