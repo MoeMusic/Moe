@@ -80,3 +80,6 @@ dmypy.json
 
 # emacs configuration
 .dir-locals.el
+
+# poetry lock file
+poetry.lock
