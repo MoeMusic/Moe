@@ -1,3 +1,18 @@
+## v0.8.0 (2021-08-28)
+
+### Feat
+
+- **config**: extra plugins can be specified in config init
+- add `plugin_registration` hook to allow custom plugin registration
+
+### Refactor
+
+- **cli**: move `edit_new_items` and `process_new_items` hooks
+- switch to using a thread-local session
+- remove core subpackage
+- change to src/moe layout
+- split cli and core files
+
 ## v0.7.3 (2021-08-14)
 
 ### Fix
