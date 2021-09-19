@@ -29,10 +29,10 @@ def edit_item(item: LibItem, field: str, value: str):
     """
     try:
         attr = getattr(item, field)
-    except AttributeError:
+    except AttributeError as a_err:
         raise EditError(
             f"'{field}' is not a valid {type(item).__name__.lower()} field."
-        )
+        ) from a_err
 
     non_editable_fields = ["path"]
     if field in non_editable_fields:
@@ -56,7 +56,7 @@ def edit_item(item: LibItem, field: str, value: str):
         else:
             try:
                 setattr(item, field, datetime.date.fromisoformat(value))
-            except ValueError:
-                raise EditError("Date must be in format YYYY-MM-DD")
+            except ValueError as v_err:
+                raise EditError("Date must be in format YYYY-MM-DD") from v_err
     else:
         raise EditError(f"Editing field of type '{type(attr)}' not supported.")
