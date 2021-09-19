@@ -2,7 +2,7 @@ default_stages: [commit]
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 21.7b0
+    rev: 21.9b0
     hooks:
       - id: black
         language_version: python3
@@ -21,12 +21,12 @@ repos:
         additional_dependencies: [sqlalchemy]
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.17.13
+    rev: v2.18.1
     hooks:
       - id: commitizen
         stages: [commit-msg]
 
   - repo: https://github.com/timothycrosley/isort
-    rev: 5.9.2
+    rev: 5.9.3
     hooks:
       - id: isort

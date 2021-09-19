@@ -218,8 +218,8 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         # match track fields (all album fields should also be exposed by the Track)
         try:
             attr = getattr(Track, field)
-        except AttributeError:
-            raise QueryError(f"Invalid Track field: {field}")
+        except AttributeError as track_err:
+            raise QueryError(f"Invalid Track field: {field}") from track_err
 
     if separator == ":":
         # path matching
@@ -238,8 +238,8 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         # Note, this is a custom sqlite function created in config.py
         try:
             re.compile(value)
-        except re.error:
-            raise QueryError(f"Invalid regular expression: {value}")
+        except re.error as re_err:
+            raise QueryError(f"Invalid regular expression: {value}") from re_err
 
         return attr.op("regexp")(sqlalchemy.sql.expression.literal(value))
 
