@@ -21,7 +21,7 @@ Album
 
 .. automodule:: moe.library.album
    :members:
-   :exclude-members: year
+   :exclude-members: year, path
    :show-inheritance:
 
 Track
@@ -31,7 +31,7 @@ Track
 
 .. automodule:: moe.library.track
    :members:
-   :exclude-members: genre
+   :exclude-members: genre, path
    :show-inheritance:
 
 Extra
@@ -41,7 +41,7 @@ Extra
 
 .. automodule:: moe.library.extra
    :members:
-   :exclude-members: filename
+   :exclude-members: filename, path
    :show-inheritance:
 
 Library Item
