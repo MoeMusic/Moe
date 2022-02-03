@@ -1,3 +1,9 @@
+## v0.8.2 (2022-02-03)
+
+### Refactor
+
+- clean query_type code
+
 ## v0.8.1 (2021-09-21)
 
 ### Fix
