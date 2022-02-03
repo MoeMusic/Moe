@@ -15,10 +15,10 @@ from moe.plugins import add as moe_add
 
 log = logging.getLogger("moe.add")
 
-__all__ = ["AbortImport", "import_prompt"]
+__all__ = ["AbortImportError", "import_prompt"]
 
 
-class AbortImport(Exception):
+class AbortImportError(Exception):
     """Used to abort the import process."""
 
 
@@ -238,4 +238,4 @@ def _abort_changes(
     new_album: Album,
 ):
     """Aborts the album changes."""
-    raise AbortImport()
+    raise AbortImportError()
