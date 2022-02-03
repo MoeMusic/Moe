@@ -38,13 +38,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Query returned no tracks.
     """
-    if args.album:
-        query_type = "album"
-    elif args.extra:
-        query_type = "extra"
-    else:
-        query_type = "track"
-    items = query.query(args.query, query_type=query_type)
+    items = query.query(args.query, query_type=args.query_type)
 
     if not items:
         raise SystemExit(1)

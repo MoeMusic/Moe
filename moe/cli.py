@@ -99,11 +99,22 @@ query_parser.add_argument("query", help="query the library for matching tracks")
 
 query_type_group = query_parser.add_mutually_exclusive_group()
 query_type_group.add_argument(
-    "-a", "--album", action="store_true", help="query for matching albums"
+    "-a",
+    "--album",
+    action="store_const",
+    const="album",
+    dest="query_type",
+    help="query for matching albums",
 )
 query_type_group.add_argument(
-    "-e", "--extra", action="store_true", help="query for matching extras"
+    "-e",
+    "--extra",
+    action="store_const",
+    const="extra",
+    dest="query_type",
+    help="query for matching extras",
 )
+query_parser.set_defaults(query_type="track")
 
 
 @moe.hookimpl

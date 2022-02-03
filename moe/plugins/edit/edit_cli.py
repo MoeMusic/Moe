@@ -47,13 +47,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
-    if args.album:
-        query_type = "album"
-    elif args.extra:
-        query_type = "extra"
-    else:
-        query_type = "track"
-    items = query.query(args.query, query_type=query_type)
+    items = query.query(args.query, args.query_type)
 
     error_count = 0
     for term in args.fv_terms:
