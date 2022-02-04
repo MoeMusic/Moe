@@ -3,7 +3,6 @@
 from unittest.mock import patch
 
 import dynaconf
-import pytest
 
 import moe
 from moe.config import Config, ExtraPlugin
@@ -104,7 +103,6 @@ class ConfigPlugin:
         config.plugin_manager.register(ConfigPlugin, "config2")
 
 
-@pytest.mark.integration
 class TestHooks:
     """Test the config hook specifications."""
 

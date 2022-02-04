@@ -69,7 +69,6 @@ profile = 'black'
 [tool.pytest.ini_options]
 log_cli_level = 10
 markers = [
-    "integration: integration tests",
     "network: tests that make network calls"
 ]
 
