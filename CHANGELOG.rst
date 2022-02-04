@@ -2,8 +2,8 @@
 Changelog
 #########
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
+and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 Unreleased
 ==========
@@ -137,7 +137,7 @@ Refactor
 -  **move**: move/copying tracks & extras now requires a destination
 
 v0.3.12 (2021-07-12)
-===================
+====================
 
 Refactor
 --------
@@ -145,7 +145,7 @@ Refactor
 -  mrmoe -> moe
 
 v0.3.11 (2021-07-11)
-===================
+====================
 
 Refactor
 --------
@@ -153,7 +153,7 @@ Refactor
 -  **cli**: only print warnings or worse logs for external libraries
 
 v0.3.10 (2021-07-11)
-===================
+====================
 
 Fix
 ---

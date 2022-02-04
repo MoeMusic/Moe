@@ -9,6 +9,7 @@
    plugins/plugins
    fields
    query
+   changelog
    developers/developers
 
 ******************
