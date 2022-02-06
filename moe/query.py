@@ -224,7 +224,7 @@ def _create_expression(term: Dict[str, str]) -> sa.sql.elements.ClauseElement:
     if separator == ":":
         # path matching
         if str(attr) == "Track.path":
-            return Track.path == Path(value)
+            return Track.path == Path(value)  # type: ignore
         elif str(attr) == "Extra.path":
             return Extra.path == Path(value)  # type: ignore
         elif str(attr) == "Album.path":
