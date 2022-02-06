@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Tuple, Type, TypeVar
 
 import mediafile
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -266,10 +266,10 @@ class Track(LibItem, SABase):
             f"path={repr(self.path)})"
         )
 
-    @sqlalchemy.orm.validates("_genres")
+    @sa.orm.validates("_genres")
     def _append_genre(self, key: str, genre: _Genre) -> _Genre:
         """Prevents duplicate genres in the database by returning any existing ones."""
-        genre_session = sqlalchemy.orm.sessionmaker.object_session(self)
+        genre_session = sa.orm.sessionmaker.object_session(self)
         if not genre_session:
             return genre
 

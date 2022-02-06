@@ -4,7 +4,7 @@ import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy import Column, Date, Integer, String, and_, or_
 from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.schema import UniqueConstraint
@@ -224,7 +224,7 @@ class Album(LibItem, SABase):
     @year.expression  # noqa: WPS440
     def year(cls):  # noqa: B902, N805, WPS440
         """Returns a year at the sql level."""
-        return sqlalchemy.extract("year", cls.date)
+        return sa.extract("year", cls.date)
 
     def __eq__(self, other) -> bool:
         """Compares an Album by it's attributes."""

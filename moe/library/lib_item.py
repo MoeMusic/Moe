@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Tuple
 
-import sqlalchemy
+import sqlalchemy as sa
 
 __all__ = ["LibItem"]
 
@@ -21,14 +21,14 @@ class LibItem:
         raise NotImplementedError
 
 
-class PathType(sqlalchemy.types.TypeDecorator):
+class PathType(sa.types.TypeDecorator):
     """A custom type for paths for database storage.
 
     Normally, paths are Path type, but we can't store that in the database,
     so we normalize the paths first for database storage.
     """
 
-    impl = sqlalchemy.types.String  # sql type
+    impl = sa.types.String  # sql type
     cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
     def process_bind_param(self, pathlib_path, dialect):
