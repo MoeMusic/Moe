@@ -18,7 +18,7 @@ import shlex
 from pathlib import Path
 from typing import Any, Dict, List
 
-import sqlalchemy
+import sqlalchemy as sa
 
 from moe.config import MoeSession
 from moe.library.album import Album
@@ -106,7 +106,7 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
     return items
 
 
-def _create_query(terms: List[str], query_type: str) -> sqlalchemy.orm.query.Query:
+def _create_query(terms: List[str], query_type: str) -> sa.orm.query.Query:
     """Creates a query statement.
 
     Args:
@@ -188,7 +188,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
+def _create_expression(term: Dict[str, str]) -> sa.sql.elements.ClauseElement:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
@@ -241,6 +241,6 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         except re.error as re_err:
             raise QueryError(f"Invalid regular expression: {value}") from re_err
 
-        return attr.op("regexp")(sqlalchemy.sql.expression.literal(value))
+        return attr.op("regexp")(sa.sql.expression.literal(value))
 
     raise QueryError(f"Invalid query type: {separator}")
