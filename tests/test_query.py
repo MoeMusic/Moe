@@ -256,3 +256,16 @@ class TestQuery:
         tmp_session.merge(track2)
 
         assert len(query.query("*")) == 2
+
+    def test_missing_extras(self, mock_album_factory, tmp_session):
+        """Ensure albums without extras are still returned by a valid query."""
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+        album2.extras = []
+        assert album1.extras
+        assert not album2.extras
+
+        tmp_session.merge(album1)
+        tmp_session.merge(album2)
+
+        assert len(query.query("*", "album")) == 2

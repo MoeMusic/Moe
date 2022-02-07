@@ -122,17 +122,13 @@ def _create_query(terms: List[str], query_type: str) -> sa.orm.query.Query:
     session = MoeSession()
 
     if query_type == "track":
-        library_query = session.query(Track).join(Album)
+        library_query = session.query(Track).join(Album, Extra, isouter=True)
     elif query_type == "album":
-        library_query = session.query(Album).join(Track)
+        library_query = session.query(Album).join(Track, Extra, isouter=True)
     elif query_type == "extra":
-        library_query = session.query(Extra).join(Album).join(Track)
+        library_query = session.query(Extra).join(Album, Track, isouter=True)
     else:
         raise QueryError(f"Invalid query type: {query_type}")
-
-    # only join Extras if the table is not empty
-    if session.query(Extra).all() and query_type in {"album", "track"}:
-        library_query = library_query.join(Extra)
 
     for term in terms:
         library_query = library_query.filter(_create_expression(_parse_term(term)))
