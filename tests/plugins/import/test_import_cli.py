@@ -176,6 +176,24 @@ class TestProcessCandidates:
             config, mock_old_album, mock_candidates[0]
         )
 
+    def test_abort_import(self, tmp_config):
+        """Raise SystemExit if the import is aborted."""
+        config = tmp_config("default_plugins = ['cli', 'import']")
+
+        with pytest.raises(SystemExit) as error:
+            with patch.object(
+                moe_import.import_cli,
+                "import_prompt",
+                side_effect=moe_import.AbortImport,
+            ):
+                config.plugin_manager.hook.process_candidates(
+                    config=config,
+                    old_album=Mock(),
+                    candidates=[Mock()],
+                )
+
+        assert error.value.code != 0
+
     def test_process_no_candidates(self, tmp_config):
         """Don't display the import prompt if there are no candidates to process."""
         config = tmp_config("default_plugins = ['cli', 'import']")

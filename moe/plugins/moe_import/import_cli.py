@@ -57,7 +57,10 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 def process_candidates(config: Config, old_album: Album, candidates):
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
-        import_prompt(config, old_album, candidates[0])
+        try:
+            import_prompt(config, old_album, candidates[0])
+        except AbortImport as err:
+            raise SystemExit(1) from err
 
 
 @moe.hookimpl

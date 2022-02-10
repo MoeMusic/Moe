@@ -13,6 +13,7 @@ Fixed
 
 - Albums and tracks without extras now show when queried.
 - Multi-disc album tracklists are now sorted properly on import.
+- Aborting an import no longer displays the stack trace.
 
 v0.8.2 (2022-02-03)
 ===================
