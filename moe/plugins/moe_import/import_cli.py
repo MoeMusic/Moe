@@ -171,10 +171,11 @@ def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
 
     matches = moe_add.get_matching_tracks(old_album, new_album)
     matches.sort(
-        key=lambda match: match[1].track_num + match[1].disc * len(matches)
-        if match[1] is not None
-        else 0
-    )  # sort by new track's track number and disc
+        key=lambda match: (
+            getattr(match[1], "disc", 0),
+            getattr(match[1], "track_num", 0),
+        )
+    )  # sort by new track's disc then track number
     unmatched_tracks: List[Track] = []
     for old_track, new_track in matches:
         if not new_track:

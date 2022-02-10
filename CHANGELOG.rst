@@ -12,6 +12,7 @@ Fixed
 -----
 
 - Albums and tracks without extras now show when queried.
+- Multi-disc album tracklists are now sorted properly on import.
 
 v0.8.2 (2022-02-03)
 ===================
