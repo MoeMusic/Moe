@@ -5,7 +5,23 @@ Getting Started
 ************
 Installation
 ************
-See the :ref:`Installation Guide <Installation Guide>` to install Moe.
+1a. The latest *release* of Moe is available on `PyPI <https://pypi.org/project/moe>`_
+
+.. code-block:: bash
+
+    $ pip install moe
+
+1b. Or, if you want to be on the bleeding edge and can't wait for the latest release, you can install from github.
+
+.. code-block:: bash
+
+    $ pip install git+https://github.com/MoeMusic/Moe@master
+
+2. Ensure everything is working properly.
+
+.. code-block:: bash
+
+    $ moe --version
 
 ****************
 Required Reading
