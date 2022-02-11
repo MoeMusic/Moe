@@ -5,7 +5,6 @@
    :caption: Contents:
 
    getting_started
-   installation
    plugins/plugins
    fields
    query
