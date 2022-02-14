@@ -101,7 +101,7 @@ class Track(LibItem, SABase):
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
     def __init__(self, album: Album, track_num: int, path: Path, **kwargs):
-        """Create a track.
+        """Creates a Track.
 
         Args:
             album: Album the track belongs to.
@@ -226,7 +226,7 @@ class Track(LibItem, SABase):
         )
 
     def __eq__(self, other) -> bool:
-        """Compares a Track by it's attributes."""
+        """Compares a Track by its attributes."""
         if isinstance(other, Track):
             if self.album_obj.is_unique(other.album_obj):
                 return False

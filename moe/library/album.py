@@ -72,7 +72,7 @@ class Album(LibItem, SABase):
     def __init__(
         self, artist: str, title: str, date: datetime.date, path: Path, **kwargs
     ):
-        """Creates an album.
+        """Creates an Album.
 
         Args:
             artist: Album artist.
@@ -225,7 +225,7 @@ class Album(LibItem, SABase):
         return sa.extract("year", cls.date)
 
     def __eq__(self, other) -> bool:
-        """Compares an Album by it's attributes."""
+        """Compares an Album by its attributes."""
         if isinstance(other, Album):
             for attr in self.fields():
                 if getattr(self, attr) != getattr(other, attr):
@@ -234,7 +234,7 @@ class Album(LibItem, SABase):
         return False
 
     def __lt__(self, other: "Album") -> bool:
-        """Sort an album based on it's title, then artist, then date."""
+        """Sort an album based on its title, then artist, then date."""
         if self.title == other.title:
             if self.artist == other.artist:
                 return self.date < other.date
@@ -248,7 +248,7 @@ class Album(LibItem, SABase):
         return f"{self.artist} - {self.title} ({self.year})"
 
     def __repr__(self):
-        """Represents an Album using it's primary key and unique fields."""
+        """Represents an Album using its primary key and unique fields."""
         return (
             f"{self.__class__.__name__}("
             f"id={repr(self._id)}, "
