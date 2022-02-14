@@ -75,3 +75,17 @@ markers = [
 [build-system]
 requires = ["poetry>=1.1"]
 build-backend = "poetry.masonry.api"
+
+[tool.mypy]
+plugins = "sqlalchemy.ext.mypy.plugin"
+
+[[tool.mypy.overrides]]
+module = [
+    "alembic.*",  # don't care for migration scripts
+    "dynaconf.*",  # https://github.com/rochacbruno/dynaconf/issues/448
+    "mediafile.*",  # still supports python 2.7
+    "musicbrainzngs.*",
+    "pkg_resources.*",  # upgrade to importlib starting with python 3.8
+    "pluggy.*",  # https://github.com/pytest-dev/pluggy/pull/225
+]
+ignore_missing_imports = true
