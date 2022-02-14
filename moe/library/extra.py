@@ -40,7 +40,7 @@ class Extra(LibItem, SABase):
     album_obj: Album = relationship("Album", back_populates="extras")
 
     def __init__(self, path: Path, album: Album):
-        """Creates an extra.
+        """Creates an Extra.
 
         Args:
             path: Filesystem path of the extra file.
@@ -59,7 +59,7 @@ class Extra(LibItem, SABase):
         return "filename", "path"
 
     def __eq__(self, other):
-        """Compares an Extra by it's attributes."""
+        """Compares an Extra by its attributes."""
         if isinstance(other, Extra):
             if self.album_obj.is_unique(other.album_obj):
                 return False
