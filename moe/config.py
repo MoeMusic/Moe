@@ -209,7 +209,7 @@ class Config:
 
     def __init__(
         self,
-        config_dir: Path = Path.home() / ".config" / "moe",
+        config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008
         settings_filename: str = "config.toml",
         extra_plugins: List[ExtraPlugin] = None,
         engine: Optional[sa.engine.base.Engine] = None,
