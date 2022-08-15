@@ -48,11 +48,11 @@ class TestFmtAlbumPath:
         asciify_paths = true
         """
         config = tmp_config(tmp_settings)
-        non_ascii_title = "café"
+        ascii_title = "café"
 
         # assumes that an album's title will be part of the new path
-        real_album.title = non_ascii_title
-        str(moe_move.fmt_item_path(config, real_album))
+        real_album.title = ascii_title
+        assert str(moe_move.fmt_item_path(config, real_album)).isascii()
 
 
 class TestFmtExtraPath:
@@ -72,11 +72,11 @@ class TestFmtExtraPath:
         asciify_paths = true
         """
         config = tmp_config(tmp_settings)
-        non_ascii_title = "café"
+        ascii_title = "café"
 
         # test assumes that an extra's path name will be part of the new path
-        real_extra.path = real_extra.path.with_name(non_ascii_title)
-        str(moe_move.fmt_item_path(config, real_extra))
+        real_extra.path = real_extra.path.with_name(ascii_title)
+        assert str(moe_move.fmt_item_path(config, real_extra)).isascii()
 
 
 class TestFmtTrackPath:
@@ -96,11 +96,11 @@ class TestFmtTrackPath:
         asciify_paths = true
         """
         config = tmp_config(tmp_settings)
-        non_ascii_title = "café"
+        ascii_title = "café"
 
         # assumes that a track's title will be part of the new path
-        real_track.title = non_ascii_title
-        str(moe_move.fmt_item_path(config, real_track))
+        real_track.title = ascii_title
+        assert str(moe_move.fmt_item_path(config, real_track)).isascii()
 
 
 ########################################################################################
