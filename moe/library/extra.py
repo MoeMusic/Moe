@@ -1,7 +1,7 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, cast
 
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
@@ -16,9 +16,7 @@ from moe.library.lib_item import LibItem, PathType
 if TYPE_CHECKING:
     typed_hybrid_property = property
 else:
-    from sqlalchemy.ext.hybrid import (  # noqa: WPS440
-        hybrid_property as typed_hybrid_property,
-    )
+    from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Extra"]
 
@@ -35,10 +33,10 @@ class Extra(LibItem, SABase):
 
     __tablename__ = "extras"
 
-    _id: int = Column(Integer, primary_key=True)
-    path: Path = Column(PathType, nullable=False, unique=True)
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
 
-    _album_id: int = Column(Integer, ForeignKey("album._id"))
+    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
 
     def __init__(self, path: Path, album: Album):

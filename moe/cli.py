@@ -6,7 +6,7 @@ import argparse
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 import pkg_resources
 import pluggy
@@ -25,7 +25,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+    def add_command(cmd_parsers: argparse._SubParsersAction):
         """Add a sub-command to Moe's CLI.
 
         Args:
@@ -120,12 +120,12 @@ query_parser.set_defaults(query_type="track")
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `CLI` hookspecs to Moe."""
-    from moe.cli import Hooks  # noqa: WPS433, WPS442
+    from moe.cli import Hooks
 
     plugin_manager.add_hookspecs(Hooks)
 
 
-def main(args: List[str] = sys.argv[1:], config: Config = None):
+def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
     """Runs the CLI."""
     if not config:
         config = Config()
@@ -174,7 +174,7 @@ def _create_arg_parser() -> argparse.ArgumentParser:
 
     moe_parser = argparse.ArgumentParser()
     moe_parser.add_argument(
-        "--version", action="version", version=f"%(prog)s v{version}"  # noqa: WPS323
+        "--version", action="version", version=f"%(prog)s v{version}"
     )
     moe_parser.add_argument(
         "--verbose",

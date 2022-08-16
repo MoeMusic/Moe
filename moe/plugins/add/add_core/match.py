@@ -14,7 +14,7 @@ TrackCoord = Tuple[
 
 
 def get_matching_tracks(
-    album_a: Album, album_b: Album, match_threshold: int = 1
+    album_a: Album, album_b: Album, match_threshold: float = 1.0
 ) -> List[TrackMatch]:
     """Returns a list of tuples of track match pairs.
 
@@ -73,10 +73,10 @@ def get_matching_tracks(
                 track_match_values[track_pair2] = -1
 
     # pair unmatched tracks with `None`
-    for a_track in album_a.tracks:  # noqa: WPS440
+    for a_track in album_a.tracks:
         if not any(a_track == track_match[0] for track_match in track_matches):
             track_matches.append((a_track, None))
-    for b_track in album_b.tracks:  # noqa: WPS440
+    for b_track in album_b.tracks:
         if not any(b_track == track_match[1] for track_match in track_matches):
             track_matches.append((None, b_track))
 

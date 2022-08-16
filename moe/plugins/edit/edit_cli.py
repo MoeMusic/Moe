@@ -3,6 +3,7 @@
 import argparse
 import logging
 
+import moe
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -12,7 +13,7 @@ log = logging.getLogger("moe.edit")
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``edit`` command to Moe's CLI."""
     epilog_help = """
     The FIELD=VALUE argument sets a track's field, an album's field if an album query is

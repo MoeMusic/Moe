@@ -11,6 +11,7 @@ import logging
 from collections import OrderedDict
 from typing import Any, Dict, List
 
+import moe
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -33,7 +34,7 @@ def plugin_registration(config: Config):
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``info`` command to Moe's CLI."""
     info_parser = cmd_parsers.add_parser(
         "info",
@@ -59,7 +60,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     if not items:
         raise SystemExit(1)
 
-    print(_fmt_infos(items), end="")  # noqa: WPS421
+    print(_fmt_infos(items), end="")
 
 
 def _fmt_infos(items: List[LibItem]):

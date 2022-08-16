@@ -2,7 +2,7 @@
 
 import pytest
 
-import moe
+import moe.cli
 from moe.config import Config
 
 

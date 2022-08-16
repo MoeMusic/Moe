@@ -7,6 +7,7 @@ from typing import List, Optional, cast
 import pluggy
 import questionary
 
+import moe
 import moe.cli
 from moe.config import Config
 from moe.library.album import Album
@@ -48,7 +49,7 @@ class Hooks:
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `import` cli hookspecs to Moe."""
-    from moe.plugins.moe_import.import_cli import Hooks  # noqa: WPS433, WPS442
+    from moe.plugins.moe_import.import_cli import Hooks
 
     plugin_manager.add_hookspecs(Hooks)
 
@@ -98,7 +99,7 @@ def import_prompt(
     existing_album = new_album.get_existing()
     old_album.merge(existing_album, overwrite_album_info=False)
 
-    print(_fmt_album_changes(old_album, new_album))  # noqa: WPS421
+    print(_fmt_album_changes(old_album, new_album))
 
     prompt_choices: List[moe.cli.PromptChoice] = []
     config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
@@ -108,8 +109,8 @@ def import_prompt(
 
     for prompt_choice in prompt_choices:
         if prompt_choice.shortcut_key == user_input:
-            prompt_choice.func(  # type: ignore
-                config=config,
+            prompt_choice.func(
+                config=config,  # type: ignore
                 old_album=old_album,
                 new_album=new_album,
             )
@@ -225,9 +226,9 @@ def _apply_changes(
     """Applies the album changes."""
     new_album.path = old_album.path
     for old_track, new_track in moe_add.get_matching_tracks(old_album, new_album):
-        if not old_track:
-            new_track.album_obj = None  # type: ignore # (causes mypy error)
-        elif new_track:
+        if not old_track and new_track:
+            new_album.tracks.remove(new_track)
+        elif old_track and new_track:
             new_track.path = old_track.path
 
     for extra in old_album.extras:

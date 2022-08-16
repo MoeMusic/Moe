@@ -2,7 +2,7 @@
 
 import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 import sqlalchemy as sa
 from sqlalchemy import Column, Date, Integer, String, and_, or_
@@ -15,16 +15,14 @@ from moe.library.lib_item import LibItem, PathType
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
-    from moe.library.extra import Extra  # noqa: F401, WPS433
-    from moe.library.track import Track  # noqa: F401, WPS433
+    from moe.library.extra import Extra  # noqa: F401
+    from moe.library.track import Track  # noqa: F401
 
     # Makes hybrid_property's have the same typing as a normal properties.
     # Use until the stubs are improved.
     typed_hybrid_property = property
 else:
-    from sqlalchemy.ext.hybrid import (  # noqa: WPS440
-        hybrid_property as typed_hybrid_property,
-    )
+    from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Album"]
 
@@ -48,13 +46,13 @@ class Album(LibItem, SABase):
 
     __tablename__ = "album"
 
-    _id: int = Column(Integer, primary_key=True)
-    artist: str = Column(String, nullable=False)
-    date: datetime.date = Column(Date, nullable=False)
-    disc_total: int = Column(Integer, nullable=False, default=1)
-    mb_album_id: str = Column(String, nullable=False, default="")
-    path: Path = Column(PathType, nullable=False, unique=True)
-    title: str = Column(String, nullable=False)
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    artist: str = cast(str, Column(String, nullable=False))
+    date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
+    disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
+    mb_album_id: str = cast(str, Column(String, nullable=False, default=""))
+    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
+    title: str = cast(str, Column(String, nullable=False))
 
     __table_args__ = (UniqueConstraint("artist", "title", "date"),)
 
@@ -217,12 +215,12 @@ class Album(LibItem, SABase):
             extra._album_id = self._id
 
     @typed_hybrid_property
-    def year(self) -> int:
+    def year(self) -> int:  # type: ignore
         """Gets an Album's year."""
         return self.date.year
 
-    @year.expression  # noqa: WPS440
-    def year(cls):  # noqa: B902, N805, WPS440
+    @year.expression  # type: ignore
+    def year(cls):  # noqa: B902, N805
         """Returns a year at the sql level."""
         return sa.extract("year", cls.date)
 

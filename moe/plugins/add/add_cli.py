@@ -15,7 +15,7 @@ __all__: List[str] = []
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``add`` command to Moe's CLI."""
     add_parser = cmd_parsers.add_parser(
         "add", description="Adds music to the library.", help="add music to the library"

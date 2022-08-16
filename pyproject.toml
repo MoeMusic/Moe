@@ -22,11 +22,12 @@ moe = 'moe.cli:main'
 python = ">=3.7, <3.11"
 alembic = "^1.4.2"
 dynaconf = "^3.1.4"
+mccabe = "^0.7.0"
 mediafile = "^0.6.0"
 musicbrainzngs = "^0.7.1"
 pluggy = "^0.13.1"
 pyyaml = "^5.3.1"
-SQLAlchemy = {extras = ["mypy"], version = "^1.4.15"}
+SQLAlchemy = "^1.4.15"
 Unidecode = "^1.2.0"
 questionary = "^1.9.0"
 
@@ -39,16 +40,18 @@ Sphinx = {version = "^4.0.2", optional = true}
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"
 commitizen = "^2.17.12"
+darglint = "^1.8.1"
 debugpy = "^1.4.1"
-flake8 = "^3.8.3"
+flake8 = "^5.0.4"
+flake8-bugbear = "^22.7.1"
+flake8-comprehensions = "^3.10.0"
 flake8-docstrings = "^1.5.0"
+flake8-isort = "^4.2.0"
 flake8-use-fstring = "^1.1"
-mypy = "^0.910"
 pre-commit = "^2.6.0"
+pyright = "^1.1.0"
 pytest = "^6.0.1"
 pytest-cov = "^2.10.0"
-sqlalchemy2-stubs = "^0.0.2-alpha.1"
-wemake-python-styleguide = "^0.15"
 
 # needed because readthedocs doesn't natively support poetry
 # https://github.com/readthedocs/readthedocs.org/issues/4912
@@ -72,20 +75,13 @@ markers = [
     "network: tests that make network calls"
 ]
 
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+exclude = [
+    "alembic",
+]
+
 [build-system]
 requires = ["poetry-core>=1.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-plugins = "sqlalchemy.ext.mypy.plugin"
-
-[[tool.mypy.overrides]]
-module = [
-    "alembic.*",  # don't care for migration scripts
-    "dynaconf.*",  # https://github.com/rochacbruno/dynaconf/issues/448
-    "mediafile.*",  # still supports python 2.7
-    "musicbrainzngs.*",
-    "pkg_resources.*",  # upgrade to importlib starting with python 3.8
-    "pluggy.*",  # https://github.com/pytest-dev/pluggy/pull/225
-]
-ignore_missing_imports = true

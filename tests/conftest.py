@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 from moe.config import Config, ExtraPlugin, MoeSession, session_factory
@@ -55,7 +56,7 @@ def tmp_config(
         settings: str = "",
         init_db: bool = False,
         tmp_db: bool = False,
-        extra_plugins: List[ExtraPlugin] = None,
+        extra_plugins: Optional[List[ExtraPlugin]] = None,
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if settings:
@@ -82,7 +83,7 @@ def tmp_config(
 
 
 @pytest.fixture
-def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
+def tmp_session(tmp_config) -> Iterator[sqlalchemy.orm.session.Session]:
     """Creates a temporary session.
 
     If you are also using `tmp_config` in your test, ensure to specify `tmp_db=True`
@@ -93,7 +94,7 @@ def tmp_session(tmp_config) -> Iterator[sa.orm.session.Session]:
     """
     try:
         MoeSession().get_bind()
-    except sa.exc.UnboundExecutionError:
+    except sqlalchemy.exc.UnboundExecutionError:
         MoeSession.remove()
         tmp_config("default_plugins = []", tmp_db=True)
 
@@ -145,7 +146,9 @@ def mock_track_factory() -> Callable[[], Track]:
         Unique Track object with each call.
     """
 
-    def _mock_track(track_num: int = 0, album: Album = None, year: int = 1996):
+    def _mock_track(
+        track_num: int = 0, album: Optional[Album] = None, year: int = 1996
+    ):
         if not album:
             album = Album(
                 "OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock()
@@ -217,7 +220,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
     def mock_lt(self, other):
         return self.name < other.name
 
-    def _mock_extra(album: Album = None, year: int = 1996):
+    def _mock_extra(album: Optional[Album] = None, year: int = 1996):
         if not album:
             album = Album(
                 "OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock()
@@ -262,7 +265,9 @@ def real_track_factory(
         Unique Track.
     """
 
-    def _real_track(track_num: int = 0, album: Album = None, year: int = 1994):
+    def _real_track(
+        track_num: int = 0, album: Optional[Album] = None, year: int = 1994
+    ):
         track = mock_track_factory(track_num, album, year)
 
         if not album:
@@ -345,7 +350,7 @@ def real_extra_factory(mock_extra_factory, tmp_path_factory) -> Callable[[], Ext
         Unique Extra.
     """
 
-    def _real_extra(album: Album = None, year: int = 1994):
+    def _real_extra(album: Optional[Album] = None, year: int = 1994):
         extra = mock_extra_factory(album, year)
 
         if not album:

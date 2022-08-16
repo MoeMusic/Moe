@@ -3,7 +3,7 @@
 import argparse
 from typing import List, cast
 
-import sqlalchemy as sa
+import sqlalchemy.orm
 
 import moe
 from moe import query
@@ -13,7 +13,7 @@ from moe.plugins import move as moe_move
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``move`` command to Moe's CLI."""
     move_parser = cmd_parsers.add_parser(
         "move",
@@ -53,7 +53,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
 
             # temporarily set the album's path so track/extra dests use the right
             # album directory
-            sa.orm.attributes.set_committed_value(dry_album, "path", album_dest)
+            sqlalchemy.orm.attributes.set_committed_value(dry_album, "path", album_dest)
 
             for dry_track in dry_album.tracks:
                 track_dest = moe_move.fmt_item_path(config, dry_track)
@@ -65,7 +65,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
                     dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
 
         if dry_run_str:
-            print(dry_run_str.lstrip())  # noqa: WPS421
+            print(dry_run_str.lstrip())
     else:
         for album in albums:
             moe_move.move_item(config, album)

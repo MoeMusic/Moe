@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-import moe
+import moe.cli
 
 
 @pytest.fixture

@@ -14,7 +14,7 @@ from . import mb_cli, mb_core
 from .mb_core import *
 
 __all__ = []
-__all__.extend(mb_core.__all__)  # noqa: WPS609
+__all__.extend(mb_core.__all__)
 
 
 @moe.hookimpl
