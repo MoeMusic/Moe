@@ -9,7 +9,7 @@ from . import move_cli, move_core
 from .move_core import *
 
 __all__ = []
-__all__.extend(move_core.__all__)  # noqa: WPS609
+__all__.extend(move_core.__all__)
 
 
 @moe.hookimpl

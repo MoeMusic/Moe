@@ -24,16 +24,18 @@ from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import dynaconf
 import pluggy
-import sqlalchemy as sa
+import sqlalchemy
+import sqlalchemy.event
 import sqlalchemy.orm
 
 import alembic.command
 import alembic.config
 import moe
+import moe.config
 from moe.library.lib_item import LibItem
 
-session_factory = sa.orm.sessionmaker()
-MoeSession = sa.orm.scoped_session(session_factory)
+session_factory = sqlalchemy.orm.sessionmaker()
+MoeSession = sqlalchemy.orm.scoped_session(session_factory)
 
 __all__ = ["Config", "ExtraPlugin"]
 
@@ -86,7 +88,7 @@ class Hooks:
         Example:
             Inside your hook implementation::
 
-                from moe.plugins.add import Hooks  # noqa: WPS433, WPS442
+                from moe.plugins.add import Hooks
                 plugin_manager.add_hookspecs(Hooks)
         """
 
@@ -211,8 +213,8 @@ class Config:
         self,
         config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008
         settings_filename: str = "config.toml",
-        extra_plugins: List[ExtraPlugin] = None,
-        engine: Optional[sa.engine.base.Engine] = None,
+        extra_plugins: Optional[List[ExtraPlugin]] = None,
+        engine: Optional[sqlalchemy.engine.base.Engine] = None,
         init_db=True,
     ):
         """Initializes the plugin manager and configuration directory.
@@ -254,7 +256,7 @@ class Config:
         db_path = self.config_dir / "library.db"
 
         if not self.engine:
-            self.engine = sa.create_engine("sqlite:///" + str(db_path))
+            self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
 
         session_factory.configure(bind=self.engine)
 
@@ -262,7 +264,7 @@ class Config:
         if create_tables:
             config_path = Path(__file__)
             alembic_cfg = alembic.config.Config(
-                config_path.parents[1] / "alembic" / "alembic.ini"
+                str(config_path.parents[1] / "alembic" / "alembic.ini")
             )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
@@ -283,8 +285,8 @@ class Config:
         )
 
         # create regular expression function for sqlite queries
-        @sa.event.listens_for(self.engine, "begin")  # noqa: WPS430
-        def sqlite_engine_connect(conn):  # noqa: WPS430
+        @sqlalchemy.event.listens_for(self.engine, "begin")
+        def sqlite_engine_connect(conn):
             if (sys.version_info.major, sys.version_info.minor) < (3, 8):
                 conn.connection.create_function("regexp", 2, _regexp)
             else:
@@ -292,7 +294,7 @@ class Config:
                     "regexp", 2, _regexp, deterministic=True
                 )
 
-        def _regexp(pattern: str, col_value) -> bool:  # noqa: WPS430
+        def _regexp(pattern: str, col_value) -> bool:
             """Use the python re module for sqlite regular expression functionality.
 
             Args:
@@ -373,8 +375,8 @@ class Config:
 
 
 def _edit_new_items(
-    session: sa.orm.Session,
-    flush_context: sa.orm.UOWTransaction,
+    session: sqlalchemy.orm.Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
     instances: Optional[Any],
     config: Config,
 ):
@@ -396,8 +398,8 @@ def _edit_new_items(
 
 
 def _process_new_items(
-    session: sa.orm.Session,
-    flush_context: sa.orm.UOWTransaction,
+    session: sqlalchemy.orm.Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
     config: Config,
 ):
     """Runs the ``process_new_items`` hook specification.

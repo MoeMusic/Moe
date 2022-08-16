@@ -8,6 +8,7 @@ import argparse
 import logging
 from typing import List
 
+import moe
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -26,7 +27,7 @@ def plugin_registration(config: Config):
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``list`` command to Moe's CLI."""
     ls_parser = cmd_parsers.add_parser(
         "list",
@@ -61,6 +62,6 @@ def _parse_args(config: Config, args: argparse.Namespace):
 
     for item in items:
         if args.paths:
-            print(item.path)  # noqa: WPS421
+            print(item.path)
         else:
-            print(item)  # noqa: WPS421
+            print(item)

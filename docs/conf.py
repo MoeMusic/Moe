@@ -44,7 +44,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "global.rst"]
 
 # `rst_prolong` is automatically included in every source file.
-rst_prolog = open("global.rst", "r").read()  # noqa: WPS515
+rst_prolog = open("global.rst", "r").read()
 
 # include type hints in function description
 # autodoc_typehints = "description"

@@ -9,7 +9,7 @@ from . import edit_cli, edit_core
 from .edit_core import *
 
 __all__ = []
-__all__.extend(edit_core.__all__)  # noqa: WPS609
+__all__.extend(edit_core.__all__)
 
 
 @moe.hookimpl

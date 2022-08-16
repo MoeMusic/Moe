@@ -68,7 +68,7 @@ class Hooks:
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
-    from moe.plugins.add.add_core.add import Hooks  # noqa: WPS433, WPS442
+    from moe.plugins.add.add_core.add import Hooks
 
     plugin_manager.add_hookspecs(Hooks)
 

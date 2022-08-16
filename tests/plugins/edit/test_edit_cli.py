@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-import moe
+import moe.cli
 from moe.config import Config
 from moe.plugins.edit import EditError
 

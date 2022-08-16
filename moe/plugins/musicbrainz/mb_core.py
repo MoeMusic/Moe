@@ -31,7 +31,7 @@ musicbrainzngs.set_useragent(
 )
 
 # information to include in the release api query
-RELEASE_INCLUDES = [  # noqa: WPS407
+RELEASE_INCLUDES = [
     "aliases",
     "artists",
     "artist-credits",

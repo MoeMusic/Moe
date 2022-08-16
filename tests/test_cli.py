@@ -54,7 +54,7 @@ class CLIPlugin:
         """Add a `cli` command to Moe."""
 
         def say_hello(config, args):
-            print("hello")  # noqa: WPS421
+            print("hello")
 
         cli_parser = cmd_parsers.add_parser("cli")
         cli_parser.add_argument("cli")

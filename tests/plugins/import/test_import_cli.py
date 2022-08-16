@@ -89,9 +89,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(  # noqa: WPS421
-            moe_import.import_cli._fmt_album_changes(old_album, new_album)
-        )
+        print(moe_import.import_cli._fmt_album_changes(old_album, new_album))
 
     def test_unmatched_tracks(self, mock_album):
         """Print prompt for albums with non-matching tracks."""
@@ -103,9 +101,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(  # noqa: WPS421
-            moe_import.import_cli._fmt_album_changes(old_album, new_album)
-        )
+        print(moe_import.import_cli._fmt_album_changes(old_album, new_album))
 
     def test_multi_disc_album(self, mock_album, mock_track_factory):
         """Prompt supports multi_disc albums."""
@@ -115,9 +111,7 @@ class TestFmtAlbumChanges:
         mock_track_factory(track_num=2, album=mock_album)
         new_album = copy.deepcopy(mock_album)
 
-        print(  # noqa: WPS421
-            moe_import.import_cli._fmt_album_changes(mock_album, new_album)
-        )
+        print(moe_import.import_cli._fmt_album_changes(mock_album, new_album))
 
 
 class ImportPlugin:

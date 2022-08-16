@@ -40,6 +40,8 @@ def post_add(config: Config, item: LibItem):
         album = item
     elif isinstance(item, (Extra, Track)):
         album = item.album_obj
+    else:
+        raise NotImplementedError
 
     copy_item(config, album)
 
@@ -56,6 +58,9 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
 
     Returns:
         Formatted item path under the config ``library_path``.
+
+    Raises:
+        NotImplementedError: Unknown item.
     """
     if isinstance(item, Album):
         new_path = _fmt_album_path(config, item)
@@ -63,6 +68,8 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
         new_path = _fmt_extra_path(config, item)
     elif isinstance(item, Track):
         new_path = _fmt_track_path(config, item)
+    else:
+        raise NotImplementedError
 
     if config.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))

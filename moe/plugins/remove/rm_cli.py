@@ -7,6 +7,7 @@ Note:
 import argparse
 from typing import List
 
+import moe
 import moe.cli
 from moe import query
 from moe.config import Config
@@ -16,7 +17,7 @@ __all__: List[str] = []
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):  # noqa: WPS437
+def add_command(cmd_parsers: argparse._SubParsersAction):
     """Adds the ``remove`` command to Moe's CLI."""
     rm_parser = cmd_parsers.add_parser(
         "remove",

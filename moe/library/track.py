@@ -3,10 +3,10 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import List, Tuple, Type, TypeVar
+from typing import List, Optional, Tuple, Type, TypeVar, cast
 
 import mediafile
-import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
@@ -30,7 +30,7 @@ class _Genre(SABase):
 
     __tablename__ = "genre"
 
-    name: str = Column(String, nullable=False, primary_key=True)
+    name: str = cast(str, Column(String, nullable=False, primary_key=True))
 
     def __init__(self, name: str):
         self.name = name
@@ -46,7 +46,7 @@ __table_args__ = ()
 
 
 # Track generic, used for typing classmethod
-T = TypeVar("T", bound="Track")  # noqa: WPS111
+T = TypeVar("T", bound="Track")
 
 
 class Track(LibItem, SABase):
@@ -76,15 +76,15 @@ class Track(LibItem, SABase):
 
     __tablename__ = "track"
 
-    _id: int = Column(Integer, primary_key=True)
-    artist: str = Column(String, nullable=False, default="")
-    disc: int = Column(Integer, nullable=False, default=1)
-    mb_track_id: str = Column(String, nullable=False, default="")
-    path: Path = Column(PathType, nullable=False, unique=True)
-    title: str = Column(String, nullable=False, default="")
-    track_num: int = Column(Integer, nullable=False)
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    artist: str = cast(str, Column(String, nullable=False, default=""))
+    disc: int = cast(int, Column(Integer, nullable=False, default=1))
+    mb_track_id: str = cast(str, Column(String, nullable=False, default=""))
+    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
+    title: str = cast(str, Column(String, nullable=False, default=""))
+    track_num: int = cast(int, Column(Integer, nullable=False))
 
-    _album_id: int = Column(Integer, ForeignKey("album._id"))
+    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
     albumartist: str = association_proxy("album_obj", "artist")
@@ -128,7 +128,7 @@ class Track(LibItem, SABase):
                 setattr(self, key, value)
 
     @classmethod
-    def from_tags(cls: Type[T], path: Path, album_path: Path = None) -> T:
+    def from_tags(cls: Type[T], path: Path, album_path: Optional[Path] = None) -> T:
         """Alternate initializer that creates a Track from its tags.
 
         Will read any tags from the given path and save them to the Track.
@@ -266,10 +266,10 @@ class Track(LibItem, SABase):
             f"path={repr(self.path)})"
         )
 
-    @sa.orm.validates("_genres")
+    @sa_orm.validates("_genres")
     def _append_genre(self, key: str, genre: _Genre) -> _Genre:
         """Prevents duplicate genres in the database by returning any existing ones."""
-        genre_session = sa.orm.sessionmaker.object_session(self)
+        genre_session = sa_orm.sessionmaker.object_session(self)
         if not genre_session:
             return genre
 

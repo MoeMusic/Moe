@@ -9,7 +9,7 @@ from . import rm_cli, rm_core
 from .rm_core import *
 
 __all__ = []
-__all__.extend(rm_core.__all__)  # noqa: WPS609
+__all__.extend(rm_core.__all__)
 
 
 @moe.hookimpl

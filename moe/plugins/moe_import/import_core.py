@@ -19,7 +19,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def import_candidates(config: Config, album: Album) -> Album:
+    def import_candidates(config: Config, album: Album) -> Album:  # type: ignore
         """Imports candidate albums from implemented sources based on the given album.
 
         This hook should be used to import metadata from an external source and return
@@ -55,7 +55,7 @@ class Hooks:
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     """Registers `import` core hookspecs to Moe."""
-    from moe.plugins.moe_import.import_core import Hooks  # noqa: WPS433, WPS442
+    from moe.plugins.moe_import.import_core import Hooks
 
     plugin_manager.add_hookspecs(Hooks)
 
@@ -67,6 +67,8 @@ def pre_add(config: Config, item: LibItem):
         album = item
     elif isinstance(item, (Extra, Track)):
         album = item.album_obj
+    else:
+        raise NotImplementedError
 
     import_album(config, album)
 
