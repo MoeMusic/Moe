@@ -251,7 +251,7 @@ class Config:
 
         Args:
             create_tables: Whether or not to create and update the db tables.
-                If doing db migrations manually, e.g. in alembic, this shuold be False.
+                If doing db migrations manually, e.g. in alembic, this should be False.
         """
         db_path = self.config_dir / "library.db"
 
