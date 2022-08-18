@@ -250,8 +250,8 @@ class TestAddImportPromptChoice:
         """The `abort` prompt choice should raise an AbortImport error."""
         config = tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
         new_album = copy.deepcopy(mock_album)
-        new_album.title = "new title"
-        assert mock_album.title != new_album.title
+        new_album.mb_album_id = "1234"
+        assert mock_album.mb_album_id != new_album.mb_album_id
 
         with pytest.raises(moe_import.AbortImport):
             with patch.object(moe_import.import_cli, "_get_input", return_value="x"):

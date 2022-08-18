@@ -1,8 +1,8 @@
-"""Initial generation.
+"""initial generation.
 
-Revision ID: 10f2c1aedd13
-Revises:
-Create Date: 2021-06-27 19:39:21.312631
+Revision ID: 530acc53e20c
+Revises: 
+Create Date: 2022-08-17 16:54:33.820645
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ import moe
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "10f2c1aedd13"
+revision = "530acc53e20c"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,12 +24,12 @@ def upgrade():
         sa.Column("_id", sa.Integer(), nullable=False),
         sa.Column("artist", sa.String(), nullable=False),
         sa.Column("date", sa.Date(), nullable=False),
-        sa.Column("disc_total", sa.Integer(), nullable=False),
-        sa.Column("mb_album_id", sa.String(), nullable=False),
+        sa.Column("disc_total", sa.Integer(), nullable=False, default=1),
+        sa.Column("mb_album_id", sa.String(), nullable=True),
         sa.Column("path", moe.library.lib_item.PathType(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("_id"),
-        sa.UniqueConstraint("artist", "title", "date"),
+        sa.UniqueConstraint("mb_album_id"),
         sa.UniqueConstraint("path"),
     )
     op.create_table(
@@ -40,26 +40,23 @@ def upgrade():
     op.create_table(
         "extras",
         sa.Column("_id", sa.Integer(), nullable=False),
-        sa.Column("_filename", sa.String(), nullable=False),
-        sa.Column("_path", moe.library.lib_item.PathType(), nullable=False),
+        sa.Column("path", moe.library.lib_item.PathType(), nullable=False),
         sa.Column("_album_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["_album_id"],
             ["album._id"],
         ),
         sa.PrimaryKeyConstraint("_id"),
-        sa.UniqueConstraint("_filename", "_album_id"),
-        sa.UniqueConstraint("_path"),
+        sa.UniqueConstraint("path"),
     )
     op.create_table(
         "track",
         sa.Column("_id", sa.Integer(), nullable=False),
-        sa.Column("artist", sa.String(), nullable=False),
-        sa.Column("disc", sa.Integer(), nullable=False),
-        sa.Column("file_ext", sa.String(), nullable=False),
-        sa.Column("mb_track_id", sa.String(), nullable=False),
+        sa.Column("artist", sa.String(), nullable=True),
+        sa.Column("disc", sa.Integer(), nullable=False, default=1),
+        sa.Column("mb_track_id", sa.String(), nullable=True),
         sa.Column("path", moe.library.lib_item.PathType(), nullable=False),
-        sa.Column("title", sa.String(), nullable=False),
+        sa.Column("title", sa.String(), nullable=True),
         sa.Column("track_num", sa.Integer(), nullable=False),
         sa.Column("_album_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -68,6 +65,7 @@ def upgrade():
         ),
         sa.PrimaryKeyConstraint("_id"),
         sa.UniqueConstraint("disc", "track_num", "_album_id"),
+        sa.UniqueConstraint("mb_track_id"),
         sa.UniqueConstraint("path"),
     )
     op.create_table(
