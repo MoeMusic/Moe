@@ -59,23 +59,6 @@ class TestAddItemFromDir:
 
         assert not tmp_session.query(Track.path).filter_by(path=new_path).scalar()
 
-    def test_different_tracks(
-        self, tmp_path, real_track_factory, tmp_session, tmp_add_config
-    ):
-        """Error if tracks have different album attributes.
-
-        All tracks in a given directory should belong to the same album.
-        """
-        tmp_album_path = tmp_path / "tmp_album"
-        tmp_album_path.mkdir()
-        shutil.copy(real_track_factory(year=1).path, tmp_album_path)
-        shutil.copy(real_track_factory(year=2).path, tmp_album_path)
-
-        with pytest.raises(add.AddError):
-            add.add_item(tmp_add_config, tmp_album_path)
-
-        assert not tmp_session.query(Album).scalar()
-
     def test_duplicate_tracks(self, real_album, tmp_session, tmp_add_config):
         """Don't fail album add if a track (by tags) already exists in the library."""
         tmp_session.merge(real_album.tracks[0])
@@ -104,7 +87,7 @@ class TestAddItemFromDir:
         existing_album = real_album_factory()
         new_album.date = existing_album.date
         new_album.path = existing_album.path
-        existing_album.mb_album_id = "1234"
+        existing_album.artist = "1234"
         assert not new_album.is_unique(existing_album)
 
         for track in new_album.tracks:
@@ -113,7 +96,7 @@ class TestAddItemFromDir:
         for extra_num, extra in enumerate(new_album.extras):
             extra.path = Path(f"{extra_num}.txt")
 
-        assert new_album.mb_album_id != existing_album.mb_album_id
+        assert new_album.artist != existing_album.artist
         assert new_album.tracks != existing_album.tracks
         assert new_album.extras != existing_album.extras
 
@@ -122,7 +105,7 @@ class TestAddItemFromDir:
             add.add_item(tmp_add_config, new_album.path)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_album_id == existing_album.mb_album_id
+        assert db_album.artist == existing_album.artist
         assert sorted(db_album.tracks) == sorted(new_album.tracks)
         assert sorted(db_album.extras) == sorted(new_album.extras)
 
@@ -163,7 +146,7 @@ class TestAddItemFromFile:
         assert tmp_session.query(Track.path).filter_by(path=real_track.path).one()
 
     def test_min_reqd_tags(self, reqd_mp3_path, tmp_session, tmp_add_config):
-        """We can add a track with only a track_num, album, albumartist, and year."""
+        """We can add a track that consists only of the minimum required tags."""
         add.add_item(tmp_add_config, reqd_mp3_path)
 
         assert tmp_session.query(Track.path).filter_by(path=reqd_mp3_path).one()

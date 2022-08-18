@@ -77,11 +77,11 @@ class Track(LibItem, SABase):
     __tablename__ = "track"
 
     _id: int = cast(int, Column(Integer, primary_key=True))
-    artist: str = cast(str, Column(String, nullable=False, default=""))
+    artist: str = cast(str, Column(String, nullable=False))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
-    mb_track_id: str = cast(str, Column(String, nullable=False, default=""))
+    mb_track_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
-    title: str = cast(str, Column(String, nullable=False, default=""))
+    title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
@@ -100,11 +100,12 @@ class Track(LibItem, SABase):
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
-    def __init__(self, album: Album, track_num: int, path: Path, **kwargs):
+    def __init__(self, album: Album, title: str, track_num: int, path: Path, **kwargs):
         """Creates a Track.
 
         Args:
             album: Album the track belongs to.
+            title: Track title.
             track_num: Track number.
             path: Filesystem path of the track file.
             **kwargs: Any other fields to assign to the Track.
@@ -113,15 +114,14 @@ class Track(LibItem, SABase):
             If you wish to add several tracks to the same album, ensure the album
             already exists in the database, or use `session.merge()`.
         """
-        self.album_obj = album
+        album.tracks.append(self)
         self.path = path
+        self.title = title
         self.track_num = track_num
 
         # set default values
-        self.artist = ""
+        self.artist = self.albumartist
         self.disc = 1
-        self.mb_track_id = ""
-        self.title = ""
 
         for key, value in kwargs.items():
             if value:
@@ -151,6 +151,8 @@ class Track(LibItem, SABase):
             missing_tags.append("album")
         if not audio_file.albumartist and not audio_file.artist:
             missing_tags.append("albumartist")
+        if not audio_file.title:
+            missing_tags.append("title")
         if not audio_file.track:
             missing_tags.append("track_num")
         if not audio_file.date:

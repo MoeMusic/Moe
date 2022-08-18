@@ -5,9 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 import sqlalchemy as sa
-from sqlalchemy import Column, Date, Integer, String, and_, or_
+from sqlalchemy import Column, Date, Integer, String, or_
 from sqlalchemy.orm import joinedload, relationship
-from sqlalchemy.schema import UniqueConstraint
 
 from moe.config import MoeSession
 from moe.library import SABase
@@ -15,8 +14,8 @@ from moe.library.lib_item import LibItem, PathType
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
-    from moe.library.extra import Extra  # noqa: F401
-    from moe.library.track import Track  # noqa: F401
+    from moe.library.extra import Extra
+    from moe.library.track import Track
 
     # Makes hybrid_property's have the same typing as a normal properties.
     # Use until the stubs are improved.
@@ -28,7 +27,7 @@ __all__ = ["Album"]
 
 
 class Album(LibItem, SABase):
-    """An album is a collection of tracks.
+    """An album is a collection of tracks and represents a specific album release.
 
     Albums also house any attributes that are shared by tracks e.g. albumartist.
 
@@ -50,11 +49,9 @@ class Album(LibItem, SABase):
     artist: str = cast(str, Column(String, nullable=False))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
-    mb_album_id: str = cast(str, Column(String, nullable=False, default=""))
+    mb_album_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
-
-    __table_args__ = (UniqueConstraint("artist", "title", "date"),)
 
     tracks: "List[Track]" = relationship(
         "Track",
@@ -93,7 +90,6 @@ class Album(LibItem, SABase):
 
         # set default values
         self.disc_total = 1
-        self.mb_album_id = ""
 
         for key, value in kwargs.items():
             if value:
@@ -114,21 +110,12 @@ class Album(LibItem, SABase):
         )
 
     def get_existing(self) -> Optional["Album"]:
-        """Gets a matching Album in the library either by its path or unique tags."""
+        """Gets a matching Album in the library by its unique attributes."""
         session = MoeSession()
 
         existing_album = (
             session.query(Album)
-            .filter(
-                or_(
-                    and_(
-                        Album.artist == self.artist,
-                        Album.title == self.title,
-                        Album.date == self.date,
-                    ),
-                    Album.path == self.path,
-                )
-            )
+            .filter(or_(Album.path == self.path, Album.mb_album_id == self.mb_album_id))
             .options(joinedload("*"))
             .one_or_none()
         )
@@ -157,11 +144,7 @@ class Album(LibItem, SABase):
 
     def is_unique(self, other: "Album") -> bool:
         """Whether or not the given album is unique (by tags) from the current album."""
-        return (
-            self.artist != other.artist
-            or self.date != other.date
-            or self.title != other.title
-        )
+        return self.mb_album_id != other.mb_album_id
 
     def merge(self, other: Optional["Album"], overwrite_album_info=True):
         """Merges the current Album with another, overwriting the other if conflict.

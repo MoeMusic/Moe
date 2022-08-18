@@ -1,7 +1,46 @@
 """Tests an Album object."""
 
+import copy
+
 from moe.library.album import Album
 from moe.library.extra import Extra
+
+
+class TestGetExisting:
+    """Test we can match an existing album based on unique attributes."""
+
+    def test_by_path(self, real_album_factory, tmp_session):
+        """Get an exisiting album from a matching path."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+
+        tmp_session.merge(album2)
+        album1.path = album2.path
+
+        assert album1.get_existing()
+
+    def test_by_mb_album_id(self, real_album_factory, tmp_session):
+        """Get an exisiting album from a matching mb_album_id."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+
+        tmp_session.merge(album2)
+        album1.mb_album_id = album2.mb_album_id
+
+        assert album1.get_existing()
+
+
+class TestIsUnique:
+    """Test determing if an album is unique based on its tags."""
+
+    def test_mb_album_id(self, real_album):
+        """Albums with different mb_album_ids are unique."""
+        dup_album = copy.deepcopy(real_album)
+
+        real_album.mb_album_id = "1"
+        assert real_album != dup_album
+
+        assert real_album.is_unique(dup_album)
 
 
 class TestMerge:
@@ -56,46 +95,40 @@ class TestMerge:
         for db_track in db_album.tracks:
             assert db_track.title != "overwrite me"
 
-    def test_overwrite_album_info(self, mock_album_factory, tmp_session):
+    def test_overwrite_album_info(self, mock_album, tmp_session):
         """If overwriting, the current album's data should be kept if conflict."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-        album1.date = album2.date
-        album1.path = album2.path
-        album1.mb_album_id = "1234"  # conflict field; should overwrite on album2
-        assert not album1.is_unique(album2)
-        assert album1.mb_album_id != album2.mb_album_id
+        dup_album = copy.deepcopy(mock_album)
 
-        tmp_session.merge(album1)
-        album2.merge(album2.get_existing(), overwrite_album_info=True)
-        tmp_session.merge(album2)
+        mock_album.artist = "conflict"  # conflict field; should overwrite on album2
+        assert not mock_album.is_unique(dup_album)
+
+        tmp_session.merge(dup_album)
+        mock_album.merge(mock_album.get_existing(), overwrite_album_info=True)
+        tmp_session.merge(mock_album)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_album_id == album2.mb_album_id
+        assert db_album.artist == "conflict"
 
-    def test_keep_album_info(self, mock_album_factory, tmp_session):
+    def test_keep_album_info(self, mock_album, tmp_session):
         """If ``overwrite_album_info=False`` don't overwrite the album info."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
-        album1.date = album2.date
-        album1.path = album2.path
-        album1.mb_album_id = "1234"
-        assert not album1.is_unique(album2)
-        assert album1.mb_album_id != album2.mb_album_id
+        dup_album = copy.deepcopy(mock_album)
 
-        tmp_session.merge(album1)
-        album2.merge(album2.get_existing(), overwrite_album_info=False)
-        tmp_session.merge(album2)
+        mock_album.artist = "conflict"  # conflict field; don't overwrite
+        assert not mock_album.is_unique(dup_album)
+
+        tmp_session.merge(dup_album)
+        mock_album.merge(mock_album.get_existing(), overwrite_album_info=False)
+        tmp_session.merge(mock_album)
 
         db_album = tmp_session.query(Album).one()
-        assert db_album.mb_album_id == album1.mb_album_id
+        assert db_album.artist != "conflict"
 
 
 class TestDuplicate:
     """Test behavior when there is an attempt to add a duplicate Album to the db.
 
-    A duplicate Album can be defined as a combination of the artist, title, and date, or
-    by having the same path.
+    A duplicate Album is defined as having any of the same unique attributes: path, or
+    mb_album_id.
 
     To handle duplicates by tags, you should use ``album.get_existing(session)`` to get
     the existing album. At this point, you can either delete the existing album from the

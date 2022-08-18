@@ -135,13 +135,6 @@ def _add_album(album_path: Path) -> Album:
 
     albums = [track.album_obj for track in album_tracks]
 
-    # ensure each track belongs to the same album
-    for discovered_album in albums:
-        if albums[0].is_unique(discovered_album):
-            raise AddError(
-                f"Not all tracks in '{album_path}' share the same album attributes."
-            )
-
     album = albums[0]
     for track in album_tracks:
         log.info(f"Adding track file to the library: {track.path}")
