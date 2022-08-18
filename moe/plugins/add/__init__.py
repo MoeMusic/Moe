@@ -9,8 +9,8 @@ from moe.plugins.add.add_core.match import *
 from . import add_cli
 
 __all__ = []
-__all__.extend(add.__all__)  # type: ignore
-__all__.extend(match.__all__)  # type: ignore
+__all__.extend(add.__all__)
+__all__.extend(match.__all__)
 
 
 @moe.hookimpl

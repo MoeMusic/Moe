@@ -49,7 +49,7 @@ flake8-docstrings = "^1.5.0"
 flake8-isort = "^4.2.0"
 flake8-use-fstring = "^1.1"
 pre-commit = "^2.6.0"
-pyright = "^1.1.0"
+pyright = "^1.1.267"
 pytest = "^6.0.1"
 pytest-cov = "^2.10.0"
 

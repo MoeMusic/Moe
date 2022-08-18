@@ -26,6 +26,6 @@ repos:
       - id: isort
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.266
+    rev: v1.1.267
     hooks:
     - id: pyright
