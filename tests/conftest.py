@@ -23,8 +23,14 @@ RESOURCE_DIR = Path(__file__).parent / "resources"
 
 
 @pytest.fixture
+def tmp_library_path(tmp_path_factory):
+    """Creates a temporary music library directory for all test tracks and albums."""
+    return tmp_path_factory.mktemp("music")
+
+
+@pytest.fixture
 def tmp_config(
-    tmp_path_factory,
+    tmp_path_factory, tmp_library_path
 ) -> Iterator[Callable[[str, bool, bool, List[ExtraPlugin]], Config]]:
     """Instantiates a temporary configuration.
 
@@ -59,6 +65,7 @@ def tmp_config(
         extra_plugins: Optional[List[ExtraPlugin]] = None,
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
+        settings += f"\n library_path='{tmp_library_path.resolve()}'"
         if settings:
             settings_path = config_dir / "config.toml"
             settings_path.write_text(textwrap.dedent(settings))
@@ -243,7 +250,7 @@ def mock_extra(mock_extra_factory) -> Extra:
 
 @pytest.fixture
 def real_track_factory(
-    empty_mp3_path, mock_track_factory, tmp_path_factory
+    empty_mp3_path, mock_track_factory, tmp_library_path
 ) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
@@ -256,6 +263,8 @@ def real_track_factory(
             exists on the filesystem.
         year: Optional year. Changing this will change which album the track belongs to.
             Not used if `album` is passed.
+        real_path: Optional path of a real music file to use. The file at `real_path`
+            will be copied into the temporary music library.
 
     Note:
         If you don't need to interact with the filesystem, it's preferred to use
@@ -266,20 +275,28 @@ def real_track_factory(
     """
 
     def _real_track(
-        track_num: int = 0, album: Optional[Album] = None, year: int = 1994
+        track_num: int = 0,
+        album: Optional[Album] = None,
+        year: int = 1994,
+        real_path: Optional[Path] = None,
     ):
         track = mock_track_factory(track_num, album, year)
 
         if not album:
-            track.album_obj.path = tmp_path_factory.mktemp(
-                f"{track.albumartist} - {track.album} {track.year}"
+            track.album_obj.path = (
+                tmp_library_path / f"{track.albumartist} - {track.album} {track.year}"
             )
+            track.album_obj.path.mkdir()
 
         filename = f"{track.track_num} - {track.title}.mp3"
         track.path = track.album_obj.path / filename
-        shutil.copyfile(empty_mp3_path, track.path)
 
-        moe_write.write_tags(track)
+        if real_path:
+            shutil.copyfile(real_path, track.path)
+        else:
+            shutil.copyfile(empty_mp3_path, track.path)
+            moe_write.write_tags(track)
+
         return track
 
     return _real_track
@@ -301,7 +318,7 @@ def real_track(real_track_factory) -> Track:
 
 @pytest.fixture
 def real_album_factory(
-    real_extra_factory, real_track_factory, tmp_path_factory
+    real_extra_factory, real_track_factory, tmp_library_path
 ) -> Callable[[], Album]:
     """Factory for Albums that exist on the filesytem.
 
@@ -313,7 +330,8 @@ def real_album_factory(
         artist = "Outkast"
         title = "ATLiens"
         year = random.randint(1, 1000)
-        path = tmp_path_factory.mktemp(f"{artist} - {title} ({year})")
+        path = tmp_library_path / f"{artist} - {title} ({year})"
+        path.mkdir()
 
         album = Album(artist, title, datetime.date(year, 1, 1), path=path)
 
@@ -334,7 +352,7 @@ def real_album(real_album_factory) -> Album:
 
 
 @pytest.fixture
-def real_extra_factory(mock_extra_factory, tmp_path_factory) -> Callable[[], Extra]:
+def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Extra]:
     """Creates an Extra on the filesystem.
 
     The track is copied to a temp location, so feel free to make any changes. Each
@@ -354,9 +372,10 @@ def real_extra_factory(mock_extra_factory, tmp_path_factory) -> Callable[[], Ext
         extra = mock_extra_factory(album, year)
 
         if not album:
-            extra.album_obj.path = tmp_path_factory.mktemp(
-                "Jacobs Awesome Band - Cool Song (2021)"
+            extra.album_obj.path = (
+                tmp_library_path / "Jacobs Awesome Band - Cool Song (2021)"
             )
+            extra.album_obj.path.mkdir()
 
         filename = f"{random.randint(1, 10000)}.txt"
         extra.path = extra.album_obj.path / filename

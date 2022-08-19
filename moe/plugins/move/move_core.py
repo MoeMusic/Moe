@@ -27,9 +27,6 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(
         dynaconf.Validator("MOVE.ASCIIFY_PATHS", must_exist=True, default=False)
     )
-    settings.validators.register(
-        dynaconf.Validator("MOVE.LIBRARY_PATH", must_exist=True, default="~/Music")
-    )
 
 
 @moe.hookimpl
@@ -90,7 +87,7 @@ def _fmt_album_path(config: Config, album: Album) -> Path:
     Returns:
         Formatted album directory under the config ``library_path``.
     """
-    library_path = Path(config.settings.move.library_path).expanduser()
+    library_path = Path(config.settings.library_path).expanduser()
     album_dir_name = f"{album.artist}/{album.title} ({album.year})"
 
     return library_path / album_dir_name

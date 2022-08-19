@@ -5,7 +5,7 @@ Alters the location of files in your library.
 
 The ``move`` plugin provides the following features:
 
-* Any items added to your library will be copied to the location set by ``library_path`` in your configuration file.
+* Any items added to your library will be copied to the location set by the global option, ``library_path`` in your configuration file.
 * Any items moved or copied will have their paths set to a default format. This default format cannot currently be configured, and is as follows:
 
   * Albums: ``{library_path}/{albumartist} ({album_year})/``
@@ -25,11 +25,6 @@ The ``move`` plugin is enabled by default and provides the following configurati
     Whether or not to convert all filesystem paths to ascii.
 
     If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
-
-``library_path = "~/Music"``
-    Tells Moe where to copy your added music to.
-
-    For Windows users, the default path is ``%USERPROFILE%\Music``. Also, you need to set your path by enclosing it in triple-single quotes, e.g. ``'''~\Music'''``.
 
 ***********
 Commandline

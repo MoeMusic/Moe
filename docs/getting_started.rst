@@ -49,14 +49,14 @@ Overriding Config Values
 ========================
 All configuration parameters can be overridden through environment variables. To override the configuration parameter ``{param}``, use an environment variable named ``MOE_{PARAM}``.
 
-For example, to override the ``library_path`` variable, you can run Moe with:
+For example, to override the ``asciify_paths`` variable, you can run Moe with:
 
 .. code-block:: bash
 
-    $ MOE_MOVE.LIBRARY_PATH="~/Music2" moe
+    $ MOE_MOVE.ASCIIFY_PATHS="true" moe
 
 .. note::
-   Notice since the ``library_path`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
+   Notice since the ``asciify_paths`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
 
 Configuring Plugins
 ===================

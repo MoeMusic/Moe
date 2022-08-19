@@ -32,7 +32,7 @@ import alembic.command
 import alembic.config
 import moe
 import moe.config
-from moe.library.lib_item import LibItem
+from moe.library.lib_item import LibItem, PathType
 
 session_factory = sqlalchemy.orm.sessionmaker()
 MoeSession = sqlalchemy.orm.scoped_session(session_factory)
@@ -70,7 +70,7 @@ class Hooks:
             Inside your hook implementation::
 
                 settings.validators.register(
-                    Validator("MOVE.LIBRARY_PATH", must_exist=True)
+                    dynaconf.Validator("MOVE.ASCIIFY_PATHS", must_exist=True)
                 )
 
         See Also:
@@ -174,6 +174,9 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     settings.validators.register(
         dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS))
+    )
+    settings.validators.register(
+        dynaconf.Validator("LIBRARY_PATH", must_exist=True, default="~/Music")
     )
 
 
@@ -320,9 +323,10 @@ class Config:
         )
 
         self._setup_plugins()
-
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
+
         self.settings.validators.validate()
+        PathType.library_path = Path(self.settings.library_path)
 
     def _setup_plugins(self):
         """Setup plugin_manager and hook logic."""
