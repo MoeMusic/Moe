@@ -311,9 +311,6 @@ class Config:
         """Reads the user configuration settings.
 
         Searches for a configuration file at `config_dir / "config.toml"`.
-
-        Raises:
-            SystemExit: No config file found.
         """
         self.config_file.touch(exist_ok=True)
 
