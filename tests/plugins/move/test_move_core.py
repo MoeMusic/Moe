@@ -10,13 +10,7 @@ from moe.plugins import move as moe_move
 @pytest.fixture(scope="function")
 def tmp_move_config(tmp_config, tmp_path):
     """Creates a configuration with a temporary library path."""
-    return tmp_config(
-        f"""
-    default_plugins = ["move"]
-    [move]
-    library_path = '''{tmp_path.resolve()}'''
-    """
-    )
+    return tmp_config(settings="default_plugins = ['move']")
 
 
 @pytest.fixture
@@ -34,7 +28,7 @@ class TestFmtAlbumPath:
 
     def test_relative_to_lib_path(self, real_album, tmp_move_config):
         """The album path should be relative to the library path configuration."""
-        lib_path = Path(tmp_move_config.settings.move.library_path)
+        lib_path = Path(tmp_move_config.settings.library_path)
 
         album_path = moe_move.fmt_item_path(tmp_move_config, real_album)
 
@@ -287,15 +281,15 @@ class TestMoveAlbum:
     def test_rm_empty_leftover_dirs(self, real_album, tmp_move_config):
         """Remove any leftover empty directories after a move."""
         real_album.disc_total = 2  # also remove empty child directories
-        lib_path = tmp_move_config.settings.move.library_path
+        lib_path = tmp_move_config.settings.library_path
 
         # first move the album to a nested sub directory
         nested_lib_path = lib_path + "/should/be/deleted"
-        tmp_move_config.settings.move.library_path = nested_lib_path
+        tmp_move_config.settings.library_path = nested_lib_path
         moe_move.move_item(tmp_move_config, real_album)
 
         # now move the item to it's final directory
-        tmp_move_config.settings.move.library_path = lib_path
+        tmp_move_config.settings.library_path = lib_path
         moe_move.move_item(tmp_move_config, real_album)
 
         # all the original nestesd sub dirs of the first album path should be deleted

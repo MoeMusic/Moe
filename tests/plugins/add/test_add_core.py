@@ -94,7 +94,7 @@ class TestAddItemFromDir:
             track.title = "new_album"
 
         for extra_num, extra in enumerate(new_album.extras):
-            extra.path = Path(f"{extra_num}.txt")
+            extra.path = new_album.path / f"{extra_num}.txt"
 
         assert new_album.artist != existing_album.artist
         assert new_album.tracks != existing_album.tracks
@@ -145,11 +145,14 @@ class TestAddItemFromFile:
 
         assert tmp_session.query(Track.path).filter_by(path=real_track.path).one()
 
-    def test_min_reqd_tags(self, reqd_mp3_path, tmp_session, tmp_add_config):
+    def test_min_reqd_tags(
+        self, real_track_factory, reqd_mp3_path, tmp_session, tmp_add_config
+    ):
         """We can add a track that consists only of the minimum required tags."""
-        add.add_item(tmp_add_config, reqd_mp3_path)
+        reqd_mp3 = real_track_factory(real_path=reqd_mp3_path)
+        add.add_item(tmp_add_config, reqd_mp3.path)
 
-        assert tmp_session.query(Track.path).filter_by(path=reqd_mp3_path).one()
+        assert tmp_session.query(Track.path).filter_by(path=reqd_mp3.path).one()
 
     def test_non_track_file(self):
         """Error if the file given is not a valid track."""
@@ -163,7 +166,7 @@ class TestAddItemFromFile:
 
     def test_duplicate_track(self, tmp_path, real_track, tmp_session, tmp_add_config):
         """Overwrite old track path with the new track if a duplicate is found."""
-        new_track_path = tmp_path / "full2"
+        new_track_path = real_track.album_obj.path / "full2"
         shutil.copyfile(real_track.path, new_track_path)
         tmp_session.add(real_track)
 
