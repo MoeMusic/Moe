@@ -81,6 +81,7 @@ venv = ".venv"
 exclude = [
     "alembic",
 ]
+pythonPlatform = "All"
 
 [build-system]
 requires = ["poetry-core>=1.0"]
