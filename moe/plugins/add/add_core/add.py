@@ -16,7 +16,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track, TrackError
 
-__all__ = ["add_item", "AddError"]
+__all__ = ["add_item", "AddAbortError", "AddError"]
 
 log = logging.getLogger("moe.add")
 
@@ -29,11 +29,19 @@ class Hooks:
     def pre_add(config: Config, item: LibItem):
         """Provides an item prior to it being added to the library.
 
-        Use this hook if you wish to change the item's metadata.
+        Use this hook if you wish to change the item's metadata. You must also ensure
+        there will be no conflicts with existing items in the database if you are
+        altering any applicable, i.e. unique, fields.
 
         Args:
             config: Moe config.
             item: Library item being added.
+
+        Note:
+            Any UI application should have a way of detecting and resolving duplicate
+            items prior to them being added to the database. You may consider
+            implementing a ``hookwrapper`` to run conflict resolution code after the
+            ``pre_add`` hook is complete, but before the item has been added to the db.
 
         See Also:
             * The :meth:`post_add` hook for any post-processing operations.
@@ -42,6 +50,10 @@ class Hooks:
               operate on an `add` operation, while the
               :meth:`~moe.config.Hooks.edit_new_items` hook will run anytime an item is
               changed or added.
+            * `Pluggy hook wrapper documention
+              <https://pluggy.readthedocs.io/en/stable/#wrappers>`_
+            * :meth:`~moe.library.lib_item.LibItem.get_existing` for detecting duplicate
+              items.
         """
 
     @staticmethod
@@ -77,6 +89,10 @@ class AddError(Exception):
     """Error adding an item to the library."""
 
 
+class AddAbortError(Exception):
+    """Add process has been aborted by the user."""
+
+
 def add_item(config: Config, item_path: Path):
     """Adds a LibItem to the library from a given path.
 
@@ -85,22 +101,35 @@ def add_item(config: Config, item_path: Path):
         item_path: Filesystem path of the item.
 
     Raises:
+        AddAbortError: Add process was aborted by the user.
         AddError: Unable to add the item to the library.
+        NotImplementedError: Attempting to add an Extra.
     """
     session = MoeSession()
 
     item: LibItem
     if item_path.is_file():
         item = _add_track(item_path)
-        album = item.album_obj
     elif item_path.is_dir():
         item = _add_album(item_path)
-        album = item
     else:
         raise AddError(f"Path not found: {item_path}")
 
-    album.merge(album.get_existing(), overwrite_album_info=False)
     config.plugin_manager.hook.pre_add(config=config, item=item)
+
+    if item.get_existing():
+        raise AddError(f"Duplicate item cannot be added to the db: {item}")
+    elif isinstance(item, (Extra, Track)):
+        if item.album_obj.get_existing():
+            raise AddError(f"Item has duplicate album in the db: {item.album_obj}")
+    elif isinstance(item, Album):
+        for track in item.tracks:
+            if track.get_existing():
+                raise AddError(f"Album has duplicate track in the db: {track}")
+        for extra in item.extras:
+            if extra.get_existing():
+                raise AddError(f"Album has duplicate extra in the db: {extra}")
+
     item = session.merge(item)
     config.plugin_manager.hook.post_add(config=config, item=item)
 

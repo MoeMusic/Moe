@@ -4,18 +4,22 @@
 
 import argparse
 import logging
+import operator
 import sys
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, cast
 
 import pkg_resources
 import pluggy
+import questionary
 
 import moe
 from moe.config import Config, MoeSession
 from moe.library.album import Album
+from moe.library.track import Track
+from moe.plugins import add as moe_add
 
-__all__ = ["PromptChoice", "query_parser"]
+__all__ = ["query_parser", "choice_prompt", "PromptChoice", "fmt_album_changes"]
 
 log = logging.getLogger("moe.cli")
 
@@ -65,32 +69,6 @@ class Hooks:
         """
 
 
-@dataclass
-class PromptChoice:
-    """A single, user-selectable choice for a CLI prompt.
-
-    Attributes:
-        title: Title of the prompt choice that is displayed to the user.
-        shortcut_key: Single character the user will use to select the choice.
-
-            Important:
-                Ensure the key is not currently in use by another PromptChoice.
-        func: Function to call upon this prompt choice being selected. The function
-            should return the album to be added to the library (or ``None`` if no album
-            should be added) and will be supplied the following keyword arguments:
-
-            * ``config``: Moe config.
-            * ``old_album``: Old album with no changes applied.
-            * ``new_album``: New album consisting of all the new changes.
-    """
-
-    func_type = Callable[[Config, Album, Album], None]
-
-    title: str
-    shortcut_key: str
-    func: func_type
-
-
 # Argument parser for a query. This should be passed as a parent parser for a command.
 query_parser = argparse.ArgumentParser(
     add_help=False, formatter_class=argparse.RawTextHelpFormatter
@@ -130,6 +108,10 @@ def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
     if not config:
         config = Config()
     _parse_args(args, config)
+
+
+if __name__ == "__main__":
+    main()
 
 
 def _parse_args(args: List[str], config: Config):
@@ -215,5 +197,145 @@ def _set_root_log_lvl(args):
             logging.getLogger(key).setLevel(logging.WARNING)
 
 
-if __name__ == "__main__":
-    main()
+########################################################################################
+# General shared UI functionality
+########################################################################################
+
+
+@dataclass
+class PromptChoice:
+    """A single, user-selectable choice for a CLI prompt.
+
+    Attributes:
+        title: Title of the prompt choice that is displayed to the user.
+        shortcut_key: Single character the user will use to select the choice.
+
+            Important:
+                Ensure each shortcut key is not in use by another PromptChoice.
+        func: The function that should get called if a choice is selected.
+            The definition for how to call ``func`` should be specified by the plugin.
+    """
+
+    title: str
+    shortcut_key: str
+    func: Callable
+
+
+def choice_prompt(
+    prompt_choices: List[PromptChoice], question: str = "What do you want to do?"
+) -> PromptChoice:
+    """Generates a user choice prompt.
+
+    Args:
+        prompt_choices: Prompt choices to be used.
+        question: Question prompted to the user.
+
+    Returns:
+        The chosen prompt choice.
+
+    Raises:
+        SystemExit: Invalid user input.
+    """
+    prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
+
+    questionary_choices: List[questionary.Choice] = []
+    for prompt_choice in prompt_choices:
+        questionary_choices.append(
+            questionary.Choice(
+                title=prompt_choice.title,
+                shortcut_key=prompt_choice.shortcut_key,
+                value=prompt_choice.shortcut_key,
+            )
+        )
+
+    user_input = questionary.rawselect(question, choices=questionary_choices).ask()
+
+    for prompt_choice in prompt_choices:
+        if prompt_choice.shortcut_key == user_input:
+            return prompt_choice
+
+    log.error("Invalid option selected.")
+    raise SystemExit(1)
+
+
+def fmt_album_changes(old_album: Album, new_album: Album) -> str:
+    """Formats the changes between between two albums."""
+    album_info_str = ""
+    album_title = f"Album: {old_album.title}"
+    if old_album.title != new_album.title:
+        album_title += f" -> {new_album.title}"
+    album_info_str += album_title
+
+    album_artist = f"Album Artist: {old_album.artist}"
+    if old_album.artist != new_album.artist:
+        album_artist = album_artist + f" -> {new_album.artist}"
+    album_info_str += "\n" + album_artist
+
+    album_year = f"Year: {old_album.year}"
+    if old_album.year != new_album.year:
+        album_year = album_year + f" -> {new_album.year}"
+    album_info_str += "\n" + album_year
+    if new_album.mb_album_id:
+        mb_album_id = f"Musicbrainz ID: {new_album.mb_album_id}"
+        album_info_str += "\n" + mb_album_id
+
+    tracklist_str = _fmt_tracklist(old_album, new_album)
+
+    extra_str = ""
+    extra_str += "\nExtras:\n"
+    extra_str += "\n".join([extra.filename for extra in old_album.extras])
+
+    album_str = album_info_str + "\n" + tracklist_str
+    if old_album.extras:
+        album_str += "\n" + extra_str
+
+    return album_str
+
+
+def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
+    """Formats the changes of the tracklists between two albums."""
+    tracklist_str = ""
+
+    matches = moe_add.get_matching_tracks(old_album, new_album)
+    matches.sort(
+        key=lambda match: (
+            getattr(match[1], "disc", 0),
+            getattr(match[1], "track_num", 0),
+        )
+    )  # sort by new track's disc then track number
+    unmatched_tracks: List[Track] = []
+    for old_track, new_track in matches:
+        if not new_track:
+            unmatched_tracks.append(cast(Track, old_track))
+            continue
+
+        tracklist_str += "\n" + _fmt_track_changes(old_track, new_track)
+
+    if unmatched_tracks:
+        tracklist_str += "\n\nUnmatched Tracks:\n"
+        tracklist_str += "\n".join([str(track) for track in unmatched_tracks])
+
+    return tracklist_str
+
+
+def _fmt_track_changes(old_track: Optional[Track], new_track: Track) -> str:
+    """Formats the changes between two tracks."""
+    track_change = ""
+    new_disc = ""
+    old_disc = ""
+    if new_track.disc_total > 1:
+        new_disc = f"{new_track.disc}."
+        if old_track:
+            old_disc = f"{old_track.disc}."
+    if old_track:
+        old_track_title = f"{old_disc}{old_track.track_num}: {old_track.title}"
+    else:
+        old_track_title = "(missing)"
+    track_change += old_track_title
+
+    new_track_title = f"{new_disc}{new_track.track_num}: {new_track.title}"
+
+    if old_track_title != new_track_title:
+        track_change += f" -> {new_track_title}"
+
+    return track_change

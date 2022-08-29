@@ -3,7 +3,7 @@
 import copy
 import shutil
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -59,55 +59,38 @@ class TestAddItemFromDir:
 
         assert not tmp_session.query(Track.path).filter_by(path=new_path).scalar()
 
-    def test_duplicate_tracks(self, real_album, tmp_session, tmp_add_config):
-        """Don't fail album add if a track (by tags) already exists in the library."""
-        tmp_session.merge(real_album.tracks[0])
+    def test_duplicate_track(self, real_track_factory, tmp_session, tmp_add_config):
+        """Raise AddError if there is a duplicate track from an album in the db."""
+        mb_track_id = "123"
+        track = real_track_factory(year=1990, mb_track_id=mb_track_id)
+        dup_track = real_track_factory(year=1992, mb_track_id=mb_track_id)
 
-        add.add_item(tmp_add_config, real_album.path)
+        tmp_session.merge(track)
+        assert dup_track.get_existing()
 
-        assert tmp_session.query(Album).filter_by(path=real_album.path).one()
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, dup_track.album_obj.path)
+
+    def test_duplicate_extra(self, real_extra_factory, tmp_session, tmp_add_config):
+        """Raise AddError if there is a duplicate extra from an album in the db."""
+        extra = real_extra_factory()
+        dup_extra = real_extra_factory()
+        extra.path = dup_extra.path
+
+        tmp_session.merge(extra)
+        assert dup_extra.get_existing()
+
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, dup_extra.album_obj.path)
 
     def test_duplicate_album(self, real_album, tmp_session, tmp_add_config):
-        """We merge an existing album by it's path."""
+        """Raise an AddError if there is a duplicate album in the database."""
         dup_album = copy.deepcopy(real_album)
         dup_album.title = "diff"
         tmp_session.merge(dup_album)
 
-        add.add_item(tmp_add_config, real_album.path)
-
-        assert tmp_session.query(Album).filter_by(path=real_album.path).one()
-
-    def test_merge_existing(self, real_album_factory, tmp_session, tmp_add_config):
-        """Merge the album to be added with an existing album in the library.
-
-        The album info should be kept (likely to be more accurate), however, any tracks
-        or extras should be overwritten.
-        """
-        new_album = real_album_factory()
-        existing_album = real_album_factory()
-        new_album.date = existing_album.date
-        new_album.path = existing_album.path
-        existing_album.artist = "1234"
-        assert not new_album.is_unique(existing_album)
-
-        for track in new_album.tracks:
-            track.title = "new_album"
-
-        for extra_num, extra in enumerate(new_album.extras):
-            extra.path = new_album.path / f"{extra_num}.txt"
-
-        assert new_album.artist != existing_album.artist
-        assert new_album.tracks != existing_album.tracks
-        assert new_album.extras != existing_album.extras
-
-        tmp_session.merge(existing_album)
-        with patch("moe.plugins.add.add._add_album", return_value=new_album):
-            add.add_item(tmp_add_config, new_album.path)
-
-        db_album = tmp_session.query(Album).one()
-        assert db_album.artist == existing_album.artist
-        assert sorted(db_album.tracks) == sorted(new_album.tracks)
-        assert sorted(db_album.extras) == sorted(new_album.extras)
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, real_album.path)
 
     def test_add_multi_disc(self, real_album, tmp_session, tmp_add_config):
         """We can add a multi-disc album."""
@@ -134,6 +117,24 @@ class TestAddItemFromDir:
 
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
+
+    def test_add_from_not_library_path(self, real_album, tmp_session, tmp_config):
+        """We can add paths from outside `library_path`.
+
+        This is important if adding an item from a separate download directory for
+        example.
+        """
+        config = tmp_config(
+            settings="""default_plugins = ["add"]
+            library_path = '~/Music'""",
+            tmp_db=True,
+        )
+        assert config.settings.library_path not in real_album.path.parents
+
+        add.add_item(config, real_album.path)
+
+        db_album = tmp_session.query(Album).filter_by(path=real_album.path).one()
+        assert db_album.path.exists()
 
 
 class TestAddItemFromFile:
@@ -165,14 +166,31 @@ class TestAddItemFromFile:
             add.add_item(tmp_add_config, empty_mp3_path)
 
     def test_duplicate_track(self, tmp_path, real_track, tmp_session, tmp_add_config):
-        """Overwrite old track path with the new track if a duplicate is found."""
+        """Raise AddError if duplicate track found."""
         new_track_path = real_track.album_obj.path / "full2"
         shutil.copyfile(real_track.path, new_track_path)
         tmp_session.add(real_track)
 
-        add.add_item(tmp_add_config, new_track_path)
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, new_track_path)
 
-        assert tmp_session.query(Track.path).filter_by(path=new_track_path).one()
+    def test_duplicate_album_from_track(
+        self, tmp_path, real_track, tmp_session, tmp_add_config
+    ):
+        """Raise AddError if adding a track with a duplicate associated album."""
+        tmp_session.merge(real_track.album_obj)
+
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, real_track.path)
+
+    def test_duplicate_album_from_extra(
+        self, tmp_path, real_extra, tmp_session, tmp_add_config
+    ):
+        """Raise AddError if adding a extra with a duplicate associated album."""
+        tmp_session.merge(real_extra.album_obj)
+
+        with pytest.raises(add.AddError):
+            add.add_item(tmp_add_config, real_extra.path)
 
 
 class AddPlugin:
@@ -212,7 +230,7 @@ class TestAddItem:
         assert db_track.genre == "post_add"
 
     def test_path_not_found(self):
-        """Raise SystemExit if the path to add does not exist."""
+        """Raise AddError if the path to add does not exist."""
         with pytest.raises(add.AddError):
             add.add_item(Mock(), Path("does not exist"))
 

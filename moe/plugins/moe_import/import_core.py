@@ -45,6 +45,9 @@ class Hooks:
         If you wish to save and apply any candidate album metadata, it should be applied
         onto the original album, ``old_album``.
 
+        Ensure any potential conflicts with existing albums in the database are
+        resolved.
+
         Args:
             config: Moe config.
             old_album: Album being added to the library.

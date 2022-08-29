@@ -2,6 +2,7 @@
 
 from unittest.mock import Mock, patch
 
+import moe.cli
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
 
@@ -26,7 +27,13 @@ class TestAddImportPromptChoice:
             "default_plugins = ['cli', 'import', 'musicbrainz']", tmp_db=True
         )
 
-        with patch.object(moe_import.import_cli, "_get_input", side_effect=["m", "a"]):
+        mock_choice1 = moe.cli.PromptChoice("mock", "m", moe_mb.mb_cli._enter_id)
+        mock_choice2 = moe.cli.PromptChoice(
+            "mock", "m", moe_import.import_cli._apply_changes
+        )
+        with patch.object(
+            moe.cli, "choice_prompt", side_effect=[mock_choice1, mock_choice2]
+        ):
             mock_q = Mock()
             mock_q.ask.return_value = "new id"
             with patch(

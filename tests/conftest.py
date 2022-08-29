@@ -65,10 +65,11 @@ def tmp_config(
         extra_plugins: Optional[List[ExtraPlugin]] = None,
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
-        settings += f"\n library_path='{tmp_library_path.resolve()}'"
-        if settings:
-            settings_path = config_dir / "config.toml"
-            settings_path.write_text(textwrap.dedent(settings))
+        if "library_path" not in settings:
+            settings += f"\nlibrary_path='{tmp_library_path.resolve()}'"
+
+        settings_path = config_dir / "config.toml"
+        settings_path.write_text(textwrap.dedent(settings))
 
         engine: Optional[sa.engine.base.Engine]
         if tmp_db:
@@ -148,13 +149,14 @@ def mock_track_factory() -> Callable[[], Track]:
         album: Optional album to assign the track to.
         year: Optional year to include. Changing this will change which album the
             the track belongs to. This is not used if `album` is passed.
+        **kwargs: Any other fields to assign to the Track.
 
     Returns:
         Unique Track object with each call.
     """
 
     def _mock_track(
-        track_num: int = 0, album: Optional[Album] = None, year: int = 1996
+        track_num: int = 0, album: Optional[Album] = None, year: int = 1996, **kwargs
     ):
         if not album:
             album = Album(
@@ -168,6 +170,7 @@ def mock_track_factory() -> Callable[[], Track]:
             track_num=track_num,
             title="Jazzy Belle",
             genre="Hip Hop",
+            **kwargs,
         )
 
     return _mock_track
@@ -265,6 +268,7 @@ def real_track_factory(
             Not used if `album` is passed.
         real_path: Optional path of a real music file to use. The file at `real_path`
             will be copied into the temporary music library.
+        **kwargs: Any other fields to assign to the track.
 
     Note:
         If you don't need to interact with the filesystem, it's preferred to use
@@ -279,8 +283,9 @@ def real_track_factory(
         album: Optional[Album] = None,
         year: int = 1994,
         real_path: Optional[Path] = None,
+        **kwargs,
     ):
-        track = mock_track_factory(track_num, album, year)
+        track = mock_track_factory(track_num, album, year, **kwargs)
 
         if not album:
             track.album_obj.path = (
@@ -375,7 +380,7 @@ def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Ext
             extra.album_obj.path = (
                 tmp_library_path / "Jacobs Awesome Band - Cool Song (2021)"
             )
-            extra.album_obj.path.mkdir()
+            extra.album_obj.path.mkdir(exist_ok=True)
 
         filename = f"{random.randint(1, 10000)}.txt"
         extra.path = extra.album_obj.path / filename
