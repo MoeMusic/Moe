@@ -39,8 +39,20 @@ class PathType(sa.types.TypeDecorator):
     library_path: Path  # will be set on config initialization
 
     def process_bind_param(self, pathlib_path, dialect):
-        """Convert the path to a relative string prior to entering in the database."""
-        return str(pathlib_path.relative_to(self.library_path))
+        """Normalize pathlib paths as strings for the database.
+
+        Args:
+            pathlib_path: Inbound path to the db.
+            dialect: Database in use.
+
+        Returns:
+            Relative path from ``library_path`` if possible, otherwise stores the
+            absolute path.
+        """
+        try:
+            return str(pathlib_path.relative_to(self.library_path))
+        except ValueError:
+            return str(pathlib_path.resolve())
 
     def process_result_value(self, path_str, dialect):
         """Convert the path back to a Path object on the way out."""
