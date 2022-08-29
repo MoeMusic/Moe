@@ -139,35 +139,26 @@ def mock_track_factory() -> Callable[[], Track]:
     """Factory for mock Tracks that don't exist on the filesystem.
 
     Note:
-        Each track will share the same album attributes, and thus will
-        belong to the same album if a mock_track already exists in the database.
-        If adding multiple tracks of the same album in one session, use
-        `session.merge(track)` vice `session.add(track)`
+        Each track will belong to a different album unless `album` is specified.
 
     Args:
-        track_num: Optional track number.
         album: Optional album to assign the track to.
-        year: Optional year to include. Changing this will change which album the
-            the track belongs to. This is not used if `album` is passed.
         **kwargs: Any other fields to assign to the Track.
 
     Returns:
         Unique Track object with each call.
     """
 
-    def _mock_track(
-        track_num: int = 0, album: Optional[Album] = None, year: int = 1996, **kwargs
-    ):
+    def _mock_track(album: Optional[Album] = None, **kwargs):
         if not album:
             album = Album(
-                "OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock()
+                "OutKast", "ATLiens", datetime.date(1996, 8, 27), path=MagicMock()
             )
-        if not track_num:
-            track_num = random.randint(1, 10000)
+
         return Track(
             album=album,
             path=MagicMock(),
-            track_num=track_num,
+            track_num=kwargs.pop("track_num", random.randint(1, 10000)),
             title="Jazzy Belle",
             genre="Hip Hop",
             **kwargs,
@@ -191,9 +182,11 @@ def mock_album_factory(mock_extra_factory, mock_track_factory) -> Callable[[], A
     """
 
     def _mock_album():
-        year = random.randint(1, 1000)
+        year = random.randint(1, 10000)
 
-        album = Album("OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock())
+        album = Album(
+            "ATCQ", "Midnight Marauders", datetime.date(year, 11, 9), path=MagicMock()
+        )
 
         mock_track_factory(track_num=1, album=album)
         mock_track_factory(track_num=2, album=album)
@@ -215,13 +208,10 @@ def mock_album(mock_album_factory) -> Album:
 def mock_extra_factory() -> Callable[[], Extra]:
     """Factory for mock Extras that don't exist on the filesytem.
 
-    Each extra will belong to the same album unless `year` or a different `album` is
-    given.
+    Each extra will belong to a different album unless `album` is given.
 
     Args:
         album: Optional album to assign the extra to.
-        year: Optional year to include. Changing this will change which album the
-            the extra belongs to. This is not used if `album` is passed.
 
     Returns:
         Unique Extra object.
@@ -230,10 +220,13 @@ def mock_extra_factory() -> Callable[[], Extra]:
     def mock_lt(self, other):
         return self.name < other.name
 
-    def _mock_extra(album: Optional[Album] = None, year: int = 1996):
+    def _mock_extra(album: Optional[Album] = None):
         if not album:
             album = Album(
-                "OutKast", "ATLiens", datetime.date(year, 1, 1), path=MagicMock()
+                "OutKast",
+                "ATLiens",
+                datetime.date(random.randint(1, 10000), 1, 1),
+                path=MagicMock(),
             )
 
         mock_path = MagicMock()
@@ -261,11 +254,8 @@ def real_track_factory(
     track will belong to a single album.
 
     Args:
-        track_num: Optional track number.
         album: Optional album to assign the track to. If given, assumes the album's path
             exists on the filesystem.
-        year: Optional year. Changing this will change which album the track belongs to.
-            Not used if `album` is passed.
         real_path: Optional path of a real music file to use. The file at `real_path`
             will be copied into the temporary music library.
         **kwargs: Any other fields to assign to the track.
@@ -279,19 +269,17 @@ def real_track_factory(
     """
 
     def _real_track(
-        track_num: int = 0,
         album: Optional[Album] = None,
-        year: int = 1994,
         real_path: Optional[Path] = None,
         **kwargs,
     ):
-        track = mock_track_factory(track_num, album, year, **kwargs)
+        track = mock_track_factory(album, **kwargs)
 
         if not album:
             track.album_obj.path = (
                 tmp_library_path / f"{track.albumartist} - {track.album} {track.year}"
             )
-            track.album_obj.path.mkdir()
+            track.album_obj.path.mkdir(exist_ok=True)
 
         filename = f"{track.track_num} - {track.title}.mp3"
         track.path = track.album_obj.path / filename
@@ -334,9 +322,9 @@ def real_album_factory(
     def _real_album_factory():
         artist = "Outkast"
         title = "ATLiens"
-        year = random.randint(1, 1000)
+        year = random.randint(1, 10000)
         path = tmp_library_path / f"{artist} - {title} ({year})"
-        path.mkdir()
+        path.mkdir(exist_ok=True)
 
         album = Album(artist, title, datetime.date(year, 1, 1), path=path)
 
@@ -366,19 +354,17 @@ def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Ext
     Args:
         album: Optional album to assign the track to. If given, assumes the album's path
             exists on the filesystem.
-        year: Optional year. Changing this will change which album the track belongs to.
-            Not used if `album` is passed.
 
     Returns:
         Unique Extra.
     """
 
-    def _real_extra(album: Optional[Album] = None, year: int = 1994):
-        extra = mock_extra_factory(album, year)
+    def _real_extra(album: Optional[Album] = None):
+        extra = mock_extra_factory(album)
 
         if not album:
             extra.album_obj.path = (
-                tmp_library_path / "Jacobs Awesome Band - Cool Song (2021)"
+                tmp_library_path / "Jacobs Awesome Band - Cool Song (1996)"
             )
             extra.album_obj.path.mkdir(exist_ok=True)
 

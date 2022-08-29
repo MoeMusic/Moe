@@ -59,11 +59,13 @@ class TestAddItemFromDir:
 
         assert not tmp_session.query(Track.path).filter_by(path=new_path).scalar()
 
-    def test_duplicate_track(self, real_track_factory, tmp_session, tmp_add_config):
+    def test_duplicate_track_from_album(
+        self, real_track_factory, tmp_session, tmp_add_config
+    ):
         """Raise AddError if there is a duplicate track from an album in the db."""
         mb_track_id = "123"
-        track = real_track_factory(year=1990, mb_track_id=mb_track_id)
-        dup_track = real_track_factory(year=1992, mb_track_id=mb_track_id)
+        track = real_track_factory(mb_track_id=mb_track_id)
+        dup_track = real_track_factory(mb_track_id=mb_track_id)
 
         tmp_session.merge(track)
         assert dup_track.get_existing()
@@ -71,17 +73,20 @@ class TestAddItemFromDir:
         with pytest.raises(add.AddError):
             add.add_item(tmp_add_config, dup_track.album_obj.path)
 
-    def test_duplicate_extra(self, real_extra_factory, tmp_session, tmp_add_config):
+    def test_duplicate_extra_from_album(
+        self, real_album_factory, tmp_session, tmp_add_config
+    ):
         """Raise AddError if there is a duplicate extra from an album in the db."""
-        extra = real_extra_factory()
-        dup_extra = real_extra_factory()
-        extra.path = dup_extra.path
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        dup_extra = album1.extras[0]
+        shutil.copy(dup_extra.path, album2.path)
+        dup_extra.path = album2.path / dup_extra.filename
 
-        tmp_session.merge(extra)
-        assert dup_extra.get_existing()
+        tmp_session.merge(album1)
 
         with pytest.raises(add.AddError):
-            add.add_item(tmp_add_config, dup_extra.album_obj.path)
+            add.add_item(tmp_add_config, album2.path)
 
     def test_duplicate_album(self, real_album, tmp_session, tmp_add_config):
         """Raise an AddError if there is a duplicate album in the database."""
@@ -165,32 +170,30 @@ class TestAddItemFromFile:
         with pytest.raises(add.AddError):
             add.add_item(tmp_add_config, empty_mp3_path)
 
-    def test_duplicate_track(self, tmp_path, real_track, tmp_session, tmp_add_config):
+    def test_duplicate_track(
+        self, tmp_path, real_track_factory, tmp_session, tmp_add_config
+    ):
         """Raise AddError if duplicate track found."""
-        new_track_path = real_track.album_obj.path / "full2"
-        shutil.copyfile(real_track.path, new_track_path)
-        tmp_session.add(real_track)
+        track1 = real_track_factory(mb_track_id="123")
+        track2 = real_track_factory(mb_track_id="123")
+        tmp_session.add(track1)
+        assert track2.get_existing()
 
         with pytest.raises(add.AddError):
-            add.add_item(tmp_add_config, new_track_path)
+            add.add_item(tmp_add_config, track2.path)
 
     def test_duplicate_album_from_track(
-        self, tmp_path, real_track, tmp_session, tmp_add_config
+        self, tmp_path, real_album, real_track_factory, tmp_session, tmp_add_config
     ):
         """Raise AddError if adding a track with a duplicate associated album."""
-        tmp_session.merge(real_track.album_obj)
+        real_album.mb_album_id = "123"
+        tmp_session.merge(real_album)
+        real_track = real_track_factory(mb_album_id="123")
+        assert real_track.album_obj.get_existing()
+        assert not real_track.get_existing()
 
         with pytest.raises(add.AddError):
             add.add_item(tmp_add_config, real_track.path)
-
-    def test_duplicate_album_from_extra(
-        self, tmp_path, real_extra, tmp_session, tmp_add_config
-    ):
-        """Raise AddError if adding a extra with a duplicate associated album."""
-        tmp_session.merge(real_extra.album_obj)
-
-        with pytest.raises(add.AddError):
-            add.add_item(tmp_add_config, real_extra.path)
 
 
 class AddPlugin:

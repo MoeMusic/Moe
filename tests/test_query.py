@@ -225,8 +225,8 @@ class TestQuery:
         Note, I think '\' would be the preferred backslash character, but for
         some reason it doesn't work.
         """
-        track1 = mock_track_factory(year=1)
-        track2 = mock_track_factory(year=2)
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
         track1.title = "_"
         track2.title = "b"
         tmp_session.merge(track1)
@@ -249,8 +249,8 @@ class TestQuery:
 
     def test_wildcard_query(self, mock_track_factory, tmp_session):
         """'*' as a query should return all items."""
-        track1 = mock_track_factory(year=2)
-        track2 = mock_track_factory(year=1)
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
 
         tmp_session.merge(track1)
         tmp_session.merge(track2)
