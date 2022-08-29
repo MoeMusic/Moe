@@ -65,7 +65,7 @@ def process_candidates(config: Config, old_album: Album, candidates):
         try:
             import_prompt(config, old_album, candidates[0])
         except AbortImport as err:
-            raise SystemExit(1) from err
+            raise SystemExit(0) from err
 
 
 @moe.hookimpl

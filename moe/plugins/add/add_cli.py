@@ -13,6 +13,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import add as moe_add
+from moe.plugins.add.add_core.add import AddAbortError
 
 log = logging.getLogger("moe.add")
 
@@ -64,7 +65,10 @@ def pre_add(config: Config, item: LibItem):
         "Duplicate item already exists in the library, how would you like to"
         " resolve it?",
     )
-    prompt_choice.func(config, album, dup_album)
+    try:
+        prompt_choice.func(config, album, dup_album)
+    except AddAbortError as err:
+        raise SystemExit(0) from err
 
 
 @moe.hookimpl
