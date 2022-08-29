@@ -1,12 +1,13 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from sqlalchemy import Column, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.schema import ForeignKey
 
+from moe.config import MoeSession
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
@@ -57,6 +58,26 @@ class Extra(LibItem, SABase):
     def fields(self) -> Tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Extra."""
         return "filename", "path"
+
+    def get_existing(self) -> Optional["Extra"]:
+        """Gets a matching Extra in the library by its unique attributes.
+
+        Returns:
+            Duplicate extra or the same extra if it already exists in the library.
+        """
+        session = MoeSession()
+
+        existing_extra = (
+            session.query(Extra)
+            .filter(Extra.path == self.path)
+            .options(joinedload("*"))
+            .one_or_none()
+        )
+        if not existing_extra:
+            return None
+
+        session.expunge(existing_extra)
+        return existing_extra
 
     def __eq__(self, other):
         """Compares an Extra by its attributes."""

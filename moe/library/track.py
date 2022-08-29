@@ -7,11 +7,12 @@ from typing import List, Optional, Tuple, Type, TypeVar, cast
 
 import mediafile
 import sqlalchemy.orm as sa_orm
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, and_, or_
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
+from moe.config import MoeSession
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
@@ -94,7 +95,10 @@ class Track(LibItem, SABase):
     year: int = association_proxy("album_obj", "year")
 
     _genres: List[_Genre] = relationship(
-        "_Genre", secondary=track_genre, collection_class=list
+        "_Genre",
+        secondary=track_genre,
+        collection_class=list,
+        cascade="save-update, merge, expunge",
     )
     genres: List[str] = association_proxy("_genres", "name")
 
@@ -226,6 +230,53 @@ class Track(LibItem, SABase):
             "track_num",
             "year",
         )
+
+    def get_existing(self) -> Optional["Track"]:
+        """Gets a matching Track in the library by its unique attributes.
+
+        Returns:
+            Duplicate track or the same track if it already exists in the library.
+        """
+        session = MoeSession()
+
+        existing_track = (
+            session.query(Track)
+            .filter(
+                or_(
+                    Track.path == self.path,
+                    and_(
+                        Track.mb_track_id == self.mb_track_id,
+                        Track.mb_track_id != None,  # noqa: E711
+                    ),
+                    and_(
+                        Track.track_num == self.track_num,
+                        Track.disc == self.disc,
+                        Track._album_id == self._album_id,
+                    ),
+                )
+            )
+            .options(joinedload("*"))
+            .one_or_none()
+        )
+        if not existing_track:
+            return None
+
+        session.expunge(existing_track)
+        return existing_track
+
+    def merge(self, other: "Track", overwrite: bool = False):
+        """Merges another track into this one.
+
+        Args:
+            other: Other track to be merged with the current track.
+            overwrite: Whether or not to overwrite self if a conflict exists.
+        """
+        for field in self.fields():
+            if field not in {"album_obj", "path", "year"}:
+                other_value = getattr(other, field)
+                self_value = getattr(self, field)
+                if other_value and (overwrite or (not overwrite and not self_value)):
+                    setattr(self, field, other_value)
 
     def __eq__(self, other) -> bool:
         """Compares a Track by its attributes."""

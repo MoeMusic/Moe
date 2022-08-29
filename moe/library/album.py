@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 import sqlalchemy as sa
-from sqlalchemy import Column, Date, Integer, String, or_
+from sqlalchemy import Column, Date, Integer, String, and_, or_
 from sqlalchemy.orm import joinedload, relationship
 
 from moe.config import MoeSession
@@ -110,19 +110,29 @@ class Album(LibItem, SABase):
         )
 
     def get_existing(self) -> Optional["Album"]:
-        """Gets a matching Album in the library by its unique attributes."""
-        session = MoeSession()
+        """Gets a matching Album in the library by its unique attributes.
 
+        Returns:
+            Duplicate album or the same album if it already exists in the library.
+        """
+        session = MoeSession()
         existing_album = (
             session.query(Album)
-            .filter(or_(Album.path == self.path, Album.mb_album_id == self.mb_album_id))
+            .filter(
+                or_(
+                    Album.path == self.path,
+                    and_(
+                        Album.mb_album_id == self.mb_album_id,
+                        Album.mb_album_id != None,  # noqa: E711
+                    ),
+                )
+            )
             .options(joinedload("*"))
             .one_or_none()
         )
         if not existing_album:
             return None
 
-        session.expunge(existing_album)
         return existing_album
 
     def get_extra(self, filename: str) -> Optional["Extra"]:
@@ -142,60 +152,44 @@ class Album(LibItem, SABase):
             None,
         )
 
-    def is_unique(self, other: "Album") -> bool:
+    def is_unique(self, other: Optional["Album"]) -> bool:
         """Whether or not the given album is unique (by tags) from the current album."""
+        if not other:
+            return True
         return self.mb_album_id != other.mb_album_id
 
-    def merge(self, other: Optional["Album"], overwrite_album_info=True):
-        """Merges the current Album with another, overwriting the other if conflict.
-
-        This only merges metadata i.e. not an album's path.
+    def merge(self, other: "Album", overwrite: bool = False):
+        """Merges another album into this one.
 
         Args:
-            other: Other album to be merged into the current album.
-            overwrite_album_info: If ``False``, the album metadata of the other album
-                will persist onto the current album. Only the tracks and extras will
-                be overwritten in this case.
-
-        Note:
-            The actual merging of the instances in the session will occur on a call to
-            ``session.merge``.
-
-        See Also:
-            https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.Session.merge
+            other: Other album to be merged with the current album.
+            overwrite: Whether or not to overwrite self if a conflict exists.
         """
-        if not other:
-            return
-
-        self._id = other._id
         for field in self.fields():
             if field not in {"path", "year", "tracks", "extras"}:
-                if overwrite_album_info:
-                    value = getattr(self, field)
-                    setattr(other, field, value)
-                else:
-                    value = getattr(other, field)
-                    setattr(self, field, value)
+                other_value = getattr(other, field)
+                self_value = getattr(self, field)
+                if other_value and (overwrite or (not overwrite and not self_value)):
+                    setattr(self, field, other_value)
 
+        new_tracks: List["Track"] = []
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
-                conflict_track._id = other_track._id
+                conflict_track.merge(other_track, overwrite)
             else:
-                self.tracks.append(other_track)
+                new_tracks.append(other_track)
+        self.tracks.extend(new_tracks)
 
-        for track in self.tracks:
-            track._album_id = self._id
-
+        new_extras: List["Extra"] = []
         for other_extra in other.extras:
             conflict_extra = self.get_extra(other_extra.filename)
-            if conflict_extra:
-                conflict_extra._id = other_extra._id
-            else:
-                self.extras.append(other_extra)
-
-        for extra in self.extras:
-            extra._album_id = self._id
+            if conflict_extra and overwrite:
+                self.extras.remove(conflict_extra)
+                new_extras.append(other_extra)
+            elif not conflict_extra:
+                new_extras.append(other_extra)
+        self.extras.extend(new_extras)
 
     @typed_hybrid_property
     def year(self) -> int:  # type: ignore

@@ -20,6 +20,10 @@ class LibItem:
         """Returns the public attributes of an item."""
         raise NotImplementedError
 
+    def get_existing(self) -> "LibItem":
+        """Returns a matching item in the library by its unique attributes."""
+        raise NotImplementedError
+
 
 class PathType(sa.types.TypeDecorator):
     """A custom type for paths for database storage.
@@ -36,14 +40,7 @@ class PathType(sa.types.TypeDecorator):
 
     def process_bind_param(self, pathlib_path, dialect):
         """Convert the path to a relative string prior to entering in the database."""
-        assert pathlib_path.relative_to(self.library_path)
-
-        absolute_path = str(pathlib_path.resolve())
-
-        if absolute_path.startswith(str(self.library_path)):
-            return absolute_path[len(str(self.library_path)) :]
-
-        return absolute_path  # only reached by tests using MagicMock for paths
+        return str(pathlib_path.relative_to(self.library_path))
 
     def process_result_value(self, path_str, dialect):
         """Convert the path back to a Path object on the way out."""

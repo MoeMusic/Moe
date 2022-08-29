@@ -5,7 +5,6 @@ import datetime
 import pytest
 
 import moe.plugins.write
-from moe.library.album import Album
 from moe.library.track import Track, TrackError
 
 
@@ -17,24 +16,6 @@ class TestInit:
         tmp_session.add(mock_track)
 
         assert mock_track.album_obj
-
-    def test_add_to_album(self, mock_track_factory, tmp_session):
-        """Tracks with the same album attributes should be added to the same album."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-
-        tmp_session.merge(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing())
-        tmp_session.merge(track2)
-
-        tracks = tmp_session.query(Track).all()
-        album = tmp_session.query(Album).one()
-
-        for track in tracks:
-            assert track in album.tracks
-
-        assert len(tracks) == len(album.tracks)
-        assert tracks == album.tracks
 
 
 class TestAlbumSet:
@@ -88,34 +69,95 @@ class TestFromTags:
         assert track.albumartist
 
 
-class TestDupTrack:
-    """Test behavior when there is an attempt to add a duplicate Track to the db.
+class TestGetExisting:
+    """Test `get_existing()`."""
 
-    A duplicate Track is defined as a combination of it's album (obj), disc, and
-    track number.
-
-    To handle duplicates by tags, you should use ``album.get_existing()`` to get
-    the existing album. At this point, you can either delete the existing album from the
-    session using ``session.delete()``, or you can merge it with the current album
-    using ``album.merge()``. Finally, to add the current track into the session,
-    make sure to use ``session.merge()``.
-
-    Note:
-        This error will only occur upon the session being flushed or committed.
-        If you wish to catch this error, then you should use a new session scope. This
-        will allow you to catch the error by wrapping the `with` statement with a
-        `try/except`.
-    """
-
-    def test_dup_fields_merge(self, mock_track_factory, tmp_session):
-        """Duplicate errors should not occur if we merge the existing album."""
+    def test_path(self, mock_track_factory, tmp_session):
+        """We match an existing track by it's path."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
-        track2.track_num = track1.track_num
+        track1.path = track2.path
 
-        tmp_session.add(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing())
-        tmp_session.merge(track2)
+        tmp_session.merge(track1)
+
+        assert track1.get_existing()
+
+    def test_mb_track_id(self, mock_track_factory, tmp_session):
+        """We match an existing track by it's mb_track_id."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        track1.mb_track_id = "123"
+        track1.mb_track_id = track2.mb_track_id
+
+        tmp_session.merge(track1)
+
+        assert track1.get_existing()
+
+    def test_null_match(self, mock_track_factory, tmp_session):
+        """Don't match off of null values."""
+        track1 = mock_track_factory()
+        track2 = mock_track_factory()
+        assert not track1.mb_track_id
+        assert not track2.mb_track_id
+        assert track1.path != track2.path
+
+        tmp_session.merge(track1)
+
+        assert not track2.get_existing()
+
+
+class TestMerge:
+    """Test merging two tracks."""
+
+    def test_conflict_persists(self, mock_track_factory):
+        """Don't overwrite any conflicts."""
+        track = mock_track_factory()
+        other_track = mock_track_factory()
+
+        track.title = "keep"
+        other_track.title = "discard"
+
+        track.merge(other_track)
+
+        assert track.title == "keep"
+
+    def test_merge_non_conflict(self, mock_track_factory):
+        """Apply any non-conflicting fields."""
+        track = mock_track_factory()
+        other_track = mock_track_factory()
+
+        track.title = None
+        track.genres = []
+        other_track.title = "keep"
+        other_track.genres = ["keep"]
+
+        track.merge(other_track)
+
+        assert track.title == "keep"
+        assert track.genres == ["keep"]
+
+    def test_none_merge(self, mock_track_factory):
+        """Don't merge in any null values."""
+        track = mock_track_factory()
+        other_track = mock_track_factory()
+
+        track.title = "keep"
+        other_track.title = None
+
+        track.merge(other_track)
+
+        assert track.title == "keep"
+
+    def test_db_delete(self, mock_track_factory, tmp_session):
+        """Remove the other track from the db if it exists."""
+        track = mock_track_factory()
+        other_track = mock_track_factory()
+        tmp_session.add(other_track)
+        tmp_session.flush()
+
+        track.merge(other_track)
+
+        assert not track.get_existing()
 
 
 class TestDupListField:
@@ -129,7 +171,6 @@ class TestDupListField:
         track2.genre = "pop"
 
         tmp_session.add(track1)
-        track2.album_obj.merge(track2.album_obj.get_existing())
         tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()
