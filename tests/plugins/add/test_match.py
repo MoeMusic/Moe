@@ -83,7 +83,7 @@ class TestGetMatchingTracks:
 
     def test_multiple_same_match(self, mock_track_factory):
         """Any track should not have more than one match."""
-        track1 = mock_track_factory(year=2000, track_num=1)
+        track1 = mock_track_factory(track_num=1)
         track2 = mock_track_factory(track_num=2)
         track1.album_obj = track2.album_obj
 
