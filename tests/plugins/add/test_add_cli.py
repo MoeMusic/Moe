@@ -150,13 +150,15 @@ class TestPreAdd:
         assert album.get_existing()
 
         mock_prompt_choice = moe.cli.PromptChoice("mock", "m", add.add_cli._abort)
-        with pytest.raises(add.AddAbortError):
+        with pytest.raises(SystemExit) as error:
             with patch.object(
                 moe.cli, "choice_prompt", return_value=mock_prompt_choice
             ):
                 tmp_add_config.plugin_manager.hook.pre_add(
                     config=tmp_add_config, item=album
                 )
+
+        assert error.value.code == 0
 
     def test_merge(self, mock_album_factory, tmp_session, tmp_add_config):
         """Test merging the two albums, without overwriting on conflict."""

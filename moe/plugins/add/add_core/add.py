@@ -101,7 +101,6 @@ def add_item(config: Config, item_path: Path):
         item_path: Filesystem path of the item.
 
     Raises:
-        AddAbortError: Add process was aborted by the user.
         AddError: Unable to add the item to the library.
         NotImplementedError: Attempting to add an Extra.
     """

@@ -122,7 +122,7 @@ class TestProcessCandidates:
                     candidates=[Mock()],
                 )
 
-        assert error.value.code != 0
+        assert error.value.code == 0
 
     def test_process_no_candidates(self, tmp_import_config):
         """Don't display the import prompt if there are no candidates to process."""
