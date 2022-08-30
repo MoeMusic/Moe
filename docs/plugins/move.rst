@@ -8,7 +8,7 @@ The ``move`` plugin provides the following features:
 * Any items added to your library will be copied to the location set by the global option, ``library_path`` in your configuration file.
 * Any items moved or copied will have their paths set to a default format. This default format cannot currently be configured, and is as follows:
 
-  * Albums: ``{library_path}/{albumartist} ({album_year})/``
+  * Albums: ``{library_path}/{albumartist}/{album_title} ({album_year})/``
   * Tracks: ``{album_path}/{track_number} - {track_title}.{file_ext}``
 
     If the album contains more than one disc, tracks will be formatted as:
