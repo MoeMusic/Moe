@@ -13,10 +13,16 @@ Most configuration options reside in their relevant plugin, however there are th
 
 ``default_plugins = ["add", "edit", "info", "ls", "move", "musicbrainz", "rm", "write"]``
     Overrides the list of default plugins.
+
+.. _library_path config option:
+
 ``library_path = "~/Music"``
     Tells Moe where your music library resides.
 
-    For Windows users, the default path is ``%USERPROFILE%\Music``. Also, you need to set your path by enclosing it in triple-single quotes, e.g. ``'''~\Music'''``.
+    For Windows users, ``~`` is your ``%USERPROFILE%`` directory. It's recommended to use a forward slash ``/`` to delineate sub-directories for your library path for consistency with other configuration options, but you may also use a backslash ``\``. If you choose to use backslashes, ensure you enclose your path in single quotes, e.g. ``'~\Music'``, to ensure the backslash ``\`` isn't interpreted as an escape character.
+
+    .. note::
+       If you change ``library_path``, Moe will attempt to search for your music in the new location.
 
 Plugin Options
 ==============

@@ -50,8 +50,8 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
     """Returns a formatted item path according to the user configuration.
 
     Args:
-        item: Library item used to format the directory.
         config: Moe config.
+        item: Library item used to format the directory.
 
     Returns:
         Formatted item path under the config ``library_path``.
@@ -81,8 +81,8 @@ def _fmt_album_path(config: Config, album: Album) -> Path:
     to ensure uniqueness.
 
     Args:
-        album: Album used to format the directory.
         config: Moe config.
+        album: Album used to format the directory.
 
     Returns:
         Formatted album directory under the config ``library_path``.
@@ -95,7 +95,7 @@ def _fmt_album_path(config: Config, album: Album) -> Path:
 
 def _fmt_extra_path(config: Config, extra: Extra) -> Path:
     """Returns a formatted extra path according to the user configuration."""
-    return extra.album_obj.path / extra.path.name
+    return _fmt_album_path(config, extra.album_obj) / extra.path.name
 
 
 def _fmt_track_path(config: Config, track: Track) -> Path:
@@ -114,7 +114,7 @@ def _fmt_track_path(config: Config, track: Track) -> Path:
     disc_dir_name = ""
     if track.disc_total > 1:
         disc_dir_name = f"Disc {track.disc:02}"
-    disc_dir = track.album_obj.path / disc_dir_name
+    disc_dir = _fmt_album_path(config, track.album_obj) / disc_dir_name
 
     track_filename = f"{track.track_num:02} - {track.title}{track.path.suffix}"
 

@@ -1,8 +1,10 @@
 """Tests configuration."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import dynaconf
+import pytest
 
 import moe
 from moe.config import Config, ExtraPlugin
@@ -146,3 +148,26 @@ class TestHooks:
         )
 
         assert config.plugin_manager.has_plugin("config2")
+
+
+class TestConfigOptions:
+    """Test the various global configuration options."""
+
+    def test_default_plugins(self, tmp_config):
+        """Not required."""
+        config = tmp_config()
+        assert config.settings.default_plugins
+
+    def test_library_path(self, tmp_config):
+        """Not required."""
+        config = tmp_config()
+        assert config.settings.library_path
+
+    @pytest.mark.win32
+    def test_library_path_backslash(self, tmp_path, tmp_config):
+        """Backslashes in library_path are allowed on Windows should use ''."""
+        tmp_windows_path = str(tmp_path.resolve()).replace("/", "\\")
+        config = tmp_config(
+            settings=f"library_path = '{tmp_windows_path}'",
+        )
+        assert Path(config.settings.library_path).exists()
