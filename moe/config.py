@@ -175,9 +175,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(
         dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS))
     )
-    settings.validators.register(
-        dynaconf.Validator("LIBRARY_PATH", must_exist=True, default="~/Music")
-    )
+    settings.validators.register(dynaconf.Validator("LIBRARY_PATH", default="~/Music"))
 
 
 class ExtraPlugin(NamedTuple):

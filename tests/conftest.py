@@ -2,6 +2,7 @@
 import datetime
 import random
 import shutil
+import sys
 import textwrap
 from pathlib import Path
 from types import FunctionType
@@ -20,6 +21,26 @@ from moe.library.track import Track
 from moe.plugins import write as moe_write
 
 RESOURCE_DIR = Path(__file__).parent / "resources"
+SUPPORTED_PLATFORMS = {"darwin", "linux", "win32"}
+
+
+def pytest_runtest_setup(item):
+    """Only run tests on their appropriate platform.
+
+    Use the following markers to mark tests for specific platforms:
+        @pytest.mark.darwin
+        @pytest.mark.linux
+        @pytest.mark.win32
+
+    See Also:
+       pytest docs: https://docs.pytest.org/en/latest/example/markers.html#marking-platform-specific-tests-with-pytest
+    """  # noqa: E501
+    platforms = SUPPORTED_PLATFORMS.intersection(
+        mark.name for mark in item.iter_markers()
+    )
+    platform = sys.platform
+    if platforms and platform not in platforms:
+        pytest.skip(f"cannot run on platform {platform}")
 
 
 @pytest.fixture
@@ -157,10 +178,10 @@ def mock_track_factory() -> Callable[[], Track]:
 
         return Track(
             album=album,
-            path=MagicMock(),
+            path=kwargs.pop("path", MagicMock()),
             track_num=kwargs.pop("track_num", random.randint(1, 10000)),
-            title="Jazzy Belle",
-            genre="Hip Hop",
+            title=kwargs.pop("title", "Jazzy Belle"),
+            genre=kwargs.pop("genre", "Hip Hop"),
             **kwargs,
         )
 
@@ -211,6 +232,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
     Each extra will belong to a different album unless `album` is given.
 
     Args:
+        path: Optional path to assign.
         album: Optional album to assign the extra to.
 
     Returns:
@@ -220,7 +242,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
     def mock_lt(self, other):
         return self.name < other.name
 
-    def _mock_extra(album: Optional[Album] = None):
+    def _mock_extra(path: Optional[Path] = None, album: Optional[Album] = None):
         if not album:
             album = Album(
                 "OutKast",
@@ -229,11 +251,12 @@ def mock_extra_factory() -> Callable[[], Extra]:
                 path=MagicMock(),
             )
 
-        mock_path = MagicMock()
+        if not path:
+            path = MagicMock()
+            path.__lt__ = mock_lt
+            path.name = f"{random.randint(1, 10000)}.txt"
 
-        mock_path.__lt__ = mock_lt
-        mock_path.name = f"{random.randint(1, 10000)}.txt"
-        return Extra(mock_path, album)
+        return Extra(path, album)
 
     return _mock_extra
 
@@ -250,8 +273,8 @@ def real_track_factory(
 ) -> Callable[[], Track]:
     """Creates a Track on the filesystem.
 
-    The track is copied to a temp location, so feel free to make any changes. Each
-    track will belong to a single album.
+    Note:
+        Each track will belong to a different album unless `album` is specified.
 
     Args:
         album: Optional album to assign the track to. If given, assumes the album's path
@@ -277,12 +300,15 @@ def real_track_factory(
 
         if not album:
             track.album_obj.path = (
-                tmp_library_path / f"{track.albumartist} - {track.album} {track.year}"
+                tmp_library_path
+                / f"{track.albumartist}"
+                / f"{track.album} ({track.year})"
             )
-            track.album_obj.path.mkdir(exist_ok=True)
+            track.album_obj.path.mkdir(exist_ok=True, parents=True)
 
         filename = f"{track.track_num} - {track.title}.mp3"
-        track.path = track.album_obj.path / filename
+        track.path = kwargs.pop("path", track.album_obj.path / filename)
+        track.path.parent.mkdir(exist_ok=True, parents=True)
 
         if real_path:
             shutil.copyfile(real_path, track.path)
@@ -315,18 +341,22 @@ def real_album_factory(
 ) -> Callable[[], Album]:
     """Factory for Albums that exist on the filesytem.
 
+    Args:
+        **kwargs: Any fields to assign to the album.
+
     Returns:
         Album with two tracks and two extras.
     """
 
-    def _real_album_factory():
-        artist = "Outkast"
-        title = "ATLiens"
+    def _real_album_factory(**kwargs):
         year = random.randint(1, 10000)
-        path = tmp_library_path / f"{artist} - {title} ({year})"
-        path.mkdir(exist_ok=True)
+        artist = kwargs.pop("artist", "Outkast")
+        title = kwargs.pop("title", "ATLiens")
+        date = kwargs.pop("data", datetime.date(year, 1, 1))
+        path = kwargs.pop("path", tmp_library_path / f"{artist}" / f"{title} ({year})")
 
-        album = Album(artist, title, datetime.date(year, 1, 1), path=path)
+        album = Album(artist, title, date, path)
+        album.path.mkdir(exist_ok=True, parents=True)
 
         real_track_factory(track_num=1, album=album)
         real_track_factory(track_num=2, album=album)
@@ -348,10 +378,11 @@ def real_album(real_album_factory) -> Album:
 def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Extra]:
     """Creates an Extra on the filesystem.
 
-    The track is copied to a temp location, so feel free to make any changes. Each
-    extra will belong to a single album.
+    Note:
+        Each track will belong to a different album unless `album` is specified.
 
     Args:
+        path: Optional path to assign. Will create the file if it does not exist.
         album: Optional album to assign the track to. If given, assumes the album's path
             exists on the filesystem.
 
@@ -359,17 +390,23 @@ def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Ext
         Unique Extra.
     """
 
-    def _real_extra(album: Optional[Album] = None):
-        extra = mock_extra_factory(album)
+    def _real_extra(
+        path: Optional[Path] = None,
+        album: Optional[Album] = None,
+    ):
+        extra = mock_extra_factory(path=path, album=album)
 
         if not album:
             extra.album_obj.path = (
-                tmp_library_path / "Jacobs Awesome Band - Cool Song (1996)"
+                tmp_library_path / "Jacob's Awesome Band" / "Cool Song (1996)"
             )
-            extra.album_obj.path.mkdir(exist_ok=True)
+            extra.album_obj.path.mkdir(exist_ok=True, parents=True)
 
         filename = f"{random.randint(1, 10000)}.txt"
-        extra.path = extra.album_obj.path / filename
+        if not path:
+            path = extra.album_obj.path / filename
+        assert path
+        extra.path = path
         extra.path.touch()
 
         return extra
