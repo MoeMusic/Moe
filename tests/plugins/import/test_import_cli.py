@@ -110,12 +110,12 @@ class TestProcessCandidates:
 
     def test_abort_import(self, tmp_import_config):
         """Raise SystemExit if the import is aborted."""
-        with pytest.raises(SystemExit) as error:
-            with patch.object(
-                moe_import.import_cli,
-                "import_prompt",
-                side_effect=moe_import.AbortImport,
-            ):
+        with patch.object(
+            moe_import.import_cli,
+            "import_prompt",
+            side_effect=moe_import.AbortImport,
+        ):
+            with pytest.raises(SystemExit) as error:
                 tmp_import_config.plugin_manager.hook.process_candidates(
                     config=tmp_import_config,
                     old_album=Mock(),
@@ -264,8 +264,8 @@ class TestAddImportPromptChoice:
         mock_choice = moe.cli.PromptChoice(
             "mock", "m", moe_import.import_cli._abort_changes
         )
-        with pytest.raises(moe_import.AbortImport):
-            with patch.object(moe.cli, "choice_prompt", return_value=mock_choice):
+        with patch.object(moe.cli, "choice_prompt", return_value=mock_choice):
+            with pytest.raises(moe_import.AbortImport):
                 moe_import.import_prompt(tmp_import_config, mock_album, new_album)
 
         assert mock_album.is_unique(new_album)

@@ -150,10 +150,8 @@ class TestPreAdd:
         assert album.get_existing()
 
         mock_prompt_choice = moe.cli.PromptChoice("mock", "m", add.add_cli._abort)
-        with pytest.raises(SystemExit) as error:
-            with patch.object(
-                moe.cli, "choice_prompt", return_value=mock_prompt_choice
-            ):
+        with patch.object(moe.cli, "choice_prompt", return_value=mock_prompt_choice):
+            with pytest.raises(SystemExit) as error:
                 tmp_add_config.plugin_manager.hook.pre_add(
                     config=tmp_add_config, item=album
                 )

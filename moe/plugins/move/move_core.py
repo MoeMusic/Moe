@@ -17,7 +17,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
-__all__ = ["fmt_item_path", "copy_item", "move_item"]
+__all__ = ["copy_item", "fmt_item_path", "move_item"]
 
 log = logging.getLogger("moe.move")
 

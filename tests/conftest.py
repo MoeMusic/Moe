@@ -135,7 +135,7 @@ def tmp_session(tmp_config) -> Iterator[sqlalchemy.orm.session.Session]:
 
 
 @pytest.fixture(autouse=True)
-def clean_session():
+def _clean_session():
     """Ensure we aren't sharing sessions between tests."""
     MoeSession.remove()
 
