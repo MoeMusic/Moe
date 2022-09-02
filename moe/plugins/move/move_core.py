@@ -1,6 +1,7 @@
 """Core api for moving items."""
 
 import logging
+import re
 import shutil
 from contextlib import suppress
 from pathlib import Path
@@ -24,8 +25,24 @@ log = logging.getLogger("moe.move")
 @moe.hookimpl
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
+    default_album_path = "{album.artist}/{album.title} ({album.year})"
+    default_extra_path = "{extra.filename}"
+    default_track_path = (
+        "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/"
+        "{track.track_num:02} - {track.title}{track.path.suffix}"
+    )
+
     settings.validators.register(
-        dynaconf.Validator("MOVE.ASCIIFY_PATHS", must_exist=True, default=False)
+        dynaconf.Validator("MOVE.ASCIIFY_PATHS", default=False)
+    )
+    settings.validators.register(
+        dynaconf.Validator("MOVE.ALBUM_PATH", default=default_album_path)
+    )
+    settings.validators.register(
+        dynaconf.Validator("MOVE.EXTRA_PATH", default=default_extra_path)
+    )
+    settings.validators.register(
+        dynaconf.Validator("MOVE.TRACK_PATH", default=default_track_path)
     )
 
 
@@ -88,14 +105,17 @@ def _fmt_album_path(config: Config, album: Album) -> Path:
         Formatted album directory under the config ``library_path``.
     """
     library_path = Path(config.settings.library_path).expanduser()
-    album_dir_name = f"{album.artist}/{album.title} ({album.year})"
+    album_path = _eval_path_template(config.settings.move.album_path, album)
 
-    return library_path / album_dir_name
+    return library_path / album_path
 
 
 def _fmt_extra_path(config: Config, extra: Extra) -> Path:
     """Returns a formatted extra path according to the user configuration."""
-    return _fmt_album_path(config, extra.album_obj) / extra.path.name
+    album_path = _fmt_album_path(config, extra.album_obj)
+    extra_path = _eval_path_template(config.settings.move.extra_path, extra)
+
+    return album_path / extra_path
 
 
 def _fmt_track_path(config: Config, track: Track) -> Path:
@@ -111,14 +131,97 @@ def _fmt_track_path(config: Config, track: Track) -> Path:
     Returns:
         Formatted track path under its album path.
     """
-    disc_dir_name = ""
-    if track.disc_total > 1:
-        disc_dir_name = f"Disc {track.disc:02}"
-    disc_dir = _fmt_album_path(config, track.album_obj) / disc_dir_name
+    album_path = _fmt_album_path(config, track.album_obj)
+    track_path = _eval_path_template(config.settings.move.track_path, track)
 
-    track_filename = f"{track.track_num:02} - {track.title}{track.path.suffix}"
+    return album_path / track_path
 
-    return disc_dir / track_filename
+
+def _eval_path_template(template, lib_item) -> str:
+    """Evaluates and sanitizes a path template.
+
+    Args:
+        template: Path template.
+            See `_lazy_fstr_item()` for more info on accepted f-string templates.
+        lib_item: Library item associated with the template.
+
+    Returns:
+        Evaluated path.
+
+    Raises:
+        NotImplementedError: You discovered a new library item!
+    """
+    template_parts = template.split("/")
+    sanitized_parts = []
+    for template_part in template_parts:
+        path_part = _lazy_fstr_item(template_part, lib_item)
+        sanitized_part = _sanitize_path_part(path_part)
+        if sanitized_part:
+            sanitized_parts.append(sanitized_part)
+
+    return "/".join(sanitized_parts)
+
+
+def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
+    """Evalutes the given f-string template for a specific library item.
+
+    Args:
+        template: f-string template to evaluate.
+            All library items should have their own template and refer to variables as:
+                Album: album (e.g. {album.title}, {album.artist})
+                Track: track (e.g. {track.title}, {track.artist})
+                Extra: extra (e.g. {extra.filename}
+        lib_item: Library item referenced in the template.
+
+
+    Example:
+        The default path template for an album is::
+
+            {album.artist}/{album.title} ({album.year})
+
+    Returns:
+        Evaluated f-string.
+
+    Raises:
+        NotImplementedError: You discovered a new library item!
+    """
+    # add the appropriate library item to the scope
+    if isinstance(lib_item, Album):
+        album = lib_item  # noqa: F841
+    elif isinstance(lib_item, Track):
+        track = lib_item  # noqa: F841
+    elif isinstance(lib_item, Extra):
+        extra = lib_item  # noqa: F841
+    else:
+        raise NotImplementedError
+
+    return eval(f'f"""{template}"""')
+
+
+def _sanitize_path_part(path_part: str) -> str:
+    """Sanitizes a part of a path to be compatible with most filesystems.
+
+    Note:
+        Only sub-paths of the library path will be affected.
+
+    Args:
+        path_part: Path part to sanitize. Must be a single 'part' of a path, i.e. no /
+            separators.
+
+    Returns:
+        Path part with all the replacements applied.
+    """
+    PATH_REPLACE_CHARS = {
+        r"^\.": "_",  # leading '.' (hidden files on Unix)
+        r'[<>:"\?\*\|\\/]': "_",  # <, >, : , ", ?, *, |, \, / (Windows reserved chars)
+        r"\.$": "_",  # trailing '.' (Windows restriction)
+        r"\s+$": "",  # trailing whitespace (Windows restriction)
+    }
+
+    for regex, replacement in PATH_REPLACE_CHARS.items():
+        path_part = re.sub(regex, replacement, path_part)
+
+    return path_part
 
 
 ########################################################################################
