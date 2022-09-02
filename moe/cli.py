@@ -19,7 +19,7 @@ from moe.library.album import Album
 from moe.library.track import Track
 from moe.plugins import add as moe_add
 
-__all__ = ["query_parser", "choice_prompt", "PromptChoice", "fmt_album_changes"]
+__all__ = ["PromptChoice", "choice_prompt", "fmt_album_changes", "query_parser"]
 
 log = logging.getLogger("moe.cli")
 

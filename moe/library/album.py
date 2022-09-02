@@ -158,7 +158,7 @@ class Album(LibItem, SABase):
             return True
         return self.mb_album_id != other.mb_album_id
 
-    def merge(self, other: "Album", overwrite: bool = False):
+    def merge(self, other: "Album", overwrite: bool = False) -> None:
         """Merges another album into this one.
 
         Args:
@@ -197,7 +197,7 @@ class Album(LibItem, SABase):
         return self.date.year
 
     @year.expression  # type: ignore
-    def year(cls):  # noqa: B902, N805
+    def year(cls):  # noqa: B902
         """Returns a year at the sql level."""
         return sa.extract("year", cls.date)
 

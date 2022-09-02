@@ -205,19 +205,7 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
     separator = term[SEPARATOR_GROUP]
     value = term[VALUE_GROUP]
 
-    attr: Any
-    if field == "extra_path":
-        attr = Extra.path
-    elif field == "album_path":
-        attr = Album.path
-    elif field == "genre":
-        attr = Track.genres
-    else:
-        # match track fields (all album fields should also be exposed by the Track)
-        try:
-            attr = getattr(Track, field)
-        except AttributeError as track_err:
-            raise QueryError(f"Invalid Track field: {field}") from track_err
+    attr = _get_item_attr(field)
 
     if separator == ":":
         # path matching
@@ -242,3 +230,32 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
     raise QueryError(f"Invalid query type: {separator}")
+
+
+def _get_item_attr(query_field: str) -> Any:
+    """Gets the matching attribute for a given query field.
+
+    Args:
+        query_field: Library item field to query.
+
+    Returns:
+        Matching library item attribute for the given query field.
+
+    Raises:
+        QueryError: Invalid query field.
+    """
+    attr: Any
+    if query_field == "extra_path":
+        attr = Extra.path
+    elif query_field == "album_path":
+        attr = Album.path
+    elif query_field == "genre":
+        attr = Track.genres
+    else:
+        # match track query_fields (all album fields should also be exposed)
+        try:
+            attr = getattr(Track, query_field)
+        except AttributeError as track_err:
+            raise QueryError(f"Invalid Track query_field: {query_field}") from track_err
+
+    return attr

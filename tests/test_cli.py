@@ -103,8 +103,8 @@ class TestChoicePrompt:
         mock_q = Mock()
         mock_q.ask.return_value = "a"
 
-        with pytest.raises(SystemExit) as error:
-            with patch("moe.cli.questionary.rawselect", return_value=mock_q):
+        with patch("moe.cli.questionary.rawselect", return_value=mock_q):
+            with pytest.raises(SystemExit) as error:
                 moe.cli.choice_prompt([mock_choice])
 
         assert error.value.code != 0

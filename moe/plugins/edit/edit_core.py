@@ -5,7 +5,7 @@ import logging
 
 from moe.library.lib_item import LibItem
 
-__all__ = ["edit_item", "EditError"]
+__all__ = ["EditError", "edit_item"]
 
 log = logging.getLogger("moe.edit")
 

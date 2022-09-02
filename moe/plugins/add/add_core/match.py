@@ -13,7 +13,7 @@ TrackCoord = Tuple[
 ]  # ((a.disc, a.track_num), (b.disc, b.track_num))
 
 
-def get_matching_tracks(
+def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
     album_a: Album, album_b: Album, match_threshold: float = 1.0
 ) -> List[TrackMatch]:
     """Returns a list of tuples of track match pairs.

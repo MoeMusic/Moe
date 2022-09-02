@@ -65,7 +65,6 @@ class TestMerge:
         other_album = mock_album_factory()
         album.mb_album_id = "123"
         other_album.mb_album_id = "456"
-        assert album.mb_album_id and other_album.mb_album_id
         keep_mb_album_id = album.mb_album_id
 
         album.merge(other_album)
@@ -100,7 +99,6 @@ class TestMerge:
         other_album = mock_album_factory()
         album.mb_album_id = "123"
         other_album.mb_album_id = "456"
-        assert album.mb_album_id and other_album.mb_album_id
         keep_mb_album_id = other_album.mb_album_id
 
         album.merge(other_album, overwrite=True)

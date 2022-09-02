@@ -7,7 +7,7 @@ import pytest
 from moe.plugins import move as moe_move
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def tmp_move_config(tmp_config):
     """Creates a configuration with a temporary library path."""
     return tmp_config(settings="default_plugins = ['move']")
