@@ -1,3 +1,5 @@
+.. _Fields:
+
 ######
 Fields
 ######
@@ -30,6 +32,8 @@ Track Fields
     "track_num", "Track number", ""
     "year", "Album release year", ""
 
+.. _Album Fields:
+
 ************
 Album Fields
 ************
@@ -45,6 +49,8 @@ Album Fields
     "title", "Album title", ""
     "year", "Album release year", ""
 
+.. _Extra Fields:
+
 ************
 Extra Fields
 ************
@@ -52,4 +58,5 @@ Extra Fields
     :header: "Field", "Description", "Notes"
     :widths: 20, 50, 50
 
+    "filename", "The filename of the extra.", ""
     "path", "Filesystem path of the extra", ""

@@ -10,6 +10,7 @@ Config
    :members:
    :exclude-members: plugin, name
 
+.. _Library API:
 
 Library
 =======

@@ -23,6 +23,37 @@ def mock_copy():
 ########################################################################################
 # Test format paths
 ########################################################################################
+class TestReplaceChars:
+    """Test replacing of illegal or unwanted characters in paths."""
+
+    def test_replace_chars(self, mock_track_factory, tmp_config):
+        """Replace all the defined illegal characters from any paths."""
+        config = tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            track_path = "{track.title}"
+            """
+        )
+        tracks = []
+        replacements = []
+        tracks.append(mock_track_factory(title='/ reserved <, >, :, ", ?, *, |, /'))
+        replacements.append("_ reserved _, _, _, _, _, _, _, _")
+        tracks.append(mock_track_factory(title=".leading dot"))
+        replacements.append("_leading dot")
+        tracks.append(mock_track_factory(title="trailing dot."))
+        replacements.append("trailing dot_")
+        tracks.append(mock_track_factory(title="trailing whitespace "))
+        replacements.append("trailing whitespace")
+
+        formatted_paths = []
+        for track in tracks:
+            formatted_paths.append(moe_move.fmt_item_path(config, track))
+
+        for path in formatted_paths:
+            assert any(replacement == path.name for replacement in replacements)
+
+
 class TestFmtAlbumPath:
     """Tests `fmt_item_path(album)`."""
 
@@ -352,6 +383,18 @@ class TestConfigOptions:
     def test_asciify_paths(self, tmp_move_config):
         """`asciify_paths` is not required and defaults to 'False'."""
         assert tmp_move_config.settings.move.asciify_paths == False  # noqa: E712
+
+    def test_album_path(self, tmp_move_config):
+        """`album_path` is not required and has a default."""
+        assert tmp_move_config.settings.move.album_path
+
+    def test_extra_path(self, tmp_move_config):
+        """`extra_path` is not required and has a default."""
+        assert tmp_move_config.settings.move.extra_path
+
+    def test_track_path(self, tmp_move_config):
+        """`track_path` is not required and has a default."""
+        assert tmp_move_config.settings.move.track_path
 
 
 class TestPostAdd:
