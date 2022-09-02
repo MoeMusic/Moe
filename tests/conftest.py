@@ -203,7 +203,7 @@ def mock_album_factory(mock_extra_factory, mock_track_factory) -> Callable[[], A
     """
 
     def _mock_album():
-        year = random.randint(1, 10000)
+        year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
 
         album = Album(
             "ATCQ", "Midnight Marauders", datetime.date(year, 11, 9), path=MagicMock()
@@ -247,7 +247,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
             album = Album(
                 "OutKast",
                 "ATLiens",
-                datetime.date(random.randint(1, 10000), 1, 1),
+                datetime.date(random.randint(datetime.MINYEAR, datetime.MAXYEAR), 1, 1),
                 path=MagicMock(),
             )
 
@@ -349,7 +349,7 @@ def real_album_factory(
     """
 
     def _real_album_factory(**kwargs):
-        year = random.randint(1, 10000)
+        year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
         artist = kwargs.pop("artist", "Outkast")
         title = kwargs.pop("title", "ATLiens")
         date = kwargs.pop("data", datetime.date(year, 1, 1))
