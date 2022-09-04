@@ -132,7 +132,7 @@ class TestMerge:
         """Merge in any new extras."""
         album1 = mock_album_factory()
         album2 = mock_album_factory()
-        new_extra = Extra(album2.path / "new.txt", album2)
+        new_extra = Extra(album2, album2.path / "new.txt")
         assert album1.extras != album2.extras
         extras_count = len(album1.extras) + len(album2.extras)
 
@@ -146,7 +146,7 @@ class TestMerge:
         album1 = real_album_factory()
         album2 = real_album_factory()
 
-        conflict_extra = Extra(album2.path / album1.extras[0].filename, album2)
+        conflict_extra = Extra(album2, album2.path / album1.extras[0].filename)
         overwrite_extra = album1.get_extra(conflict_extra.filename)
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()

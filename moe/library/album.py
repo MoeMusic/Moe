@@ -67,29 +67,29 @@ class Album(LibItem, SABase):
     )
 
     def __init__(
-        self, artist: str, title: str, date: datetime.date, path: Path, **kwargs
+        self,
+        path: Path,
+        artist: str,
+        title: str,
+        date: datetime.date,
+        disc_total=1,
+        **kwargs,
     ):
         """Creates an Album.
 
         Args:
+            path: Filesystem path of the album directory.
             artist: Album artist.
             title: Album title.
             date: Album release date.
-            path: Filesystem path of the album directory.
-            **kwargs: Any other fields to assign to the Album.
-
-        Note that a path must be present prior to the album being added to the db.
-
-        Raises:
-            ValueError: No path given and the move plugin is disabled.
+            disc_total: Number of discs in the album.
+            **kwargs: Any other fields to assign to the album.
         """
-        self.artist = artist
-        self.date = date
         self.path = path
+        self.artist = artist
         self.title = title
-
-        # set default values
-        self.disc_total = 1
+        self.date = date
+        self.disc_total = disc_total
 
         for key, value in kwargs.items():
             if value:

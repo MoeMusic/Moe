@@ -104,28 +104,32 @@ class Track(LibItem, SABase):
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
-    def __init__(self, album: Album, title: str, track_num: int, path: Path, **kwargs):
+    def __init__(
+        self,
+        album: Album,
+        path: Path,
+        title: str,
+        track_num: int,
+        disc: int = 1,
+        **kwargs,
+    ):
         """Creates a Track.
 
         Args:
             album: Album the track belongs to.
-            title: Track title.
-            track_num: Track number.
             path: Filesystem path of the track file.
-            **kwargs: Any other fields to assign to the Track.
-
-        Note:
-            If you wish to add several tracks to the same album, ensure the album
-            already exists in the database, or use `session.merge()`.
+            title: Title of the track.
+            track_num: Track number.
+            disc: Disc number the track is on.
+            **kwargs: Any other fields to assign to the track.
         """
         album.tracks.append(self)
         self.path = path
         self.title = title
         self.track_num = track_num
+        self.disc = disc
 
-        # set default values
-        self.artist = self.albumartist
-        self.disc = 1
+        self.artist = self.albumartist  # default value
 
         for key, value in kwargs.items():
             if value:
