@@ -152,12 +152,6 @@ class Album(LibItem, SABase):
             None,
         )
 
-    def is_unique(self, other: Optional["Album"]) -> bool:
-        """Whether or not the given album is unique (by tags) from the current album."""
-        if not other:
-            return True
-        return self.mb_album_id != other.mb_album_id
-
     def merge(self, other: "Album", overwrite: bool = False) -> None:
         """Merges another album into this one.
 
@@ -202,12 +196,15 @@ class Album(LibItem, SABase):
         return sa.extract("year", cls.date)
 
     def __eq__(self, other) -> bool:
-        """Compares an Album by its attributes."""
-        if isinstance(other, Album):
-            for attr in self.fields():
-                if getattr(self, attr) != getattr(other, attr):
-                    return False
+        """Compares Albums by their 'uniqueness' in the database."""
+        if not isinstance(other, Album):
+            return False
+
+        if self.mb_album_id and self.mb_album_id == other.mb_album_id:
             return True
+        if self.path == other.path:
+            return True
+
         return False
 
     def __lt__(self, other: "Album") -> bool:
@@ -225,7 +222,7 @@ class Album(LibItem, SABase):
         return f"{self.artist} - {self.title} ({self.year})"
 
     def __repr__(self):
-        """Represents an Album using its primary key and unique fields."""
+        """Represents an Album using its key and primary fields."""
         return (
             f"{self.__class__.__name__}("
             f"id={repr(self._id)}, "

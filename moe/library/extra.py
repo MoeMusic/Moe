@@ -80,17 +80,13 @@ class Extra(LibItem, SABase):
         return existing_extra
 
     def __eq__(self, other):
-        """Compares an Extra by its attributes."""
-        if isinstance(other, Extra):
-            if self.album_obj.is_unique(other.album_obj):
-                return False
+        """Compares Extras by their 'uniqueness' in the database."""
+        if not isinstance(other, Extra):
+            return False
 
-            for attr in self.fields():
-                if attr == "album_obj":  # prevent cyclic comparison
-                    continue
-                if getattr(self, attr) != getattr(other, attr):
-                    return False
+        if self.path == other.path:
             return True
+
         return False
 
     def __lt__(self, other: "Extra") -> bool:
