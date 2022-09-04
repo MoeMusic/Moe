@@ -96,7 +96,7 @@ class TestGetMatchingTracks:
         assert track2.title == track1.title
         assert track2.title == track4.title
 
-        def mock_get_value(track_a, track_b):
+        def mock_get_value(track_a, track_b, match_field_weights):
             if track_a.title == track_b.title:
                 return 1
             return 0
@@ -118,29 +118,31 @@ class TestGetMatchingTracks:
 class TestGetMatchValue:
     """Test ``get_match_value()``."""
 
-    def test_same_track_num(self, mock_track_factory):
-        """Tracks with the same track number should be a perfect match."""
+    TEST_FIELD_WEIGHTS = {
+        "disc": 0.3,
+        "title": 0.9,
+        "track_num": 0.9,
+    }  # how much to weigh matches of various fields
+
+    def test_same_track(self, mock_track_factory):
+        """Tracks with the same values for all used fields should be a perfect match."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
+        track1.title = track2.title
         track1.track_num = track2.track_num
+        track1.disc = track2.disc
 
-        assert add.match.get_match_value(track1, track2) == 1
+        assert add.match.get_match_value(track1, track2, self.TEST_FIELD_WEIGHTS) == 1
 
-    def test_diff_track_num(self, mock_track_factory):
-        """Tracks with a different track number should not be match."""
+    def test_diff_track(self, mock_track_factory):
+        """Tracks with different values for each field should not match."""
         track1 = mock_track_factory()
         track2 = mock_track_factory()
+        track1.title = "a"
+        track2.title = "b"
+        track1.disc = 2
+        assert track1.title != track2.title
+        assert track1.disc != track2.disc
         assert track1.track_num != track2.track_num
 
-        assert add.match.get_match_value(track1, track2) == 0
-
-    def test_diff_disc(self, mock_track_factory):
-        """Tracks with the same track number on different discs should not match."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
-        track1.track_num = track2.track_num
-        track2.disc = 2
-        assert track1.track_num == track2.track_num
-        assert track1.disc != track2.disc
-
-        assert add.match.get_match_value(track1, track2) == 0
+        assert add.match.get_match_value(track1, track2, self.TEST_FIELD_WEIGHTS) == 0

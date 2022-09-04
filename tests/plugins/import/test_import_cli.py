@@ -187,7 +187,7 @@ class TestAddImportPromptChoice:
         they can still merge properly.
         """
 
-        def mock_get_match_value(track_a, track_b) -> int:
+        def mock_get_match_value(track_a, track_b, field_weights) -> float:
             """Match tracks with different track and disc numbers."""
             if track_a.track_num == 1 and track_b.track_num == 2:
                 return 1
