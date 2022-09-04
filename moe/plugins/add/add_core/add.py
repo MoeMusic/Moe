@@ -140,7 +140,7 @@ def _add_track(track_path: Path) -> Track:
     log.info(f"Adding track to the library: {track_path}")
 
     try:
-        track = Track.from_tags(path=track_path)
+        track = Track.from_path(path=track_path)
     except (TrackError, mediafile.UnreadableFileError) as init_exc:
         raise AddError(init_exc) from init_exc
 
@@ -166,7 +166,7 @@ def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
     album: Optional[Album] = None
     for file_path in album_file_paths:
         try:
-            track = Track.from_tags(path=file_path, album_path=album_path)
+            track = Track.from_path(path=file_path, album_path=album_path)
         except mediafile.UnreadableFileError:
             extra_paths.append(file_path)
         except TrackError as err:
