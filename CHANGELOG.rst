@@ -2,18 +2,15 @@
 Changelog
 #########
 
-The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
-and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
+This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-Unreleased
-==========
+v0.9.0 (2022-09-02)
+===================
 
-Fixed
------
-
-- Albums and tracks without extras now show when queried.
-- Multi-disc album tracklists are now sorted properly on import.
-- Aborting an import no longer displays the stack trace.
+Feat
+----
+- Paths are now configurable.
+- Better duplicate resolution.
 
 v0.8.2 (2022-02-03)
 ===================
