@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.10.0 (2022-09-04)
+====================
+
+New Features
+------------
+* Release: Remove pypi publish step so we can test new release flow (`b2271ae <https://github.com/MoeMusic/Moe/commit/b2271ae8f52225db0b0ed4df4994e3c85cc624b2>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.9.0...v0.10.0>`_
+
 v0.9.0 (2022-09-02)
 ===================
 
