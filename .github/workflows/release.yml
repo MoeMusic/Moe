@@ -11,8 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-        # TODO: add body to github release with most recent changelog additions
-        # https://github.com/commitizen-tools/commitizen/issues/225
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Get latest changelog
+        run: |
+          echo "changelog<<EOF" >> $GITHUB_ENV
+          python .github/get_latest_changelog.py ${{ github.ref }} >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Release to GitHub
         uses: actions/create-release@v1
         env:
@@ -20,8 +29,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            [Changelog](https://github.com/MoeMusic/Moe/blob/master/CHANGELOG.md)
+          body: ${{ env.changelog }}
           draft: false
           prerelease: false
 
