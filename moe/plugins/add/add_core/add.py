@@ -5,6 +5,7 @@ This module provides the main entry point into the add process via ``add_item()`
 
 import logging
 from pathlib import Path
+from typing import List, Optional
 
 import mediafile
 import pluggy
@@ -122,48 +123,6 @@ def add_item(config: Config, item_path: Path):
     config.plugin_manager.hook.post_add(config=config, item=item)
 
 
-def _add_album(album_path: Path) -> Album:
-    """Add an album to the library from a given directory.
-
-    Args:
-        album_path: Filesystem path of the album directory to add.
-
-    Returns:
-        Album added.
-
-    Raises:
-        AddError: Unable to add the album to the library.
-    """
-    log.info(f"Adding album to the library: {album_path}")
-
-    album_tracks = []
-    extra_paths = []
-    album_file_paths = [path for path in album_path.rglob("*") if path.is_file()]
-    for file_path in album_file_paths:
-        try:
-            album_tracks.append(Track.from_tags(path=file_path, album_path=album_path))
-        except mediafile.UnreadableFileError:
-            extra_paths.append(file_path)
-        except TrackError as err:
-            log.error(err)
-
-    if not album_tracks:
-        raise AddError(f"No tracks found in album: {album_path}")
-
-    albums = [track.album_obj for track in album_tracks]
-
-    album = albums[0]
-    for track in album_tracks:
-        log.info(f"Adding track file to the library: {track.path}")
-        album.tracks.append(track)
-
-    for extra_path in extra_paths:
-        log.info(f"Adding extra file to the library: {extra_path}")
-        Extra(extra_path, album)
-
-    return album
-
-
 def _add_track(track_path: Path) -> Track:
     """Add a track to the library from a given file.
 
@@ -186,6 +145,85 @@ def _add_track(track_path: Path) -> Track:
         raise AddError(init_exc) from init_exc
 
     return track
+
+
+def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
+    """Add an album to the library from a given directory.
+
+    Args:
+        album_path: Filesystem path of the album directory to add.
+
+    Returns:
+        Album added.
+
+    Raises:
+        AddError: Unable to add the album to the library.
+    """
+    log.info(f"Adding album to the library: {album_path}")
+
+    extra_paths = []
+    album_file_paths = [path for path in album_path.rglob("*") if path.is_file()]
+    album: Optional[Album] = None
+    for file_path in album_file_paths:
+        try:
+            track = Track.from_tags(path=file_path, album_path=album_path)
+        except mediafile.UnreadableFileError:
+            extra_paths.append(file_path)
+        except TrackError as err:
+            log.error(err)
+        else:
+            log.info(f"Adding track file to the library: {track.path}")
+            if not album:
+                album = track.album_obj
+            else:
+                album.tracks.append(track)
+
+    if not album:
+        raise AddError(f"No tracks found in album: {album_path}")
+
+    for track in album.tracks:
+        if album.tracks.count(track) > 1:
+            # Duplicate track found, potentially due to an incorrect disc tag.
+            track.disc = _guess_disc(track)
+
+    for track in album.tracks:
+        if album.tracks.count(track) > 1:
+            # Either we couldn't guess the disc or there's some other issue.
+            log.warning(f"Duplicate track found in album: {track}")
+
+    for extra_path in extra_paths:
+        log.info(f"Adding extra file to the library: {extra_path}")
+        Extra(extra_path, album)
+
+    return album
+
+
+def _guess_disc(track: Track) -> int:
+    """Attempts to guess the disc of a track based on it's path."""
+    album = track.album_obj
+    if track.path.parent == album.path:
+        return 1
+
+    # The track is in a subdirectory of the album, which are hopefully split by disc.
+    disc_dirs: List[Path] = []
+    for path in album.path.iterdir():
+        if not path.is_dir():
+            continue
+
+        contains_tracks = False
+        for album_track in album.tracks:
+            if path in album_track.path.parents:
+                contains_tracks = True
+
+        if contains_tracks:
+            disc_dirs.append(path)
+
+    # Guess the disc by the order of the disc directory it appears in.
+    for disc_num, disc_dir in enumerate(sorted(disc_dirs), start=1):
+        if disc_dir in track.path.parents:
+            return disc_num
+
+    return 1
 
 
 def _check_for_duplicates(item: LibItem):
