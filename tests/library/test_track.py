@@ -106,6 +106,44 @@ class TestGetExisting:
         assert not track2.get_existing()
 
 
+class TestEquality:
+    """Test equality of tracks."""
+
+    def test_equals_mb_track_id(self, real_track_factory):
+        """Tracks with the same `mb_track_id` are equal."""
+        track1 = real_track_factory()
+        track2 = real_track_factory()
+        track1.mb_track_id = "1"
+        assert track1 != track2
+
+        track2.mb_track_id = track1.mb_track_id
+        assert track1 == track2
+
+    def test_equals_path(self, real_track_factory):
+        """Tracks with the same `path` are equal."""
+        track1 = real_track_factory()
+        track2 = real_track_factory()
+        assert track1 != track2
+
+        track1.path = track2.path
+        assert track1 == track2
+
+    def test_not_equals(self, real_track_factory):
+        """Tracks with different designated unique fields are not equal."""
+        track1 = real_track_factory()
+        track2 = real_track_factory()
+        track1.mb_track_id = "1"
+
+        assert track1.mb_track_id != track2.mb_track_id
+        assert track1.path != track2.path
+
+        assert track1 != track2
+
+    def test_not_equals_not_track(self, real_track):
+        """Not equal if not comparing two tracks."""
+        assert real_track != "test"
+
+
 class TestMerge:
     """Test merging two tracks."""
 

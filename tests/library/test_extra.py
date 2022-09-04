@@ -13,3 +13,28 @@ class TestGetExisting:
         tmp_session.merge(extra2)
 
         assert extra1.get_existing()
+
+
+class TestEquality:
+    """Test equality of extras."""
+
+    def test_equals_path(self, real_extra_factory):
+        """Extras with the same `path` are equal."""
+        extra1 = real_extra_factory()
+        extra2 = real_extra_factory()
+        assert extra1 != extra2
+
+        extra1.path = extra2.path
+        assert extra1 == extra2
+
+    def test_not_equals(self, real_extra_factory):
+        """Extras with different designated unique fields are not equal."""
+        extra1 = real_extra_factory()
+        extra2 = real_extra_factory()
+        assert extra1.path != extra2.path
+
+        assert extra1 != extra2
+
+    def test_not_equals_not_extra(self, real_extra):
+        """Not equal if not comparing two extras."""
+        assert real_extra != "test"

@@ -279,17 +279,21 @@ class Track(LibItem, SABase):
                     setattr(self, field, other_value)
 
     def __eq__(self, other) -> bool:
-        """Compares a Track by its attributes."""
-        if isinstance(other, Track):
-            if self.album_obj.is_unique(other.album_obj):
-                return False
+        """Compares Tracks by their 'uniqueness' in the database."""
+        if not isinstance(other, Track):
+            return False
 
-            for attr in self.fields():
-                if attr == "album_obj":  # prevent cyclic comparison
-                    continue
-                if getattr(self, attr) != getattr(other, attr):
-                    return False
+        if self.mb_track_id and self.mb_track_id == other.mb_track_id:
             return True
+        if self.path == other.path:
+            return True
+        if (
+            self.track_num == other.track_num
+            and self.disc == other.disc
+            and self.album_obj == other.album_obj
+        ):
+            return True
+
         return False
 
     def __lt__(self, other) -> bool:

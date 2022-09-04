@@ -1,7 +1,5 @@
 """Tests an Album object."""
 
-import copy
-
 from moe.library.album import Album
 from moe.library.extra import Extra
 
@@ -43,17 +41,42 @@ class TestGetExisting:
         assert not album2.get_existing()
 
 
-class TestIsUnique:
-    """Test determing if an album is unique based on its tags."""
+class TestEquality:
+    """Test equality of albums."""
 
-    def test_mb_album_id(self, real_album):
-        """Albums with different mb_album_ids are unique."""
-        dup_album = copy.deepcopy(real_album)
+    def test_equals_mb_album_id(self, real_album_factory):
+        """Albums with the same `mb_album_id` are equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        album1.mb_album_id = "1"
+        assert album1 != album2
 
-        real_album.mb_album_id = "1"
-        assert real_album != dup_album
+        album2.mb_album_id = album1.mb_album_id
+        assert album1 == album2
 
-        assert real_album.is_unique(dup_album)
+    def test_equals_path(self, real_album_factory):
+        """Albums with the same `path` are equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        assert album1 != album2
+
+        album1.path = album2.path
+        assert album1 == album2
+
+    def test_not_equals(self, real_album_factory):
+        """Albums with different designated unique fields are not equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        album1.mb_album_id = "1"
+
+        assert album1.mb_album_id != album2.mb_album_id
+        assert album1.path != album2.path
+
+        assert album1 != album2
+
+    def test_not_equals_not_album(self, real_album):
+        """Not equal if not comparing two albums."""
+        assert real_album != "test"
 
 
 class TestMerge:

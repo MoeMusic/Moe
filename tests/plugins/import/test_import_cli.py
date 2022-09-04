@@ -70,10 +70,11 @@ class ImportPlugin:
 class TestHookSpecs:
     """Test the various plugin hook specifications."""
 
-    def test_add_import_prompt_choice(self, mock_album, tmp_config):
+    def test_add_import_prompt_choice(self, mock_album_factory, tmp_config):
         """Plugins can add prompt choices to the import prompt."""
-        new_album = copy.deepcopy(mock_album)
-        mock_album.title = "not ImportPlugin"
+        old_album = mock_album_factory()
+        new_album = mock_album_factory()
+        old_album.title = "not ImportPlugin"
         config = tmp_config(
             "default_plugins = ['cli', 'import']",
             tmp_db=True,
@@ -82,9 +83,9 @@ class TestHookSpecs:
         with patch.object(
             moe.cli, "choice_prompt", return_value=ImportPlugin.test_choice
         ):
-            moe_import.import_prompt(config, mock_album, new_album)
+            moe_import.import_prompt(config, old_album, new_album)
 
-        assert mock_album.title == "ImportPlugin"
+        assert old_album.title == "ImportPlugin"
 
 
 class TestProcessCandidates:
@@ -151,33 +152,36 @@ class TestAddImportPromptChoice:
         assert any(choice.shortcut_key == "a" for choice in prompt_choices)
         assert any(choice.shortcut_key == "x" for choice in prompt_choices)
 
-    def test_apply_tracks(self, mock_album, mock_track_factory, tmp_import_config):
+    def test_apply_tracks(
+        self, mock_album_factory, mock_track_factory, tmp_import_config
+    ):
         """`apply` prompt choice should apply any matching Tracks.
 
         Missing and unmatched tracks should not be present in the final album.
         """
-        new_album = copy.deepcopy(mock_album)
+        old_album = mock_album_factory()
+        new_album = mock_album_factory()
         missing_track = mock_track_factory(
-            album=new_album, track_num=len(mock_album.tracks) + 1
+            album=new_album, track_num=len(old_album.tracks) + 1
         )
         unmatched_track = mock_track_factory(
-            album=mock_album, track_num=missing_track.track_num + 1
+            album=old_album, track_num=missing_track.track_num + 1
         )
-        assert not mock_album.get_track(missing_track.track_num)
+        assert not old_album.get_track(missing_track.track_num)
         assert not new_album.get_track(unmatched_track.track_num)
 
         mock_choice = moe.cli.PromptChoice(
             "mock", "m", moe_import.import_cli._apply_changes
         )
         with patch.object(moe.cli, "choice_prompt", return_value=mock_choice):
-            moe_import.import_prompt(tmp_import_config, mock_album, new_album)
+            moe_import.import_prompt(tmp_import_config, old_album, new_album)
 
-        assert mock_album.tracks
-        assert not mock_album.get_track(missing_track.track_num)
-        assert not mock_album.get_track(unmatched_track.track_num)
+        assert old_album.tracks
+        assert not old_album.get_track(missing_track.track_num)
+        assert not old_album.get_track(unmatched_track.track_num)
 
     def test_apply_diff_get_track(
-        self, mock_album, mock_track_factory, tmp_import_config
+        self, mock_album_factory, mock_track_factory, tmp_import_config
     ):
         """Apply matches that don't have corresponding track and disc numbers.
 
@@ -195,26 +199,27 @@ class TestAddImportPromptChoice:
                 return 1
             return 0
 
-        new_album = copy.deepcopy(mock_album)
-        mock_album.get_track(1).title = "old track 1"
+        old_album = mock_album_factory()
+        new_album = mock_album_factory()
+        old_album.get_track(1).title = "old track 1"
         new_album.get_track(1).title = "new track 1"
-        mock_album.get_track(2).title = "old track 2"
+        old_album.get_track(2).title = "old track 2"
         new_album.get_track(2).title = "new track 2"
 
-        org_path1 = mock_album.get_track(1).path  # will become track 2
-        org_path2 = mock_album.get_track(2).path  # will become track 1
+        org_path1 = old_album.get_track(1).path  # will become track 2
+        org_path2 = old_album.get_track(2).path  # will become track 1
 
         mock_choice = moe.cli.PromptChoice(
             "mock", "m", moe_import.import_cli._apply_changes
         )
         with patch("moe.plugins.add.match.get_match_value", wraps=mock_get_match_value):
             with patch.object(moe.cli, "choice_prompt", return_value=mock_choice):
-                moe_import.import_prompt(tmp_import_config, mock_album, new_album)
+                moe_import.import_prompt(tmp_import_config, old_album, new_album)
 
-        assert mock_album.get_track(1).title == "new track 1"
-        assert mock_album.get_track(2).title == "new track 2"
-        assert mock_album.get_track(1).path == org_path2
-        assert mock_album.get_track(2).path == org_path1
+        assert old_album.get_track(1).title == "new track 1"
+        assert old_album.get_track(2).title == "new track 2"
+        assert old_album.get_track(1).path == org_path2
+        assert old_album.get_track(2).path == org_path1
 
     def test_apply_extras(self, mock_album, mock_extra_factory, tmp_import_config):
         """`apply` prompt choice should keep any extras."""
@@ -255,20 +260,21 @@ class TestAddImportPromptChoice:
         for extra in mock_album.tracks:
             assert extra.path
 
-    def test_abort(self, mock_album, tmp_import_config):
+    def test_abort(self, mock_album_factory, tmp_import_config):
         """The `abort` prompt choice should raise an AbortImport error."""
-        new_album = copy.deepcopy(mock_album)
-        new_album.mb_album_id = "1234"
-        assert mock_album.mb_album_id != new_album.mb_album_id
+        album1 = mock_album_factory()
+        album2 = mock_album_factory()
+        album1.mb_album_id = "1234"
+        assert album1.mb_album_id != album2.mb_album_id
 
         mock_choice = moe.cli.PromptChoice(
             "mock", "m", moe_import.import_cli._abort_changes
         )
         with patch.object(moe.cli, "choice_prompt", return_value=mock_choice):
             with pytest.raises(moe_import.AbortImport):
-                moe_import.import_prompt(tmp_import_config, mock_album, new_album)
+                moe_import.import_prompt(tmp_import_config, album1, album2)
 
-        assert mock_album.is_unique(new_album)
+        assert album1 != album2
 
 
 class TestPluginRegistration:
