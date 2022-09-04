@@ -40,7 +40,7 @@ class TestFromTags:
 
     def test_read_tags(self, full_mp3_path):
         """We can initialize a track with tags from a file if present."""
-        track = Track.from_tags(full_mp3_path)
+        track = Track.from_path(full_mp3_path)
 
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
@@ -57,7 +57,7 @@ class TestFromTags:
     def test_no_reqd_tags(self, empty_mp3_path):
         """Raise `TrackError` if missing required tags."""
         with pytest.raises(TrackError):
-            Track.from_tags(empty_mp3_path)
+            Track.from_path(empty_mp3_path)
 
     def test_albumartist_backup(self, real_track):
         """Use artist as a backup for albumartist if missing."""
@@ -65,7 +65,7 @@ class TestFromTags:
         real_track.artist = "Backup"
         moe.plugins.write.write_tags(real_track)
 
-        track = Track.from_tags(real_track.path)
+        track = Track.from_path(real_track.path)
         assert track.albumartist
 
 

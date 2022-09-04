@@ -136,13 +136,13 @@ class Track(LibItem, SABase):
                 setattr(self, key, value)
 
     @classmethod
-    def from_tags(cls: Type[T], path: Path, album_path: Optional[Path] = None) -> T:
-        """Alternate initializer that creates a Track from its tags.
+    def from_path(cls: Type[T], path: Path, album_path: Optional[Path] = None) -> T:
+        """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
-            path: Filesystem path of the track to add.
+            path: Filesystem path of the track.
             album_path: Filesystem path of the track's album. Defaults to using the
                 parent of the track path.
 
