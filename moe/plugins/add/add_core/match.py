@@ -1,5 +1,6 @@
 """All logic regarding matching albums and tracks against each other."""
 
+import difflib
 from typing import Dict, List, Optional, Tuple
 
 from moe.library.album import Album
@@ -12,9 +13,15 @@ TrackCoord = Tuple[
     Tuple[int, int], Tuple[int, int]
 ]  # ((a.disc, a.track_num), (b.disc, b.track_num))
 
+MATCH_FIELD_WEIGHTS = {
+    "disc": 0.3,
+    "title": 0.9,
+    "track_num": 0.9,
+}  # how much to weigh matches of various fields
+
 
 def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
-    album_a: Album, album_b: Album, match_threshold: float = 1.0
+    album_a: Album, album_b: Album, match_threshold: float = 0.8
 ) -> List[TrackMatch]:
     """Returns a list of tuples of track match pairs.
 
@@ -31,12 +38,12 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         ``(album_a_track, album_b_track)``.
     """
     # get all match values for every pair of tracks between both albums
-    track_match_values: Dict[TrackCoord, int] = {}
+    track_match_values: Dict[TrackCoord, float] = {}
     for a_track in album_a.tracks:
         for b_track in album_b.tracks:
             track_match_values[
                 ((a_track.disc, a_track.track_num), (b_track.disc, b_track.track_num))
-            ] = get_match_value(a_track, b_track)
+            ] = get_match_value(a_track, b_track, MATCH_FIELD_WEIGHTS)
 
     # Greedy algorithm that assigns a match to each track pair in order of greatest
     # match value.
@@ -83,9 +90,36 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
     return track_matches
 
 
-def get_match_value(track_a: Track, track_b: Track) -> int:
-    """Returns a similarity "match value" between two tracks on a scale of 0 to 1."""
-    if track_a.track_num == track_b.track_num and track_a.disc == track_b.disc:
-        return 1
+def get_match_value(
+    track_a: Track,
+    track_b: Track,
+    field_weights: Dict[str, float] = MATCH_FIELD_WEIGHTS,
+) -> float:
+    """Returns a similarity "match value" between two tracks on a scale of 0 to 1.
 
-    return 0
+    Args:
+        track_a: First Track to compare.
+        track_b: Second Track to compare.
+        field_weights: Mapping of track fields to weights for how much to value the
+            field when considering it for matching two tracks.
+
+    Returns:
+        The match value is a weighted sum according to the defined weights for each
+        applicable field.
+    """
+    match_values = []
+    for field, weight in field_weights.items():
+        value_a = getattr(track_a, field)
+        value_b = getattr(track_b, field)
+
+        if field == "title":
+            match_value = difflib.SequenceMatcher(None, value_a, value_b).ratio()
+        else:
+            if value_a == value_b:
+                match_value = 1
+            else:
+                match_value = 0
+
+        match_values.append(match_value * weight)
+
+    return sum(match_values) / sum(field_weights.values())
