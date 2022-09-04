@@ -141,6 +141,33 @@ class TestAddItemFromDir:
         db_album = tmp_session.query(Album).filter_by(path=real_album.path).one()
         assert db_album.path.exists()
 
+    def test_incorrect_disc_tags(self, real_album, tmp_session, tmp_add_config):
+        """Guess the disc if a multi-disc album is interpreted but the disc is wrong."""
+        track1 = real_album.tracks[0]
+        track2 = real_album.tracks[1]
+        track1.track_num = track2.track_num
+        track1.disc = 1
+        track2.disc = 1  # should be 2!
+        real_album.disc_total = 2
+        moe_write.write_tags(track1)
+        moe_write.write_tags(track2)
+        assert track1 == track2
+
+        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
+        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
+        Path(real_album.path / "artwork (1996)").mkdir()
+        track1_path.parent.mkdir()
+        track2_path.parent.mkdir()
+        track1.path.rename(track1_path)
+        track2.path.rename(track2_path)
+        track1.path = track1_path
+        track2.path = track2_path
+
+        add.add_item(tmp_add_config, real_album.path)
+
+        db_album = tmp_session.query(Album).filter_by(path=real_album.path).one()
+        assert db_album.get_track(track_num=track2.track_num, disc=2)
+
 
 class TestAddItemFromFile:
     """Test a file argument given to add as a track."""
