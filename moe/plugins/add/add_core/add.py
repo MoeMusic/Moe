@@ -193,7 +193,7 @@ def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
 
     for extra_path in extra_paths:
         log.info(f"Adding extra file to the library: {extra_path}")
-        Extra(extra_path, album)
+        Extra(album, extra_path)
 
     return album
 

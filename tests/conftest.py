@@ -173,7 +173,10 @@ def mock_track_factory() -> Callable[[], Track]:
     def _mock_track(album: Optional[Album] = None, **kwargs):
         if not album:
             album = Album(
-                "OutKast", "ATLiens", datetime.date(1996, 8, 27), path=MagicMock()
+                artist="OutKast",
+                title="ATLiens",
+                date=datetime.date(1996, 8, 27),
+                path=MagicMock(),
             )
 
         return Track(
@@ -206,7 +209,10 @@ def mock_album_factory(mock_extra_factory, mock_track_factory) -> Callable[[], A
         year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
 
         album = Album(
-            "ATCQ", "Midnight Marauders", datetime.date(year, 11, 9), path=MagicMock()
+            artist="ATCQ",
+            title="Midnight Marauders",
+            date=datetime.date(year, 11, 9),
+            path=MagicMock(),
         )
 
         mock_track_factory(track_num=1, album=album)
@@ -245,9 +251,11 @@ def mock_extra_factory() -> Callable[[], Extra]:
     def _mock_extra(path: Optional[Path] = None, album: Optional[Album] = None):
         if not album:
             album = Album(
-                "OutKast",
-                "ATLiens",
-                datetime.date(random.randint(datetime.MINYEAR, datetime.MAXYEAR), 1, 1),
+                artist="OutKast",
+                title="ATLiens",
+                date=datetime.date(
+                    random.randint(datetime.MINYEAR, datetime.MAXYEAR), 1, 1
+                ),
                 path=MagicMock(),
             )
 
@@ -256,7 +264,7 @@ def mock_extra_factory() -> Callable[[], Extra]:
             path.__lt__ = mock_lt
             path.name = f"{random.randint(1, 10000)}.txt"
 
-        return Extra(path, album)
+        return Extra(album=album, path=path)
 
     return _mock_extra
 
@@ -355,7 +363,7 @@ def real_album_factory(
         date = kwargs.pop("data", datetime.date(year, 1, 1))
         path = kwargs.pop("path", tmp_library_path / f"{artist}" / f"{title} ({year})")
 
-        album = Album(artist, title, date, path)
+        album = Album(artist=artist, title=title, date=date, path=path)
         album.path.mkdir(exist_ok=True, parents=True)
 
         real_track_factory(track_num=1, album=album)
@@ -382,17 +390,17 @@ def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Ext
         Each track will belong to a different album unless `album` is specified.
 
     Args:
-        path: Optional path to assign. Will create the file if it does not exist.
         album: Optional album to assign the track to. If given, assumes the album's path
             exists on the filesystem.
+        path: Optional path to assign. Will create the file if it does not exist.
 
     Returns:
         Unique Extra.
     """
 
     def _real_extra(
-        path: Optional[Path] = None,
         album: Optional[Album] = None,
+        path: Optional[Path] = None,
     ):
         extra = mock_extra_factory(path=path, album=album)
 

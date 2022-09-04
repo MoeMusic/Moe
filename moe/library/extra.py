@@ -40,15 +40,15 @@ class Extra(LibItem, SABase):
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
 
-    def __init__(self, path: Path, album: Album):
+    def __init__(self, album: Album, path: Path):
         """Creates an Extra.
 
         Args:
-            path: Filesystem path of the extra file.
             album: Album the extra file belongs to.
+            path: Filesystem path of the extra file.
         """
+        album.extras.append(self)
         self.path = path
-        self.album_obj = album
 
     @typed_hybrid_property
     def filename(self) -> str:
