@@ -30,7 +30,7 @@ jobs:
       - name: Lint
         run: |
           poetry run pre-commit run --all-files
-          poetry run cz check --rev-range c8054a8acb312d3166d046f47ca14617b7f547d..HEAD
+          poetry run cz check --rev-range origin/master..HEAD
 
   test:
     runs-on: ${{ matrix.platform }}
