@@ -33,6 +33,7 @@ release = pkg_resources.get_distribution("moe").version
 # ones.
 extensions = [
     "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -49,6 +50,9 @@ rst_prolog = open("global.rst", "r").read()
 # include type hints in function description
 # autodoc_typehints = "description"
 
+# -- Extension configuration ---------------------------------------------------
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
 
 # -- Options for HTML output -------------------------------------------------
 
