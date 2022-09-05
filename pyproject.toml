@@ -63,12 +63,14 @@ pytest-cov = "^2.10.0"
 docs = ["Sphinx", "furo"]
 
 [tool.commitizen]
-name = "cz_conventional_commits"
+name = "cz_customize"
 version = "0.10.0"
 version_files = [
     "pyproject.toml:^version",
 ]
 tag_format = "v$version"
+
+[tool.commitizen.customize]
 schema_pattern = '(build|ci|deprecate|docs|feat|fix|perf|refactor|release|style|test)(\(\w+\))?:\s\S.*'
 
 [tool.isort]
