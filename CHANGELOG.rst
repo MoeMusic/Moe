@@ -4,6 +4,16 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.10.0 (2022-09-05)
+====================
+
+New Features
+------------
+* Add: Guess a track's disc number if not given or presumed wrong (`d71afd9 <https://github.com/MoeMusic/Moe/commit/d71afd9efd5d7cd65efabd383c4fe2da1c54613e>`_)
+* Fuzzy match title when matching tracks (`37b9f02 <https://github.com/MoeMusic/Moe/commit/37b9f02b0649e478e525868c064942057fb6f72b>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.9.0...v0.10.0>`_
+
 v0.9.0 (2022-09-02)
 ===================
 
