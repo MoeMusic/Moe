@@ -1,14 +1,25 @@
 .. include:: ../README.rst
 
+********
+Contents
+********
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    getting_started
    plugins/plugins
    fields
    query
+
+.. toctree::
+   :maxdepth: 1
+
    changelog
+
+.. toctree::
+   :maxdepth: 2
+
    developers/developers
 
 ******************
