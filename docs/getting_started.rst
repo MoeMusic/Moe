@@ -29,8 +29,6 @@ Required Reading
 Before using Moe, you should understand that Moe mostly consists of *plugins* or self-contained features, that each provide a different way of interacting with music in your library.
 For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins comes with it's own commands and configuration options that let you define how Moe manages your music. Each configuration option has sensible defaults which means you *could* just run Moe out of the box, but I'd recommend taking a look at the following.
 
-.. _General Configuration:
-
 *************
 Configuration
 *************
@@ -58,9 +56,33 @@ For example, to override the ``asciify_paths`` variable, you can run Moe with:
 .. note::
    Notice since the ``asciify_paths`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
 
-Configuring Plugins
-===================
-Configuring Moe is mostly done by configuring the available plugins. For more information on the available configuration options, see the :doc:`plugins documentation <plugins/plugins>`.
+Global Options
+==============
+Most configuration options reside in their relevant plugin, however there are the following global options:
+
+``default_plugins = ["add", "edit", "info", "ls", "move", "musicbrainz", "rm", "write"]``
+    Overrides the list of default plugins.
+
+.. _library_path config option:
+
+``library_path = "~/Music"``
+    Tells Moe where your music library resides.
+
+    For Windows users, ``~`` is your ``%USERPROFILE%`` directory. It's recommended to use a forward slash ``/`` to delineate sub-directories for your library path for consistency with other configuration options, but you may also use a backslash ``\``. If you choose to use backslashes, ensure you enclose your path in single quotes, e.g. ``'~\Music'``, to ensure the backslash ``\`` isn't interpreted as an escape character.
+
+    .. note::
+       If you change ``library_path``, Moe will attempt to search for your music in the new location.
+
+Plugin Options
+==============
+For plugin specific configuration, see the respective plugin's page. Each plugin option should be specified under that plugin's section in the config.
+
+For example, you may want to ensure when Moe moves your music, it only names files using ascii characters. To do this, we'd check out the ``move`` plugin and find it has the ``asciify_paths`` configuration option. To customize this option, we'd write the following in our config file.
+
+.. code-block:: toml
+
+    [move]
+    asciify_paths = true
 
 **********************
 Command-Line Interface
