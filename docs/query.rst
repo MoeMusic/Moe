@@ -3,7 +3,7 @@ Querying
 ########
 Many plugins use a "query" to search for music in your library.
 
-The query must be in the format ``field:value`` where field is a :ref:`track's field <Track Fields>` to match and value is that field's value. Internally, this ``field:value`` pair is referred to as a single "term". The match is case-insensitive.
+The query must be in the format ``field:value`` where field is a :ref:`track's field <fields:Track Fields>` to match and value is that field's value. Internally, this ``field:value`` pair is referred to as a single "term". The match is case-insensitive.
 
 Album queries, specified with the ``-a, --album`` option, will return albums that contain any tracks matching the given query. Similarly, querying for extras, specified with the ``-e, --extra`` option, will return extras that are attached to albums that contain any tracks matching the given query.
 
@@ -56,7 +56,7 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 Supported Fields
 ****************
 
-In addition to the :ref:`track fields <Track Fields>`, the following fields are also available to query:
+In addition to the :ref:`track fields <fields:Track Fields>`, the following fields are also available to query:
 
 * ``album_path`` Path of an album directory.
 * ``extra_path`` Path of an extra.

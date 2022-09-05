@@ -1,5 +1,3 @@
-.. _Fields:
-
 ######
 Fields
 ######
@@ -8,8 +6,6 @@ These are the fields Moe keeps track of for tracks, albums, and extras in your l
 
 .. note::
     Some track fields are actually on a per-album basis, and are just a mapping to the related album field e.g. ``albumartist`` or ``album``. These fields are exposed as track fields for convenience and due to convention.
-
-.. _Track Fields:
 
 ************
 Track Fields
@@ -32,8 +28,6 @@ Track Fields
     "track_num", "Track number", ""
     "year", "Album release year", ""
 
-.. _Album Fields:
-
 ************
 Album Fields
 ************
@@ -48,8 +42,6 @@ Album Fields
     "path", "Filesystem path of the album", ""
     "title", "Album title", ""
     "year", "Album release year", ""
-
-.. _Extra Fields:
 
 ************
 Extra Fields
