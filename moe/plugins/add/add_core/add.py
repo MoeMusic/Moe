@@ -117,7 +117,7 @@ def add_item(config: Config, item_path: Path):
 
     config.plugin_manager.hook.pre_add(config=config, item=item)
 
-    _check_for_duplicates(item)
+    _check_db_dups(item)
     item = session.merge(item)
 
     config.plugin_manager.hook.post_add(config=config, item=item)
@@ -147,7 +147,7 @@ def _add_track(track_path: Path) -> Track:
     return track
 
 
-def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
+def _add_album(album_path: Path) -> Album:
     """Add an album to the library from a given directory.
 
     Args:
@@ -181,6 +181,29 @@ def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
     if not album:
         raise AddError(f"No tracks found in album: {album_path}")
 
+    try:
+        _resolve_dup_tracks(album)
+    except AddError as err:
+        # Only log here as other plugins may still resolve the issue before the album
+        # is added to the database. There is another check in case it wasn't resolved.
+        log.warning(err)
+
+    for extra_path in extra_paths:
+        log.info(f"Adding extra file to the library: {extra_path}")
+        Extra(album, extra_path)
+
+    return album
+
+
+def _resolve_dup_tracks(album: Album):
+    """Tries to resolve any duplicate tracks due to incorrect or missing disc numbers.
+
+    Args:
+        album: Album to check.
+
+    Raises:
+        AddError: Unable to resolve the duplicates.
+    """
     for track in album.tracks:
         if album.tracks.count(track) > 1:
             # Duplicate track found, potentially due to an incorrect disc tag.
@@ -189,13 +212,7 @@ def _add_album(album_path: Path) -> Album:  # noqa: C901 (needs refactoring)
     for track in album.tracks:
         if album.tracks.count(track) > 1:
             # Either we couldn't guess the disc or there's some other issue.
-            log.warning(f"Duplicate track found in album: {track}")
-
-    for extra_path in extra_paths:
-        log.info(f"Adding extra file to the library: {extra_path}")
-        Extra(album, extra_path)
-
-    return album
+            raise AddError(f"Duplicate track found in album: {track}")
 
 
 def _guess_disc(track: Track) -> int:
@@ -226,7 +243,7 @@ def _guess_disc(track: Track) -> int:
     return 1
 
 
-def _check_for_duplicates(item: LibItem):
+def _check_db_dups(item: LibItem):
     """Checks for any duplicates in the library for the given item and its relatives.
 
     Args:
