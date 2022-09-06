@@ -9,7 +9,7 @@ import pytest
 
 import moe
 import moe.cli
-from moe.config import ExtraPlugin, MoeSession
+from moe.config import ConfigValidationError, ExtraPlugin, MoeSession
 from moe.library.track import Track
 
 
@@ -46,6 +46,15 @@ def test_default_config(tmp_config, real_track):
         session.add(real_track)
 
     moe.cli.main(cli_args, config)
+
+
+def test_config_validation_error():
+    """Raise SystemExit if the config fails to pass its validation."""
+    with patch("moe.cli.Config", autospec=True, side_effect=ConfigValidationError):
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(["-h"])
+
+    assert error.value.code != 0
 
 
 class CLIPlugin:

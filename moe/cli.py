@@ -14,7 +14,7 @@ import pluggy
 import questionary
 
 import moe
-from moe.config import Config, MoeSession
+from moe.config import Config, ConfigValidationError, MoeSession
 from moe.library.album import Album
 from moe.library.track import Track
 from moe.plugins import add as moe_add
@@ -106,7 +106,11 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
     """Runs the CLI."""
     if not config:
-        config = Config()
+        try:
+            config = Config()
+        except ConfigValidationError as err:
+            log.error(err)
+            raise SystemExit(1) from err
     _parse_args(args, config)
 
 

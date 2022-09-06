@@ -37,7 +37,7 @@ from moe.library.lib_item import LibItem, PathType
 session_factory = sqlalchemy.orm.sessionmaker()
 MoeSession = sqlalchemy.orm.scoped_session(session_factory)
 
-__all__ = ["Config", "ExtraPlugin"]
+__all__ = ["Config", "ConfigValidationError", "ExtraPlugin"]
 
 log = logging.getLogger("moe.config")
 
@@ -53,6 +53,10 @@ DEFAULT_PLUGINS = (
     "remove",
     "write",
 )
+
+
+class ConfigValidationError(Exception):
+    """Error in the user's configuration."""
 
 
 class Hooks:
@@ -312,6 +316,9 @@ class Config:
         """Reads the user configuration settings.
 
         Searches for a configuration file at `config_dir / "config.toml"`.
+
+        Raises:
+            ConfigValidationError: Unable to parse the configuration file.
         """
         self.config_file.touch(exist_ok=True)
 
@@ -322,9 +329,20 @@ class Config:
 
         self._setup_plugins()
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
+        self._validate_settings()
 
-        self.settings.validators.validate()
         PathType.library_path = Path(self.settings.library_path)
+
+    def _validate_settings(self):
+        """Validates the given user configuration.
+
+        Raises:
+            ConfigValidationError: Error validating the configuration.
+        """
+        try:
+            self.settings.validators.validate()
+        except dynaconf.validator.ValidationError as err:
+            raise ConfigValidationError(err) from err
 
     def _setup_plugins(self):
         """Setup plugin_manager and hook logic."""
@@ -335,7 +353,8 @@ class Config:
         self.plugin_manager.register(moe.config, name="config")
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
-        self.settings.validators.validate()
+        self._validate_settings()
+
         config_plugins = self.settings.default_plugins
 
         # the 'import' plugin maps to the 'moe_import' package

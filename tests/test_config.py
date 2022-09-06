@@ -7,7 +7,7 @@ import dynaconf
 import pytest
 
 import moe
-from moe.config import Config, ExtraPlugin
+from moe.config import Config, ConfigValidationError, ExtraPlugin
 from moe.library.track import Track
 
 
@@ -42,6 +42,11 @@ class TestInit:
         with patch.dict("os.environ", {"MOE_CONFIG_DIR": str(tmp_path)}):
             config = Config(init_db=False)
             assert config.config_dir == tmp_path
+
+    def test_bad_validation(self, tmp_config):
+        """Raise a ConfigValidationError if the configuration is invalid."""
+        with pytest.raises(ConfigValidationError):
+            tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
 
 
 class TestPlugins:
@@ -94,7 +99,7 @@ class ConfigPlugin:
     def add_config_validator(settings):
         """Add the `config_plugin` configuration option."""
         settings.validators.register(
-            dynaconf.Validator("CONFIG_PLUGIN", must_exist=True, default="hello!")
+            dynaconf.Validator("CONFIG_PLUGIN", must_exist=True)
         )
 
     @staticmethod
@@ -110,14 +115,19 @@ class TestHooks:
 
     def test_add_config_validator(self, tmp_config):
         """Ensure plugins can implement the `add_config_validator` hook."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")])
+        config = tmp_config(
+            settings="CONFIG_PLUGIN = 'hello!'",
+            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
+        )
 
         assert config.settings.config_plugin == "hello!"
 
     def test_edit_new_items(self, mock_track, tmp_config, tmp_session):
         """Ensure plugins can implement the `edit_new_items` hook."""
         tmp_config(
-            "default_plugins = []",
+            """default_plugins = []
+            CONFIG_PLUGIN = true
+            """,
             extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
             tmp_db=True,
         )
@@ -130,7 +140,9 @@ class TestHooks:
     def test_process_new_items(self, mock_track, tmp_config, tmp_session):
         """Ensure plugins can implement the `add_hooks` hook."""
         tmp_config(
-            "default_plugins = []",
+            """default_plugins = []
+            CONFIG_PLUGIN = true
+            """,
             extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
             tmp_db=True,
         )
@@ -143,7 +155,9 @@ class TestHooks:
     def test_plugin_registration(self, tmp_config):
         """Ensure plugins can implement the `plugin_registration` hook."""
         config = tmp_config(
-            "default_plugins = []",
+            """default_plugins = []
+            CONFIG_PLUGIN = true
+            """,
             extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
         )
 
