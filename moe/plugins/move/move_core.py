@@ -32,18 +32,13 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
         "{track.track_num:02} - {track.title}{track.path.suffix}"
     )
 
-    settings.validators.register(
-        dynaconf.Validator("MOVE.ASCIIFY_PATHS", default=False)
-    )
-    settings.validators.register(
-        dynaconf.Validator("MOVE.ALBUM_PATH", default=default_album_path)
-    )
-    settings.validators.register(
-        dynaconf.Validator("MOVE.EXTRA_PATH", default=default_extra_path)
-    )
-    settings.validators.register(
-        dynaconf.Validator("MOVE.TRACK_PATH", default=default_track_path)
-    )
+    validators = [
+        dynaconf.Validator("MOVE.ASCIIFY_PATHS", default=False),
+        dynaconf.Validator("MOVE.ALBUM_PATH", default=default_album_path),
+        dynaconf.Validator("MOVE.EXTRA_PATH", default=default_extra_path),
+        dynaconf.Validator("MOVE.TRACK_PATH", default=default_track_path),
+    ]
+    settings.validators.register(*validators)
 
 
 @moe.hookimpl

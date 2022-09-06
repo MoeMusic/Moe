@@ -176,10 +176,11 @@ class Hooks:
 @moe.hookimpl
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
-    settings.validators.register(
-        dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS))
-    )
-    settings.validators.register(dynaconf.Validator("LIBRARY_PATH", default="~/Music"))
+    validators = [
+        dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS)),
+        dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
+    ]
+    settings.validators.register(*validators)
 
 
 class ExtraPlugin(NamedTuple):
