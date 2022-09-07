@@ -45,4 +45,4 @@ def _parse_args(config: Config, args: argparse.Namespace):
         raise SystemExit(1)
 
     for item in items:
-        moe_rm.remove_item(item)
+        moe_rm.remove_item(config, item)
