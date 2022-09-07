@@ -148,7 +148,11 @@ class TestGetAlbumById:
 
 
 class TestPluginRegistration:
-    """Test the `plugin_registration` hook implementation."""
+    """Test the `plugin_registration` hook implementation.
+
+    Note:
+        The hook implementation exists in the `__init__.py` of the plugin.
+    """
 
     def test_musicbrainz_core(self, tmp_config):
         """Enable the musicbrainz core plugin if specified in the config."""
