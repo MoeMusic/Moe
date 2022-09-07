@@ -1,7 +1,10 @@
 """Core musicbrainz api.
 
-The ``musicbrainz`` plugin will import metadata from musicbrainz when adding a track or
-album to the library.
+The ``musicbrainz`` core plugin provides the following functionality:
+
+* Imports metadata from musicbrainz when adding a track or album to the library.
+* Optionally updates a musicbrainz collection when items are added or removed from the
+  library.
 
 Note:
     This plugin is enabled by default.
@@ -12,17 +15,33 @@ See Also:
 """
 
 import datetime
-from typing import Dict, List
+import logging
+from typing import Any, Callable, Dict, List, Optional
 
+import dynaconf
 import musicbrainzngs
 import pkg_resources
 
 import moe
 from moe.config import Config
 from moe.library.album import Album
+from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
-__all__ = ["get_album_by_id", "get_matching_album"]
+__all__ = [
+    "MBAuthError",
+    "add_releases_to_collection",
+    "get_album_by_id",
+    "get_matching_album",
+    "rm_releases_from_collection",
+]
+
+log = logging.getLogger("moe.mb")
+
+
+class MBAuthError(Exception):
+    """Musicbrainz user authentication error."""
+
 
 musicbrainzngs.set_useragent(
     "moe",
@@ -47,6 +66,35 @@ RELEASE_INCLUDES = [
 
 
 @moe.hookimpl
+def add_config_validator(settings: dynaconf.base.LazySettings):
+    """Validates musicbrainz plugin configuration settings."""
+    login_required = False
+
+    settings.validators.register(
+        dynaconf.Validator(
+            "musicbrainz.collection.auto_add",
+            "musicbrainz.collection.auto_remove",
+            default=False,
+        )
+    )
+
+    if settings.get("musicbrainz.collection.auto_add", False) or settings.get(
+        "musicbrainz.collection.auto_remove", False
+    ):
+        login_required = True
+        settings.validators.register(
+            dynaconf.Validator("musicbrainz.collection.collection_id", must_exist=True)
+        )
+
+    if login_required:
+        settings.validators.register(
+            dynaconf.Validator(
+                "musicbrainz.username", "musicbrainz.password", must_exist=True
+            )
+        )
+
+
+@moe.hookimpl
 def import_candidates(config: Config, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
 
@@ -59,6 +107,118 @@ def import_candidates(config: Config, album: Album) -> Album:
         is not complete, as it will not contain any references to the filesystem.
     """
     return get_matching_album(album)
+
+
+@moe.hookimpl
+def post_remove(config: Config, item: LibItem):
+    """Removes a release from a collection when removed from the library."""
+    if not config.settings.musicbrainz.collection.auto_remove:
+        return
+
+    if isinstance(item, Album) and item.mb_album_id:
+        try:
+            rm_releases_from_collection(config, None, [item.mb_album_id])
+        except MBAuthError as err:
+            log.error(err)
+
+
+@moe.hookimpl
+def process_new_items(config: Config, items: List[LibItem]):
+    """Updates a user collection in musicbrainz with new releases."""
+    if not config.settings.musicbrainz.collection.auto_add:
+        return
+
+    releases = []
+    for item in items:
+        if isinstance(item, Album) and item.mb_album_id:
+            releases.append(item.mb_album_id)
+
+    if releases:
+        try:
+            add_releases_to_collection(config, None, releases)
+        except MBAuthError as err:
+            log.error(err)
+
+
+def add_releases_to_collection(
+    config: Config, collection: Optional[str], releases: List[str]
+) -> None:
+    """Adds releases to a musicbrainz collection.
+
+    Args:
+        config: Moe config.
+        collection: Musicbrainz collection ID to add the releases to.
+            If not given, defaults to the ``musicbrainz.collection.collection_id``
+            config option.
+        releases: Musicbrainz release IDs to add to the collection.
+
+    Raises:
+        MBAuthError: Invalid musicbrainz user credentials in the configuration.
+    """
+    collection = collection or config.settings.musicbrainz.collection.collection_id
+
+    for release in releases:
+        log.info(f"Adding release: '{release}' to collection: '{collection}'")
+
+    _mb_auth_call(
+        config,
+        musicbrainzngs.add_releases_to_collection,
+        collection=collection,
+        releases=releases,
+    )
+
+
+def rm_releases_from_collection(
+    config: Config, collection: Optional[str], releases: List[str]
+) -> None:
+    """Removes releases from a musicbrainz collection.
+
+    Args:
+        config: Moe config.
+        collection: Musicbrainz collection ID to remove the releases from.
+            If not given, defaults to the ``musicbrainz.collection.collection_id``
+            config option.
+        releases: Musicbrainz release IDs to remove from the collection.
+
+    Raises:
+        MBAuthError: Invalid musicbrainz user credentials in the configuration.
+    """
+    collection = collection or config.settings.musicbrainz.collection.collection_id
+
+    for release in releases:
+        log.info(f"Removing release: '{release}' from collection: '{collection}'")
+
+    _mb_auth_call(
+        config,
+        musicbrainzngs.remove_releases_from_collection,
+        collection=collection,
+        releases=releases,
+    )
+
+
+def _mb_auth_call(config: Config, api_func: Callable, **kwargs) -> Any:
+    """Call a musicbrainz API function that requires user authentication.
+
+    Args:
+        config: Moe config. Used to access credentials for user authentication.
+        api_func: Musicbrainz API function to call.
+        **kwargs: Keyword arguments to pass to the API function call.
+
+    Returns:
+        The return value of the API function called.
+
+    Raises:
+        MBAuthError: Invalid user credentials in the configuration.
+    """
+    if config:
+        musicbrainzngs.auth(
+            config.settings.musicbrainz.username, config.settings.musicbrainz.password
+        )
+
+    try:
+        return api_func(**kwargs)
+    except musicbrainzngs.AuthenticationError as err:
+        raise MBAuthError("User authentication with musicbrainz failed.") from err
 
 
 def get_matching_album(album: Album) -> Album:

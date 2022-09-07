@@ -1,4 +1,9 @@
-"""Integrates musicbrainz with the import prompt."""
+"""Integrates musicbrainz with the import prompt.
+
+The ``musicbrainz`` cli plugin provides the following functionality:
+
+* Ability to search for a specific musicbrainz ID when importing an item.
+"""
 
 
 from typing import List
