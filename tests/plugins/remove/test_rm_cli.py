@@ -31,7 +31,7 @@ class TestCommand:
         moe.cli.main(cli_args, tmp_rm_config)
 
         mock_query.assert_called_once_with("*", query_type="track")
-        mock_rm.assert_called_once_with(mock_track)
+        mock_rm.assert_called_once_with(tmp_rm_config, mock_track)
 
     def test_album(self, mock_album, mock_query, mock_rm, tmp_rm_config):
         """Albums are removed from the database with valid query."""
@@ -41,7 +41,7 @@ class TestCommand:
         moe.cli.main(cli_args, tmp_rm_config)
 
         mock_query.assert_called_once_with("*", query_type="album")
-        mock_rm.assert_called_once_with(mock_album)
+        mock_rm.assert_called_once_with(tmp_rm_config, mock_album)
 
     def test_extra(self, mock_extra, mock_query, mock_rm, tmp_rm_config):
         """Extras are removed from the database with valid query."""
@@ -51,7 +51,7 @@ class TestCommand:
         moe.cli.main(cli_args, tmp_rm_config)
 
         mock_query.assert_called_once_with("*", query_type="extra")
-        mock_rm.assert_called_once_with(mock_extra)
+        mock_rm.assert_called_once_with(tmp_rm_config, mock_extra)
 
     def test_multiple_items(
         self, mock_track_factory, mock_query, mock_rm, tmp_rm_config
@@ -64,7 +64,7 @@ class TestCommand:
         moe.cli.main(cli_args, tmp_rm_config)
 
         for mock_track in mock_tracks:
-            mock_rm.assert_any_call(mock_track)
+            mock_rm.assert_any_call(tmp_rm_config, mock_track)
         assert mock_rm.call_count == 2
 
     def test_exit_code(self, mock_query, mock_rm, tmp_rm_config):
