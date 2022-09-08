@@ -265,7 +265,6 @@ class Track(LibItem, SABase):
         if not existing_track:
             return None
 
-        session.expunge(existing_track)
         return existing_track
 
     def merge(self, other: "Track", overwrite: bool = False):
