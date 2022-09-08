@@ -41,7 +41,9 @@ class TestPrompt:
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
-            "moe.plugins.moe_import.import_cli.choice_prompt", return_value=mock_choice
+            "moe.plugins.moe_import.import_cli.choice_prompt",
+            return_value=mock_choice,
+            autospec=True,
         ):
             moe_import.import_prompt(config, mock_album, new_album)
 
@@ -84,6 +86,7 @@ class TestHookSpecs:
         with patch(
             "moe.plugins.moe_import.import_cli.choice_prompt",
             return_value=ImportPlugin.test_choice,
+            autospec=True,
         ):
             moe_import.import_prompt(config, old_album, new_album)
 
@@ -99,7 +102,7 @@ class TestProcessCandidates:
         mock_candidates = [Mock()]
 
         with patch(
-            "moe.plugins.moe_import.import_cli.import_prompt"
+            "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
             tmp_import_config.plugin_manager.hook.process_candidates(
                 config=tmp_import_config,
@@ -113,10 +116,10 @@ class TestProcessCandidates:
 
     def test_abort_import(self, tmp_import_config):
         """Raise SystemExit if the import is aborted."""
-        with patch.object(
-            moe_import.import_cli,
-            "import_prompt",
+        with patch(
+            "moe.plugins.moe_import.import_cli.import_prompt",
             side_effect=moe_import.AbortImport,
+            autospec=True,
         ):
             with pytest.raises(SystemExit) as error:
                 tmp_import_config.plugin_manager.hook.process_candidates(
@@ -130,7 +133,7 @@ class TestProcessCandidates:
     def test_process_no_candidates(self, tmp_import_config):
         """Don't display the import prompt if there are no candidates to process."""
         with patch(
-            "moe.plugins.moe_import.import_cli.import_prompt"
+            "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
             tmp_import_config.plugin_manager.hook.process_candidates(
                 config=tmp_import_config, old_album=Mock(), candidates=[]
@@ -174,7 +177,9 @@ class TestAddImportPromptChoice:
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
-            "moe.plugins.moe_import.import_cli.choice_prompt", return_value=mock_choice
+            "moe.plugins.moe_import.import_cli.choice_prompt",
+            return_value=mock_choice,
+            autospec=True,
         ):
             moe_import.import_prompt(tmp_import_config, old_album, new_album)
 
@@ -210,10 +215,12 @@ class TestAddImportPromptChoice:
         with patch(
             "moe.plugins.moe_import.import_cli.get_matching_tracks",
             return_value=mock_matches,
+            autospec=True,
         ):
             with patch(
                 "moe.plugins.moe_import.import_cli.choice_prompt",
                 return_value=mock_choice,
+                autospec=True,
             ):
                 moe_import.import_prompt(tmp_import_config, old_album, new_album)
 
@@ -229,7 +236,9 @@ class TestAddImportPromptChoice:
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
-            "moe.plugins.moe_import.import_cli.choice_prompt", return_value=mock_choice
+            "moe.plugins.moe_import.import_cli.choice_prompt",
+            return_value=mock_choice,
+            autospec=True,
         ):
             moe_import.import_prompt(tmp_import_config, mock_album, new_album)
 
@@ -250,7 +259,9 @@ class TestAddImportPromptChoice:
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
-            "moe.plugins.moe_import.import_cli.choice_prompt", return_value=mock_choice
+            "moe.plugins.moe_import.import_cli.choice_prompt",
+            return_value=mock_choice,
+            autospec=True,
         ):
             moe_import.import_prompt(tmp_import_config, mock_album, new_album)
 
@@ -270,7 +281,9 @@ class TestAddImportPromptChoice:
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._abort_changes)
         with patch(
-            "moe.plugins.moe_import.import_cli.choice_prompt", return_value=mock_choice
+            "moe.plugins.moe_import.import_cli.choice_prompt",
+            return_value=mock_choice,
+            autospec=True,
         ):
             with pytest.raises(moe_import.AbortImport):
                 moe_import.import_prompt(tmp_import_config, album1, album2)

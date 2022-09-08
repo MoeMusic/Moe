@@ -5,9 +5,8 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from types import FunctionType
 from typing import Callable, Iterator, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -138,21 +137,6 @@ def tmp_session(tmp_config) -> Iterator[sqlalchemy.orm.session.Session]:
 def _clean_session():
     """Ensure we aren't sharing sessions between tests."""
     MoeSession.remove()
-
-
-@pytest.fixture
-def mock_query() -> Iterator[FunctionType]:
-    """Mock a database query call.
-
-    Use ``mock_query.return_value` to set the return value of a query.
-
-    Assumes `query` is imported as `moe.query`.
-
-    Yields:
-        Mock query
-    """
-    with patch("moe.query.query", autospec=True) as mock_query:
-        yield mock_query
 
 
 @pytest.fixture

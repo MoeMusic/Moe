@@ -6,10 +6,10 @@ from typing import List, cast
 import sqlalchemy.orm
 
 import moe
-from moe import query
 from moe.config import Config
 from moe.library.album import Album
 from moe.plugins import move as moe_move
+from moe.query import query as moe_query
 
 
 @moe.hookimpl
@@ -42,7 +42,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
-    albums = cast(List[Album], query.query("*", query_type="album"))
+    albums = cast(List[Album], moe_query("*", query_type="album"))
 
     if args.dry_run:
         dry_run_str = ""

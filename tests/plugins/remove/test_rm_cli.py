@@ -1,5 +1,7 @@
 """Tests the ``remove`` plugin."""
 
+from types import FunctionType
+from typing import Iterator
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +14,19 @@ def mock_rm():
     """Mock the `remove_item()` api call."""
     with patch("moe.plugins.remove.remove_item", autospec=True) as mock_rm:
         yield mock_rm
+
+
+@pytest.fixture
+def mock_query() -> Iterator[FunctionType]:
+    """Mock a database query call.
+
+    Use ``mock_query.return_value` to set the return value of a query.
+
+    Yields:
+        Mock query
+    """
+    with patch("moe.plugins.remove.rm_cli.moe_query", autospec=True) as mock_query:
+        yield mock_query
 
 
 @pytest.fixture

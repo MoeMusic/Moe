@@ -5,9 +5,9 @@ import logging
 
 import moe
 import moe.cli
-from moe import query
 from moe.config import Config
 from moe.plugins import edit
+from moe.query import query as moe_query
 
 log = logging.getLogger("moe.edit")
 
@@ -48,7 +48,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Invalid field or field_value term format.
     """
-    items = query.query(args.query, args.query_type)
+    items = moe_query(args.query, args.query_type)
 
     error_count = 0
     for term in args.fv_terms:

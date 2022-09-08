@@ -13,12 +13,12 @@ from typing import Any, Dict, List
 
 import moe
 import moe.cli
-from moe import query
 from moe.config import Config
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
+from moe.query import query as moe_query
 
 __all__: List[str] = []
 
@@ -55,7 +55,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Query returned no tracks.
     """
-    items = query.query(args.query, query_type=args.query_type)
+    items = moe_query(args.query, query_type=args.query_type)
 
     if not items:
         raise SystemExit(1)
