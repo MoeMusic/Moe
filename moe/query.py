@@ -8,7 +8,7 @@ Example:
 
         my_parser = cmd_parser.add_parser("my_plugin", parents=[query.query_parser])
 
-Then, in your argument parsing function, call `query.query(args.query)`
+Then, in your argument parsing function, call ``query.query(args.query)``
 to get a list of Tracks matching the query from the library.
 """
 

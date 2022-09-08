@@ -13,7 +13,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import add as moe_add
-from moe.plugins.add.add_core.add import AddAbortError
+from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
 
 log = logging.getLogger("moe.add")
 
@@ -40,34 +40,34 @@ def pre_add(config: Config, item: LibItem):
     else:
         raise NotImplementedError
 
-    print(moe.cli.fmt_album_changes(album, dup_album))
+    print(fmt_album_changes(album, dup_album))
 
     # Each PromptChoice `func` should have the following signature:
     # func(config, album, dup_album) # noqa: E800
     prompt_choices = [
-        moe.cli.PromptChoice(
+        PromptChoice(
             title="Replace the existing album", shortcut_key="r", func=_replace
         ),
-        moe.cli.PromptChoice(title="Abort", shortcut_key="x", func=_abort),
-        moe.cli.PromptChoice(
+        PromptChoice(title="Abort", shortcut_key="x", func=_abort),
+        PromptChoice(
             title="Merge without overwriting existing values",
             shortcut_key="m",
             func=_merge,
         ),
-        moe.cli.PromptChoice(
+        PromptChoice(
             title="Merge, overwriting any existing values",
             shortcut_key="o",
             func=_overwrite,
         ),
     ]
-    prompt_choice = moe.cli.choice_prompt(
+    prompt_choice = choice_prompt(
         prompt_choices,
         "Duplicate item already exists in the library, how would you like to"
         " resolve it?",
     )
     try:
         prompt_choice.func(config, album, dup_album)
-    except AddAbortError as err:
+    except moe_add.AddAbortError as err:
         raise SystemExit(0) from err
 
 

@@ -9,7 +9,8 @@ import moe
 import moe.cli
 from moe.config import Config
 from moe.library.album import Album
-from moe.plugins import add as moe_add
+from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
+from moe.util.core import get_matching_tracks
 
 log = logging.getLogger("moe.add")
 
@@ -25,7 +26,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
+    def add_import_prompt_choice(prompt_choices: List[PromptChoice]):
         """Add a user input choice to the import prompt.
 
         ``func`` should return the album to be added to the library (or ``None`` if no
@@ -69,15 +70,13 @@ def process_candidates(config: Config, old_album: Album, candidates):
 
 
 @moe.hookimpl
-def add_import_prompt_choice(prompt_choices: List[moe.cli.PromptChoice]):
+def add_import_prompt_choice(prompt_choices: List[PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
-        moe.cli.PromptChoice(
-            title="Apply changes", shortcut_key="a", func=_apply_changes
-        )
+        PromptChoice(title="Apply changes", shortcut_key="a", func=_apply_changes)
     )
     prompt_choices.append(
-        moe.cli.PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
+        PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
     )
 
 
@@ -100,12 +99,12 @@ def import_prompt(
     if old_album == new_album:
         return
 
-    print(moe.cli.fmt_album_changes(old_album, new_album))
+    print(fmt_album_changes(old_album, new_album))
 
-    prompt_choices: List[moe.cli.PromptChoice] = []
+    prompt_choices: List[PromptChoice] = []
     config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
-    prompt_choice = moe.cli.choice_prompt(prompt_choices)
+    prompt_choice = choice_prompt(prompt_choices)
     prompt_choice.func(config, old_album, new_album)
 
 
@@ -115,7 +114,7 @@ def _apply_changes(
     new_album: Album,
 ):
     """Applies the album changes."""
-    for old_track, new_track in moe_add.get_matching_tracks(old_album, new_album):
+    for old_track, new_track in get_matching_tracks(old_album, new_album):
         if not old_track and new_track:
             new_album.tracks.remove(new_track)  # missing track
         elif old_track and not new_track:
@@ -126,8 +125,11 @@ def _apply_changes(
             and old_album.get_track(new_track.track_num, new_track.disc) != old_track
         ):
             # matchup track and disc numbers of matches to ensure they merge properly
+            print(f"old track_num: {old_track.track_num}")
+            print(f"new track_title: {new_track.title}")
             old_track.track_num = new_track.track_num
             old_track.disc = new_track.disc
+            print(f"new track_num: {new_track.track_num}")
 
     old_album.merge(new_album, overwrite=True)
 
