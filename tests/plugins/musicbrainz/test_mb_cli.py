@@ -2,17 +2,13 @@
 
 from unittest.mock import Mock, patch
 
-import moe.cli
-from moe.plugins import moe_import
-from moe.plugins import musicbrainz as moe_mb
-
 
 class TestAddImportPromptChoice:
     """Test the `add_import_prompt_choice` hook implementation."""
 
     def test_add_choice(self, tmp_config):
         """The "m" key to add a musicbrainz id is added."""
-        config = tmp_config("default_plugins = ['cli', 'import', 'musicbrainz']")
+        config = tmp_config("default_plugins = ['cli', 'musicbrainz']")
         prompt_choices = []
 
         config.plugin_manager.hook.add_import_prompt_choice(
@@ -23,28 +19,31 @@ class TestAddImportPromptChoice:
 
     def test_enter_id(self, mock_album_factory, tmp_config):
         """When selected, the 'm' key should allow the user to enter an mb_id."""
-        config = tmp_config(
-            "default_plugins = ['cli', 'import', 'musicbrainz']", tmp_db=True
+        config = tmp_config("default_plugins = ['cli', 'musicbrainz']", tmp_db=True)
+        old_album = mock_album_factory()
+        new_album = mock_album_factory()
+        prompt_choices = []
+        config.plugin_manager.hook.add_import_prompt_choice(
+            prompt_choices=prompt_choices
         )
 
-        mock_choice1 = moe.cli.PromptChoice("mock", "m", moe_mb.mb_cli._enter_id)
-        mock_choice2 = moe.cli.PromptChoice(
-            "mock", "m", moe_import.import_cli._apply_changes
-        )
-        with patch.object(
-            moe.cli, "choice_prompt", side_effect=[mock_choice1, mock_choice2]
+        mock_q = Mock()
+        mock_album = Mock()
+        mock_q.ask.return_value = "new id"
+        with patch(
+            "moe.plugins.musicbrainz.mb_cli.questionary.text", return_value=mock_q
         ):
-            mock_q = Mock()
-            mock_q.ask.return_value = "new id"
             with patch(
-                "moe.plugins.musicbrainz.mb_cli.questionary.text", return_value=mock_q
-            ):
-                with patch.object(moe_mb, "get_album_by_id") as mock_album_by_id:
-                    moe_import.import_prompt(
-                        config, mock_album_factory(), mock_album_factory()
-                    )
+                "moe.plugins.musicbrainz.mb_cli.moe_mb.get_album_by_id",
+                return_value=mock_album,
+            ) as mock_get_album:
+                with patch(
+                    "moe.plugins.musicbrainz.mb_cli.moe_import.import_prompt"
+                ) as mock_prompt:
+                    prompt_choices[0].func(config, old_album, new_album)
 
-        mock_album_by_id.assert_called_with("new id")
+        mock_get_album.assert_called_once_with("new id")
+        mock_prompt.assert_called_once_with(config, old_album, mock_album)
 
 
 class TestPluginRegistration:
