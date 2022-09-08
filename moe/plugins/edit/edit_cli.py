@@ -2,12 +2,13 @@
 
 import argparse
 import logging
+from typing import Tuple
 
 import moe
 import moe.cli
 from moe.config import Config
 from moe.plugins import edit
-from moe.query import query as moe_query
+from moe.query import QueryError, query
 
 log = logging.getLogger("moe.edit")
 
@@ -38,7 +39,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     edit_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):
+def _parse_args(config: Config, args: argparse.Namespace):  # noqa: C901
     """Parses the given commandline arguments.
 
     Args:
@@ -46,26 +47,52 @@ def _parse_args(config: Config, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Invalid field or field_value term format.
+        SystemExit: Invalid query, no items found to edit, or invalid field or
+            field_value term format.
     """
-    items = moe_query(args.query, args.query_type)
+    try:
+        items = query(args.query, query_type=args.query_type)
+    except QueryError as err:
+        log.error(err)
+        raise SystemExit(1) from err
+
+    if not items:
+        log.error("No items found to edit.")
+        raise SystemExit(1)
 
     error_count = 0
     for term in args.fv_terms:
-        # term: FIELD=VALUE format used to set the item's `field` to `value`
         try:
-            field, value = term.split("=")
-        except ValueError:
-            log.error(f"Invalid FIELD=VALUE format: {term}")
+            field, value = _parse_term(term)
+        except ValueError as err:
+            log.error(err)
             error_count += 1
             continue
 
         for item in items:
             try:
                 edit.edit_item(item, field, value)
-            except edit.EditError as exc:
-                log.error(exc)
+            except edit.EditError as err:
+                log.error(err)
                 error_count += 1
 
     if error_count:
         raise SystemExit(1)
+
+
+def _parse_term(term: str) -> Tuple[str, str]:
+    """Parses a single `term` from the passed args.
+
+    Args:
+        term: FIELD=VALUE format used to set the item's `field` to `value`.
+
+    Returns:
+        [field, value] parsed from the term.
+
+    Raises:
+        ValueError: Invalid term format.
+    """
+    try:
+        return tuple(term.split("="))
+    except ValueError as err:
+        raise ValueError(f"Invalid FIELD=VALUE format: {term}") from err

@@ -18,7 +18,7 @@ from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
-from moe.query import query as moe_query
+from moe.query import QueryError, query
 
 __all__: List[str] = []
 
@@ -53,11 +53,16 @@ def _parse_args(config: Config, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Query returned no tracks.
+        SystemExit: Invalid query given, or no items found.
     """
-    items = moe_query(args.query, query_type=args.query_type)
+    try:
+        items = query(args.query, query_type=args.query_type)
+    except QueryError as err:
+        log.error(err)
+        raise SystemExit(1) from err
 
     if not items:
+        log.error("No items found.")
         raise SystemExit(1)
 
     print(_fmt_infos(items), end="")

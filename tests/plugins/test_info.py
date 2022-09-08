@@ -19,7 +19,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.info.moe_query", autospec=True) as mock_query:
+    with patch("moe.plugins.info.query", autospec=True) as mock_query:
         yield mock_query
 
 

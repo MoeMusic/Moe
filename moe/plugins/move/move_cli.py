@@ -1,6 +1,7 @@
 """Adds the ``move`` command to the cli."""
 
 import argparse
+import logging
 from typing import List, cast
 
 import sqlalchemy.orm
@@ -9,7 +10,9 @@ import moe
 from moe.config import Config
 from moe.library.album import Album
 from moe.plugins import move as moe_move
-from moe.query import query as moe_query
+from moe.query import QueryError, query
+
+log = logging.getLogger("moe.list")
 
 
 @moe.hookimpl
@@ -40,32 +43,47 @@ def _parse_args(config: Config, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Invalid field or field_value term format.
+        SystemExit: Invalid query or no items found to move.
     """
-    albums = cast(List[Album], moe_query("*", query_type="album"))
+    try:
+        albums = cast(List[Album], query("*", query_type="album"))
+    except QueryError as err:
+        log.error(err)
+        raise SystemExit(1) from err
+
+    if not albums:
+        log.error("No items found to move.")
+        raise SystemExit(1)
 
     if args.dry_run:
-        dry_run_str = ""
-        for dry_album in albums:
-            album_dest = moe_move.fmt_item_path(config, dry_album)
-            if album_dest != dry_album.path:
-                dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
-
-            # temporarily set the album's path so track/extra dests use the right
-            # album directory
-            sqlalchemy.orm.attributes.set_committed_value(dry_album, "path", album_dest)
-
-            for dry_track in dry_album.tracks:
-                track_dest = moe_move.fmt_item_path(config, dry_track)
-                if track_dest != dry_track.path:
-                    dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
-            for dry_extra in dry_album.extras:
-                extra_dest = moe_move.fmt_item_path(config, dry_extra)
-                if extra_dest != dry_extra.path:
-                    dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
-
+        dry_run_str = _dry_run(config, albums)
         if dry_run_str:
             print(dry_run_str.lstrip())
     else:
         for album in albums:
             moe_move.move_item(config, album)
+
+
+def _dry_run(config: Config, albums: List[Album]) -> str:
+    """Returns a string of output representing a 'dry-run' of moving albums."""
+    dry_run_str = ""
+
+    for dry_album in albums:
+        album_dest = moe_move.fmt_item_path(config, dry_album)
+        if album_dest != dry_album.path:
+            dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
+
+        # temporarily set the album's path so track/extra dests use the right
+        # album directory
+        sqlalchemy.orm.attributes.set_committed_value(dry_album, "path", album_dest)
+
+        for dry_track in dry_album.tracks:
+            track_dest = moe_move.fmt_item_path(config, dry_track)
+            if track_dest != dry_track.path:
+                dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
+        for dry_extra in dry_album.extras:
+            extra_dest = moe_move.fmt_item_path(config, dry_extra)
+            if extra_dest != dry_extra.path:
+                dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
+
+    return dry_run_str
