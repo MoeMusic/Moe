@@ -27,18 +27,19 @@ class TestAddImportPromptChoice:
             prompt_choices=prompt_choices
         )
 
-        mock_q = Mock()
         mock_album = Mock()
-        mock_q.ask.return_value = "new id"
         with patch(
-            "moe.plugins.musicbrainz.mb_cli.questionary.text", return_value=mock_q
+            "moe.plugins.musicbrainz.mb_cli.questionary.text",
+            **{"return_value.ask.return_value": "new id"}
         ):
             with patch(
                 "moe.plugins.musicbrainz.mb_cli.moe_mb.get_album_by_id",
                 return_value=mock_album,
+                autospec=True,
             ) as mock_get_album:
                 with patch(
-                    "moe.plugins.musicbrainz.mb_cli.moe_import.import_prompt"
+                    "moe.plugins.musicbrainz.mb_cli.moe_import.import_prompt",
+                    autospec=True,
                 ) as mock_prompt:
                     prompt_choices[0].func(config, old_album, new_album)
 

@@ -19,6 +19,19 @@ def mock_edit() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
+def mock_query() -> Iterator[FunctionType]:
+    """Mock a database query call.
+
+    Use ``mock_query.return_value` to set the return value of a query.
+
+    Yields:
+        Mock query
+    """
+    with patch("moe.plugins.edit.edit_cli.moe_query", autospec=True) as mock_query:
+        yield mock_query
+
+
+@pytest.fixture
 def tmp_edit_config(tmp_config) -> Config:
     """A temporary config for the edit plugin with the cli."""
     return tmp_config('default_plugins = ["cli", "edit"]')

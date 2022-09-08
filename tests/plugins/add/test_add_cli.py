@@ -92,7 +92,9 @@ class TestPreAdd:
         """When adding a track, call the function with the respective album."""
         tmp_session.merge(mock_track)
         db_album = mock_track.album_obj.get_existing()
-        with patch("moe.plugins.add.add_cli.choice_prompt") as mock_prompt_choice:
+        with patch(
+            "moe.plugins.add.add_cli.choice_prompt", autospec=True
+        ) as mock_prompt_choice:
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=mock_track
             )
@@ -105,7 +107,9 @@ class TestPreAdd:
         """When adding an extra, call the function with the respective album."""
         tmp_session.merge(mock_extra)
         db_album = mock_extra.album_obj.get_existing()
-        with patch("moe.plugins.add.add_cli.choice_prompt") as mock_prompt_choice:
+        with patch(
+            "moe.plugins.add.add_cli.choice_prompt", autospec=True
+        ) as mock_prompt_choice:
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=mock_extra
             )
@@ -129,7 +133,9 @@ class TestPreAdd:
 
         mock_prompt_choice = PromptChoice("mock", "m", add.add_cli._replace)
         with patch(
-            "moe.plugins.add.add_cli.choice_prompt", return_value=mock_prompt_choice
+            "moe.plugins.add.add_cli.choice_prompt",
+            return_value=mock_prompt_choice,
+            autospec=True,
         ):
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=album
@@ -154,7 +160,9 @@ class TestPreAdd:
 
         mock_prompt_choice = PromptChoice("mock", "m", add.add_cli._abort)
         with patch(
-            "moe.plugins.add.add_cli.choice_prompt", return_value=mock_prompt_choice
+            "moe.plugins.add.add_cli.choice_prompt",
+            return_value=mock_prompt_choice,
+            autospec=True,
         ):
             with pytest.raises(SystemExit) as error:
                 tmp_add_config.plugin_manager.hook.pre_add(
@@ -179,7 +187,9 @@ class TestPreAdd:
 
         mock_prompt_choice = PromptChoice("mock", "m", add.add_cli._merge)
         with patch(
-            "moe.plugins.add.add_cli.choice_prompt", return_value=mock_prompt_choice
+            "moe.plugins.add.add_cli.choice_prompt",
+            return_value=mock_prompt_choice,
+            autospec=True,
         ):
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=new_album
@@ -207,7 +217,9 @@ class TestPreAdd:
 
         mock_prompt_choice = PromptChoice("mock", "m", add.add_cli._overwrite)
         with patch(
-            "moe.plugins.add.add_cli.choice_prompt", return_value=mock_prompt_choice
+            "moe.plugins.add.add_cli.choice_prompt",
+            return_value=mock_prompt_choice,
+            autospec=True,
         ):
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=new_album
@@ -221,7 +233,9 @@ class TestPreAdd:
 
     def test_no_dup_album(self, tmp_session, mock_album, tmp_add_config):
         """Don't do anything if the album does not have a duplicate."""
-        with patch("moe.plugins.add.add_cli.choice_prompt") as mock_choice_prompt:
+        with patch(
+            "moe.plugins.add.add_cli.choice_prompt", autospec=True
+        ) as mock_choice_prompt:
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=mock_album
             )
@@ -230,7 +244,9 @@ class TestPreAdd:
 
     def test_no_dup_track(self, tmp_session, mock_track, tmp_add_config):
         """Don't do anything if the track does not have a duplicate."""
-        with patch("moe.plugins.add.add_cli.choice_prompt") as mock_choice_prompt:
+        with patch(
+            "moe.plugins.add.add_cli.choice_prompt", autospec=True
+        ) as mock_choice_prompt:
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=mock_track
             )
@@ -239,7 +255,9 @@ class TestPreAdd:
 
     def test_no_dup_extra(self, tmp_session, mock_extra, tmp_add_config):
         """Don't do anything if the extra does not have a duplicate."""
-        with patch("moe.plugins.add.add_cli.choice_prompt") as mock_choice_prompt:
+        with patch(
+            "moe.plugins.add.add_cli.choice_prompt", autospec=True
+        ) as mock_choice_prompt:
             tmp_add_config.plugin_manager.hook.pre_add(
                 config=tmp_add_config, item=mock_extra
             )

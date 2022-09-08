@@ -10,8 +10,8 @@ from typing import List
 
 import moe
 import moe.cli
-from moe import query
 from moe.config import Config
+from moe.query import query as moe_query
 
 __all__: List[str] = []
 
@@ -55,7 +55,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     Raises:
         SystemExit: Query returned no tracks.
     """
-    items = query.query(args.query, query_type=args.query_type)
+    items = moe_query(args.query, query_type=args.query_type)
 
     if not items:
         raise SystemExit(1)

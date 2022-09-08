@@ -16,8 +16,8 @@ def tmp_move_config(tmp_config):
 @pytest.fixture
 def mock_copy():
     """Mock the `move_item()` api call."""
-    with patch("moe.plugins.move.move_core.copy_item", autospec=True) as mock_edit:
-        yield mock_edit
+    with patch("moe.plugins.move.move_core.copy_item", autospec=True) as mock_copy:
+        yield mock_copy
 
 
 ########################################################################################

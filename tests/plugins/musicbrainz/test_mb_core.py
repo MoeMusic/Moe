@@ -13,9 +13,8 @@ from moe.plugins import musicbrainz as moe_mb
 @pytest.fixture
 def mock_mb_by_id():
     """Mock the musicbrainzngs api call `get_release_by_id`."""
-    with patch(
-        "moe.plugins.musicbrainz.mb_core.musicbrainzngs.get_release_by_id",
-        autospec=True,
+    with patch.object(
+        moe_mb.mb_core.musicbrainzngs, "get_release_by_id", autospec=True
     ) as mock_mb_by_id:
         yield mock_mb_by_id
 
@@ -114,7 +113,9 @@ class TestImportCandidates:
         """Get matching albums when searching for candidates to import."""
         config = tmp_config("default_plugins = ['import', 'musicbrainz']")
 
-        with patch.object(moe_mb.mb_core, "get_matching_album") as mock_gma:
+        with patch.object(
+            moe_mb.mb_core, "get_matching_album", autospec=True
+        ) as mock_gma:
             mock_gma.return_value = mock_album
             candidates = config.plugin_manager.hook.import_candidates(
                 config=config, album=mock_album
@@ -132,9 +133,8 @@ class TestCollectionsAutoRemove:
         mock_album.mb_album_id = "184"
         mb_config.settings.musicbrainz.collection.auto_remove = True
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.rm_releases_from_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
             mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
 
@@ -146,9 +146,8 @@ class TestCollectionsAutoRemove:
         """Don't remove any items from the collection if `auto_remove` set to false."""
         mb_config.settings.musicbrainz.collection.auto_remove = False
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.rm_releases_from_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
             mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
 
@@ -159,9 +158,8 @@ class TestCollectionsAutoRemove:
         mock_album.mb_album_id = None
         mb_config.settings.musicbrainz.collection.auto_remove = True
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.rm_releases_from_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
             mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
 
@@ -189,9 +187,8 @@ class TestCollectionsAutoAdd:
         mock_album.mb_album_id = "184"
         mb_config.settings.musicbrainz.collection.auto_add = True
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.add_releases_to_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
             mb_config.plugin_manager.hook.process_new_items(
                 config=mb_config, items=[mock_album]
@@ -205,9 +202,8 @@ class TestCollectionsAutoAdd:
         """Don't add any items if `auto_add` set to false."""
         mb_config.settings.musicbrainz.collection.auto_add = False
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.add_releases_to_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
             mb_config.plugin_manager.hook.process_new_items(
                 config=mb_config, items=[mock_album]
@@ -220,9 +216,8 @@ class TestCollectionsAutoAdd:
         mb_config.settings.musicbrainz.collection.auto_add = True
         mock_album.mb_album_id = None
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.add_releases_to_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
             mb_config.plugin_manager.hook.process_new_items(
                 config=mb_config, items=[mock_album]
@@ -278,8 +273,9 @@ class TestGetMatchingAlbum:
         }
         mock_mb_by_id.return_value = mb_rsrc.full_release.release
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.musicbrainzngs.search_releases",
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs,
+            "search_releases",
             return_value=mb_rsrc.full_release.search,
             autospec=True,
         ) as mock_mb_search:
@@ -292,8 +288,8 @@ class TestGetMatchingAlbum:
         """Use ``mb_album_id`` to search by id if it exists."""
         mock_album.mb_album_id = "1"
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.get_album_by_id",
+        with patch.object(
+            moe_mb.mb_core, "get_album_by_id", autospec=True
         ) as mock_mb_by_id:
             moe_mb.get_matching_album(mock_album)
 
@@ -365,14 +361,13 @@ class TestRmReleasesFromCollection:
         mb_config.settings.musicbrainz.username = "my name is"
         mb_config.settings.musicbrainz.password = "slim shady"
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.musicbrainzngs"
-            ".remove_releases_from_collection",
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs,
+            "remove_releases_from_collection",
             autospec=True,
         ) as mock_remove_releases_call:
-            with patch(
-                "moe.plugins.musicbrainz.mb_core.musicbrainzngs.auth",
-                autospec=True,
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
                 moe_mb.rm_releases_from_collection(
                     mb_config, collection, [mock_album.mb_album_id]
@@ -392,14 +387,13 @@ class TestRmReleasesFromCollection:
         mb_config.settings.musicbrainz.username = "my name is"
         mb_config.settings.musicbrainz.password = "slim shady"
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.musicbrainzngs"
-            ".remove_releases_from_collection",
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs,
+            "remove_releases_from_collection",
             autospec=True,
         ) as mock_remove_releases_call:
-            with patch(
-                "moe.plugins.musicbrainz.mb_core.musicbrainzngs.auth",
-                autospec=True,
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
                 moe_mb.rm_releases_from_collection(
                     mb_config, None, [mock_album.mb_album_id]
@@ -438,13 +432,11 @@ class TestAddReleasesToCollection:
         mb_config.settings.musicbrainz.username = "my name is"
         mb_config.settings.musicbrainz.password = "slim shady"
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.musicbrainzngs.add_releases_to_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            with patch(
-                "moe.plugins.musicbrainz.mb_core.musicbrainzngs.auth",
-                autospec=True,
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
                 moe_mb.add_releases_to_collection(
                     mb_config, collection, [mock_album.mb_album_id]
@@ -464,13 +456,11 @@ class TestAddReleasesToCollection:
         mb_config.settings.musicbrainz.username = "my name is"
         mb_config.settings.musicbrainz.password = "slim shady"
 
-        with patch(
-            "moe.plugins.musicbrainz.mb_core.musicbrainzngs.add_releases_to_collection",
-            autospec=True,
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            with patch(
-                "moe.plugins.musicbrainz.mb_core.musicbrainzngs.auth",
-                autospec=True,
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
                 moe_mb.add_releases_to_collection(
                     mb_config, None, [mock_album.mb_album_id]

@@ -70,7 +70,9 @@ class TestPreAdd:
         """Albums are imported in the `pre_add` hook."""
         config = tmp_config("default_plugins = ['add', 'import']")
 
-        with patch("moe.plugins.moe_import.import_core.import_album") as mock_import:
+        with patch(
+            "moe.plugins.moe_import.import_core.import_album", autospec=True
+        ) as mock_import:
             config.plugin_manager.hook.pre_add(config=config, item=mock_album)
 
         mock_import.assert_called_once_with(config, mock_album)
@@ -79,7 +81,9 @@ class TestPreAdd:
         """A track's album is imported in the `pre_add` hook."""
         config = tmp_config("default_plugins = ['add', 'import']")
 
-        with patch("moe.plugins.moe_import.import_core.import_album") as mock_import:
+        with patch(
+            "moe.plugins.moe_import.import_core.import_album", autospec=True
+        ) as mock_import:
             config.plugin_manager.hook.pre_add(config=config, item=mock_track)
 
         mock_import.assert_called_once_with(config, mock_track.album_obj)
@@ -88,7 +92,9 @@ class TestPreAdd:
         """An extra's album is imported in the `pre_add` hook."""
         config = tmp_config("default_plugins = ['add', 'import']")
 
-        with patch("moe.plugins.moe_import.import_core.import_album") as mock_import:
+        with patch(
+            "moe.plugins.moe_import.import_core.import_album", autospec=True
+        ) as mock_import:
             config.plugin_manager.hook.pre_add(config=config, item=mock_extra)
 
         mock_import.assert_called_once_with(config, mock_extra.album_obj)
