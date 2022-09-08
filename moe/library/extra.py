@@ -76,7 +76,6 @@ class Extra(LibItem, SABase):
         if not existing_extra:
             return None
 
-        session.expunge(existing_extra)
         return existing_extra
 
     def __eq__(self, other):
