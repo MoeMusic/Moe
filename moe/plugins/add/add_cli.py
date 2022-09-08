@@ -13,6 +13,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import add as moe_add
+from moe.plugins.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
 
 log = logging.getLogger("moe.add")
@@ -114,7 +115,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
 
 def _replace(config: Config, album: Album, dup_album: Album):
     """Keeps the new album, removing the existing album from the library."""
-    MoeSession().delete(dup_album)
+    remove_item(config, dup_album)
 
 
 def _abort(config: Config, album: Album, dup_album: Album):
