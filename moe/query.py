@@ -88,20 +88,15 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
 
     Returns:
         All tracks matching the query.
+
+    Raises:
+        QueryError: Invalid query.
     """
     terms = shlex.split(query_str)
     if not terms:
-        log.error(f"No query given.\n{HELP_STR}")
-        return []
+        raise QueryError(f"No query given.\n{HELP_STR}")
 
-    try:
-        items = _create_query(terms, query_type).all()
-    except QueryError as exc:
-        log.error(exc)
-        return []
-
-    if not items:
-        log.warning(f"No items found for the query '{query_str}'.")
+    items = _create_query(terms, query_type).all()
 
     items_str = "".join(f"\n    {str(item)}" for item in items)
     log.debug(f"Query '{query_str}' returned: {items_str}")

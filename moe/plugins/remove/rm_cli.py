@@ -5,15 +5,18 @@ Note:
 """
 
 import argparse
+import logging
 from typing import List
 
 import moe
 import moe.cli
 from moe.config import Config
 from moe.plugins import remove as moe_rm
-from moe.query import query as moe_query
+from moe.query import QueryError, query
 
 __all__: List[str] = []
+
+log = logging.getLogger("moe.remove")
 
 
 @moe.hookimpl
@@ -37,11 +40,16 @@ def _parse_args(config: Config, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Query returned no tracks.
+        SystemExit: Invalid query given, or no items to remove.
     """
-    items = moe_query(args.query, query_type=args.query_type)
+    try:
+        items = query(args.query, query_type=args.query_type)
+    except QueryError as err:
+        log.error(err)
+        raise SystemExit(1) from err
 
     if not items:
+        log.error("No items found to remove.")
         raise SystemExit(1)
 
     for item in items:

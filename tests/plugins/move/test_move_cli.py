@@ -25,7 +25,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.move.move_cli.moe_query", autospec=True) as mock_query:
+    with patch("moe.plugins.move.move_cli.query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -58,6 +58,16 @@ class TestCommand:
         for album in albums:
             mock_move.assert_any_call(tmp_move_config, album)
         assert mock_move.call_count == len(albums)
+
+    def test_no_items(self, capsys, mock_query, tmp_move_config):
+        """If no items found to move, exit with non-zero code."""
+        cli_args = ["move", "*"]
+        mock_query.return_value = []
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_move_config)
+
+        assert error.value.code != 0
 
 
 class TestPluginRegistration:

@@ -11,7 +11,7 @@ from typing import List
 import moe
 import moe.cli
 from moe.config import Config
-from moe.query import query as moe_query
+from moe.query import QueryError, query
 
 __all__: List[str] = []
 
@@ -53,11 +53,16 @@ def _parse_args(config: Config, args: argparse.Namespace):
         args: Commandline arguments to parse.
 
     Raises:
-        SystemExit: Query returned no tracks.
+        SystemExit: Invalid query or no items found.
     """
-    items = moe_query(args.query, query_type=args.query_type)
+    try:
+        items = query(args.query, query_type=args.query_type)
+    except QueryError as err:
+        log.error(err)
+        raise SystemExit(1) from err
 
     if not items:
+        log.error("No items found to list.")
         raise SystemExit(1)
 
     for item in items:
