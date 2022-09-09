@@ -47,9 +47,9 @@ class TestCommand:
 
         mock_move.assert_not_called()
 
-    def test_move(self, mock_album_factory, mock_query, mock_move, tmp_move_config):
+    def test_move(self, album_factory, mock_query, mock_move, tmp_move_config):
         """Test all items in the library are moved when the command is invoked."""
-        albums = [mock_album_factory(), mock_album_factory()]
+        albums = [album_factory(), album_factory()]
         mock_query.return_value = albums
         cli_args = ["move"]
 

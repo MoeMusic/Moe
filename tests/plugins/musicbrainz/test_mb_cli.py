@@ -17,11 +17,11 @@ class TestAddImportPromptChoice:
 
         assert any(choice.shortcut_key == "m" for choice in prompt_choices)
 
-    def test_enter_id(self, mock_album_factory, tmp_config):
+    def test_enter_id(self, album_factory, tmp_config):
         """When selected, the 'm' key should allow the user to enter an mb_id."""
         config = tmp_config("default_plugins = ['cli', 'musicbrainz']", tmp_db=True)
-        old_album = mock_album_factory()
-        new_album = mock_album_factory()
+        old_album = album_factory()
+        new_album = album_factory()
         prompt_choices = []
         config.plugin_manager.hook.add_import_prompt_choice(
             prompt_choices=prompt_choices

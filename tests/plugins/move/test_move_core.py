@@ -26,7 +26,7 @@ def mock_copy():
 class TestReplaceChars:
     """Test replacing of illegal or unwanted characters in paths."""
 
-    def test_replace_chars(self, mock_track_factory, tmp_config):
+    def test_replace_chars(self, track_factory, tmp_config):
         """Replace all the defined illegal characters from any paths."""
         config = tmp_config(
             settings="""
@@ -37,13 +37,13 @@ class TestReplaceChars:
         )
         tracks = []
         replacements = []
-        tracks.append(mock_track_factory(title='/ reserved <, >, :, ", ?, *, |, /'))
+        tracks.append(track_factory(title='/ reserved <, >, :, ", ?, *, |, /'))
         replacements.append("_ reserved _, _, _, _, _, _, _, _")
-        tracks.append(mock_track_factory(title=".leading dot"))
+        tracks.append(track_factory(title=".leading dot"))
         replacements.append("_leading dot")
-        tracks.append(mock_track_factory(title="trailing dot."))
+        tracks.append(track_factory(title="trailing dot."))
         replacements.append("trailing dot_")
-        tracks.append(mock_track_factory(title="trailing whitespace "))
+        tracks.append(track_factory(title="trailing whitespace "))
         replacements.append("trailing whitespace")
 
         formatted_paths = []
@@ -137,12 +137,12 @@ class TestFmtTrackPath:
 class TestCopyAlbum:
     """Tests `copy_item(album)`."""
 
-    def test_copy_album(self, tmp_path, real_album_factory, tmp_move_config):
+    def test_copy_album(self, tmp_path, album_factory, tmp_move_config):
         """We can copy an album that was added to the library.
 
         The album desination should be formatted according to `fmt_item_path()`.
         """
-        album = real_album_factory(path=tmp_path)
+        album = album_factory(path=tmp_path, exists=True)
         album_dest = moe_move.fmt_item_path(tmp_move_config, album)
         assert album.path != album_dest
 
@@ -167,12 +167,12 @@ class TestCopyAlbum:
         for og_path in og_paths:
             assert og_path.exists()
 
-    def test_copy_multi_disc_album(self, tmp_path, real_album_factory, tmp_move_config):
+    def test_copy_multi_disc_album(self, tmp_path, album_factory, tmp_move_config):
         """We can copy albums containing multiple discs.
 
         The album desination should be formatted according to `fmt_item_path()`.
         """
-        album = real_album_factory(path=tmp_path)
+        album = album_factory(path=tmp_path, exists=True)
         album_dest = moe_move.fmt_item_path(tmp_move_config, album)
         assert album.path != album_dest
 
@@ -205,12 +205,12 @@ class TestCopyAlbum:
 class TestCopyExtra:
     """Tests `copy_item(extra)`."""
 
-    def test_copy_extra(self, tmp_path, real_extra_factory, tmp_move_config):
+    def test_copy_extra(self, tmp_path, extra_factory, tmp_move_config):
         """We can copy an extra.
 
         The extra desination should be formatted according to `fmt_item_path()`.
         """
-        extra = real_extra_factory(path=tmp_path / "move me.txt")
+        extra = extra_factory(path=tmp_path / "move me.txt", exists=True)
         extra_dest = moe_move.fmt_item_path(tmp_move_config, extra)
         og_path = extra.path
         assert og_path != extra_dest
@@ -226,12 +226,12 @@ class TestCopyExtra:
 class TestCopyTrack:
     """Tests `copy_item(track)`."""
 
-    def test_copy_track(self, tmp_path, real_track_factory, tmp_move_config):
+    def test_copy_track(self, tmp_path, track_factory, tmp_move_config):
         """We can copy a track.
 
         The track desination should be formatted according to `fmt_item_path()`.
         """
-        track = real_track_factory(path=tmp_path / "move me.mp3")
+        track = track_factory(path=tmp_path / "move me.mp3", exists=True)
         track_dest = moe_move.fmt_item_path(tmp_move_config, track)
         og_path = track.path
         assert og_path != track_dest
@@ -250,9 +250,9 @@ class TestCopyTrack:
 class TestMoveAlbum:
     """Tests `move_item(album)`."""
 
-    def test_move_album(self, tmp_path, real_album_factory, tmp_move_config):
+    def test_move_album(self, tmp_path, album_factory, tmp_move_config):
         """We can move an album that was added to the library."""
-        album = real_album_factory(path=tmp_path)
+        album = album_factory(path=tmp_path, exists=True)
         album_dest = moe_move.fmt_item_path(tmp_move_config, album)
         assert album.path != album_dest
 
@@ -277,9 +277,9 @@ class TestMoveAlbum:
         for og_path in og_paths:
             assert not og_path.exists()
 
-    def test_move_multi_disc_album(self, tmp_path, real_album_factory, tmp_move_config):
+    def test_move_multi_disc_album(self, tmp_path, album_factory, tmp_move_config):
         """We can copy albums containing multiple discs."""
-        album = real_album_factory(path=tmp_path)
+        album = album_factory(path=tmp_path, exists=True)
         album_dest = moe_move.fmt_item_path(tmp_move_config, album)
         assert album.path != album_dest
 
@@ -335,12 +335,12 @@ class TestMoveAlbum:
 class TestMoveExtra:
     """Tests `move_item(extra)`."""
 
-    def test_move_extra(self, tmp_path, real_extra_factory, tmp_move_config):
+    def test_move_extra(self, tmp_path, extra_factory, tmp_move_config):
         """We can move an extra.
 
         The extra desination should be formatted according to `fmt_item_path()`.
         """
-        extra = real_extra_factory(path=tmp_path / "move me.txt")
+        extra = extra_factory(path=tmp_path / "move me.txt", exists=True)
         extra_dest = moe_move.fmt_item_path(tmp_move_config, extra)
         og_path = extra.path
         assert og_path != extra_dest
@@ -356,12 +356,12 @@ class TestMoveExtra:
 class TestMoveTrack:
     """Tests `move_item(track)`."""
 
-    def test_move_track(self, tmp_path, real_track_factory, tmp_move_config):
+    def test_move_track(self, tmp_path, track_factory, tmp_move_config):
         """We can move a track.
 
         The track desination should be formatted according to `fmt_item_path()`.
         """
-        track = real_track_factory(path=tmp_path / "move me.mp3")
+        track = track_factory(path=tmp_path / "move me.mp3", exists=True)
         track_dest = moe_move.fmt_item_path(tmp_move_config, track)
         og_path = track.path
         assert og_path != track_dest

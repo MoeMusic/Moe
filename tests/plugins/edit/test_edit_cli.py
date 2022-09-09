@@ -71,12 +71,12 @@ class TestCommand:
         mock_edit.assert_called_once_with(mock_extra, "title", "edit")
 
     def test_multiple_items(
-        self, mock_track_factory, mock_query, mock_edit, tmp_edit_config
+        self, track_factory, mock_query, mock_edit, tmp_edit_config
     ):
         """All items returned from a query are edited."""
         cli_args = ["edit", "*", "track_num=3"]
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         mock_query.return_value = [track1, track2]
 
         moe.cli.main(cli_args, tmp_edit_config)

@@ -59,20 +59,20 @@ class TestFromDir:
 class TestGetExisting:
     """Test we can match an existing album based on unique attributes."""
 
-    def test_by_path(self, mock_album_factory, tmp_session):
+    def test_by_path(self, album_factory, tmp_session):
         """Get an exisiting album from a matching path."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.path = album2.path
 
         tmp_session.merge(album2)
 
         assert album1.get_existing()
 
-    def test_by_mb_album_id(self, mock_album_factory, tmp_session):
+    def test_by_mb_album_id(self, album_factory, tmp_session):
         """Get an exisiting album from a matching mb_album_id."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.mb_album_id = "123"
         album2.mb_album_id = album1.mb_album_id
 
@@ -80,10 +80,10 @@ class TestGetExisting:
 
         assert album1.get_existing()
 
-    def test_null_match(self, mock_album_factory, tmp_session):
+    def test_null_match(self, album_factory, tmp_session):
         """Don't match off of null values."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         assert not album1.mb_album_id
         assert not album2.mb_album_id
         assert album1.path != album2.path
@@ -96,10 +96,10 @@ class TestGetExisting:
 class TestMerge:
     """Test merging two albums together."""
 
-    def test_conflict_persists(self, mock_album_factory):
+    def test_conflict_persists(self, album_factory):
         """Don't overwrite any conflicts."""
-        album = mock_album_factory()
-        other_album = mock_album_factory()
+        album = album_factory()
+        other_album = album_factory()
         album.mb_album_id = "123"
         other_album.mb_album_id = "456"
         keep_mb_album_id = album.mb_album_id
@@ -108,10 +108,10 @@ class TestMerge:
 
         assert album.mb_album_id == keep_mb_album_id
 
-    def test_merge_non_conflict(self, mock_album_factory):
+    def test_merge_non_conflict(self, album_factory):
         """Apply any non-conflicting fields."""
-        album = mock_album_factory()
-        other_album = mock_album_factory()
+        album = album_factory()
+        other_album = album_factory()
         album.mb_album_id = None
         other_album.mb_album_id = "456"
 
@@ -119,10 +119,10 @@ class TestMerge:
 
         assert album.mb_album_id == "456"
 
-    def test_none_merge(self, mock_album_factory):
+    def test_none_merge(self, album_factory):
         """Don't merge in any null values."""
-        album = mock_album_factory()
-        other_album = mock_album_factory()
+        album = album_factory()
+        other_album = album_factory()
         album.mb_album_id = "123"
         other_album.mb_album_id = None
 
@@ -130,10 +130,10 @@ class TestMerge:
 
         assert album.mb_album_id == "123"
 
-    def test_overwrite_field(self, mock_album_factory):
+    def test_overwrite_field(self, album_factory):
         """Overwrite fields if the option is given."""
-        album = mock_album_factory()
-        other_album = mock_album_factory()
+        album = album_factory()
+        other_album = album_factory()
         album.mb_album_id = "123"
         other_album.mb_album_id = "456"
         keep_mb_album_id = other_album.mb_album_id
@@ -142,10 +142,10 @@ class TestMerge:
 
         assert album.mb_album_id == keep_mb_album_id
 
-    def test_merge_extras(self, mock_album_factory):
+    def test_merge_extras(self, album_factory):
         """Merge in any new extras."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         new_extra = Extra(album2, album2.path / "new.txt")
         assert album1.extras != album2.extras
         extras_count = len(album1.extras) + len(album2.extras)
@@ -155,10 +155,10 @@ class TestMerge:
         assert new_extra in album1.extras
         assert len(album1.extras) == extras_count
 
-    def test_overwrite_extras(self, real_album_factory):
+    def test_overwrite_extras(self, album_factory):
         """Replace conflicting extras if told to overwrite."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
+        album1 = album_factory(exists=True)
+        album2 = album_factory(exists=True)
 
         conflict_extra = Extra(album2, album2.path / album1.extras[0].filename)
         overwrite_extra = album1.get_extra(conflict_extra.filename)
@@ -171,12 +171,12 @@ class TestMerge:
             if extra.path.exists():
                 assert extra.path.read_text() != "overwrite"
 
-    def test_merge_tracks(self, mock_album_factory, mock_track_factory):
+    def test_merge_tracks(self, album_factory, track_factory):
         """Tracks should merge with the same behavior as fields."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
 
-        new_track = mock_track_factory(album=album2)
+        new_track = track_factory(album=album2)
         conflict_track = album2.tracks[0]
         keep_track = album1.get_track(conflict_track.track_num)
         keep_track.title = "keep"
@@ -188,10 +188,10 @@ class TestMerge:
         assert new_track in album1.tracks
         assert keep_track.title == "keep"
 
-    def test_overwrite_tracks(self, mock_album_factory, mock_track_factory):
+    def test_overwrite_tracks(self, album_factory, track_factory):
         """Tracks should overwrite the same as fields if option given."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
 
         conflict_track = album2.tracks[0]
         overwrite_track = album1.get_track(conflict_track.track_num)
@@ -206,29 +206,29 @@ class TestMerge:
 class TestEquality:
     """Test equality of albums."""
 
-    def test_equals_mb_album_id(self, real_album_factory):
+    def test_equals_mb_album_id(self, album_factory):
         """Albums with the same `mb_album_id` are equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.mb_album_id = "1"
         assert album1 != album2
 
         album2.mb_album_id = album1.mb_album_id
         assert album1 == album2
 
-    def test_equals_path(self, real_album_factory):
+    def test_equals_path(self, album_factory):
         """Albums with the same `path` are equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         assert album1 != album2
 
         album1.path = album2.path
         assert album1 == album2
 
-    def test_not_equals(self, real_album_factory):
+    def test_not_equals(self, album_factory):
         """Albums with different designated unique fields are not equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.mb_album_id = "1"
 
         assert album1.mb_album_id != album2.mb_album_id
@@ -261,10 +261,10 @@ class TestDuplicate:
         `try/except`.
     """
 
-    def test_dup_deleted(self, real_album_factory, tmp_session):
+    def test_dup_deleted(self, album_factory, tmp_session):
         """Duplicate errors should not occur if the existing album is deleted."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.date = album2.date
         album1.path = album2.path
 

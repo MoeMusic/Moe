@@ -66,12 +66,10 @@ class TestCommand:
         mock_query.assert_called_once_with("*", query_type="extra")
         assert capsys.readouterr().out
 
-    def test_multiple_items(
-        self, capsys, mock_track_factory, mock_query, tmp_info_config
-    ):
+    def test_multiple_items(self, capsys, track_factory, mock_query, tmp_info_config):
         """All items returned from the query are printed."""
         cli_args = ["info", "*"]
-        mock_query.return_value = [mock_track_factory(), mock_track_factory()]
+        mock_query.return_value = [track_factory(), track_factory()]
 
         moe.cli.main(cli_args, tmp_info_config)
 

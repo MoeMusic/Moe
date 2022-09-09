@@ -44,10 +44,10 @@ class TestGetMatchingTracks:
 
         assert len(track_matches) == len(album_a.tracks) + len(album_b.tracks)
 
-    def test_high_threshold(self, mock_track_factory):
+    def test_high_threshold(self, track_factory):
         """A zero threshold should always return a match."""
-        track1 = mock_track_factory(track_num=1)
-        track2 = mock_track_factory(track_num=2)
+        track1 = track_factory(track_num=1)
+        track2 = track_factory(track_num=2)
         assert track1.track_num != track2.track_num
 
         track_matches = get_matching_tracks(
@@ -59,34 +59,34 @@ class TestGetMatchingTracks:
 
         assert len(track_matches) == 1
 
-    def test_a_longer_than_b(self, mock_album_factory, mock_track):
+    def test_a_longer_than_b(self, album_factory, mock_track):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = mock_album_factory()
-        album_b = mock_album_factory()
+        album_a = album_factory()
+        album_b = album_factory()
         mock_track.album_obj = album_a
 
         track_matches = get_matching_tracks(album_a, album_b)
 
         assert (mock_track, None) in track_matches
 
-    def test_b_longer_than_a(self, mock_album_factory, mock_track):
+    def test_b_longer_than_a(self, album_factory, mock_track):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = mock_album_factory()
-        album_b = mock_album_factory()
+        album_a = album_factory()
+        album_b = album_factory()
         mock_track.album_obj = album_b
 
         track_matches = get_matching_tracks(album_a, album_b)
 
         assert (None, mock_track) in track_matches
 
-    def test_multiple_same_match(self, mock_track_factory):
+    def test_multiple_same_match(self, track_factory):
         """Any track should not have more than one match."""
-        track1 = mock_track_factory(track_num=1)
-        track2 = mock_track_factory(track_num=2)
+        track1 = track_factory(track_num=1)
+        track2 = track_factory(track_num=2)
         track1.album_obj = track2.album_obj
 
-        track3 = mock_track_factory(track_num=3)
-        track4 = mock_track_factory(track_num=4)
+        track3 = track_factory(track_num=3)
+        track4 = track_factory(track_num=4)
         track3.album_obj = track4.album_obj
 
         track3.title = "not a match"
@@ -120,20 +120,20 @@ class TestGetMatchValue:
         "track_num": 0.9,
     }  # how much to weigh matches of various fields
 
-    def test_same_track(self, mock_track_factory):
+    def test_same_track(self, track_factory):
         """Tracks with the same values for all used fields should be a perfect match."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.title = track2.title
         track1.track_num = track2.track_num
         track1.disc = track2.disc
 
         assert get_match_value(track1, track2, self.TEST_FIELD_WEIGHTS) == 1
 
-    def test_diff_track(self, mock_track_factory):
+    def test_diff_track(self, track_factory):
         """Tracks with different values for each field should not match."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.title = "a"
         track2.title = "b"
         track1.disc = 2

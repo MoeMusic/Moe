@@ -19,6 +19,7 @@ from moe.library.track import Track
 from moe.plugins import write as moe_write
 
 RESOURCE_DIR = Path(__file__).parent / "resources"
+EMPTY_MP3_FILE = RESOURCE_DIR / "empty.mp3"
 SUPPORTED_PLATFORMS = {"darwin", "linux", "win32"}
 
 
@@ -41,15 +42,16 @@ def pytest_runtest_setup(item):
         pytest.skip(f"cannot run on platform {platform}")
 
 
-@pytest.fixture
-def tmp_library_path(tmp_path_factory):
+@pytest.fixture(autouse=True, scope="session")
+def _tmp_library_path(tmp_path_factory):
     """Creates a temporary music library directory for all test tracks and albums."""
-    return tmp_path_factory.mktemp("music")
+    global LIBRARY_PATH
+    LIBRARY_PATH = tmp_path_factory.mktemp("music")
 
 
 @pytest.fixture
 def tmp_config(
-    tmp_path_factory, tmp_library_path
+    tmp_path_factory,
 ) -> Iterator[Callable[[str, bool, bool, List[ExtraPlugin]], Config]]:
     """Instantiates a temporary configuration.
 
@@ -85,7 +87,7 @@ def tmp_config(
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if "library_path" not in settings:
-            settings += f"\nlibrary_path='{tmp_library_path.resolve()}'"
+            settings += f"\nlibrary_path='{LIBRARY_PATH.resolve()}'"
 
         settings_path = config_dir / "config.toml"
         settings_path.write_text(textwrap.dedent(settings))
@@ -139,302 +141,170 @@ def _clean_session():
 
 
 @pytest.fixture
-def mock_track_factory() -> Callable[[], Track]:
-    """Factory for mock Tracks that don't exist on the filesystem.
+def mock_track() -> Track:
+    """Creates a track that does not exist on the filesystem."""
+    return _create_track(exists=False)
 
-    Note:
-        Each track will belong to a different album unless `album` is specified.
+
+@pytest.fixture
+def real_track() -> Track:
+    """Creates a Track that exists on the filesystem."""
+    return _create_track(exists=True)
+
+
+@pytest.fixture
+def track_factory() -> Callable[[], Track]:
+    """Factory for creating tracks.
+
+    Any arguments given to this factory will be passed to `_create_album`.
+
+    Returns:
+        New track.
+    """
+    return _create_track
+
+
+def _create_track(album: Optional[Album] = None, exists: bool = False, **kwargs):
+    """Creates a track.
 
     Args:
         album: Optional album to assign the track to.
+        exists: Whether or not the track should actually exist on the filesystem.
         **kwargs: Any other fields to assign to the Track.
 
     Returns:
-        Unique Track object with each call.
+        Unique Track.
     """
+    if not album:
+        album = _create_album(0, 0, exists)
 
-    def _mock_track(album: Optional[Album] = None, **kwargs):
-        if not album:
-            year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
+    track_num = kwargs.pop("track_num", random.randint(1, 10000))
+    title = kwargs.pop("title", "Jazzy Belle")
+    disc = kwargs.pop("disc", 1)
+    path = kwargs.pop("path", album.path / f"{disc}.{track_num} - {title}.mp3")
 
-            artist = "ATCQ"
-            title = "Midnight Muarauders"
-            album = Album(
-                artist=artist,
-                title=title,
-                date=datetime.date(year, 11, 9),
-                path=Path(f"{artist} - {title} ({year})"),
-            )
+    track = Track(
+        album=album,
+        path=path,
+        title=title,
+        track_num=track_num,
+        disc=disc,
+        **kwargs,
+    )
 
-        track_num = kwargs.pop("track_num", random.randint(1, 10000))
-        title = kwargs.pop("title", "Jazzy Belle")
+    if exists:
+        shutil.copyfile(EMPTY_MP3_FILE, track.path)
+        moe_write.write_tags(track)
 
-        return Track(
-            album=album,
-            path=kwargs.pop("path", album.path / f"{track_num} - {title}"),
-            track_num=track_num,
-            title=title,
-            genre=kwargs.pop("genre", "Hip Hop"),
-            disc=kwargs.pop("disc", 1),
-            **kwargs,
-        )
-
-    return _mock_track
+    return track
 
 
 @pytest.fixture
-def mock_track(mock_track_factory) -> Track:
-    """Creates a single mock Track object."""
-    return mock_track_factory()
+def mock_extra() -> Extra:
+    """Creates an extra that does not exist on the filesystem."""
+    return _create_extra(exists=False)
 
 
 @pytest.fixture
-def mock_album_factory(mock_extra_factory, mock_track_factory) -> Callable[[], Album]:
-    """Factory for mock Albums that don't exist on the filesytem.
+def real_extra() -> Extra:
+    """Creates an Extra that exists on the filesystem."""
+    return _create_extra(exists=True)
+
+
+@pytest.fixture
+def extra_factory(tmp_path_factory) -> Callable[[], Extra]:
+    """Factory for creating Extras.
+
+    Any arguments given to this factory will be passed to `_create_extra`.
+
+    Returns:
+        New extra.
+    """
+    return _create_extra
+
+
+def _create_extra(
+    album: Optional[Album] = None, path: Optional[Path] = None, exists: bool = False
+) -> Extra:
+    """Creates an extra for testing.
+
+    Args:
+        album: Album to assign the extra to.
+        path: Path to assign to the extra. Will create a random path if not given.
+        exists: Whether the extra should actually exist on the filesystem.
+
+    Returns:
+        Created extra.
+    """
+    if not album:
+        album = _create_album(0, 0, exists)
+
+    path = path or album.path / f"{random.randint(1,1000)}"
+
+    if not path:
+        path = album.path / f"{random.randint(1, 10000)}.txt"
+
+    extra = Extra(album=album, path=path)
+
+    if exists:
+        extra.path.touch()
+
+    return extra
+
+
+@pytest.fixture
+def mock_album() -> Album:
+    """Creates an Album that does not exist on the filesystem."""
+    return _create_album(exists=False)
+
+
+@pytest.fixture
+def real_album() -> Album:
+    """Creates an Album that exists on the filesystem."""
+    return _create_album(exists=True)
+
+
+@pytest.fixture
+def album_factory() -> Callable[[], Album]:
+    """Factory for creating albums.
+
+    Any arguments given to this factory will be passed to `_create_album`.
+
+    Returns:
+        New album.
+    """
+    return _create_album
+
+
+def _create_album(
+    num_tracks: int = 2, num_extras: int = 2, exists: bool = False, **kwargs
+) -> Album:
+    """Creates an album.
 
     Args:
         num_tracks: Number of tracks to add to the album.
         num_extras: Number of extras to add to the album.
+        exists: Whether the album should exist on the filesystem.
 
     Returns:
-        Album with two tracks and two extras.
+        Created album.
     """
+    year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
 
-    def _mock_album(num_tracks: int = 2, num_extras: int = 2):
-        year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
+    artist = kwargs.pop("artist", "Outkast")
+    title = kwargs.pop("title", "ATLiens")
+    date = kwargs.pop("date", datetime.date(year, 1, 1))
+    path = kwargs.pop("path", LIBRARY_PATH / f"{artist}" / f"{title} ({year})")
 
-        artist = "ATCQ"
-        title = "Midnight Muarauders"
-        album = Album(
-            artist=artist,
-            title=title,
-            date=datetime.date(year, 11, 9),
-            path=Path(f"{artist} - {title} ({year})"),
-        )
+    album = Album(path=path, artist=artist, title=title, date=date)
 
-        for track_num in range(1, num_tracks + 1):
-            mock_track_factory(track_num=track_num, album=album)
-
-        for _ in range(1, num_extras):
-            mock_extra_factory(album=album)
-
-        return album
-
-    return _mock_album
-
-
-@pytest.fixture
-def mock_album(mock_album_factory) -> Album:
-    """Creates a single mock Album object."""
-    return mock_album_factory()
-
-
-@pytest.fixture
-def mock_extra_factory() -> Callable[[], Extra]:
-    """Factory for mock Extras that don't exist on the filesytem.
-
-    Each extra will belong to a different album unless `album` is given.
-
-    Args:
-        path: Optional path to assign.
-        album: Optional album to assign the extra to.
-
-    Returns:
-        Unique Extra object.
-    """
-
-    def _mock_extra(path: Optional[Path] = None, album: Optional[Album] = None):
-        if not album:
-            year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
-
-            artist = "ATCQ"
-            title = "Midnight Muarauders"
-            album = Album(
-                artist=artist,
-                title=title,
-                date=datetime.date(year, 11, 9),
-                path=Path(f"{artist} - {title} ({year})"),
-            )
-
-        path = path or album.path / f"{random.randint(1,1000)}"
-
-        return Extra(album=album, path=path)
-
-    return _mock_extra
-
-
-@pytest.fixture
-def mock_extra(mock_extra_factory) -> Extra:
-    """Creates a single mock Extra object."""
-    return mock_extra_factory()
-
-
-@pytest.fixture
-def real_track_factory(
-    empty_mp3_path, mock_track_factory, tmp_library_path
-) -> Callable[[], Track]:
-    """Creates a Track on the filesystem.
-
-    Note:
-        Each track will belong to a different album unless `album` is specified.
-
-    Args:
-        album: Optional album to assign the track to. If given, assumes the album's path
-            exists on the filesystem.
-        real_path: Optional path of a real music file to use. The file at `real_path`
-            will be copied into the temporary music library.
-        **kwargs: Any other fields to assign to the track.
-
-    Note:
-        If you don't need to interact with the filesystem, it's preferred to use
-        `mock_track_factory`.
-
-    Returns:
-        Unique Track.
-    """
-
-    def _real_track(
-        album: Optional[Album] = None,
-        real_path: Optional[Path] = None,
-        **kwargs,
-    ):
-        track = mock_track_factory(album, **kwargs)
-
-        if not album:
-            track.album_obj.path = (
-                tmp_library_path
-                / f"{track.albumartist}"
-                / f"{track.album} ({track.year})"
-            )
-            track.album_obj.path.mkdir(exist_ok=True, parents=True)
-
-        filename = f"{track.track_num} - {track.title}.mp3"
-        track.path = kwargs.pop("path", track.album_obj.path / filename)
-        track.path.parent.mkdir(exist_ok=True, parents=True)
-
-        if real_path:
-            shutil.copyfile(real_path, track.path)
-        else:
-            shutil.copyfile(empty_mp3_path, track.path)
-            moe_write.write_tags(track)
-
-        return track
-
-    return _real_track
-
-
-@pytest.fixture
-def real_track(real_track_factory) -> Track:
-    """Creates a single Track that exists on the filesystem.
-
-    Note:
-        If you do not need to interact with the filesytem, it is preferred to use
-        `mock_track`
-
-    Returns:
-        Unique Track.
-    """
-    return real_track_factory()
-
-
-@pytest.fixture
-def real_album_factory(
-    real_extra_factory, real_track_factory, tmp_library_path
-) -> Callable[[], Album]:
-    """Factory for Albums that exist on the filesytem.
-
-    Args:
-        **kwargs: Any fields to assign to the album.
-
-    Returns:
-        Album with two tracks and two extras.
-    """
-
-    def _real_album_factory(**kwargs):
-        year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
-        artist = kwargs.pop("artist", "Outkast")
-        title = kwargs.pop("title", "ATLiens")
-        date = kwargs.pop("data", datetime.date(year, 1, 1))
-        path = kwargs.pop("path", tmp_library_path / f"{artist}" / f"{title} ({year})")
-
-        album = Album(artist=artist, title=title, date=date, path=path)
+    if exists:
         album.path.mkdir(exist_ok=True, parents=True)
 
-        real_track_factory(track_num=1, album=album)
-        real_track_factory(track_num=2, album=album)
-        real_extra_factory(album=album)
-        real_extra_factory(album=album)
+    for track_num in range(1, num_tracks + 1):
+        _create_track(album=album, exists=exists, track_num=track_num)
 
-        return album
+    for _ in range(1, num_extras):
+        _create_extra(album=album, exists=exists)
 
-    return _real_album_factory
-
-
-@pytest.fixture
-def real_album(real_album_factory) -> Album:
-    """Creates a single Album on the filesystem."""
-    return real_album_factory()
-
-
-@pytest.fixture
-def real_extra_factory(mock_extra_factory, tmp_library_path) -> Callable[[], Extra]:
-    """Creates an Extra on the filesystem.
-
-    Note:
-        Each track will belong to a different album unless `album` is specified.
-
-    Args:
-        album: Optional album to assign the track to. If given, assumes the album's path
-            exists on the filesystem.
-        path: Optional path to assign. Will create the file if it does not exist.
-
-    Returns:
-        Unique Extra.
-    """
-
-    def _real_extra(
-        album: Optional[Album] = None,
-        path: Optional[Path] = None,
-    ):
-        extra = mock_extra_factory(path=path, album=album)
-
-        if not album:
-            extra.album_obj.path = (
-                tmp_library_path / "Jacob's Awesome Band" / "Cool Song (1996)"
-            )
-            extra.album_obj.path.mkdir(exist_ok=True, parents=True)
-
-        filename = f"{random.randint(1, 10000)}.txt"
-        if not path:
-            path = extra.album_obj.path / filename
-        assert path
-        extra.path = path
-        extra.path.touch()
-
-        return extra
-
-    return _real_extra
-
-
-@pytest.fixture
-def real_extra(real_extra_factory) -> Extra:
-    """Creates a single Extra that exists on the filesystem."""
-    return real_extra_factory()
-
-
-@pytest.fixture
-def empty_mp3_path() -> Path:
-    """Path to an mp3 file with no tags."""
-    return RESOURCE_DIR / "empty.mp3"
-
-
-@pytest.fixture
-def reqd_mp3_path() -> Path:
-    """Path to an mp3 file with the minimum required tags."""
-    return RESOURCE_DIR / "reqd.mp3"
-
-
-@pytest.fixture
-def full_mp3_path() -> Path:
-    """Path to an mp3 file with every tag."""
-    return RESOURCE_DIR / "full.mp3"
+    return album

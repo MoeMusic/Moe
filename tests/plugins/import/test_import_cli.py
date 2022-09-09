@@ -63,10 +63,10 @@ class ImportPlugin:
 class TestHookSpecs:
     """Test the various plugin hook specifications."""
 
-    def test_add_import_prompt_choice(self, mock_album_factory, tmp_config):
+    def test_add_import_prompt_choice(self, album_factory, tmp_config):
         """Plugins can add prompt choices to the import prompt."""
-        old_album = mock_album_factory()
-        new_album = mock_album_factory()
+        old_album = album_factory()
+        new_album = album_factory()
         old_album.title = "not ImportPlugin"
         config = tmp_config(
             "default_plugins = ['cli', 'import']",
@@ -147,19 +147,17 @@ class TestAddImportPromptChoice:
         assert any(choice.shortcut_key == "a" for choice in prompt_choices)
         assert any(choice.shortcut_key == "x" for choice in prompt_choices)
 
-    def test_apply_tracks(
-        self, mock_album_factory, mock_track_factory, tmp_import_config
-    ):
+    def test_apply_tracks(self, album_factory, track_factory, tmp_import_config):
         """`apply` prompt choice should apply any matching Tracks.
 
         Missing and unmatched tracks should not be present in the final album.
         """
-        old_album = mock_album_factory()
-        new_album = mock_album_factory()
-        missing_track = mock_track_factory(
+        old_album = album_factory()
+        new_album = album_factory()
+        missing_track = track_factory(
             album=new_album, track_num=len(old_album.tracks) + 1
         )
-        unmatched_track = mock_track_factory(
+        unmatched_track = track_factory(
             album=old_album, track_num=missing_track.track_num + 1
         )
         assert not old_album.get_track(missing_track.track_num)
@@ -178,7 +176,7 @@ class TestAddImportPromptChoice:
         assert not old_album.get_track(unmatched_track.track_num)
 
     def test_apply_diff_get_track(
-        self, mock_album_factory, mock_track_factory, tmp_import_config
+        self, album_factory, track_factory, tmp_import_config
     ):
         """Apply matches that don't have corresponding track and disc numbers.
 
@@ -187,8 +185,8 @@ class TestAddImportPromptChoice:
         two matching tracks don't conflict (i.e. matching track and disc numbers), that
         they can still merge properly.
         """
-        old_album = mock_album_factory()
-        new_album = mock_album_factory()
+        old_album = album_factory()
+        new_album = album_factory()
         old_album.get_track(1).title = "old track 1"
         new_album.get_track(1).title = "new track 1"
         old_album.get_track(2).title = "old track 2"
@@ -219,10 +217,10 @@ class TestAddImportPromptChoice:
         assert old_album.get_track(1).path == og_path2
         assert old_album.get_track(2).path == og_path1
 
-    def test_apply_extras(self, mock_album, mock_extra_factory, tmp_import_config):
+    def test_apply_extras(self, mock_album, extra_factory, tmp_import_config):
         """`apply` prompt choice should keep any extras."""
         new_album = copy.deepcopy(mock_album)
-        new_extra = mock_extra_factory(album=mock_album)
+        new_extra = extra_factory(album=mock_album)
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
@@ -262,10 +260,10 @@ class TestAddImportPromptChoice:
         for extra in mock_album.tracks:
             assert extra.path
 
-    def test_abort(self, mock_album_factory, tmp_import_config):
+    def test_abort(self, album_factory, tmp_import_config):
         """The `abort` prompt choice should raise an AbortImport error."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album1.mb_album_id = "1234"
         assert album1.mb_album_id != album2.mb_album_id
 

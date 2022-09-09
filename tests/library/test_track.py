@@ -7,6 +7,7 @@ import pytest
 
 import moe.plugins.write as moe_write
 from moe.library.track import Track, TrackError
+from moe.plugins.write import write_tags
 
 
 class TestInit:
@@ -65,21 +66,34 @@ class TestAlbumSet:
 class TestFromFile:
     """Test initialization from given file path."""
 
-    def test_read_tags(self, full_mp3_path):
+    def test_read_tags(self, real_track):
         """We can initialize a track with tags from a file if present."""
-        track = Track.from_file(full_mp3_path)
+        real_track.album = "The Lost Album"
+        real_track.albumartist = "Wu-Tang Clan"
+        real_track.artist = "Wu-Tang Clan"
+        real_track.date = datetime.date(2020, 1, 12)
+        real_track.disc = 1
+        real_track.disc_total = 2
+        real_track.genres = {"hip hop", "rock"}
+        real_track.mb_album_id = "1234"
+        real_track.mb_track_id = "123"
+        real_track.title = "Full"
+        real_track.track_num = 1
+        write_tags(real_track)
 
-        assert track.album == "The Lost Album"
-        assert track.albumartist == "Wu-Tang Clan"
-        assert track.artist == "Wu-Tang Clan"
-        assert track.date == datetime.date(2020, 1, 12)
-        assert track.disc == 1
-        assert track.disc_total == 2
-        assert set(track.genres) == {"hip hop", "rock"}
-        assert track.mb_album_id == "1234"
-        assert track.mb_track_id == "123"
-        assert track.title == "Full"
-        assert track.track_num == 1
+        new_track = Track.from_file(real_track.path)
+
+        assert new_track.album == real_track.album
+        assert new_track.albumartist == real_track.albumartist
+        assert new_track.artist == real_track.artist
+        assert new_track.date == real_track.date
+        assert new_track.disc == real_track.disc
+        assert new_track.disc_total == real_track.disc_total
+        assert new_track.genres == real_track.genres
+        assert new_track.mb_album_id == real_track.mb_album_id
+        assert new_track.mb_track_id == real_track.mb_track_id
+        assert new_track.title == real_track.title
+        assert new_track.track_num == real_track.track_num
 
     def test_non_track_file(self, real_extra):
         """Raise `TrackError` if the given path does not correspond to a track file."""
@@ -99,20 +113,20 @@ class TestFromFile:
 class TestGetExisting:
     """Test `get_existing()`."""
 
-    def test_path(self, mock_track_factory, tmp_session):
+    def test_path(self, track_factory, tmp_session):
         """We match an existing track by it's path."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.path = track2.path
 
         tmp_session.merge(track1)
 
         assert track1.get_existing()
 
-    def test_mb_track_id(self, mock_track_factory, tmp_session):
+    def test_mb_track_id(self, track_factory, tmp_session):
         """We match an existing track by it's mb_track_id."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.mb_track_id = "123"
         track1.mb_track_id = track2.mb_track_id
 
@@ -120,10 +134,10 @@ class TestGetExisting:
 
         assert track1.get_existing()
 
-    def test_null_match(self, mock_track_factory, tmp_session):
+    def test_null_match(self, track_factory, tmp_session):
         """Don't match off of null values."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         assert not track1.mb_track_id
         assert not track2.mb_track_id
         assert track1.path != track2.path
@@ -136,29 +150,29 @@ class TestGetExisting:
 class TestEquality:
     """Test equality of tracks."""
 
-    def test_equals_mb_track_id(self, real_track_factory):
+    def test_equals_mb_track_id(self, track_factory):
         """Tracks with the same `mb_track_id` are equal."""
-        track1 = real_track_factory()
-        track2 = real_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.mb_track_id = "1"
         assert track1 != track2
 
         track2.mb_track_id = track1.mb_track_id
         assert track1 == track2
 
-    def test_equals_path(self, real_track_factory):
+    def test_equals_path(self, track_factory):
         """Tracks with the same `path` are equal."""
-        track1 = real_track_factory()
-        track2 = real_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         assert track1 != track2
 
         track1.path = track2.path
         assert track1 == track2
 
-    def test_not_equals(self, real_track_factory):
+    def test_not_equals(self, track_factory):
         """Tracks with different designated unique fields are not equal."""
-        track1 = real_track_factory()
-        track2 = real_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.mb_track_id = "1"
 
         assert track1.mb_track_id != track2.mb_track_id
@@ -174,10 +188,10 @@ class TestEquality:
 class TestMerge:
     """Test merging two tracks."""
 
-    def test_conflict_persists(self, mock_track_factory):
+    def test_conflict_persists(self, track_factory):
         """Don't overwrite any conflicts."""
-        track = mock_track_factory()
-        other_track = mock_track_factory()
+        track = track_factory()
+        other_track = track_factory()
 
         track.title = "keep"
         other_track.title = "discard"
@@ -186,10 +200,10 @@ class TestMerge:
 
         assert track.title == "keep"
 
-    def test_merge_non_conflict(self, mock_track_factory):
+    def test_merge_non_conflict(self, track_factory):
         """Apply any non-conflicting fields."""
-        track = mock_track_factory()
-        other_track = mock_track_factory()
+        track = track_factory()
+        other_track = track_factory()
 
         track.title = None
         track.genres = []
@@ -201,10 +215,10 @@ class TestMerge:
         assert track.title == "keep"
         assert track.genres == ["keep"]
 
-    def test_none_merge(self, mock_track_factory):
+    def test_none_merge(self, track_factory):
         """Don't merge in any null values."""
-        track = mock_track_factory()
-        other_track = mock_track_factory()
+        track = track_factory()
+        other_track = track_factory()
 
         track.title = "keep"
         other_track.title = None
@@ -213,10 +227,10 @@ class TestMerge:
 
         assert track.title == "keep"
 
-    def test_db_delete(self, mock_track_factory, tmp_session):
+    def test_db_delete(self, track_factory, tmp_session):
         """Remove the other track from the db if it exists."""
-        track = mock_track_factory()
-        other_track = mock_track_factory()
+        track = track_factory()
+        other_track = track_factory()
         tmp_session.add(other_track)
         tmp_session.flush()
 
@@ -228,10 +242,10 @@ class TestMerge:
 class TestDupListField:
     """Ensure duplicate list fields can be assigned/created without error."""
 
-    def test_genre(self, mock_track_factory, tmp_session):
+    def test_genre(self, track_factory, tmp_session):
         """Duplicate genres don't error."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.genre = "pop"
         track2.genre = "pop"
 
