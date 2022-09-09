@@ -16,7 +16,7 @@ from moe.query import QueryError, query
 
 __all__: List[str] = []
 
-log = logging.getLogger("moe.remove")
+log = logging.getLogger("moe.cli.remove")
 
 
 @moe.hookimpl

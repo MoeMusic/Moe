@@ -92,14 +92,18 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
     Raises:
         QueryError: Invalid query.
     """
+    log.debug(
+        "Querying library for items. "
+        f"[query_str={query_str!r}, query_type={query_type!r}]"
+    )
+
     terms = shlex.split(query_str)
     if not terms:
         raise QueryError(f"No query given.\n{HELP_STR}")
 
     items = _create_query(terms, query_type).all()
 
-    items_str = "".join(f"\n    {str(item)}" for item in items)
-    log.debug(f"Query '{query_str}' returned: {items_str}")
+    log.debug(f"Queried library for items. [items={items!r}]")
     return items
 
 

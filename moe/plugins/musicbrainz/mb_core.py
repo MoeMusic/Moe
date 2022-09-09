@@ -157,14 +157,21 @@ def add_releases_to_collection(
     """
     collection = collection or config.settings.musicbrainz.collection.collection_id
 
-    for release in releases:
-        log.info(f"Adding release: '{release}' to collection: '{collection}'")
+    log.debug(
+        "Adding releases to musicbrainz collection. "
+        f"[releases={releases!r}, collection={collection!r}]"
+    )
 
     _mb_auth_call(
         config,
         musicbrainzngs.add_releases_to_collection,
         collection=collection,
         releases=releases,
+    )
+
+    log.info(
+        "Added releases to musicbrainz collection. "
+        f"[releases={releases!r}, collection={collection!r}]"
     )
 
 
@@ -185,14 +192,21 @@ def rm_releases_from_collection(
     """
     collection = collection or config.settings.musicbrainz.collection.collection_id
 
-    for release in releases:
-        log.info(f"Removing release: '{release}' from collection: '{collection}'")
+    log.debug(
+        "Removing releases from musicbrainz collection. "
+        f"[releases={releases!r}, collection={collection!r}]"
+    )
 
     _mb_auth_call(
         config,
         musicbrainzngs.remove_releases_from_collection,
         collection=collection,
         releases=releases,
+    )
+
+    log.info(
+        "Removed releases from musicbrainz collection. "
+        f"[releases={releases!r}, collection={collection!r}]"
     )
 
 
@@ -234,6 +248,8 @@ def get_matching_album(album: Album) -> Album:
     if album.mb_album_id:
         return get_album_by_id(album.mb_album_id)
 
+    log.debug(f"Determing matching releases from musicbrainz. [album={album!r}]")
+
     search_criteria: Dict = {}
     search_criteria["artist"] = album.artist
     search_criteria["release"] = album.title
@@ -242,7 +258,11 @@ def get_matching_album(album: Album) -> Album:
     releases = musicbrainzngs.search_releases(limit=1, **search_criteria)
 
     release = releases["release-list"][0]
-    return get_album_by_id(release["id"])  # searching by id provides more info
+    release_id = release["id"]
+
+    log.info(f"Determined matching release from musicbrainz. [match={release_id!r}]")
+
+    return get_album_by_id(release_id)  # searching by id provides more info
 
 
 def get_album_by_id(release_id: str) -> Album:
@@ -257,14 +277,19 @@ def get_album_by_id(release_id: str) -> Album:
         is returned from searching by fields for a release. Notably, searching by an id
         results in more information including track information.
     """
-    # https://python-musicbrainzngs.readthedocs.io/en/latest/api/#musicbrainzngs.get_release_by_id
+    log.debug(f"Fetching release from musicbrainz. [release={release_id!r}]")
 
     release = musicbrainzngs.get_release_by_id(release_id, includes=RELEASE_INCLUDES)
+
+    log.info(f"Fetched release from musicbrainz. [release={release_id!r}]")
+
     return _create_album(release["release"])
 
 
 def _create_album(release: Dict) -> Album:
     """Creates an album from a given musicbrainz release."""
+    log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
+
     date = release["date"].split("-")
     year = int(date[0])
     try:
@@ -295,6 +320,8 @@ def _create_album(release: Dict) -> Album:
                 mb_track_id=track["id"],
                 title=track["recording"]["title"],
             )
+
+    log.debug(f"Created album from musicbrainz release. [album={album!r}]")
     return album
 
 

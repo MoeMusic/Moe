@@ -71,6 +71,8 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
     Raises:
         NotImplementedError: Unknown item.
     """
+    log.debug(f"Formatting item path. [path={item.path}]")
+
     if isinstance(item, Album):
         new_path = _fmt_album_path(config, item)
     elif isinstance(item, Extra):
@@ -83,6 +85,7 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
     if config.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))
 
+    log.debug(f"Formatted item path. [path={new_path}]")
     return new_path
 
 
@@ -249,7 +252,8 @@ def _copy_album(config: Config, album: Album):
     """
     dest = fmt_item_path(config, album)
 
-    log.info(f"Copying album from '{album.path}' to '{dest}'.")
+    log.debug(f"Copying album. [dest={dest}, album={album!r}]")
+
     if album.path != dest:
         dest.mkdir(parents=True, exist_ok=True)
         album.path = dest
@@ -260,18 +264,23 @@ def _copy_album(config: Config, album: Album):
     for extra in album.extras:
         _copy_file_item(config, extra)
 
+    log.info(f"Album copied. [dest={dest}, album={album!r}]")
+
 
 def _copy_file_item(config: Config, item: Union[Extra, Track]):
     """Copies an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(config, item)
+    log.debug(f"Copying item. [dest={dest}, item={item!r}]")
+
     if dest == item.path:
         return
 
-    log.info(f"Copying {type(item).__name__.lower()} from '{item.path}' to '{dest}'.")
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(item.path, dest)
 
     item.path = dest
+
+    log.info(f"Copied item. [dest={dest}, item={item!r}]")
 
 
 ########################################################################################
@@ -308,7 +317,8 @@ def _move_album(config: Config, album: Album):
     dest = fmt_item_path(config, album)
     old_album_dir = album.path
 
-    log.info(f"Moving album from '{album.path}' to '{dest}'.")
+    log.debug(f"Moving album. [dest={dest}, album={album!r}]")
+
     if album.path != dest:
         dest.mkdir(parents=True, exist_ok=True)
         album.path = dest
@@ -329,6 +339,8 @@ def _move_album(config: Config, album: Album):
         with suppress(OSError):
             old_parent.rmdir()
 
+    log.info(f"Moved album. [dest={dest}, album={album!r}]")
+
 
 def _move_file_item(config: Config, item: Union[Extra, Track]):
     """Moves an extra or track to a destination as determined by the user config."""
@@ -336,8 +348,11 @@ def _move_file_item(config: Config, item: Union[Extra, Track]):
     if dest == item.path:
         return
 
-    log.info(f"Moving {type(item).__name__.lower()} from '{item.path}' to '{dest}'.")
+    log.debug(f"Moving item. [dest={dest}, item={item!r}]")
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     item.path.replace(dest)
 
     item.path = dest
+
+    log.info(f"Moved item. [dest={dest}, item={item!r}]")

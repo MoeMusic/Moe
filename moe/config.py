@@ -240,6 +240,7 @@ class Config:
             self.config_dir = Path(os.environ["MOE_CONFIG_DIR"])
         except KeyError:
             self.config_dir = config_dir
+
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         self.config_file = self.config_dir / settings_filename
@@ -259,6 +260,8 @@ class Config:
             create_tables: Whether or not to create and update the db tables.
                 If doing db migrations manually, e.g. in alembic, this should be False.
         """
+        log.debug(f"Initializing database. [create_tables={create_tables!r}]")
+
         db_path = self.config_dir / "library.db"
 
         if not self.engine:
@@ -313,6 +316,8 @@ class Config:
             """
             return re.search(pattern, str(col_value), re.IGNORECASE) is not None
 
+        log.debug(f"Initialized database. [engine={self.engine!r}]")
+
     def _read_config(self):
         """Reads the user configuration settings.
 
@@ -321,6 +326,8 @@ class Config:
         Raises:
             ConfigValidationError: Unable to parse the configuration file.
         """
+        log.debug(f"Reading configuration file. [config_file={self.config_file}]")
+
         self.config_file.touch(exist_ok=True)
 
         self.settings = dynaconf.Dynaconf(
@@ -340,6 +347,8 @@ class Config:
         Raises:
             ConfigValidationError: Error validating the configuration.
         """
+        log.debug("Validating configuration settings.")
+
         try:
             self.settings.validators.validate()
         except dynaconf.validator.ValidationError as err:
@@ -347,6 +356,8 @@ class Config:
 
     def _setup_plugins(self):
         """Setup plugin_manager and hook logic."""
+        log.debug("Setting up plugins.")
+
         self.plugin_manager = pluggy.PluginManager("moe")
 
         # need to validate `config` specific settings separately so we have access to
@@ -380,6 +391,10 @@ class Config:
 
         # register plugin hookspecs for all enabled plugins
         self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
+
+        log.debug(
+            f"Registered plugins. [plugins={self.plugin_manager.list_name_plugin()}]"
+        )
 
     def _register_internal_plugins(self, enabled_plugins):
         """Registers all internal plugins in `enabled_plugins`."""

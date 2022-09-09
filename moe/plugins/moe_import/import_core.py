@@ -1,5 +1,6 @@
 """Core api for importing albums."""
 
+import logging
 from typing import List
 
 import pluggy
@@ -12,6 +13,8 @@ from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
 __all__ = ["import_album"]
+
+log = logging.getLogger("moe.import")
 
 
 class Hooks:
@@ -78,6 +81,8 @@ def pre_add(config: Config, item: LibItem):
 
 def import_album(config: Config, album: Album):
     """Imports album metadata for an album."""
+    log.debug(f"Importing album metadata. [album={album!r}]")
+
     candidates = config.plugin_manager.hook.import_candidates(
         config=config, album=album
     )
@@ -86,3 +91,5 @@ def import_album(config: Config, album: Album):
         old_album=album,
         candidates=candidates,
     )
+
+    log.debug(f"Imported album metadata. [album={album!r}]")
