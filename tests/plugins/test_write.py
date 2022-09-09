@@ -53,7 +53,7 @@ class TestWriteTags:
 
         moe_write.write_tags(real_track)
 
-        new_track = Track.from_path(path=real_track.path)
+        new_track = Track.from_file(real_track.path)
         assert new_track.album == album
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist

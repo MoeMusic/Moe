@@ -1689,6 +1689,7 @@ track1 = Track(
     artist="Kanye West",
     title="Dark Fantasy",
     mb_track_id="219e6b01-c962-355c-8a87-5d4ab3fc13bc",
+    disc=1,
 )
 track2 = Track(
     album=album,
@@ -1697,4 +1698,5 @@ track2 = Track(
     artist="Kanye West feat. Kid Cudi & Raekwon",
     title="Gorgeous",
     mb_track_id="d4cbaf03-b40a-352d-9461-eadbc5986fc0",
+    disc=1,
 )

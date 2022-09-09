@@ -6,7 +6,6 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional
-from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -156,19 +155,27 @@ def mock_track_factory() -> Callable[[], Track]:
 
     def _mock_track(album: Optional[Album] = None, **kwargs):
         if not album:
+            year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
+
+            artist = "ATCQ"
+            title = "Midnight Muarauders"
             album = Album(
-                artist="OutKast",
-                title="ATLiens",
-                date=datetime.date(1996, 8, 27),
-                path=MagicMock(),
+                artist=artist,
+                title=title,
+                date=datetime.date(year, 11, 9),
+                path=Path(f"{artist} - {title} ({year})"),
             )
+
+        track_num = kwargs.pop("track_num", random.randint(1, 10000))
+        title = kwargs.pop("title", "Jazzy Belle")
 
         return Track(
             album=album,
-            path=kwargs.pop("path", MagicMock()),
-            track_num=kwargs.pop("track_num", random.randint(1, 10000)),
-            title=kwargs.pop("title", "Jazzy Belle"),
+            path=kwargs.pop("path", album.path / f"{track_num} - {title}"),
+            track_num=track_num,
+            title=title,
             genre=kwargs.pop("genre", "Hip Hop"),
+            disc=kwargs.pop("disc", 1),
             **kwargs,
         )
 
@@ -185,24 +192,31 @@ def mock_track(mock_track_factory) -> Track:
 def mock_album_factory(mock_extra_factory, mock_track_factory) -> Callable[[], Album]:
     """Factory for mock Albums that don't exist on the filesytem.
 
+    Args:
+        num_tracks: Number of tracks to add to the album.
+        num_extras: Number of extras to add to the album.
+
     Returns:
         Album with two tracks and two extras.
     """
 
-    def _mock_album():
+    def _mock_album(num_tracks: int = 2, num_extras: int = 2):
         year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
 
+        artist = "ATCQ"
+        title = "Midnight Muarauders"
         album = Album(
-            artist="ATCQ",
-            title="Midnight Marauders",
+            artist=artist,
+            title=title,
             date=datetime.date(year, 11, 9),
-            path=MagicMock(),
+            path=Path(f"{artist} - {title} ({year})"),
         )
 
-        mock_track_factory(track_num=1, album=album)
-        mock_track_factory(track_num=2, album=album)
-        mock_extra_factory(album=album)
-        mock_extra_factory(album=album)
+        for track_num in range(1, num_tracks + 1):
+            mock_track_factory(track_num=track_num, album=album)
+
+        for _ in range(1, num_extras):
+            mock_extra_factory(album=album)
 
         return album
 
@@ -229,24 +243,20 @@ def mock_extra_factory() -> Callable[[], Extra]:
         Unique Extra object.
     """
 
-    def mock_lt(self, other):
-        return self.name < other.name
-
     def _mock_extra(path: Optional[Path] = None, album: Optional[Album] = None):
         if not album:
+            year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
+
+            artist = "ATCQ"
+            title = "Midnight Muarauders"
             album = Album(
-                artist="OutKast",
-                title="ATLiens",
-                date=datetime.date(
-                    random.randint(datetime.MINYEAR, datetime.MAXYEAR), 1, 1
-                ),
-                path=MagicMock(),
+                artist=artist,
+                title=title,
+                date=datetime.date(year, 11, 9),
+                path=Path(f"{artist} - {title} ({year})"),
             )
 
-        if not path:
-            path = MagicMock()
-            path.__lt__ = mock_lt
-            path.name = f"{random.randint(1, 10000)}.txt"
+        path = path or album.path / f"{random.randint(1,1000)}"
 
         return Extra(album=album, path=path)
 

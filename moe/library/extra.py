@@ -1,5 +1,6 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
@@ -20,6 +21,8 @@ else:
     from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Extra"]
+
+log = logging.getLogger("moe.extra")
 
 
 class Extra(LibItem, SABase):
@@ -50,6 +53,8 @@ class Extra(LibItem, SABase):
         album.extras.append(self)
         self.path = path
 
+        log.debug(f"Extra created. [extra={self!r}]")
+
     @typed_hybrid_property
     def filename(self) -> str:
         """Gets an Extra's filename."""
@@ -65,8 +70,9 @@ class Extra(LibItem, SABase):
         Returns:
             Duplicate extra or the same extra if it already exists in the library.
         """
-        session = MoeSession()
+        log.debug(f"Searching library for existing extra. [extra={self!r}]")
 
+        session = MoeSession()
         existing_extra = (
             session.query(Extra)
             .filter(Extra.path == self.path)
@@ -74,8 +80,10 @@ class Extra(LibItem, SABase):
             .one_or_none()
         )
         if not existing_extra:
+            log.debug("No matching extra found.")
             return None
 
+        log.debug(f"Matching extra found. [match={existing_extra!r}]")
         return existing_extra
 
     def __eq__(self, other):
@@ -95,13 +103,10 @@ class Extra(LibItem, SABase):
 
         return self.album_obj < other.album_obj
 
+    def __repr__(self):
+        """Represents an Extra using its path and album."""
+        return f"Extra(path={self.path}, album={self.album_obj.title})"
+
     def __str__(self):
         """String representation of an Extra."""
         return f"{self.album_obj}: {self.filename}"
-
-    def __repr__(self):
-        """Represents an Extra using its primary keys."""
-        return (
-            f"{self.__class__.__name__}("
-            f"{repr(self.album_obj)}, filename={repr(self.filename)})"
-        )

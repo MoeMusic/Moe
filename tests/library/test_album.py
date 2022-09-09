@@ -1,7 +1,59 @@
 """Tests an Album object."""
 
-from moe.library.album import Album
+from pathlib import Path
+
+import pytest
+
+from moe.library.album import Album, AlbumError
 from moe.library.extra import Extra
+from moe.plugins import write as moe_write
+
+
+class TestFromDir:
+    """Test a creating an album from a directory."""
+
+    def test_dir_album(self, real_album):
+        """If a directory given, add to library as an album."""
+        assert Album.from_dir(real_album.path) == real_album
+
+    def test_extras(self, real_album):
+        """Add any extras that are within the album directory."""
+        new_album = Album.from_dir(real_album.path)
+
+        for extra in real_album.extras:
+            assert extra in new_album.extras
+
+    def test_no_valid_tracks(self, tmp_path):
+        """Error if given directory does not contain any valid tracks."""
+        empty_path = tmp_path / "empty"
+        empty_path.mkdir()
+
+        with pytest.raises(AlbumError):
+            Album.from_dir(empty_path)
+
+    def test_add_multi_disc(self, real_album):
+        """We can add a multi-disc album."""
+        track1 = real_album.tracks[0]
+        track2 = real_album.tracks[1]
+        track1.disc = 1
+        track2.disc = 2
+        real_album.disc_total = 2
+        moe_write.write_tags(track1)
+        moe_write.write_tags(track2)
+
+        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
+        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
+        track1_path.parent.mkdir()
+        track2_path.parent.mkdir()
+        track1.path.rename(track1_path)
+        track2.path.rename(track2_path)
+        track1.path = track1_path
+        track2.path = track2_path
+
+        album = Album.from_dir(real_album.path)
+
+        assert album.get_track(track1.track_num, track1.disc)
+        assert album.get_track(track2.track_num, track2.disc)
 
 
 class TestGetExisting:
@@ -39,44 +91,6 @@ class TestGetExisting:
         tmp_session.merge(album1)
 
         assert not album2.get_existing()
-
-
-class TestEquality:
-    """Test equality of albums."""
-
-    def test_equals_mb_album_id(self, real_album_factory):
-        """Albums with the same `mb_album_id` are equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
-        album1.mb_album_id = "1"
-        assert album1 != album2
-
-        album2.mb_album_id = album1.mb_album_id
-        assert album1 == album2
-
-    def test_equals_path(self, real_album_factory):
-        """Albums with the same `path` are equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
-        assert album1 != album2
-
-        album1.path = album2.path
-        assert album1 == album2
-
-    def test_not_equals(self, real_album_factory):
-        """Albums with different designated unique fields are not equal."""
-        album1 = real_album_factory()
-        album2 = real_album_factory()
-        album1.mb_album_id = "1"
-
-        assert album1.mb_album_id != album2.mb_album_id
-        assert album1.path != album2.path
-
-        assert album1 != album2
-
-    def test_not_equals_not_album(self, real_album):
-        """Not equal if not comparing two albums."""
-        assert real_album != "test"
 
 
 class TestMerge:
@@ -183,11 +197,48 @@ class TestMerge:
         overwrite_track = album1.get_track(conflict_track.track_num)
         conflict_track.title = "conflict"
         assert conflict_track.title != overwrite_track.title
-        assert album1.tracks != album2.tracks
 
         album1.merge(album2, overwrite=True)
 
         assert overwrite_track.title == "conflict"
+
+
+class TestEquality:
+    """Test equality of albums."""
+
+    def test_equals_mb_album_id(self, real_album_factory):
+        """Albums with the same `mb_album_id` are equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        album1.mb_album_id = "1"
+        assert album1 != album2
+
+        album2.mb_album_id = album1.mb_album_id
+        assert album1 == album2
+
+    def test_equals_path(self, real_album_factory):
+        """Albums with the same `path` are equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        assert album1 != album2
+
+        album1.path = album2.path
+        assert album1 == album2
+
+    def test_not_equals(self, real_album_factory):
+        """Albums with different designated unique fields are not equal."""
+        album1 = real_album_factory()
+        album2 = real_album_factory()
+        album1.mb_album_id = "1"
+
+        assert album1.mb_album_id != album2.mb_album_id
+        assert album1.path != album2.path
+
+        assert album1 != album2
+
+    def test_not_equals_not_album(self, real_album):
+        """Not equal if not comparing two albums."""
+        assert real_album != "test"
 
 
 class TestDuplicate:

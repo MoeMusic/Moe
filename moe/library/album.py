@@ -1,8 +1,9 @@
 """An Album in the database and any related logic."""
 
 import datetime
+import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional, Tuple, Type, TypeVar, cast
 
 import sqlalchemy as sa
 from sqlalchemy import Column, Date, Integer, String, and_, or_
@@ -24,6 +25,16 @@ else:
     from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Album"]
+
+log = logging.getLogger("moe.album")
+
+
+class AlbumError(Exception):
+    """Error creating an Album."""
+
+
+# Album generic, used for typing classmethod
+A = TypeVar("A", bound="Album")
 
 
 class Album(LibItem, SABase):
@@ -95,6 +106,49 @@ class Album(LibItem, SABase):
             if value:
                 setattr(self, key, value)
 
+        log.debug(f"Album created. [album={self!r}]")
+
+    @classmethod
+    def from_dir(cls: Type[A], album_path: Path) -> A:
+        """Creates an album from a directory.
+
+        Args:
+            album_path: Album directory path. The directory will be scanned for any
+                files to be added to the album. Any non-track files will be added as
+                extras.
+
+        Returns:
+            Created album.
+
+        Raises:
+            AlbumError: No tracks found in the given directory.
+        """
+        from moe.library.extra import Extra
+        from moe.library.track import Track, TrackError
+
+        log.debug(f"Creating album from directory. [dir={album_path}]")
+
+        extra_paths = []
+        album_file_paths = [path for path in album_path.rglob("*") if path.is_file()]
+        album: Optional[Album] = None
+        for file_path in album_file_paths:
+            try:
+                track = Track.from_file(file_path, album)
+            except TrackError:
+                extra_paths.append(file_path)
+            else:
+                if not album:
+                    album = track.album_obj
+
+        if not album:
+            raise AlbumError(f"No tracks found in album: {album_path}")
+
+        for extra_path in extra_paths:
+            Extra(album, extra_path)
+
+        log.debug(f"Album created from directory. [dir={album_path}, album={album!r}]")
+        return album
+
     def fields(self) -> Tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Album."""
         return (
@@ -115,6 +169,8 @@ class Album(LibItem, SABase):
         Returns:
             Duplicate album or the same album if it already exists in the library.
         """
+        log.debug(f"Searching library for existing album. [album={self!r}]")
+
         session = MoeSession()
         existing_album = (
             session.query(Album)
@@ -131,8 +187,10 @@ class Album(LibItem, SABase):
             .one_or_none()
         )
         if not existing_album:
+            log.debug("No matching album found.")
             return None
 
+        log.debug(f"Matching album found. [match={existing_album!r}]")
         return existing_album
 
     def get_extra(self, filename: str) -> Optional["Extra"]:
@@ -159,6 +217,11 @@ class Album(LibItem, SABase):
             other: Other album to be merged with the current album.
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
+        log.debug(
+            "Merging albums. "
+            f"[album_a={self!r}, album_b={other!r}, overwrite={overwrite!r}]"
+        )
+
         for field in self.fields():
             if field not in {"path", "year", "tracks", "extras"}:
                 other_value = getattr(other, field)
@@ -184,6 +247,11 @@ class Album(LibItem, SABase):
             elif not conflict_extra:
                 new_extras.append(other_extra)
         self.extras.extend(new_extras)
+
+        log.debug(
+            "Albums merged. "
+            f"[album_a={self!r}, album_b={other!r}, overwrite={overwrite!r}]"
+        )
 
     @typed_hybrid_property
     def year(self) -> int:  # type: ignore
@@ -217,17 +285,38 @@ class Album(LibItem, SABase):
 
         return self.title < other.title
 
+    def __repr__(self):
+        """Represents an Album using its fields."""
+        repr_str = "Album("
+
+        repr_fields = [
+            "artist",
+            "title",
+            "date",
+            "mb_album_id",
+            "path",
+        ]
+        field_reprs = []
+        for field in repr_fields:
+            if hasattr(self, field):
+                field_reprs.append(f"{field}={getattr(self, field)!r}")
+        repr_str += ", ".join(field_reprs)
+
+        repr_str += ", tracks=["
+        track_reprs = []
+        for track in sorted(self.tracks):
+            track_reprs.append(f"{track.disc}.{track.track_num} - {track.title}")
+        repr_str += ", ".join(track_reprs) + "]"
+
+        repr_str += ", extras=["
+        extra_reprs = []
+        for extra in sorted(self.extras):
+            extra_reprs.append(f"{extra.filename}")
+        repr_str += ", ".join(extra_reprs) + "]"
+
+        repr_str += "]"
+        return repr_str
+
     def __str__(self):
         """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
-
-    def __repr__(self):
-        """Represents an Album using its key and primary fields."""
-        return (
-            f"{self.__class__.__name__}("
-            f"id={repr(self._id)}, "
-            f"artist={repr(self.artist)}, "
-            f"title={repr(self.title)}, "
-            f"date={repr(self.date)}, "
-            f"path={repr(self.path)})"
-        )

@@ -110,7 +110,6 @@ class Track(LibItem, SABase):
         path: Path,
         title: str,
         track_num: int,
-        disc: int = 1,
         **kwargs,
     ):
         """Creates a Track.
@@ -120,14 +119,12 @@ class Track(LibItem, SABase):
             path: Filesystem path of the track file.
             title: Title of the track.
             track_num: Track number.
-            disc: Disc number the track is on.
             **kwargs: Any other fields to assign to the track.
         """
         album.tracks.append(self)
         self.path = path
         self.title = title
         self.track_num = track_num
-        self.disc = disc
 
         self.artist = self.albumartist  # default value
 
@@ -135,64 +132,81 @@ class Track(LibItem, SABase):
             if value:
                 setattr(self, key, value)
 
+        if not self.disc:
+            self.disc = self._guess_disc()
+
+        log.debug(f"Track created. [track={self!r}]")
+
+    def _guess_disc(self) -> int:
+        """Attempts to guess the disc of a track based on it's path."""
+        log.debug(f"Guessing track disc number. [track={self!r}]")
+
+        if self.path.parent == self.album_obj.path:
+            return 1
+
+        # The track is in a subdirectory of the album - most likely disc directories.
+        disc_dirs: List[Path] = []
+        for path in self.album_obj.path.iterdir():
+            if not path.is_dir():
+                continue
+
+            contains_tracks = False
+            for album_track in self.album_obj.tracks:
+                if path in album_track.path.parents:
+                    contains_tracks = True
+
+            if contains_tracks:
+                disc_dirs.append(path)
+
+        # Guess the disc by the order of the disc directory it appears in.
+        for disc_num, disc_dir in enumerate(sorted(disc_dirs), start=1):
+            if disc_dir in self.path.parents:
+                return disc_num
+
+        return 1
+
     @classmethod
-    def from_path(cls: Type[T], path: Path, album_path: Optional[Path] = None) -> T:
+    def from_file(cls: Type[T], track_path: Path, album: Optional[Album] = None) -> T:
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
-            path: Filesystem path of the track.
-            album_path: Filesystem path of the track's album. Defaults to using the
-                parent of the track path.
+            track_path: Filesystem path of the track.
+            album: Corresponding album for the track. If not given, the album will be
+                created.
 
         Returns:
             Track instance.
 
         Raises:
-            TrackError: Missing required tags.
+            TrackError: Given ``path`` does not correspond to a track file.
         """
-        audio_file = mediafile.MediaFile(path)
+        log.debug(f"Creating track from path. [path={track_path!r}, album={album}]")
 
-        missing_tags: List[str] = []
-        if not audio_file.album:
-            missing_tags.append("album")
-        if not audio_file.albumartist and not audio_file.artist:
-            missing_tags.append("albumartist")
-        if not audio_file.title:
-            missing_tags.append("title")
-        if not audio_file.track:
-            missing_tags.append("track_num")
-        if not audio_file.date:
-            missing_tags.append("date")
-        if missing_tags:
+        try:
+            audio_file = mediafile.MediaFile(track_path)
+        except mediafile.UnreadableFileError as err:
             raise TrackError(
-                f"'{path}' is missing required tag(s): {', '.join(missing_tags)}"
+                "Unable to create track; given path is not a track file. "
+                f"[path={track_path!r}]"
+            ) from err
+
+        if not album:
+            albumartist = audio_file.albumartist or audio_file.artist
+
+            album = Album(
+                artist=albumartist,
+                title=audio_file.album,
+                date=audio_file.date,
+                disc_total=audio_file.disctotal,
+                mb_album_id=audio_file.mb_albumid,
+                path=track_path.parent,
             )
 
-        # use artist as the backup for the albumartist if missing
-        if audio_file.albumartist:
-            albumartist = audio_file.albumartist
-        else:
-            log.debug(
-                f"'{path}' is missing an albumartist, using the artist"
-                f" '{audio_file.artist}' as a backup."
-            )
-            albumartist = audio_file.artist
-
-        if not album_path:
-            album_path = path.parent
-        album = Album(
-            artist=albumartist,
-            title=audio_file.album,
-            date=audio_file.date,
-            disc_total=audio_file.disctotal,
-            mb_album_id=audio_file.mb_albumid,
-            path=album_path,
-        )
         return cls(
             album=album,
-            path=path,
+            path=track_path,
             track_num=audio_file.track,
             artist=audio_file.artist,
             disc=audio_file.disc,
@@ -241,8 +255,9 @@ class Track(LibItem, SABase):
         Returns:
             Duplicate track or the same track if it already exists in the library.
         """
-        session = MoeSession()
+        log.debug(f"Searching library for existing track. [track={self!r}]")
 
+        session = MoeSession()
         existing_track = (
             session.query(Track)
             .filter(
@@ -263,8 +278,10 @@ class Track(LibItem, SABase):
             .one_or_none()
         )
         if not existing_track:
+            log.debug("No matching track found.")
             return None
 
+        log.debug(f"Matching track found. [match={existing_track!r}]")
         return existing_track
 
     def merge(self, other: "Track", overwrite: bool = False):
@@ -274,12 +291,22 @@ class Track(LibItem, SABase):
             other: Other track to be merged with the current track.
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
+        log.debug(
+            "Merging tracks. "
+            f"[track_a={self!r}, track_b={other!r}, overwrite={overwrite!r}]"
+        )
+
         for field in self.fields():
             if field not in {"album_obj", "path", "year"}:
                 other_value = getattr(other, field)
                 self_value = getattr(self, field)
                 if other_value and (overwrite or (not overwrite and not self_value)):
                     setattr(self, field, other_value)
+
+        log.debug(
+            "Tracks merged. "
+            f"[track_a={self!r}, track_b={other!r}, overwrite={overwrite!r}]"
+        )
 
     def __eq__(self, other) -> bool:
         """Compares Tracks by their 'uniqueness' in the database."""
@@ -309,22 +336,31 @@ class Track(LibItem, SABase):
 
         return self.album_obj < other.album_obj
 
+    def __repr__(self):
+        """Represents a Track using track-specific and relevant album fields."""
+        repr_str = "Track("
+
+        repr_fields = [
+            "track_num",
+            "disc",
+            "title",
+            "artist",
+            "genre",
+            "mb_track_id",
+            "album",
+            "path",
+        ]
+        field_reprs = []
+        for field in repr_fields:
+            if hasattr(self, field):
+                field_reprs.append(f"{field}={getattr(self, field)!r}")
+        repr_str += ", ".join(field_reprs) + ")"
+
+        return repr_str
+
     def __str__(self):
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
-
-    def __repr__(self):
-        """Represents a Track using its primary key, unique fields, title and artist."""
-        return (
-            f"{self.__class__.__name__}("
-            f"id={repr(self._id)}, "
-            f"disc={repr(self.disc)}, "
-            f"track_num={repr(self.track_num)}, "
-            f"{repr(self.album_obj)}, "
-            f"artist={repr(self.artist)}, "
-            f"title={repr(self.title)}, "
-            f"path={repr(self.path)})"
-        )
 
     @sa_orm.validates("_genres")
     def _append_genre(self, key: str, genre: _Genre) -> _Genre:
