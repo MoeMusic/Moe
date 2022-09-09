@@ -103,6 +103,8 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
     """Runs the CLI."""
+    log.debug(f"Commandline arguments received. [args={args!r}]")
+
     if not config:
         try:
             config = Config()
@@ -140,16 +142,16 @@ def _parse_args(args: List[str], config: Config):
         moe_parser.print_help(sys.stderr)
         raise SystemExit(1)
 
-    _set_root_log_lvl(parsed_args)
+    _set_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
     cli_session = MoeSession()
     with cli_session.begin():
         try:
             parsed_args.func(config, args=parsed_args)
-        except SystemExit as err:
+        except SystemExit:
             cli_session.commit()
-            raise err
+            raise
 
 
 def _create_arg_parser() -> argparse.ArgumentParser:
@@ -176,24 +178,15 @@ def _create_arg_parser() -> argparse.ArgumentParser:
     return moe_parser
 
 
-def _set_root_log_lvl(args):
-    """Sets the root logger level based on cli arguments.
+def _set_log_lvl(args):
+    """Sets the root logger level based on cli arguments."""
+    moe_log = logging.getLogger("moe")
 
-    Args:
-        args: parsed arguments to process
-    """
     if args.verbose == 1:
-        logging.basicConfig(level="INFO")
+        moe_log.setLevel(logging.INFO)
     elif args.verbose == 2:
-        logging.basicConfig(level="DEBUG")
+        moe_log.setLevel(logging.DEBUG)
     elif args.quiet == 1:
-        logging.basicConfig(level="ERROR")
+        moe_log.setLevel(logging.ERROR)
     elif args.quiet == 2:
-        logging.basicConfig(level="CRITICAL")
-    else:
-        logging.basicConfig(level="WARNING")
-
-    # always set external loggers to warning
-    for key in logging.Logger.manager.loggerDict:
-        if "moe" not in key:
-            logging.getLogger(key).setLevel(logging.WARNING)
+        moe_log.setLevel(logging.CRITICAL)

@@ -12,7 +12,7 @@ from moe.library.album import Album
 from moe.plugins import move as moe_move
 from moe.query import QueryError, query
 
-log = logging.getLogger("moe.list")
+log = logging.getLogger("moe.cli.move")
 
 
 @moe.hookimpl

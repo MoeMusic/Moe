@@ -1,10 +1,13 @@
 """All logic regarding matching albums and tracks against each other."""
 
 import difflib
+import logging
 from typing import Dict, List, Optional, Tuple
 
 from moe.library.album import Album
 from moe.library.track import Track
+
+log = logging.getLogger("moe")
 
 __all__: List[str] = ["get_matching_tracks", "get_match_value"]
 
@@ -37,6 +40,12 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         was found. Each tuple represents a match and will be in the form
         ``(album_a_track, album_b_track)``.
     """
+    log.debug(
+        "Finding matching tracks. "
+        f"[album_a={album_a!r}, album_b={album_b!r}, "
+        f"match_threshold={match_threshold!r}]"
+    )
+
     # get all match values for every pair of tracks between both albums
     track_match_values: Dict[TrackCoord, float] = {}
     for a_track in album_a.tracks:
@@ -87,6 +96,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         if not any(b_track == track_match[1] for track_match in track_matches):
             track_matches.append((None, b_track))
 
+    log.debug("Found matching tracks. [matches={track_matches!r}]")
     return track_matches
 
 
@@ -107,6 +117,11 @@ def get_match_value(
         The match value is a weighted sum according to the defined weights for each
         applicable field.
     """
+    log.debug(
+        "Determining match value between tracks. "
+        "[track_a={track_a!r}, track_b={track_b!r}]"
+    )
+
     match_values = []
     for field, weight in field_weights.items():
         value_a = getattr(track_a, field)
@@ -122,4 +137,7 @@ def get_match_value(
 
         match_values.append(match_value * weight)
 
-    return sum(match_values) / sum(field_weights.values())
+    match_value = sum(match_values) / sum(field_weights.values())
+
+    log.debug("Determing match value between tracks. [match_value={match_value!r}]")
+    return match_value

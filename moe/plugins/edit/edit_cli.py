@@ -10,7 +10,7 @@ from moe.config import Config
 from moe.plugins import edit
 from moe.query import QueryError, query
 
-log = logging.getLogger("moe.edit")
+log = logging.getLogger("moe.cli.edit")
 
 
 @moe.hookimpl

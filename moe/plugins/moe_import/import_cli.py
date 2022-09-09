@@ -12,7 +12,7 @@ from moe.library.album import Album
 from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
 from moe.util.core import get_matching_tracks
 
-log = logging.getLogger("moe.add")
+log = logging.getLogger("moe.cli.import")
 
 __all__ = ["AbortImport", "import_prompt"]
 
@@ -63,9 +63,15 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 def process_candidates(config: Config, old_album: Album, candidates):
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
+        chosen_candidate = candidates[0]
+        log.debug(
+            "Candidate album chosen for import prompt. "
+            f"[candidate={chosen_candidate!r}]"
+        )
         try:
-            import_prompt(config, old_album, candidates[0])
+            import_prompt(config, old_album, chosen_candidate)
         except AbortImport as err:
+            log.debug(err)
             raise SystemExit(0) from err
 
 
@@ -96,8 +102,9 @@ def import_prompt(
     Raises:
         AbortImport: Import prompt was aborted by the user.
     """
-    if old_album == new_album:
-        return
+    log.debug(
+        "Running import prompt. [old_album={old_album!r}, new_album={new_album!r}]"
+    )
 
     print(fmt_album_changes(old_album, new_album))
 
@@ -114,6 +121,8 @@ def _apply_changes(
     new_album: Album,
 ):
     """Applies the album changes."""
+    log.debug("Applying changes from import prompt.")
+
     for old_track, new_track in get_matching_tracks(old_album, new_album):
         if not old_track and new_track:
             new_album.tracks.remove(new_track)  # missing track
@@ -140,4 +149,4 @@ def _abort_changes(
     new_album: Album,
 ):
     """Aborts the album changes."""
-    raise AbortImport()
+    raise AbortImport("Import prompt aborted; no changes made.")
