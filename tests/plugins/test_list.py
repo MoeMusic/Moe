@@ -62,12 +62,10 @@ class TestParseArgs:
         mock_query.assert_called_once_with("*", query_type="extra")
         assert capsys.readouterr().out.strip("\n") == str(mock_extra)
 
-    def test_multiple_items(
-        self, capsys, mock_track_factory, mock_query, tmp_list_config
-    ):
+    def test_multiple_items(self, capsys, track_factory, mock_query, tmp_list_config):
         """All items returned from the query are printed."""
         cli_args = ["list", "*"]
-        mock_tracks = [mock_track_factory(), mock_track_factory()]
+        mock_tracks = [track_factory(), track_factory()]
         mock_query.return_value = mock_tracks
 
         moe.cli.main(cli_args, tmp_list_config)

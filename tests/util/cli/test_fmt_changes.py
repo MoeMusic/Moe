@@ -45,12 +45,12 @@ class TestFmtAlbumChanges:
 
         print(fmt_album_changes(old_album, new_album))
 
-    def test_multi_disc_album(self, mock_album, mock_track_factory):
+    def test_multi_disc_album(self, mock_album, track_factory):
         """Prompt supports multi_disc albums."""
         mock_album.disc_total = 2
         mock_album.tracks[1].disc = 2
         mock_album.tracks[1].track_num = 1
-        mock_track_factory(track_num=2, album=mock_album)
+        track_factory(track_num=2, album=mock_album)
         new_album = copy.deepcopy(mock_album)
 
         print(fmt_album_changes(mock_album, new_album))

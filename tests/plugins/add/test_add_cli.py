@@ -60,10 +60,10 @@ class TestPreAdd:
                 tmp_add_config, mock_extra.album_obj, db_album
             )
 
-    def test_replace_album(self, mock_album_factory, tmp_session, tmp_add_config):
+    def test_replace_album(self, album_factory, tmp_session, tmp_add_config):
         """Test the 'replace' merge option with an album."""
-        album = mock_album_factory()
-        dup_album = mock_album_factory()
+        album = album_factory()
+        dup_album = album_factory()
         album.title = "keep"
         dup_album.title = "dup"
         album.mb_album_id = None
@@ -90,10 +90,10 @@ class TestPreAdd:
         assert db_album.title == "keep"  # conflicts not overwritten
         assert not db_album.mb_album_id  # non-existing fields not written
 
-    def test_abort_add(self, mock_album_factory, tmp_session, tmp_add_config):
+    def test_abort_add(self, album_factory, tmp_session, tmp_add_config):
         """A 'keep right' merge is treated as the user wanting to abort the add."""
-        album = mock_album_factory()
-        dup_album = mock_album_factory()
+        album = album_factory()
+        dup_album = album_factory()
         album.mb_album_id = "123"
         dup_album = copy.deepcopy(album)
 
@@ -113,10 +113,10 @@ class TestPreAdd:
 
         assert error.value.code == 0
 
-    def test_merge(self, mock_album_factory, tmp_session, tmp_add_config):
+    def test_merge(self, album_factory, tmp_session, tmp_add_config):
         """Test merging the two albums, without overwriting on conflict."""
-        new_album = mock_album_factory()
-        dup_album = mock_album_factory()
+        new_album = album_factory()
+        dup_album = album_factory()
 
         new_album.title = "ignore"
         dup_album.title = "keep"
@@ -143,10 +143,10 @@ class TestPreAdd:
         assert db_album.title == "keep"
         assert db_album.mb_album_id == "123"
 
-    def test_overwrite(self, mock_album_factory, tmp_session, tmp_add_config):
+    def test_overwrite(self, album_factory, tmp_session, tmp_add_config):
         """Test merging the two albums, overwriting on conflict."""
-        new_album = mock_album_factory()
-        dup_album = mock_album_factory()
+        new_album = album_factory()
+        dup_album = album_factory()
 
         new_album.title = "keep"
         dup_album.title = "overwrite"

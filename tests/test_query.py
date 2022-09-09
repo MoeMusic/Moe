@@ -225,14 +225,14 @@ class TestQuery:
         assert query("track_num:_")
         assert query("track_num:%")
 
-    def test_like_escape_query(self, mock_track_factory, tmp_session):
+    def test_like_escape_query(self, track_factory, tmp_session):
         r"""We should be able to escape the LIKE wildcard characters with '/'.
 
         Note, I think '\' would be the preferred backslash character, but for
         some reason it doesn't work.
         """
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
         track1.title = "_"
         track2.title = "b"
         tmp_session.merge(track1)
@@ -253,20 +253,20 @@ class TestQuery:
         assert query("genre:rock")
         assert query("genre:rock 'genre:hip hop'")
 
-    def test_wildcard_query(self, mock_track_factory, tmp_session):
+    def test_wildcard_query(self, track_factory, tmp_session):
         """'*' as a query should return all items."""
-        track1 = mock_track_factory()
-        track2 = mock_track_factory()
+        track1 = track_factory()
+        track2 = track_factory()
 
         tmp_session.merge(track1)
         tmp_session.merge(track2)
 
         assert len(query("*")) == 2
 
-    def test_missing_extras(self, mock_album_factory, tmp_session):
+    def test_missing_extras(self, album_factory, tmp_session):
         """Ensure albums without extras are still returned by a valid query."""
-        album1 = mock_album_factory()
-        album2 = mock_album_factory()
+        album1 = album_factory()
+        album2 = album_factory()
         album2.extras = []
         assert album1.extras
         assert not album2.extras

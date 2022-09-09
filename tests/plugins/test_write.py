@@ -94,11 +94,9 @@ class TestProcessNewItems:
 
         mock_write.assert_not_called()
 
-    def test_process_multiple_tracks(
-        self, mock_track_factory, mock_write, tmp_write_config
-    ):
+    def test_process_multiple_tracks(self, track_factory, mock_write, tmp_write_config):
         """All altered tracks are written."""
-        mock_tracks = [mock_track_factory(), mock_track_factory()]
+        mock_tracks = [track_factory(), track_factory()]
 
         tmp_write_config.plugin_manager.hook.process_new_items(
             config=tmp_write_config, items=mock_tracks

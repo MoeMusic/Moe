@@ -68,12 +68,10 @@ class TestCommand:
         mock_query.assert_called_once_with("*", query_type="extra")
         mock_rm.assert_called_once_with(tmp_rm_config, mock_extra)
 
-    def test_multiple_items(
-        self, mock_track_factory, mock_query, mock_rm, tmp_rm_config
-    ):
+    def test_multiple_items(self, track_factory, mock_query, mock_rm, tmp_rm_config):
         """All items returned from the query are removed."""
         cli_args = ["remove", "*"]
-        mock_tracks = [mock_track_factory(), mock_track_factory()]
+        mock_tracks = [track_factory(), track_factory()]
         mock_query.return_value = mock_tracks
 
         moe.cli.main(cli_args, tmp_rm_config)
