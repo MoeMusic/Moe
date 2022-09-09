@@ -21,16 +21,6 @@ def tmp_import_config(tmp_config) -> Config:
 class TestPrompt:
     """Test the import prompt."""
 
-    def test_same_album(self, capsys, mock_album):
-        """Don't do anything if no album changes."""
-        new_album = copy.deepcopy(mock_album)
-        assert mock_album is not new_album
-
-        moe_import.import_prompt(Mock(), mock_album, new_album)
-
-        captured_txt = capsys.readouterr()
-        assert not captured_txt.out
-
     def test_multi_disc_album(self, mock_album, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
         config = tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)

@@ -8,15 +8,15 @@ from typing import List, Union, cast
 import moe
 import moe.cli
 from moe.config import Config, MoeSession
-from moe.library.album import Album
+from moe.library.album import Album, AlbumError
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library.track import Track, TrackError
 from moe.plugins import add as moe_add
 from moe.plugins.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
 
-log = logging.getLogger("moe.add")
+log = logging.getLogger("moe.cli.add")
 
 __all__: List[str] = []
 
@@ -29,6 +29,11 @@ def pre_add(config: Config, item: LibItem):
     dup_item = item.get_existing()
     if not dup_item:
         return
+
+    log.debug(
+        "Duplicate item exists in the library. "
+        f"[new_item={item!r}, dup_item={dup_item!r}]"
+    )
 
     if isinstance(item, Album):
         dup_item = cast(Album, dup_item)
@@ -69,6 +74,7 @@ def pre_add(config: Config, item: LibItem):
     try:
         prompt_choice.func(config, album, dup_album)
     except moe_add.AddAbortError as err:
+        log.debug(err)
         raise SystemExit(0) from err
 
 
@@ -103,10 +109,24 @@ def _parse_args(config: Config, args: argparse.Namespace):
 
     error_count = 0
     for path in paths:
-        try:
-            moe_add.add_item(config, path)
-        except moe_add.AddError as exc:
-            log.error(exc)
+        if path.is_file():
+            try:
+                track = Track.from_file(path)
+            except TrackError as err:
+                log.error(err)
+                error_count += 1
+            else:
+                moe_add.add_item(config, track)
+        elif path.is_dir():
+            try:
+                album = Album.from_dir(path)
+            except AlbumError as err:
+                log.error(err)
+                error_count += 1
+            else:
+                moe_add.add_item(config, album)
+        else:
+            log.error(f"Path not found. [path={path}]")
             error_count += 1
 
     if error_count:
@@ -115,27 +135,33 @@ def _parse_args(config: Config, args: argparse.Namespace):
 
 def _replace(config: Config, album: Album, dup_album: Album):
     """Keeps the new album, removing the existing album from the library."""
+    log.debug("Replacing duplicate album.")
+
     remove_item(config, dup_album)
 
 
 def _abort(config: Config, album: Album, dup_album: Album):
     """Keeps the existing album i.e. abort adding the new album."""
-    raise moe_add.AddAbortError("Add aborted; existing item kept.")
+    raise moe_add.AddAbortError("Duplicate resolution aborted; existing item kept.")
 
 
 def _merge(config: Config, album: Album, dup_album: Album):
     """Merges the new album into the existing, without overwriting any conflicts."""
+    log.debug("Merging duplicate album without overwriting.")
+
     album.merge(dup_album, overwrite=True)  # persist dup_album values
 
     session = MoeSession()
-    session.delete(dup_album)  # remove existing album from the library
+    remove_item(config, dup_album)  # remove existing item from the library
     session.expunge(album)  # don't prematurely add the album to the session
 
 
 def _overwrite(config: Config, album: Album, dup_album: Album):
     """Merges the new album into the existing, overwriting any conflicts."""
+    log.debug("Overwriting duplicate album.")
+
     album.merge(dup_album)
 
     session = MoeSession()
-    session.delete(dup_album)  # remove existing album from the library
+    remove_item(config, dup_album)  # remove existing item from the library
     session.expunge(album)  # don't prematurely add the album to the session

@@ -1,21 +1,48 @@
 """Tests a Track object."""
 
 import datetime
+from pathlib import Path
 
 import pytest
 
-import moe.plugins.write
+import moe.plugins.write as moe_write
 from moe.library.track import Track, TrackError
 
 
 class TestInit:
     """Test Track initialization."""
 
-    def test_album_init(self, mock_track, tmp_session):
+    def test_album_init(self, mock_track):
         """Creating a Track should also create the corresponding Album."""
-        tmp_session.add(mock_track)
-
         assert mock_track.album_obj
+
+    def test_guess_disc(self, real_album):
+        """Guess the disc if not given."""
+        track1 = real_album.tracks[0]
+        track2 = real_album.tracks[1]
+        track1.track_num = track2.track_num
+        track1.disc = 1
+        track2.disc = 1  # should be 2!
+        real_album.disc_total = 2
+        moe_write.write_tags(track1)
+        moe_write.write_tags(track2)
+        assert track1 == track2
+
+        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
+        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
+        Path(real_album.path / "artwork (1996)").mkdir()
+        track1_path.parent.mkdir()
+        track2_path.parent.mkdir()
+        track1.path.rename(track1_path)
+        track2.path.rename(track2_path)
+        track1.path = track1_path
+        track2.path = track2_path
+
+        new_track1 = Track(real_album, track1.path, track1.title, track1.track_num)
+        new_track2 = Track(real_album, track2.path, track2.title, track2.track_num)
+
+        assert new_track1.disc == 1
+        assert new_track2.disc == 2
 
 
 class TestAlbumSet:
@@ -35,12 +62,12 @@ class TestAlbumSet:
         assert album1 is mock_track.album_obj
 
 
-class TestFromTags:
-    """Test initialization from tags."""
+class TestFromFile:
+    """Test initialization from given file path."""
 
     def test_read_tags(self, full_mp3_path):
         """We can initialize a track with tags from a file if present."""
-        track = Track.from_path(full_mp3_path)
+        track = Track.from_file(full_mp3_path)
 
         assert track.album == "The Lost Album"
         assert track.albumartist == "Wu-Tang Clan"
@@ -54,18 +81,18 @@ class TestFromTags:
         assert track.title == "Full"
         assert track.track_num == 1
 
-    def test_no_reqd_tags(self, empty_mp3_path):
-        """Raise `TrackError` if missing required tags."""
+    def test_non_track_file(self, real_extra):
+        """Raise `TrackError` if the given path does not correspond to a track file."""
         with pytest.raises(TrackError):
-            Track.from_path(empty_mp3_path)
+            Track.from_file(real_extra.path)
 
     def test_albumartist_backup(self, real_track):
         """Use artist as a backup for albumartist if missing."""
         real_track.albumartist = ""
         real_track.artist = "Backup"
-        moe.plugins.write.write_tags(real_track)
+        moe_write.write_tags(real_track)
 
-        track = Track.from_path(real_track.path)
+        track = Track.from_file(real_track.path)
         assert track.albumartist
 
 
