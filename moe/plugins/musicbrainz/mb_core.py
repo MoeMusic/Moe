@@ -117,7 +117,7 @@ def post_remove(config: Config, item: LibItem):
 
     if isinstance(item, Album) and item.mb_album_id:
         try:
-            rm_releases_from_collection(config, None, [item.mb_album_id])
+            rm_releases_from_collection(config, [item.mb_album_id])
         except MBAuthError as err:
             log.error(err)
 
@@ -135,22 +135,22 @@ def process_new_items(config: Config, items: List[LibItem]):
 
     if releases:
         try:
-            add_releases_to_collection(config, None, releases)
+            add_releases_to_collection(config, releases)
         except MBAuthError as err:
             log.error(err)
 
 
 def add_releases_to_collection(
-    config: Config, collection: Optional[str], releases: List[str]
+    config: Config, releases: List[str], collection: Optional[str] = None
 ) -> None:
     """Adds releases to a musicbrainz collection.
 
     Args:
         config: Moe config.
+        releases: Musicbrainz release IDs to add to the collection.
         collection: Musicbrainz collection ID to add the releases to.
             If not given, defaults to the ``musicbrainz.collection.collection_id``
             config option.
-        releases: Musicbrainz release IDs to add to the collection.
 
     Raises:
         MBAuthError: Invalid musicbrainz user credentials in the configuration.
@@ -176,16 +176,16 @@ def add_releases_to_collection(
 
 
 def rm_releases_from_collection(
-    config: Config, collection: Optional[str], releases: List[str]
+    config: Config, releases: List[str], collection: Optional[str] = None
 ) -> None:
     """Removes releases from a musicbrainz collection.
 
     Args:
         config: Moe config.
+        releases: Musicbrainz release IDs to remove from the collection.
         collection: Musicbrainz collection ID to remove the releases from.
             If not given, defaults to the ``musicbrainz.collection.collection_id``
             config option.
-        releases: Musicbrainz release IDs to remove from the collection.
 
     Raises:
         MBAuthError: Invalid musicbrainz user credentials in the configuration.
