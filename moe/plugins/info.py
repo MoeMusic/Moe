@@ -93,17 +93,7 @@ def _fmt_info(item: LibItem) -> str:
 
 
 def _fmt_album_info(album: Album) -> str:
-    """Formats an album's information for display.
-
-    An album's information is represented by it's attributes (see `_get_base_dict()`)
-    plus lists of its tracks and extras.
-
-    Args:
-        album: Album to format.
-
-    Returns:
-        Formatted string representing the album's relevant information to the user.
-    """
+    """Formats an album's information for display."""
     base_dict = _get_base_dict(album)
     base_dict.pop("extras", None)
     base_dict.pop("tracks", None)
@@ -122,16 +112,7 @@ def _fmt_album_info(album: Album) -> str:
 
 
 def _fmt_extra_info(extra: Extra) -> str:
-    """Formats a extra's information for display.
-
-    An extra's information is represented by it's attributes (see `_get_base_dict()`).
-
-    Args:
-        extra: Extra to format.
-
-    Returns:
-        Formatted string representing the extra's relevant information to the user.
-    """
+    """Formats a extra's information for display."""
     base_dict = _get_base_dict(extra)
     base_dict.pop("filename", None)
 
@@ -142,16 +123,7 @@ def _fmt_extra_info(extra: Extra) -> str:
 
 
 def _fmt_track_info(track: Track) -> str:
-    """Formats a track's information for display.
-
-    A track's information is represented by it's attributes (see `_get_base_dict()`).
-
-    Args:
-        track: Track to format.
-
-    Returns:
-        Formatted string representing the track's relevant information to the user.
-    """
+    """Formats a track's information for display."""
     base_dict = OrderedDict(sorted(_get_base_dict(track).items()))
     base_dict.pop("album_obj", None)
     base_dict.pop("genres", None)
