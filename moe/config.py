@@ -260,7 +260,7 @@ class Config:
             create_tables: Whether or not to create and update the db tables.
                 If doing db migrations manually, e.g. in alembic, this should be False.
         """
-        log.debug(f"Initializing database. [create_tables={create_tables!r}]")
+        log.debug(f"Initializing database. [{create_tables=!r}]")
 
         db_path = self.config_dir / "library.db"
 

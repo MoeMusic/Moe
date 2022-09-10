@@ -102,9 +102,7 @@ def import_prompt(
     Raises:
         AbortImport: Import prompt was aborted by the user.
     """
-    log.debug(
-        "Running import prompt. [old_album={old_album!r}, new_album={new_album!r}]"
-    )
+    log.debug("Running import prompt. [{old_album=!r}, {new_album=!r}]")
 
     print(fmt_album_changes(old_album, new_album))
 

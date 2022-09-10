@@ -164,8 +164,7 @@ def add_releases_to_collection(
     collection = collection or config.settings.musicbrainz.collection.collection_id
 
     log.debug(
-        "Adding releases to musicbrainz collection. "
-        f"[releases={releases!r}, collection={collection!r}]"
+        f"Adding releases to musicbrainz collection. [{releases=!r}, {collection=!r}]"
     )
 
     _mb_auth_call(
@@ -176,8 +175,7 @@ def add_releases_to_collection(
     )
 
     log.info(
-        "Added releases to musicbrainz collection. "
-        f"[releases={releases!r}, collection={collection!r}]"
+        f"Added releases to musicbrainz collection. [{releases=!r}, {collection=!r}]"
     )
 
 
@@ -200,7 +198,7 @@ def rm_releases_from_collection(
 
     log.debug(
         "Removing releases from musicbrainz collection. "
-        f"[releases={releases!r}, collection={collection!r}]"
+        f"[{releases=!r}, {collection=!r}]"
     )
 
     _mb_auth_call(
@@ -212,7 +210,7 @@ def rm_releases_from_collection(
 
     log.info(
         "Removed releases from musicbrainz collection. "
-        f"[releases={releases!r}, collection={collection!r}]"
+        f"[{releases=!r}, {collection=!r}]"
     )
 
 
@@ -261,10 +259,7 @@ def set_collection(
     """
     collection = collection or config.settings.musicbrainz.collection.collection_id
 
-    log.debug(
-        "Setting musicbrainz collection. "
-        f"[releases={releases!r}, collection={collection!r}]"
-    )
+    log.debug("Setting musicbrainz collection. " f"[{releases=!r}, {collection=!r}]")
 
     current_releases = []
     num_searches = 0
@@ -303,7 +298,7 @@ def get_matching_album(album: Album) -> Album:
     if album.mb_album_id:
         return get_album_by_id(album.mb_album_id)
 
-    log.debug(f"Determing matching releases from musicbrainz. [album={album!r}]")
+    log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")
 
     search_criteria: Dict = {}
     search_criteria["artist"] = album.artist
@@ -376,7 +371,7 @@ def _create_album(release: Dict) -> Album:
                 title=track["recording"]["title"],
             )
 
-    log.debug(f"Created album from musicbrainz release. [album={album!r}]")
+    log.debug(f"Created album from musicbrainz release. [{album=!r}]")
     return album
 
 
@@ -401,11 +396,11 @@ def update_album(album: Album):
     Raises:
         ValueError: ``album`` has no ``mb_album_id``.
     """
-    log.debug(f"Updating album with musicbrainz metadata. [album={album!r}]")
+    log.debug(f"Updating album with musicbrainz metadata. [{album=!r}]")
 
     if not album.mb_album_id:
         raise ValueError(
-            "Unable to update album, no musicbrainz id found. [album={album!r}]"
+            "Unable to update album, no musicbrainz id found. [{album=!r}]"
         )
 
     album.merge(get_album_by_id(album.mb_album_id), overwrite=True)
