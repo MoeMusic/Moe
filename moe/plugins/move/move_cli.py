@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from typing import List, cast
+from typing import cast
 
 import sqlalchemy.orm
 
@@ -46,7 +46,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
         SystemExit: Invalid query or no items found to move.
     """
     try:
-        albums = cast(List[Album], query("*", query_type="album"))
+        albums = cast(list[Album], query("*", query_type="album"))
     except QueryError as err:
         log.error(err)
         raise SystemExit(1) from err
@@ -64,7 +64,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
             moe_move.move_item(config, album)
 
 
-def _dry_run(config: Config, albums: List[Album]) -> str:
+def _dry_run(config: Config, albums: list[Album]) -> str:
     """Returns a string of output representing a 'dry-run' of moving albums."""
     dry_run_str = ""
 

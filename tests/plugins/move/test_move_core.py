@@ -63,7 +63,7 @@ class TestFmtAlbumPath:
 
         album_path = moe_move.fmt_item_path(tmp_move_config, real_album)
 
-        assert lib_path in album_path.parents
+        assert album_path.is_relative_to(lib_path)
 
     def test_album_asciify_paths(self, real_album, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""
@@ -87,9 +87,8 @@ class TestFmtExtraPath:
         """The extra path should be relative to its album path."""
         extra_path = moe_move.fmt_item_path(tmp_move_config, real_extra)
 
-        assert (
+        assert extra_path.is_relative_to(
             moe_move.fmt_item_path(tmp_move_config, real_extra.album_obj)
-            in extra_path.parents
         )
 
     def test_extra_asciify_paths(self, real_extra, tmp_config):
@@ -114,7 +113,7 @@ class TestFmtTrackPath:
         """The track path should be relative to its album path."""
         track_path = moe_move.fmt_item_path(tmp_move_config, real_track)
 
-        assert real_track.album_obj.path in track_path.parents
+        assert track_path.is_relative_to(real_track.album_obj.path)
 
     def test_extra_asciify_paths(self, real_track, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""

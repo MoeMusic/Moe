@@ -2,18 +2,18 @@
 
 import difflib
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from moe.library.album import Album
 from moe.library.track import Track
 
 log = logging.getLogger("moe")
 
-__all__: List[str] = ["get_matching_tracks", "get_match_value"]
+__all__ = ["get_match_value", "get_matching_tracks"]
 
-TrackMatch = Tuple[Optional[Track], Optional[Track]]
-TrackCoord = Tuple[
-    Tuple[int, int], Tuple[int, int]
+TrackMatch = tuple[Optional[Track], Optional[Track]]
+TrackCoord = tuple[
+    tuple[int, int], tuple[int, int]
 ]  # ((a.disc, a.track_num), (b.disc, b.track_num))
 
 MATCH_FIELD_WEIGHTS = {
@@ -25,7 +25,7 @@ MATCH_FIELD_WEIGHTS = {
 
 def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
     album_a: Album, album_b: Album, match_threshold: float = 0.8
-) -> List[TrackMatch]:
+) -> list[TrackMatch]:
     """Returns a list of tuples of track match pairs.
 
     Args:
@@ -45,7 +45,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
     )
 
     # get all match values for every pair of tracks between both albums
-    track_match_values: Dict[TrackCoord, float] = {}
+    track_match_values: dict[TrackCoord, float] = {}
     for a_track in album_a.tracks:
         for b_track in album_b.tracks:
             track_match_values[
@@ -69,7 +69,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
     track_match_values = dict(
         sorted(track_match_values.items(), reverse=True, key=lambda match: match[1])
     )  # sort by match value (descending)
-    track_matches: List[TrackMatch] = []  # [(a_track, b_track)]
+    track_matches: list[TrackMatch] = []  # [(a_track, b_track)]
     for track_pair, match_value in track_match_values.items():
         if match_value < match_threshold:
             continue
@@ -101,7 +101,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
 def get_match_value(
     track_a: Track,
     track_b: Track,
-    field_weights: Dict[str, float] = MATCH_FIELD_WEIGHTS,
+    field_weights: dict[str, float] = MATCH_FIELD_WEIGHTS,
 ) -> float:
     """Returns a similarity "match value" between two tracks on a scale of 0 to 1.
 

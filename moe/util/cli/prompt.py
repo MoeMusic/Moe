@@ -3,7 +3,7 @@
 import logging
 import operator
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import Callable
 
 import questionary
 
@@ -32,7 +32,7 @@ class PromptChoice:
 
 
 def choice_prompt(
-    prompt_choices: List[PromptChoice], question: str = "What do you want to do?"
+    prompt_choices: list[PromptChoice], question: str = "What do you want to do?"
 ) -> PromptChoice:
     """Generates a user choice prompt.
 
@@ -48,7 +48,7 @@ def choice_prompt(
     """
     prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
-    questionary_choices: List[questionary.Choice] = []
+    questionary_choices: list[questionary.Choice] = []
     for prompt_choice in prompt_choices:
         questionary_choices.append(
             questionary.Choice(
