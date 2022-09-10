@@ -81,7 +81,7 @@ def pre_add(config: Config, item: LibItem):
 
 def import_album(config: Config, album: Album):
     """Imports album metadata for an album."""
-    log.debug(f"Importing album metadata. [album={album!r}]")
+    log.debug(f"Importing album metadata. [{album=!r}]")
 
     candidates = config.plugin_manager.hook.import_candidates(
         config=config, album=album
@@ -92,4 +92,4 @@ def import_album(config: Config, album: Album):
         candidates=candidates,
     )
 
-    log.debug(f"Imported album metadata. [album={album!r}]")
+    log.debug(f"Imported album metadata. [{album=!r}]")

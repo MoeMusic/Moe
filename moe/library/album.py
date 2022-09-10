@@ -141,12 +141,12 @@ class Album(LibItem, SABase):
                     album = track.album_obj
 
         if not album:
-            raise AlbumError(f"No tracks found in album: {album_path}")
+            raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")
 
         for extra_path in extra_paths:
             Extra(album, extra_path)
 
-        log.debug(f"Album created from directory. [dir={album_path}, album={album!r}]")
+        log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
 
     def fields(self) -> Tuple[str, ...]:
@@ -218,8 +218,7 @@ class Album(LibItem, SABase):
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
         log.debug(
-            "Merging albums. "
-            f"[album_a={self!r}, album_b={other!r}, overwrite={overwrite!r}]"
+            f"Merging albums. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
         )
 
         for field in self.fields():
@@ -249,8 +248,7 @@ class Album(LibItem, SABase):
         self.extras.extend(new_extras)
 
         log.debug(
-            "Albums merged. "
-            f"[album_a={self!r}, album_b={other!r}, overwrite={overwrite!r}]"
+            f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
         )
 
     @typed_hybrid_property

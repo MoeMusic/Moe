@@ -31,8 +31,7 @@ def pre_add(config: Config, item: LibItem):
         return
 
     log.debug(
-        "Duplicate item exists in the library. "
-        f"[new_item={item!r}, dup_item={dup_item!r}]"
+        f"Duplicate item exists in the library. [new_item={item!r}, {dup_item=!r}]"
     )
 
     if isinstance(item, Album):
@@ -126,7 +125,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
             else:
                 moe_add.add_item(config, album)
         else:
-            log.error(f"Path not found. [path={path}]")
+            log.error(f"Path not found. [{path=}]")
             error_count += 1
 
     if error_count:
