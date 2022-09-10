@@ -182,14 +182,14 @@ class Track(LibItem, SABase):
         Raises:
             TrackError: Given ``path`` does not correspond to a track file.
         """
-        log.debug(f"Creating track from path. [path={track_path!r}, album={album}]")
+        log.debug(f"Creating track from path. [path={track_path}, {album=}]")
 
         try:
             audio_file = mediafile.MediaFile(track_path)
         except mediafile.UnreadableFileError as err:
             raise TrackError(
                 "Unable to create track; given path is not a track file. "
-                f"[path={track_path!r}]"
+                f"[path={track_path}]"
             ) from err
 
         if not album:
@@ -292,8 +292,7 @@ class Track(LibItem, SABase):
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
         log.debug(
-            "Merging tracks. "
-            f"[track_a={self!r}, track_b={other!r}, overwrite={overwrite!r}]"
+            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
         )
 
         for field in self.fields():
@@ -304,8 +303,7 @@ class Track(LibItem, SABase):
                     setattr(self, field, other_value)
 
         log.debug(
-            "Tracks merged. "
-            f"[track_a={self!r}, track_b={other!r}, overwrite={overwrite!r}]"
+            f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
         )
 
     def __eq__(self, other) -> bool:

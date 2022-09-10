@@ -205,7 +205,7 @@ def _copy_album(config: Config, album: Album):
     """Copies an album to a destination as determined by the user configuration."""
     dest = fmt_item_path(config, album)
 
-    log.debug(f"Copying album. [dest={dest}, album={album!r}]")
+    log.debug(f"Copying album. [{dest=}, {album=!r}]")
 
     if album.path != dest:
         dest.mkdir(parents=True, exist_ok=True)
@@ -217,13 +217,13 @@ def _copy_album(config: Config, album: Album):
     for extra in album.extras:
         _copy_file_item(config, extra)
 
-    log.info(f"Album copied. [dest={dest}, album={album!r}]")
+    log.info(f"Album copied. [{dest=}, {album=!r}]")
 
 
 def _copy_file_item(config: Config, item: Union[Extra, Track]):
     """Copies an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(config, item)
-    log.debug(f"Copying item. [dest={dest}, item={item!r}]")
+    log.debug(f"Copying item. [{dest=}, {item=!r}]")
 
     if dest == item.path:
         return
@@ -233,7 +233,7 @@ def _copy_file_item(config: Config, item: Union[Extra, Track]):
 
     item.path = dest
 
-    log.info(f"Copied item. [dest={dest}, item={item!r}]")
+    log.info(f"Copied item. [{dest=}, {item=!r}]")
 
 
 ########################################################################################
@@ -260,7 +260,7 @@ def _move_album(config: Config, album: Album):
     dest = fmt_item_path(config, album)
     old_album_dir = album.path
 
-    log.debug(f"Moving album. [dest={dest}, album={album!r}]")
+    log.debug(f"Moving album. [{dest=}, {album=!r}]")
 
     if album.path != dest:
         dest.mkdir(parents=True, exist_ok=True)
@@ -282,7 +282,7 @@ def _move_album(config: Config, album: Album):
         with suppress(OSError):
             old_parent.rmdir()
 
-    log.info(f"Moved album. [dest={dest}, album={album!r}]")
+    log.info(f"Moved album. [{dest=}, {album=!r}]")
 
 
 def _move_file_item(config: Config, item: Union[Extra, Track]):
@@ -291,11 +291,11 @@ def _move_file_item(config: Config, item: Union[Extra, Track]):
     if dest == item.path:
         return
 
-    log.debug(f"Moving item. [dest={dest}, item={item!r}]")
+    log.debug(f"Moving item. [{dest=}, {item=!r}]")
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     item.path.replace(dest)
 
     item.path = dest
 
-    log.info(f"Moved item. [dest={dest}, item={item!r}]")
+    log.info(f"Moved item. [{dest=}, {item=!r}]")
