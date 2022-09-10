@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
+from moe.query import QueryError
 
 
 @pytest.fixture
@@ -90,6 +91,16 @@ class TestCommand:
 
         assert error.value.code != 0
         mock_rm.assert_not_called()
+
+    def test_bad_query(self, mock_query, tmp_rm_config):
+        """Raise SystemExit if given a bad query."""
+        cli_args = ["remove", "*"]
+        mock_query.side_effect = QueryError
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_rm_config)
+
+        assert error.value.code != 0
 
 
 class TestPluginRegistration:

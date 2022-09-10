@@ -8,6 +8,7 @@ import pytest
 
 import moe.cli
 from moe.config import Config
+from moe.query import QueryError
 
 
 @pytest.fixture
@@ -75,10 +76,20 @@ class TestCommand:
 
         assert capsys.readouterr().out
 
-    def test_no_items(self, capsys, mock_query, tmp_info_config):
+    def test_no_items(self, mock_query, tmp_info_config):
         """If no item infos are printed, we should return a non-zero exit code."""
         cli_args = ["info", "*"]
         mock_query.return_value = []
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_info_config)
+
+        assert error.value.code != 0
+
+    def test_bad_query(self, mock_query, tmp_info_config):
+        """Raise SystemExit if given a bad query."""
+        cli_args = ["info", "*"]
+        mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
             moe.cli.main(cli_args, tmp_info_config)

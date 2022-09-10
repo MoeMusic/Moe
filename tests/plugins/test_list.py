@@ -8,6 +8,7 @@ import pytest
 
 import moe.cli
 from moe.config import Config
+from moe.query import QueryError
 
 
 @pytest.fixture
@@ -92,6 +93,16 @@ class TestParseArgs:
 
         mock_query.assert_called_once_with("*", query_type="track")
         assert capsys.readouterr().out.strip("\n") == str(mock_track.path)
+
+    def test_bad_query(self, mock_query, tmp_list_config):
+        """Raise SystemExit if given a bad query."""
+        cli_args = ["list", "*"]
+        mock_query.side_effect = QueryError
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_list_config)
+
+        assert error.value.code != 0
 
 
 class TestPluginRegistration:

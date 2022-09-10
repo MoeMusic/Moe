@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
+from moe.query import QueryError
 
 
 @pytest.fixture
@@ -38,10 +39,13 @@ def tmp_move_config(tmp_config):
 class TestCommand:
     """Test the `move` command."""
 
-    def test_dry_run(self, mock_album, mock_query, mock_move, tmp_move_config):
+    def test_dry_run(
+        self, tmp_path, album_factory, mock_query, mock_move, tmp_move_config
+    ):
         """If `dry-run` is specified, don't actually move the items."""
+        album = album_factory(path=tmp_path)
         cli_args = ["move", "--dry-run"]
-        mock_query.return_value = [mock_album]
+        mock_query.return_value = [album]
 
         moe.cli.main(cli_args, tmp_move_config)
 
@@ -61,8 +65,18 @@ class TestCommand:
 
     def test_no_items(self, capsys, mock_query, tmp_move_config):
         """If no items found to move, exit with non-zero code."""
-        cli_args = ["move", "*"]
+        cli_args = ["move"]
         mock_query.return_value = []
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_move_config)
+
+        assert error.value.code != 0
+
+    def test_bad_query(self, mock_query, tmp_move_config):
+        """Raise SystemExit if given a bad query."""
+        cli_args = ["move"]
+        mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
             moe.cli.main(cli_args, tmp_move_config)
