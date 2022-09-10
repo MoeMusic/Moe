@@ -16,7 +16,7 @@ See Also:
 
 import datetime
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 import dynaconf
 import musicbrainzngs
@@ -34,9 +34,14 @@ __all__ = [
     "get_album_by_id",
     "get_matching_album",
     "rm_releases_from_collection",
+    "set_collection",
 ]
 
 log = logging.getLogger("moe.mb")
+
+MAX_SEARCH_LIMIT = 100
+"""Max number of entries that can be returned from a search to musicbrainz. This limit
+is enforced by their api."""
 
 
 class MBAuthError(Exception):
@@ -117,7 +122,7 @@ def post_remove(config: Config, item: LibItem):
 
     if isinstance(item, Album) and item.mb_album_id:
         try:
-            rm_releases_from_collection(config, [item.mb_album_id])
+            rm_releases_from_collection(config, {item.mb_album_id})
         except MBAuthError as err:
             log.error(err)
 
@@ -128,10 +133,10 @@ def process_new_items(config: Config, items: List[LibItem]):
     if not config.settings.musicbrainz.collection.auto_add:
         return
 
-    releases = []
+    releases = set()
     for item in items:
         if isinstance(item, Album) and item.mb_album_id:
-            releases.append(item.mb_album_id)
+            releases.add(item.mb_album_id)
 
     if releases:
         try:
@@ -141,7 +146,7 @@ def process_new_items(config: Config, items: List[LibItem]):
 
 
 def add_releases_to_collection(
-    config: Config, releases: List[str], collection: Optional[str] = None
+    config: Config, releases: Set[str], collection: Optional[str] = None
 ) -> None:
     """Adds releases to a musicbrainz collection.
 
@@ -176,7 +181,7 @@ def add_releases_to_collection(
 
 
 def rm_releases_from_collection(
-    config: Config, releases: List[str], collection: Optional[str] = None
+    config: Config, releases: Set[str], collection: Optional[str] = None
 ) -> None:
     """Removes releases from a musicbrainz collection.
 
@@ -233,6 +238,55 @@ def _mb_auth_call(config: Config, api_func: Callable, **kwargs) -> Any:
         return api_func(**kwargs)
     except musicbrainzngs.AuthenticationError as err:
         raise MBAuthError("User authentication with musicbrainz failed.") from err
+
+
+def set_collection(
+    config: Config, releases: Set[str], collection: Optional[str] = None
+) -> None:
+    """Sets a musicbrainz collection with the given releases.
+
+    The releases in the collection will be set to ``releases``, adding any releases not
+    present in the collection, as well as removing any extraneous releases.
+
+    Args:
+        config: Moe config.
+        releases: Musicbrainz releases to set the collection to.
+        collection: Musicbrainz collection ID for the collection to set.
+            If not given, defaults to the ``musicbrainz.collection.collection_id``
+            config option.
+
+    Raises:
+        MBAuthError: Invalid user credentials in the configuration.
+    """
+    collection = collection or config.settings.musicbrainz.collection.collection_id
+
+    log.debug(
+        "Setting musicbrainz collection. "
+        f"[releases={releases!r}, collection={collection!r}]"
+    )
+
+    current_releases = []
+    num_searches = 0
+    limit = MAX_SEARCH_LIMIT
+    while len(current_releases) == limit * num_searches:  # hitting the search limit
+        result = _mb_auth_call(
+            config,
+            musicbrainzngs.get_releases_in_collection,
+            collection=collection,
+            limit=limit,
+            offset=limit * num_searches,
+        )
+        for release in result["collection"]["release-list"]:
+            current_releases.append(release["id"])
+
+        num_searches += 1
+    current_releases = set(current_releases)
+
+    stale_releases = current_releases.difference(releases)
+    rm_releases_from_collection(config, stale_releases, collection)
+
+    new_releases = releases.difference(current_releases)
+    add_releases_to_collection(config, new_releases, collection)
 
 
 def get_matching_album(album: Album) -> Album:
