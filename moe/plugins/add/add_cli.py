@@ -1,4 +1,4 @@
-"""Adds the ``add`` command and various user prompts to the cli."""
+"""Adds the ``add`` command provides duplicate resolution when adding an item."""
 
 import argparse
 import logging

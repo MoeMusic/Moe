@@ -2,6 +2,13 @@
 Core
 ####
 
+Util
+====
+
+.. automodule:: moe.util.core
+   :members:
+   :show-inheritance:
+
 
 Config
 ======
