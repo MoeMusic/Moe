@@ -239,10 +239,7 @@ def _create_extra(
     if not album:
         album = _create_album(0, 0, exists)
 
-    path = path or album.path / f"{random.randint(1,1000)}"
-
-    if not path:
-        path = album.path / f"{random.randint(1, 10000)}.txt"
+    path = path or album.path / f"{random.randint(1,1000)}.txt"
 
     extra = Extra(album=album, path=path)
 
@@ -285,6 +282,7 @@ def _create_album(
         num_tracks: Number of tracks to add to the album.
         num_extras: Number of extras to add to the album.
         exists: Whether the album should exist on the filesystem.
+        **kwargs: Any other fields to assign to the album.
 
     Returns:
         Created album.
@@ -296,7 +294,7 @@ def _create_album(
     date = kwargs.pop("date", datetime.date(year, 1, 1))
     path = kwargs.pop("path", LIBRARY_PATH / f"{artist}" / f"{title} ({year})")
 
-    album = Album(path=path, artist=artist, title=title, date=date)
+    album = Album(path=path, artist=artist, title=title, date=date, **kwargs)
 
     if exists:
         album.path.mkdir(exist_ok=True, parents=True)
