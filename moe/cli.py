@@ -9,7 +9,7 @@ For general shared CLI functionality, see the ``moe.util.cli`` package.
 import argparse
 import logging
 import sys
-from typing import List, Optional
+from typing import Optional
 
 import pkg_resources
 import pluggy
@@ -101,7 +101,7 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     plugin_manager.add_hookspecs(Hooks)
 
 
-def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
+def main(args: list[str] = sys.argv[1:], config: Optional[Config] = None):
     """Runs the CLI."""
     log.debug(f"Commandline arguments received. [{args=!r}]")
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     main()
 
 
-def _parse_args(args: List[str], config: Config):
+def _parse_args(args: list[str], config: Config):
     """Parses the commandline arguments.
 
     Args:

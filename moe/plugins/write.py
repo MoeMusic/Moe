@@ -1,7 +1,6 @@
 """Writes tags to track files."""
 
 import logging
-from typing import List
 
 import mediafile
 
@@ -16,7 +15,7 @@ log = logging.getLogger("moe.write")
 
 
 @moe.hookimpl
-def process_new_items(config: Config, items: List[LibItem]):
+def process_new_items(config: Config, items: list[LibItem]):
     """Writes tags to any altered or new tracks in the library."""
     for item in items:
         if isinstance(item, Track):

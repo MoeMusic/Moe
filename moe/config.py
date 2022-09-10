@@ -20,7 +20,7 @@ import sys
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, NamedTuple, Optional, Union
 
 import dynaconf
 import pluggy
@@ -98,7 +98,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_new_items(config: "Config", items: List[LibItem]):
+    def edit_new_items(config: "Config", items: list[LibItem]):
         """Edit any new or changed items prior to them being added to the library.
 
         Args:
@@ -114,7 +114,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_new_items(config: "Config", items: List[LibItem]):
+    def process_new_items(config: "Config", items: list[LibItem]):
         """Process any new or changed items after they have been added to the library.
 
         Args:
@@ -191,7 +191,7 @@ class ExtraPlugin(NamedTuple):
         name: Name to register the plugin under.
     """
 
-    plugin: Union[Type, ModuleType]
+    plugin: Union[type, ModuleType]
     name: str
 
 
@@ -219,7 +219,7 @@ class Config:
         self,
         config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008
         settings_filename: str = "config.toml",
-        extra_plugins: Optional[List[ExtraPlugin]] = None,
+        extra_plugins: Optional[list[ExtraPlugin]] = None,
         engine: Optional[sqlalchemy.engine.base.Engine] = None,
         init_db=True,
     ):

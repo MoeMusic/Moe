@@ -1,7 +1,6 @@
 """Import prompt."""
 
 import logging
-from typing import List
 
 import pluggy
 
@@ -26,7 +25,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_import_prompt_choice(prompt_choices: List[PromptChoice]):
+    def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
         """Add a user input choice to the import prompt.
 
         ``func`` should return the album to be added to the library (or ``None`` if no
@@ -76,7 +75,7 @@ def process_candidates(config: Config, old_album: Album, candidates):
 
 
 @moe.hookimpl
-def add_import_prompt_choice(prompt_choices: List[PromptChoice]):
+def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
         PromptChoice(title="Apply changes", shortcut_key="a", func=_apply_changes)
@@ -106,7 +105,7 @@ def import_prompt(
 
     print(fmt_album_changes(old_album, new_album))
 
-    prompt_choices: List[PromptChoice] = []
+    prompt_choices: list[PromptChoice] = []
     config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
     prompt_choice = choice_prompt(prompt_choices)

@@ -16,7 +16,7 @@ See Also:
 
 import datetime
 import logging
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Optional
 
 import dynaconf
 import musicbrainzngs
@@ -129,7 +129,7 @@ def post_remove(config: Config, item: LibItem):
 
 
 @moe.hookimpl
-def process_new_items(config: Config, items: List[LibItem]):
+def process_new_items(config: Config, items: list[LibItem]):
     """Updates a user collection in musicbrainz with new releases."""
     if not config.settings.musicbrainz.collection.auto_add:
         return
@@ -147,7 +147,7 @@ def process_new_items(config: Config, items: List[LibItem]):
 
 
 def add_releases_to_collection(
-    config: Config, releases: Set[str], collection: Optional[str] = None
+    config: Config, releases: set[str], collection: Optional[str] = None
 ) -> None:
     """Adds releases to a musicbrainz collection.
 
@@ -180,7 +180,7 @@ def add_releases_to_collection(
 
 
 def rm_releases_from_collection(
-    config: Config, releases: Set[str], collection: Optional[str] = None
+    config: Config, releases: set[str], collection: Optional[str] = None
 ) -> None:
     """Removes releases from a musicbrainz collection.
 
@@ -240,7 +240,7 @@ def _mb_auth_call(config: Config, api_func: Callable, **kwargs) -> Any:
 
 
 def set_collection(
-    config: Config, releases: Set[str], collection: Optional[str] = None
+    config: Config, releases: set[str], collection: Optional[str] = None
 ) -> None:
     """Sets a musicbrainz collection with the given releases.
 
@@ -300,7 +300,7 @@ def get_matching_album(album: Album) -> Album:
 
     log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")
 
-    search_criteria: Dict = {}
+    search_criteria: dict = {}
     search_criteria["artist"] = album.artist
     search_criteria["release"] = album.title
     search_criteria["date"] = album.date.isoformat()
@@ -336,7 +336,7 @@ def get_album_by_id(release_id: str) -> Album:
     return _create_album(release["release"])
 
 
-def _create_album(release: Dict) -> Album:
+def _create_album(release: dict) -> Album:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
@@ -375,7 +375,7 @@ def _create_album(release: Dict) -> Album:
     return album
 
 
-def _flatten_artist_credit(artist_credit: List[Dict]) -> str:
+def _flatten_artist_credit(artist_credit: list[dict]) -> str:
     """Given a musicbrainz formatted artist-credit, return the full artist name."""
     full_artist = ""
     for artist in artist_credit:
