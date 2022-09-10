@@ -103,8 +103,8 @@ def import_candidates(config: Config, album: Album) -> Album:
         album: Original album used to search musicbrainz for a matching album.
 
     Returns:
-        A new album containing all the corrected metadata from musicbrainz. This album
-        is not complete, as it will not contain any references to the filesystem.
+        A new album containing all the corrected metadata from musicbrainz. Note, this
+        album is not complete, as it will not contain any references to the filesystem.
     """
     return get_matching_album(album)
 

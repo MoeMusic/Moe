@@ -59,18 +59,7 @@ def post_add(config: Config, item: LibItem):
 # Format paths
 ########################################################################################
 def fmt_item_path(config: Config, item: LibItem) -> Path:
-    """Returns a formatted item path according to the user configuration.
-
-    Args:
-        config: Moe config.
-        item: Library item used to format the directory.
-
-    Returns:
-        Formatted item path under the config ``library_path``.
-
-    Raises:
-        NotImplementedError: Unknown item.
-    """
+    """Returns a formatted item path according to the user configuration."""
     log.debug(f"Formatting item path. [path={item.path}]")
 
     if isinstance(item, Album):
@@ -90,18 +79,7 @@ def fmt_item_path(config: Config, item: LibItem) -> Path:
 
 
 def _fmt_album_path(config: Config, album: Album) -> Path:
-    """Returns a formatted album directory according to the user configuration.
-
-    An album directory should contain, at a minimum, the album artist, title, and year
-    to ensure uniqueness.
-
-    Args:
-        config: Moe config.
-        album: Album used to format the directory.
-
-    Returns:
-        Formatted album directory under the config ``library_path``.
-    """
+    """Returns a formatted album directory according to the user configuration."""
     library_path = Path(config.settings.library_path).expanduser()
     album_path = _eval_path_template(config.settings.move.album_path, album)
 
@@ -117,18 +95,7 @@ def _fmt_extra_path(config: Config, extra: Extra) -> Path:
 
 
 def _fmt_track_path(config: Config, track: Track) -> Path:
-    """Returns a formatted track path according to the user configuration.
-
-    The track path should contain, at a minimum, the track number and
-    disc (if more than one) to ensure uniqueness.
-
-    Args:
-        track: Track used to format the path.
-        config: Moe config.
-
-    Returns:
-        Formatted track path under its album path.
-    """
+    """Returns a formatted track path according to the user configuration."""
     album_path = _fmt_album_path(config, track.album_obj)
     track_path = _eval_path_template(config.settings.move.track_path, track)
 
@@ -145,9 +112,6 @@ def _eval_path_template(template, lib_item) -> str:
 
     Returns:
         Evaluated path.
-
-    Raises:
-        NotImplementedError: You discovered a new library item!
     """
     template_parts = template.split("/")
     sanitized_parts = []
@@ -230,10 +194,6 @@ def copy_item(config: Config, item: LibItem):
 
     Overwrites any existing files. Will create the destination if it does not already
     exist.
-
-    Args:
-        item: Library item to copy.
-        config: Moe config.
     """
     if isinstance(item, Album):
         _copy_album(config, item)
@@ -242,14 +202,7 @@ def copy_item(config: Config, item: LibItem):
 
 
 def _copy_album(config: Config, album: Album):
-    """Copies an album to a destination as determined by the user configuration.
-
-    Copying an album will also copy all of it's tracks and extras.
-
-    Args:
-        album: Album to copy
-        config: Moe config.
-    """
+    """Copies an album to a destination as determined by the user configuration."""
     dest = fmt_item_path(config, album)
 
     log.debug(f"Copying album. [dest={dest}, album={album!r}]")
@@ -291,10 +244,6 @@ def move_item(config: Config, item: LibItem):
 
     Overwrites any existing files. Will create the destination if it does not already
     exist.
-
-    Args:
-        item: Library item to move.
-        config: Moe config.
     """
     if isinstance(item, Album):
         _move_album(config, item)
@@ -305,14 +254,8 @@ def move_item(config: Config, item: LibItem):
 def _move_album(config: Config, album: Album):
     """Moves an album to a given destination.
 
-    - Overwrites any existing files.
-    - Creates the destination if it does not already exist.
-    - Tracks and extras are also moved.
-    - Empty leftover directories will be removed.
-
-    Args:
-        album: Album to move.
-        config: Moe config.
+    Note:
+        Empty leftover directories will be removed.
     """
     dest = fmt_item_path(config, album)
     old_album_dir = album.path

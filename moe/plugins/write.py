@@ -17,13 +17,7 @@ log = logging.getLogger("moe.write")
 
 @moe.hookimpl
 def process_new_items(config: Config, items: List[LibItem]):
-    """Writes tags to any altered or new tracks in the library.
-
-    Args:
-        config: Moe config.
-        items: Any new or changed items that have been committed to the database
-            during the current session.
-    """
+    """Writes tags to any altered or new tracks in the library."""
     for item in items:
         if isinstance(item, Track):
             write_tags(item)
