@@ -1,7 +1,6 @@
 """Core api for importing albums."""
 
 import logging
-from typing import List
 
 import pluggy
 
@@ -42,7 +41,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(config: Config, old_album: Album, candidates: List[Album]):
+    def process_candidates(config: Config, old_album: Album, candidates: list[Album]):
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied

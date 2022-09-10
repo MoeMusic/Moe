@@ -16,7 +16,7 @@ import logging
 import re
 import shlex
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import sqlalchemy as sa
 import sqlalchemy.orm
@@ -28,7 +28,7 @@ from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 
-__all__: List[str] = ["QueryError", "query"]
+__all__: list[str] = ["QueryError", "query"]
 
 log = logging.getLogger("moe.query")
 
@@ -79,7 +79,7 @@ SEPARATOR_GROUP = "separator"
 VALUE_GROUP = "value"
 
 
-def query(query_str: str, query_type: str = "track") -> List[LibItem]:
+def query(query_str: str, query_type: str = "track") -> list[LibItem]:
     """Queries the database for the given query string.
 
     Args:
@@ -104,7 +104,7 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
     return items
 
 
-def _create_query(terms: List[str], query_type: str) -> sqlalchemy.orm.query.Query:
+def _create_query(terms: list[str], query_type: str) -> sqlalchemy.orm.query.Query:
     """Creates a query statement.
 
     Args:
@@ -134,7 +134,7 @@ def _create_query(terms: List[str], query_type: str) -> sqlalchemy.orm.query.Que
     return library_query
 
 
-def _parse_term(term: str) -> Dict[str, str]:
+def _parse_term(term: str) -> dict[str, str]:
     """Parse the given database query term.
 
     A term is a single field:value declaration.
@@ -182,7 +182,7 @@ def _parse_term(term: str) -> Dict[str, str]:
     return match_dict
 
 
-def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
+def _create_expression(term: dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:

@@ -2,7 +2,7 @@
 
 This module is used in various prompts of the CLI.
 """
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 from moe.library.album import Album
 from moe.library.track import Track
@@ -56,7 +56,7 @@ def _fmt_tracklist(old_album: Album, new_album: Album) -> str:
             getattr(match[1], "track_num", 0),
         )
     )  # sort by new track's disc then track number
-    unmatched_tracks: List[Track] = []
+    unmatched_tracks: list[Track] = []
     for old_track, new_track in matches:
         if not new_track:
             unmatched_tracks.append(cast(Track, old_track))

@@ -6,7 +6,6 @@ Note:
 
 import argparse
 import logging
-from typing import List
 
 import moe
 import moe.cli
@@ -14,7 +13,7 @@ from moe.config import Config
 from moe.plugins import remove as moe_rm
 from moe.query import QueryError, query
 
-__all__: List[str] = []
+__all__: list[str] = []
 
 log = logging.getLogger("moe.cli.remove")
 

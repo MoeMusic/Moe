@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import joinedload, relationship
@@ -60,7 +60,7 @@ class Extra(LibItem, SABase):
         """Gets an Extra's filename."""
         return self.path.name
 
-    def fields(self) -> Tuple[str, ...]:
+    def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Extra."""
         return "filename", "path"
 

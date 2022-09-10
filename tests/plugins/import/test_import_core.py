@@ -1,7 +1,6 @@
 """Tests the import core plugin."""
 
 import copy
-from typing import List
 from unittest.mock import patch
 
 import moe
@@ -24,7 +23,7 @@ class ImportPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def process_candidates(config: Config, old_album: Album, candidates: List[Album]):
+    def process_candidates(config: Config, old_album: Album, candidates: list[Album]):
         """Apply the new title onto the old album."""
         old_album.title = candidates[0].title
 

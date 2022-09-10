@@ -3,7 +3,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Union, cast
+from typing import Union, cast
 
 import moe
 import moe.cli
@@ -18,7 +18,7 @@ from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
 
 log = logging.getLogger("moe.cli.add")
 
-__all__: List[str] = []
+__all__: list[str] = []
 
 
 @moe.hookimpl(hookwrapper=True)

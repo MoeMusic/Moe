@@ -7,7 +7,6 @@ The ``musicbrainz`` cli plugin provides the following functionality:
 
 
 import logging
-from typing import List
 
 import questionary
 
@@ -23,7 +22,7 @@ log = logging.getLogger("moe.cli.mb")
 
 
 @moe.hookimpl
-def add_import_prompt_choice(prompt_choices: List[PromptChoice]):
+def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
         PromptChoice(title="Enter Musicbrainz ID", shortcut_key="m", func=_enter_id)
