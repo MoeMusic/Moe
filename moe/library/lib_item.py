@@ -1,7 +1,6 @@
 """Shared functionality between library albums, extras, and tracks."""
 
 from pathlib import Path
-from typing import Tuple
 
 import sqlalchemy as sa
 
@@ -16,7 +15,7 @@ class LibItem:
         """A library item's filesystem path."""
         raise NotImplementedError
 
-    def fields(self) -> Tuple[str, ...]:
+    def fields(self) -> tuple[str, ...]:
         """Returns the public attributes of an item."""
         raise NotImplementedError
 

@@ -5,7 +5,7 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional
+from typing import Callable, Iterator, Optional
 
 import pytest
 import sqlalchemy as sa
@@ -52,7 +52,7 @@ def _tmp_library_path(tmp_path_factory):
 @pytest.fixture
 def tmp_config(
     tmp_path_factory,
-) -> Iterator[Callable[[str, bool, bool, List[ExtraPlugin]], Config]]:
+) -> Iterator[Callable[[str, bool, bool, list[ExtraPlugin]], Config]]:
     """Instantiates a temporary configuration.
 
     This fixture must be declared, like a factory. If you want to use specific config
@@ -83,7 +83,7 @@ def tmp_config(
         settings: str = "",
         init_db: bool = False,
         tmp_db: bool = False,
-        extra_plugins: Optional[List[ExtraPlugin]] = None,
+        extra_plugins: Optional[list[ExtraPlugin]] = None,
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if "library_path" not in settings:

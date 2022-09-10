@@ -3,7 +3,7 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Optional, TypeVar, cast
 
 import sqlalchemy as sa
 from sqlalchemy import Column, Date, Integer, String, and_, or_
@@ -46,11 +46,11 @@ class Album(LibItem, SABase):
         artist (str): AKA albumartist.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
-        extras (List[Extra]): Extra non-track files associated with the album.
+        extras (list[Extra]): Extra non-track files associated with the album.
         mb_album_id (str): Musicbrainz album aka release id.
         path (Path): Filesystem path of the album directory.
         title (str)
-        tracks (List[Track]): Album's corresponding tracks.
+        tracks (list[Track]): Album's corresponding tracks.
         year (int): Album release year.
     """
 
@@ -64,13 +64,13 @@ class Album(LibItem, SABase):
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
 
-    tracks: "List[Track]" = relationship(
+    tracks: list["Track"] = relationship(
         "Track",
         back_populates="album_obj",
         cascade="all, delete-orphan",
         collection_class=list,
     )
-    extras: "List[Extra]" = relationship(
+    extras: list["Extra"] = relationship(
         "Extra",
         back_populates="album_obj",
         cascade="all, delete-orphan",
@@ -109,7 +109,7 @@ class Album(LibItem, SABase):
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
-    def from_dir(cls: Type[A], album_path: Path) -> A:
+    def from_dir(cls: type[A], album_path: Path) -> A:
         """Creates an album from a directory.
 
         Args:
@@ -149,7 +149,7 @@ class Album(LibItem, SABase):
         log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
 
-    def fields(self) -> Tuple[str, ...]:
+    def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Album."""
         return (
             "artist",
@@ -228,7 +228,7 @@ class Album(LibItem, SABase):
                 if other_value and (overwrite or (not overwrite and not self_value)):
                     setattr(self, field, other_value)
 
-        new_tracks: List["Track"] = []
+        new_tracks: list[Track] = []
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
@@ -237,7 +237,7 @@ class Album(LibItem, SABase):
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
 
-        new_extras: List["Extra"] = []
+        new_extras: list[Extra] = []
         for other_extra in other.extras:
             conflict_extra = self.get_extra(other_extra.filename)
             if conflict_extra and overwrite:

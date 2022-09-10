@@ -3,7 +3,7 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple, Type, TypeVar, cast
+from typing import Optional, TypeVar, cast
 
 import mediafile
 import sqlalchemy.orm as sa_orm
@@ -62,7 +62,7 @@ class Track(LibItem, SABase):
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
         genre (str): String of all genres concatenated with ';'.
-        genres (List[str]): List of all genres.
+        genres (list[str]): List of all genres.
         mb_album_id (str): Musicbrainz album aka release ID.
         mb_track_id (str): Musicbrainz track ID.
         path (Path): Filesystem path of the track file.
@@ -94,13 +94,13 @@ class Track(LibItem, SABase):
     mb_album_id: str = association_proxy("album_obj", "mb_album_id")
     year: int = association_proxy("album_obj", "year")
 
-    _genres: List[_Genre] = relationship(
+    _genres: list[_Genre] = relationship(
         "_Genre",
         secondary=track_genre,
         collection_class=list,
         cascade="save-update, merge, expunge",
     )
-    genres: List[str] = association_proxy("_genres", "name")
+    genres: list[str] = association_proxy("_genres", "name")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -145,14 +145,14 @@ class Track(LibItem, SABase):
             return 1
 
         # The track is in a subdirectory of the album - most likely disc directories.
-        disc_dirs: List[Path] = []
+        disc_dirs: list[Path] = []
         for path in self.album_obj.path.iterdir():
             if not path.is_dir():
                 continue
 
             contains_tracks = False
             for album_track in self.album_obj.tracks:
-                if path in album_track.path.parents:
+                if album_track.path.is_relative_to(path):
                     contains_tracks = True
 
             if contains_tracks:
@@ -160,13 +160,13 @@ class Track(LibItem, SABase):
 
         # Guess the disc by the order of the disc directory it appears in.
         for disc_num, disc_dir in enumerate(sorted(disc_dirs), start=1):
-            if disc_dir in self.path.parents:
+            if self.path.is_relative_to(disc_dir):
                 return disc_num
 
         return 1
 
     @classmethod
-    def from_file(cls: Type[T], track_path: Path, album: Optional[Album] = None) -> T:
+    def from_file(cls: type[T], track_path: Path, album: Optional[Album] = None) -> T:
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
@@ -229,7 +229,7 @@ class Track(LibItem, SABase):
         """
         self.genres = [genre.strip() for genre in genre_str.split(";")]
 
-    def fields(self) -> Tuple[str, ...]:
+    def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of a Track."""
         return (
             "album",

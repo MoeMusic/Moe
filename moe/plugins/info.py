@@ -9,7 +9,7 @@ Note:
 import argparse
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import moe
 import moe.cli
@@ -20,7 +20,7 @@ from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.query import QueryError, query
 
-__all__: List[str] = []
+__all__: list[str] = []
 
 log = logging.getLogger("moe.cli.info")
 
@@ -68,7 +68,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     print(_fmt_infos(items), end="")
 
 
-def _fmt_infos(items: List[LibItem]):
+def _fmt_infos(items: list[LibItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
