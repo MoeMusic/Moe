@@ -92,10 +92,7 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
     Raises:
         QueryError: Invalid query.
     """
-    log.debug(
-        "Querying library for items. "
-        f"[query_str={query_str!r}, query_type={query_type!r}]"
-    )
+    log.debug(f"Querying library for items. [{query_str=!r}, {query_type=!r}]")
 
     terms = shlex.split(query_str)
     if not terms:
@@ -103,7 +100,7 @@ def query(query_str: str, query_type: str = "track") -> List[LibItem]:
 
     items = _create_query(terms, query_type).all()
 
-    log.debug(f"Queried library for items. [items={items!r}]")
+    log.debug(f"Queried library for items. [{items=!r}]")
     return items
 
 
@@ -129,7 +126,7 @@ def _create_query(terms: List[str], query_type: str) -> sqlalchemy.orm.query.Que
     elif query_type == "extra":
         library_query = session.query(Extra).join(Album, Track, isouter=True)
     else:
-        raise QueryError(f"Invalid query type: {query_type}")
+        raise QueryError(f"Invalid query type. [{query_type=!r}]")
 
     for term in terms:
         library_query = library_query.filter(_create_expression(_parse_term(term)))
@@ -177,7 +174,7 @@ def _parse_term(term: str) -> Dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        raise QueryError(f"Invalid query term: {term}\n{HELP_STR}")
+        raise QueryError(f"Invalid query term. [{term=!r}]\n{HELP_STR}")
 
     match_dict = match.groupdict()
     match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
@@ -224,11 +221,13 @@ def _create_expression(term: Dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
         try:
             re.compile(value)
         except re.error as re_err:
-            raise QueryError(f"Invalid regular expression: {value}") from re_err
+            raise QueryError(
+                f"Invalid regular expression. [regex={value!r}]"
+            ) from re_err
 
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
-    raise QueryError(f"Invalid query type: {separator}")
+    raise QueryError(f"Invalid query type. [type={separator}]")
 
 
 def _get_item_attr(query_field: str) -> Any:
@@ -255,6 +254,8 @@ def _get_item_attr(query_field: str) -> Any:
         try:
             attr = getattr(Track, query_field)
         except AttributeError as track_err:
-            raise QueryError(f"Invalid Track query_field: {query_field}") from track_err
+            raise QueryError(
+                f"Invalid Track query_field. {query_field=!r}"
+            ) from track_err
 
     return attr

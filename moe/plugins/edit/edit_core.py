@@ -25,18 +25,16 @@ def edit_item(item: LibItem, field: str, value: str):
     Raises:
         EditError: ``field`` is not a valid attribute or is not editable.
     """
-    log.debug(f"Editing item. [item={item!r}, field={field!r}, value={value!r}]")
+    log.debug(f"Editing item. [{item=!r}, {field=!r}, {value=!r}]")
 
     try:
         attr = getattr(item, field)
     except AttributeError as a_err:
-        raise EditError(
-            f"'{field}' is not a valid {type(item).__name__.lower()} field."
-        ) from a_err
+        raise EditError(f"Invalid field given. [{field=!r}]") from a_err
 
     non_editable_fields = ["path"]
     if field in non_editable_fields:
-        raise EditError(f"'{field}' is not an editable field.")
+        raise EditError(f"Non-editable field given. [{field=!r}]")
 
     if isinstance(attr, str):
         setattr(item, field, value)
@@ -48,6 +46,6 @@ def edit_item(item: LibItem, field: str, value: str):
         except ValueError as v_err:
             raise EditError("Date must be in format YYYY-MM-DD") from v_err
     else:
-        raise EditError(f"Editing field of type '{type(attr)}' not supported.")
+        raise EditError(f"Editing field not supported. [{field=!r}]")
 
-    log.info(f"Item edited. [item={item!r}, field={field!r}, value={value!r}]")
+    log.info(f"Item edited. [{item=!r}, {field=!r}, {value=!r}]")

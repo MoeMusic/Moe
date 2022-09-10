@@ -103,7 +103,7 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 def main(args: List[str] = sys.argv[1:], config: Optional[Config] = None):
     """Runs the CLI."""
-    log.debug(f"Commandline arguments received. [args={args!r}]")
+    log.debug(f"Commandline arguments received. [{args=!r}]")
 
     if not config:
         try:

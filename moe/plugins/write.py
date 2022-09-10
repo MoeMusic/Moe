@@ -25,7 +25,7 @@ def process_new_items(config: Config, items: List[LibItem]):
 
 def write_tags(track: Track):
     """Write tags to a track's file."""
-    log.debug(f"Writing tags to track. [track={track!r}]")
+    log.debug(f"Writing tags to track. [{track=!r}]")
 
     audio_file = mediafile.MediaFile(track.path)
 
@@ -43,4 +43,4 @@ def write_tags(track: Track):
 
     audio_file.save()
 
-    log.info(f"Wrote tags to track. [track={track!r}]")
+    log.info(f"Wrote tags to track. [{track=!r}]")

@@ -41,9 +41,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         ``(album_a_track, album_b_track)``.
     """
     log.debug(
-        "Finding matching tracks. "
-        f"[album_a={album_a!r}, album_b={album_b!r}, "
-        f"match_threshold={match_threshold!r}]"
+        f"Finding matching tracks. [{album_a=!r}, {album_b=!r}, {match_threshold=!r}]"
     )
 
     # get all match values for every pair of tracks between both albums
@@ -117,10 +115,7 @@ def get_match_value(
         The match value is a weighted sum according to the defined weights for each
         applicable field.
     """
-    log.debug(
-        "Determining match value between tracks. "
-        "[track_a={track_a!r}, track_b={track_b!r}]"
-    )
+    log.debug(f"Determining match value between tracks. [{track_a=!r}, {track_b=!r}]")
 
     match_values = []
     for field, weight in field_weights.items():
@@ -139,5 +134,5 @@ def get_match_value(
 
     match_value = sum(match_values) / sum(field_weights.values())
 
-    log.debug("Determing match value between tracks. [match_value={match_value!r}]")
+    log.debug("Determing match value between tracks. [{match_value=!r}]")
     return match_value

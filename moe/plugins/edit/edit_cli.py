@@ -64,7 +64,7 @@ def _parse_args(config: Config, args: argparse.Namespace):  # noqa: C901
         try:
             field, value = term.split("=")
         except ValueError:
-            log.error(f"Invalid FIELD=VALUE format: {term}")
+            log.error(f"Invalid FIELD=VALUE format. [{term=!r}]")
             error_count += 1
             continue
 

@@ -32,11 +32,11 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
 
 def remove_item(config: Config, item: LibItem):
     """Removes an item from the library."""
-    log.debug(f"Removing item from the library. [item={item!r}]")
+    log.debug(f"Removing item from the library. [{item=!r}]")
 
     session = MoeSession()
     session.delete(item)
 
-    log.info(f"Removed item from the library. [item={item!r}]")
+    log.info(f"Removed item from the library. [{item=!r}]")
 
     config.plugin_manager.hook.post_remove(config=config, item=item)
