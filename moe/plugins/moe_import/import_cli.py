@@ -134,11 +134,8 @@ def _apply_changes(
             and old_album.get_track(new_track.track_num, new_track.disc) != old_track
         ):
             # matchup track and disc numbers of matches to ensure they merge properly
-            print(f"old track_num: {old_track.track_num}")
-            print(f"new track_title: {new_track.title}")
             old_track.track_num = new_track.track_num
             old_track.disc = new_track.disc
-            print(f"new track_num: {new_track.track_num}")
 
     old_album.merge(new_album, overwrite=True)
 
