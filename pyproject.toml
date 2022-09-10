@@ -86,8 +86,6 @@ markers = [
 ]
 
 [tool.pyright]
-venvPath = "."
-venv = ".venv"
 exclude = [
     "alembic",
 ]
