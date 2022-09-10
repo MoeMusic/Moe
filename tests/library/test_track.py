@@ -17,7 +17,7 @@ class TestInit:
         """Creating a Track should also create the corresponding Album."""
         assert mock_track.album_obj
 
-    def test_guess_disc(self, real_album):
+    def test_guess_disc_multi_disc(self, real_album):
         """Guess the disc if not given."""
         track1 = real_album.tracks[0]
         track2 = real_album.tracks[1]
@@ -44,6 +44,19 @@ class TestInit:
 
         assert new_track1.disc == 1
         assert new_track2.disc == 2
+
+    def test_guess_disc_single_disc(self, real_track):
+        """Guess the disc if there are no disc sub directories."""
+        assert real_track.path.parent == real_track.album_obj.path
+
+        new_track = Track(
+            real_track.album_obj,
+            real_track.path,
+            real_track.title,
+            real_track.track_num,
+        )
+
+        assert new_track.disc == 1
 
 
 class TestAlbumSet:

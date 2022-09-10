@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-from typing import Tuple
 
 import moe
 import moe.cli
@@ -63,9 +62,9 @@ def _parse_args(config: Config, args: argparse.Namespace):  # noqa: C901
     error_count = 0
     for term in args.fv_terms:
         try:
-            field, value = _parse_term(term)
-        except ValueError as err:
-            log.error(err)
+            field, value = term.split("=")
+        except ValueError:
+            log.error(f"Invalid FIELD=VALUE format: {term}")
             error_count += 1
             continue
 
@@ -78,21 +77,3 @@ def _parse_args(config: Config, args: argparse.Namespace):  # noqa: C901
 
     if error_count:
         raise SystemExit(1)
-
-
-def _parse_term(term: str) -> Tuple[str, str]:
-    """Parses a single `term` from the passed args.
-
-    Args:
-        term: FIELD=VALUE format used to set the item's `field` to `value`.
-
-    Returns:
-        [field, value] parsed from the term.
-
-    Raises:
-        ValueError: Invalid term format.
-    """
-    try:
-        return tuple(term.split("="))
-    except ValueError as err:
-        raise ValueError(f"Invalid FIELD=VALUE format: {term}") from err

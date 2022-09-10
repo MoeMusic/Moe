@@ -9,6 +9,7 @@ import pytest
 import moe.cli
 from moe.config import Config
 from moe.plugins.edit import EditError
+from moe.query import QueryError
 
 
 @pytest.fixture
@@ -121,7 +122,7 @@ class TestCommand:
 
     def test_edit_error(self, mock_track, mock_query, mock_edit, tmp_edit_config):
         """Raise SystemExit if there is an error editing the item."""
-        cli_args = ["edit", "*"]
+        cli_args = ["edit", "*", "track_num=3"]
         mock_query.return_value = [mock_track]
         mock_edit.side_effect = EditError
 
@@ -134,6 +135,16 @@ class TestCommand:
         """If no items found to edit, exit with non-zero code."""
         cli_args = ["edit", "*", "track_num=3"]
         mock_query.return_value = []
+
+        with pytest.raises(SystemExit) as error:
+            moe.cli.main(cli_args, tmp_edit_config)
+
+        assert error.value.code != 0
+
+    def test_bad_query(self, mock_query, tmp_edit_config):
+        """Raise SystemExit if given a bad query."""
+        cli_args = ["edit", "*", "track_num=3"]
+        mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
             moe.cli.main(cli_args, tmp_edit_config)
