@@ -16,7 +16,7 @@ Plugins
 
 Add
 ---
-.. autoclass:: moe.plugins.add.add_core.add.Hooks
+.. autoclass:: moe.plugins.add.add_core.Hooks
    :members:
 
 Import
