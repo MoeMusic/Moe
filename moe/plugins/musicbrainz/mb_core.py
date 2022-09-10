@@ -35,6 +35,7 @@ __all__ = [
     "get_matching_album",
     "rm_releases_from_collection",
     "set_collection",
+    "update_album",
 ]
 
 log = logging.getLogger("moe.mb")
@@ -389,3 +390,22 @@ def _flatten_artist_credit(artist_credit: List[Dict]) -> str:
             full_artist += artist["artist"]["name"]
 
     return full_artist
+
+
+def update_album(album: Album):
+    """Updates an album with metadata from musicbrainz.
+
+    Args:
+        album: Album to update.
+
+    Raises:
+        ValueError: ``album`` has no ``mb_album_id``.
+    """
+    log.debug(f"Updating album with musicbrainz metadata. [album={album!r}]")
+
+    if not album.mb_album_id:
+        raise ValueError(
+            "Unable to update album, no musicbrainz id found. [album={album!r}]"
+        )
+
+    album.merge(get_album_by_id(album.mb_album_id), overwrite=True)

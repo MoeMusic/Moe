@@ -636,6 +636,31 @@ class TestSetCollection:
             moe_mb.set_collection(mb_config, releases, collection)
 
 
+class TestUpdateAlbum:
+    """Test ``update_album``."""
+
+    def test_update_album(self, album_factory):
+        """We can update a given album."""
+        old_album = album_factory(title="old", mb_album_id="1")
+        new_album = album_factory(title="new")
+
+        with patch.object(
+            moe_mb.mb_core, "get_album_by_id", autospec=True, return_value=new_album
+        ) as mock_album_by_id:
+            moe_mb.update_album(old_album)
+
+        assert old_album.title == new_album.title
+        mock_album_by_id.assert_called_once_with(old_album.mb_album_id)
+
+    def test_no_id(self, mock_album):
+        """Raise ValueError if not mb album id present."""
+        mock_album.mb_album_id = None
+
+        with patch.object(moe_mb.mb_core, "get_album_by_id", autospec=True):
+            with pytest.raises(ValueError, match=r"album="):
+                moe_mb.update_album(mock_album)
+
+
 class TestPluginRegistration:
     """Test the `plugin_registration` hook implementation.
 
