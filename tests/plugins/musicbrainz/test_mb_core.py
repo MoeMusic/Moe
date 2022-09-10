@@ -8,6 +8,7 @@ import pytest
 import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe.config import ConfigValidationError
 from moe.plugins import musicbrainz as moe_mb
+from moe.plugins.musicbrainz.mb_core import MBAuthError
 
 
 @pytest.fixture
@@ -139,7 +140,7 @@ class TestCollectionsAutoRemove:
             mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
 
         mock_rm_releases_call.assert_called_once_with(
-            mb_config, None, [mock_album.mb_album_id]
+            mb_config, [mock_album.mb_album_id]
         )
 
     def test_auto_remove_false(self, mock_album, mb_config):
@@ -165,18 +166,20 @@ class TestCollectionsAutoRemove:
 
         mock_rm_releases_call.assert_not_called()
 
-    @pytest.mark.network
-    def test_invalid_credentials(self, mock_album, mb_config):
+    def test_invalid_credentials(self, caplog, mock_album, mb_config):
         """Don't raise an error if bad credentials, just log."""
-        mb_config.settings.musicbrainz.username = "bad"
-        mb_config.settings.musicbrainz.password = "invalid"
-        mb_config.settings.musicbrainz.collection.collection_id = (
-            "56418762-9bbd-4d67-b6cf-30cd36d93cd1"
-        )
         mb_config.settings.musicbrainz.collection.auto_remove = True
         mock_album.mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
 
-        mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+        with patch.object(
+            moe_mb.mb_core,
+            "rm_releases_from_collection",
+            autospec=True,
+            side_effect=MBAuthError,
+        ):
+            mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+
+        assert any(record.levelname == "ERROR" for record in caplog.records)
 
 
 class TestCollectionsAutoAdd:
@@ -195,7 +198,7 @@ class TestCollectionsAutoAdd:
             )
 
         mock_add_releases_call.assert_called_once_with(
-            mb_config, None, [mock_album.mb_album_id]
+            mb_config, [mock_album.mb_album_id]
         )
 
     def test_auto_add_false(self, mock_album, mb_config):
@@ -225,20 +228,22 @@ class TestCollectionsAutoAdd:
 
         mock_add_releases_call.assert_not_called()
 
-    @pytest.mark.network
-    def test_invalid_credentials(self, mock_album, mb_config):
-        """Don't raise an error if bad credentials, just log."""
-        mb_config.settings.musicbrainz.username = "bad"
-        mb_config.settings.musicbrainz.password = "invalid"
-        mb_config.settings.musicbrainz.collection.collection_id = (
-            "56418762-9bbd-4d67-b6cf-30cd36d93cd1"
-        )
+    def test_invalid_credentials(self, caplog, mock_album, mb_config):
+        """Don't raise an error if bad credentials, just log an error."""
         mb_config.settings.musicbrainz.collection.auto_add = True
-        mock_album.mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        mock_album.mb_album_id = "123"
 
-        mb_config.plugin_manager.hook.process_new_items(
-            config=mb_config, items=[mock_album]
-        )
+        with patch.object(
+            moe_mb.mb_core,
+            "add_releases_to_collection",
+            autospec=True,
+            side_effect=MBAuthError,
+        ):
+            mb_config.plugin_manager.hook.process_new_items(
+                config=mb_config, items=[mock_album]
+            )
+
+        assert any(record.levelname == "ERROR" for record in caplog.records)
 
 
 class TestGetMatchingAlbum:
@@ -352,76 +357,6 @@ class TestGetAlbumById:
         assert any(track.disc == 2 for track in mb_album.tracks)
 
 
-class TestRmReleasesFromCollection:
-    """Test `rm_releases_from_collection` function."""
-
-    def test_remove_release_from_collection(self, mock_album, mb_config):
-        """The right calls are made when removing a release from a collection."""
-        collection = "123"
-        mb_config.settings.musicbrainz.username = "my name is"
-        mb_config.settings.musicbrainz.password = "slim shady"
-
-        with patch.object(
-            moe_mb.mb_core.musicbrainzngs,
-            "remove_releases_from_collection",
-            autospec=True,
-        ) as mock_remove_releases_call:
-            with patch.object(
-                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
-            ) as mock_auth_call:
-                moe_mb.rm_releases_from_collection(
-                    mb_config, collection, [mock_album.mb_album_id]
-                )
-
-        mock_remove_releases_call.assert_called_once_with(
-            collection=collection, releases=[mock_album.mb_album_id]
-        )
-        mock_auth_call.assert_called_once_with(
-            mb_config.settings.musicbrainz.username,
-            mb_config.settings.musicbrainz.password,
-        )
-
-    def test_get_collection_from_config(self, mock_album, mb_config):
-        """Use the collection in the config if not specified."""
-        mb_config.settings.musicbrainz.collection.collection_id = "123"
-        mb_config.settings.musicbrainz.username = "my name is"
-        mb_config.settings.musicbrainz.password = "slim shady"
-
-        with patch.object(
-            moe_mb.mb_core.musicbrainzngs,
-            "remove_releases_from_collection",
-            autospec=True,
-        ) as mock_remove_releases_call:
-            with patch.object(
-                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
-            ) as mock_auth_call:
-                moe_mb.rm_releases_from_collection(
-                    mb_config, None, [mock_album.mb_album_id]
-                )
-
-        mock_remove_releases_call.assert_called_once_with(
-            collection=mb_config.settings.musicbrainz.collection.collection_id,
-            releases=[mock_album.mb_album_id],
-        )
-        mock_auth_call.assert_called_once_with(
-            mb_config.settings.musicbrainz.username,
-            mb_config.settings.musicbrainz.password,
-        )
-
-    @pytest.mark.network
-    def test_invalid_credentials(self, mock_album, mb_config):
-        """Raise MBAuthError if invalid user credentials given."""
-        collection = "56418762-9bbd-4d67-b6cf-30cd36d93cd1"
-        mock_album.mb_album_id = "11b6532c-0de0-45bb-84fc-7e99514a4cd5"
-        mb_config.settings.musicbrainz.username = "my name is"
-        mb_config.settings.musicbrainz.password = "slim shady"
-
-        with pytest.raises(moe_mb.MBAuthError):
-            moe_mb.rm_releases_from_collection(
-                mb_config, collection, [mock_album.mb_album_id]
-            )
-
-
 class TestAddReleasesToCollection:
     """Test `add_releases_to_collection` function."""
 
@@ -439,7 +374,7 @@ class TestAddReleasesToCollection:
                 moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
                 moe_mb.add_releases_to_collection(
-                    mb_config, collection, [mock_album.mb_album_id]
+                    mb_config, [mock_album.mb_album_id], collection
                 )
 
         mock_add_releases_call.assert_called_once_with(
@@ -462,9 +397,7 @@ class TestAddReleasesToCollection:
             with patch.object(
                 moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
-                moe_mb.add_releases_to_collection(
-                    mb_config, None, [mock_album.mb_album_id]
-                )
+                moe_mb.add_releases_to_collection(mb_config, [mock_album.mb_album_id])
 
         mock_add_releases_call.assert_called_once_with(
             collection=mb_config.settings.musicbrainz.collection.collection_id,
@@ -485,7 +418,75 @@ class TestAddReleasesToCollection:
 
         with pytest.raises(moe_mb.MBAuthError):
             moe_mb.add_releases_to_collection(
-                mb_config, collection, [mock_album.mb_album_id]
+                mb_config, [mock_album.mb_album_id], collection
+            )
+
+
+class TestRmReleasesFromCollection:
+    """Test `rm_releases_from_collection` function."""
+
+    def test_remove_release_from_collection(self, mock_album, mb_config):
+        """The right calls are made when removing a release from a collection."""
+        collection = "123"
+        mb_config.settings.musicbrainz.username = "my name is"
+        mb_config.settings.musicbrainz.password = "slim shady"
+
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs,
+            "remove_releases_from_collection",
+            autospec=True,
+        ) as mock_remove_releases_call:
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
+            ) as mock_auth_call:
+                moe_mb.rm_releases_from_collection(
+                    mb_config, [mock_album.mb_album_id], collection
+                )
+
+        mock_remove_releases_call.assert_called_once_with(
+            collection=collection, releases=[mock_album.mb_album_id]
+        )
+        mock_auth_call.assert_called_once_with(
+            mb_config.settings.musicbrainz.username,
+            mb_config.settings.musicbrainz.password,
+        )
+
+    def test_get_collection_from_config(self, mock_album, mb_config):
+        """Use the collection in the config if not specified."""
+        mb_config.settings.musicbrainz.collection.collection_id = "123"
+        mb_config.settings.musicbrainz.username = "my name is"
+        mb_config.settings.musicbrainz.password = "slim shady"
+
+        with patch.object(
+            moe_mb.mb_core.musicbrainzngs,
+            "remove_releases_from_collection",
+            autospec=True,
+        ) as mock_remove_releases_call:
+            with patch.object(
+                moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
+            ) as mock_auth_call:
+                moe_mb.rm_releases_from_collection(mb_config, [mock_album.mb_album_id])
+
+        mock_remove_releases_call.assert_called_once_with(
+            collection=mb_config.settings.musicbrainz.collection.collection_id,
+            releases=[mock_album.mb_album_id],
+        )
+        mock_auth_call.assert_called_once_with(
+            mb_config.settings.musicbrainz.username,
+            mb_config.settings.musicbrainz.password,
+        )
+
+    @pytest.mark.network
+    def test_invalid_credentials(self, mock_album, mb_config):
+        """Raise MBAuthError if invalid user credentials given."""
+        collection = "56418762-9bbd-4d67-b6cf-30cd36d93cd1"
+        mock_album.mb_album_id = "11b6532c-0de0-45bb-84fc-7e99514a4cd5"
+        mb_config.settings.musicbrainz.username = "my name is"
+        mb_config.settings.musicbrainz.password = "slim shady"
+
+        with pytest.raises(moe_mb.MBAuthError):
+            moe_mb.rm_releases_from_collection(
+                mb_config, [mock_album.mb_album_id], collection
             )
 
 
