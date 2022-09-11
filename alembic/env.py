@@ -57,7 +57,9 @@ def run_migrations_online():
     # When connectable is already a Connection object, calling
     # connect() gives us a *branched connection*.
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata, render_as_batch=True
+        )
 
         with context.begin_transaction():
             context.run_migrations()
