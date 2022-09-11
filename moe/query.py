@@ -120,11 +120,11 @@ def _create_query(terms: list[str], query_type: str) -> sqlalchemy.orm.query.Que
     session = MoeSession()
 
     if query_type == "track":
-        library_query = session.query(Track).join(Album, Extra, isouter=True)
+        library_query = session.query(Track).join(Album).join(Extra, isouter=True)
     elif query_type == "album":
-        library_query = session.query(Album).join(Track, Extra, isouter=True)
+        library_query = session.query(Album).join(Track).join(Extra, isouter=True)
     elif query_type == "extra":
-        library_query = session.query(Extra).join(Album, Track, isouter=True)
+        library_query = session.query(Extra).join(Album).join(Track)
     else:
         raise QueryError(f"Invalid query type. [{query_type=!r}]")
 
@@ -227,7 +227,7 @@ def _create_expression(term: dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
 
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
-    raise QueryError(f"Invalid query type. [type={separator}]")
+    raise QueryError(f"Invalid query type separator. [{separator=!r}]")
 
 
 def _get_item_attr(query_field: str) -> Any:
