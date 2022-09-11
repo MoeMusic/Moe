@@ -11,6 +11,7 @@ These are all the plugins that are enabled by default.
    :maxdepth: 1
 
    add
+   duplicate
    edit
    import
    info

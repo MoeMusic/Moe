@@ -24,8 +24,20 @@ Library
 
 ``library`` subpackage.
 
+General
+-------
+
+``lib_item`` submodule.
+
+.. automodule:: moe.library.lib_item
+   :members:
+   :exclude-members: cache_ok
+
+
 Album
 -----
+
+``album`` submodule.
 
 .. automodule:: moe.library.album
    :members:
@@ -49,17 +61,8 @@ Extra
 
 .. automodule:: moe.library.extra
    :members:
-   :exclude-members: filename, path
+   :exclude-members: path
    :show-inheritance:
-
-Library Item
-------------
-
-``lib_item`` submodule.
-
-.. automodule:: moe.library.lib_item
-   :members:
-   :exclude-members: cache_ok
 
 
 Query

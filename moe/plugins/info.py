@@ -106,7 +106,7 @@ def _fmt_album_info(album: Album) -> str:
     tracks += "\n".join(track.title for track in sorted(album.tracks))
 
     extras = "\nExtras\n"
-    extras += "\n".join(extra.filename for extra in sorted(album.extras))
+    extras += "\n".join(extra.path.name for extra in sorted(album.extras))
 
     return base_info + "\n" + tracks + "\n" + extras
 
@@ -114,7 +114,6 @@ def _fmt_album_info(album: Album) -> str:
 def _fmt_extra_info(extra: Extra) -> str:
     """Formats a extra's information for display."""
     base_dict = _get_base_dict(extra)
-    base_dict.pop("filename", None)
 
     return "\n".join(
         f"{field}: {value}"

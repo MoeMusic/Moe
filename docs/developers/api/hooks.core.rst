@@ -10,6 +10,32 @@ Config
 .. autoclass:: moe.config.Hooks
    :members:
 
+Library
+=======
+
+General
+-------
+.. autoclass:: moe.library.lib_item.Hooks
+   :members:
+
+Albums
+------
+
+.. autoclass:: moe.library.album.Hooks
+   :members:
+
+Tracks
+------
+
+.. autoclass:: moe.library.track.Hooks
+   :members:
+
+Extras
+------
+
+.. autoclass:: moe.library.extra.Hooks
+   :members:
+
 
 Plugins
 =======
@@ -22,9 +48,4 @@ Add
 Import
 ------
 .. autoclass:: moe.plugins.moe_import.import_core.Hooks
-   :members:
-
-Remove
-------
-.. autoclass:: moe.plugins.remove.rm_core.Hooks
    :members:

@@ -61,9 +61,13 @@ class Hooks:
                     parents=[moe.cli.query_parser],
                 )
 
+            Then, you can call ``query.query(args.query, query_type=args.query_type)``
+            to get a list of items matching the query from the library.
+
         See Also:
-            `The python documentation for adding sub-parsers.
-            <https://docs.python.org/3/library/argparse.html#sub-commands>`_
+            * `The python documentation for adding sub-parsers.
+              <https://docs.python.org/3/library/argparse.html#sub-commands>`_
+            * The :meth:`~moe.query.query` function.
         """
 
 

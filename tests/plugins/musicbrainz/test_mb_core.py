@@ -1,7 +1,7 @@
 """Tests the musicbrainz plugin."""
 
 import datetime
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -130,12 +130,12 @@ class TestImportCandidates:
                 config=config, album=mock_album
             )
 
-        mock_gma.assert_called_once_with(mock_album)
+        mock_gma.assert_called_once_with(config, mock_album)
         assert candidates == [mock_album]
 
 
 class TestCollectionsAutoRemove:
-    """Test the collection auto remove functionality in the `post_remove` hook."""
+    """Test the collection auto remove functionality."""
 
     def test_auto_remove_true(self, mock_album, mb_config):
         """Remove items from the collection if `auto_remove` is true."""
@@ -145,10 +145,29 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+            mb_config.plugin_manager.hook.process_removed_items(
+                config=mb_config, items=[mock_album]
+            )
 
         mock_rm_releases_call.assert_called_once_with(
             mb_config, {mock_album.mb_album_id}
+        )
+
+    def test_all_items(self, album_factory, mb_config):
+        """Remove all items from the collection if `auto_remove` is true."""
+        album1 = album_factory(mb_album_id="1")
+        album2 = album_factory(mb_album_id="2")
+        mb_config.settings.musicbrainz.collection.auto_remove = True
+
+        with patch.object(
+            moe_mb.mb_core, "rm_releases_from_collection", autospec=True
+        ) as mock_rm_releases_call:
+            mb_config.plugin_manager.hook.process_removed_items(
+                config=mb_config, items=[album1, album2]
+            )
+
+        mock_rm_releases_call.assert_called_once_with(
+            mb_config, {album1.mb_album_id, album2.mb_album_id}
         )
 
     def test_auto_remove_false(self, mock_album, mb_config):
@@ -158,7 +177,9 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+            mb_config.plugin_manager.hook.process_removed_items(
+                config=mb_config, items=[mock_album]
+            )
 
         mock_rm_releases_call.assert_not_called()
 
@@ -170,7 +191,9 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+            mb_config.plugin_manager.hook.process_removed_items(
+                config=mb_config, items=[mock_album]
+            )
 
         mock_rm_releases_call.assert_not_called()
 
@@ -185,7 +208,9 @@ class TestCollectionsAutoRemove:
             autospec=True,
             side_effect=MBAuthError,
         ):
-            mb_config.plugin_manager.hook.post_remove(config=mb_config, item=mock_album)
+            mb_config.plugin_manager.hook.process_removed_items(
+                config=mb_config, items=[mock_album]
+            )
 
         assert any(record.levelname == "ERROR" for record in caplog.records)
 
@@ -258,27 +283,33 @@ class TestGetMatchingAlbum:
     """Test `get_matching_album()`."""
 
     @pytest.mark.network
-    def test_network(self, mock_album):
+    def test_network(self, album_factory, mb_config):
         """Make sure we can actually hit the real API.
 
         Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
         network test for both.
         """
-        mock_album.artist = "Kanye West"
-        mock_album.title = "My Beautiful Dark Twisted Fantasy"
+        album = album_factory(
+            config=mb_config,
+            artist="Kanye West",
+            title="My Beautiful Dark Twisted Fantasy",
+        )
 
-        mb_album = moe_mb.get_matching_album(mock_album)
+        mb_album = moe_mb.get_matching_album(mb_config, album)
 
         # don't test every field since we can't actually guarantee the accuracy of
         # musicbrainz's search results every time
-        assert mb_album.artist == mock_album.artist
-        assert mb_album.title == mock_album.title
+        assert mb_album.artist == album.artist
+        assert mb_album.title == album.title
 
-    def test_album_search(self, mock_album, mock_mb_by_id):
+    def test_album_search(self, album_factory, mock_mb_by_id, mb_config):
         """Searching for a release uses the expected parameters."""
-        mock_album.artist = "Kanye West"
-        mock_album.title = "My Beautiful Dark Twisted Fantasy"
-        mock_album.date = datetime.date(2010, 11, 22)
+        album = album_factory(
+            config=mb_config,
+            artist="Kanye West",
+            title="My Beautiful Dark Twisted Fantasy",
+            date=datetime.date(2010, 11, 22),
+        )
         search_criteria = {
             "artist": "Kanye West",
             "release": "My Beautiful Dark Twisted Fantasy",
@@ -292,7 +323,7 @@ class TestGetMatchingAlbum:
             return_value=mb_rsrc.full_release.search,
             autospec=True,
         ) as mock_mb_search:
-            mb_album = moe_mb.get_matching_album(mock_album)
+            mb_album = moe_mb.get_matching_album(mb_config, album)
 
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
         assert mb_album == mb_rsrc.full_release.album
@@ -300,13 +331,14 @@ class TestGetMatchingAlbum:
     def test_dont_search_if_mbid(self, mock_album):
         """Use ``mb_album_id`` to search by id if it exists."""
         mock_album.mb_album_id = "1"
+        mock_config = MagicMock()
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True
         ) as mock_mb_by_id:
-            moe_mb.get_matching_album(mock_album)
+            moe_mb.get_matching_album(mock_config, mock_album)
 
-        mock_mb_by_id.assert_called_once_with(mock_album.mb_album_id)
+        mock_mb_by_id.assert_called_once_with(mock_config, mock_album.mb_album_id)
 
 
 class TestGetAlbumById:
@@ -328,7 +360,7 @@ class TestGetAlbumById:
         mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
         mock_mb_by_id.return_value = mb_rsrc.full_release.release
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         mock_mb_by_id.assert_called_once_with(
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
@@ -340,7 +372,7 @@ class TestGetAlbumById:
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year_mon
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 12, 1)
 
@@ -349,7 +381,7 @@ class TestGetAlbumById:
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 1, 1)
 
@@ -358,7 +390,7 @@ class TestGetAlbumById:
         mb_album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
         mock_mb_by_id.return_value = mb_rsrc.multi_disc.release
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.disc_total == 2
         assert any(track.disc == 1 for track in mb_album.tracks)
@@ -639,18 +671,18 @@ class TestSetCollection:
 class TestUpdateAlbum:
     """Test ``update_album``."""
 
-    def test_update_album(self, album_factory):
+    def test_update_album(self, album_factory, mb_config):
         """We can update a given album."""
-        old_album = album_factory(title="old", mb_album_id="1")
-        new_album = album_factory(title="new")
+        old_album = album_factory(title="old", mb_album_id="1", config=mb_config)
+        new_album = album_factory(title="new", config=mb_config)
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True, return_value=new_album
         ) as mock_album_by_id:
-            moe_mb.update_album(old_album)
+            moe_mb.update_album(mb_config, old_album)
 
         assert old_album.title == new_album.title
-        mock_album_by_id.assert_called_once_with(old_album.mb_album_id)
+        mock_album_by_id.assert_called_once_with(mb_config, old_album.mb_album_id)
 
     def test_no_id(self, mock_album):
         """Raise ValueError if not mb album id present."""
@@ -658,7 +690,7 @@ class TestUpdateAlbum:
 
         with patch.object(moe_mb.mb_core, "get_album_by_id", autospec=True):
             with pytest.raises(ValueError, match=r"album="):
-                moe_mb.update_album(mock_album)
+                moe_mb.update_album(MagicMock(), mock_album)
 
 
 class TestPluginRegistration:

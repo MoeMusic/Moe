@@ -5,13 +5,29 @@ This module is used in various prompts of the CLI.
 from typing import Optional, cast
 
 from moe.library.album import Album
+from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.util.core import get_matching_tracks
 
-__all__ = ["fmt_album_changes"]
+__all__ = ["fmt_item_changes"]
 
 
-def fmt_album_changes(old_album: Album, new_album: Album) -> str:
+def fmt_item_changes(item_a: LibItem, item_b: LibItem) -> str:
+    """Formats the changes between two items."""
+    if type(item_a) != type(item_b):
+        raise ValueError(
+            "Cannot format changes of items of different types. "
+            f"[{item_a=!r}, {item_b=!r}]"
+        )
+    if isinstance(item_a, Track) and isinstance(item_b, Track):
+        return _fmt_track_changes(item_a, item_b)
+    elif isinstance(item_a, Album) and isinstance(item_b, Album):
+        return _fmt_album_changes(item_a, item_b)
+    else:
+        raise NotImplementedError
+
+
+def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
     """Formats the changes between between two albums."""
     album_info_str = ""
     album_title = f"Album: {old_album.title}"
@@ -28,15 +44,12 @@ def fmt_album_changes(old_album: Album, new_album: Album) -> str:
     if old_album.year != new_album.year:
         album_year = album_year + f" -> {new_album.year}"
     album_info_str += "\n" + album_year
-    if new_album.mb_album_id:
-        mb_album_id = f"Musicbrainz ID: {new_album.mb_album_id}"
-        album_info_str += "\n" + mb_album_id
 
     tracklist_str = _fmt_tracklist(old_album, new_album)
 
     extra_str = ""
     extra_str += "\nExtras:\n"
-    extra_str += "\n".join([extra.filename for extra in old_album.extras])
+    extra_str += "\n".join([extra.path.name for extra in old_album.extras])
 
     album_str = album_info_str + "\n" + tracklist_str
     if old_album.extras:

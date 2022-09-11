@@ -6,6 +6,7 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import Callable, Iterator, Optional
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -164,26 +165,41 @@ def track_factory() -> Callable[[], Track]:
     return _create_track
 
 
-def _create_track(album: Optional[Album] = None, exists: bool = False, **kwargs):
+def _create_track(
+    config: Optional[Config] = None,
+    album: Optional[Album] = None,
+    exists: bool = False,
+    dup_track: Optional[Track] = None,
+    **kwargs,
+):
     """Creates a track.
 
     Args:
         album: Optional album to assign the track to.
         exists: Whether or not the track should actually exist on the filesystem.
+        dup_track: If given, the new track created will be a duplicate of `dup_track`.
         **kwargs: Any other fields to assign to the Track.
 
     Returns:
         Unique Track.
     """
-    if not album:
-        album = _create_album(0, 0, exists)
+    config = config or MagicMock()
+    album = album or _create_album(config, num_tracks=0, num_extras=0, exists=exists)
 
     track_num = kwargs.pop("track_num", random.randint(1, 10000))
     title = kwargs.pop("title", "Jazzy Belle")
     disc = kwargs.pop("disc", 1)
-    path = kwargs.pop("path", album.path / f"{disc}.{track_num} - {title}.mp3")
+
+    if album.disc_total > 1:
+        disc_dir = f"Disc {disc:02}"
+    else:
+        disc_dir = ""
+    path = kwargs.pop(
+        "path", album.path / disc_dir / f"{disc}.{track_num} - {title}.mp3"
+    )
 
     track = Track(
+        config=config,
         album=album,
         path=path,
         title=title,
@@ -191,8 +207,17 @@ def _create_track(album: Optional[Album] = None, exists: bool = False, **kwargs)
         disc=disc,
         **kwargs,
     )
+    if dup_track:
+        for field in dup_track.fields():
+            value = getattr(dup_track, field)
+            try:
+                setattr(track, field, value)
+            except AttributeError:
+                pass
+        return track
 
     if exists:
+        track.path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(EMPTY_MP3_FILE, track.path)
         moe_write.write_tags(track)
 
@@ -206,7 +231,7 @@ def mock_extra() -> Extra:
 
 
 @pytest.fixture
-def real_extra() -> Extra:
+def real_extra(tmp_config) -> Extra:
     """Creates an Extra that exists on the filesystem."""
     return _create_extra(exists=True)
 
@@ -224,24 +249,40 @@ def extra_factory(tmp_path_factory) -> Callable[[], Extra]:
 
 
 def _create_extra(
-    album: Optional[Album] = None, path: Optional[Path] = None, exists: bool = False
+    config: Optional[Config] = None,
+    album: Optional[Album] = None,
+    path: Optional[Path] = None,
+    exists: bool = False,
+    dup_extra: Optional[Extra] = None,
+    **kwargs,
 ) -> Extra:
     """Creates an extra for testing.
 
     Args:
+        config; Moe config.
         album: Album to assign the extra to.
         path: Path to assign to the extra. Will create a random path if not given.
         exists: Whether the extra should actually exist on the filesystem.
+        dup_extra: If given, the new extra created will be a duplicate of `dup_extra`.
+        **kwargs: Any other fields to assign to the extra.
 
     Returns:
         Created extra.
     """
-    if not album:
-        album = _create_album(0, 0, exists)
-
+    config = config or MagicMock()
+    album = album or _create_album(config, num_tracks=0, num_extras=0, exists=exists)
     path = path or album.path / f"{random.randint(1,1000)}.txt"
 
-    extra = Extra(album=album, path=path)
+    extra = Extra(config=config, album=album, path=path, **kwargs)
+
+    if dup_extra:
+        for field in dup_extra.fields():
+            value = getattr(dup_extra, field)
+            try:
+                setattr(extra, field, value)
+            except AttributeError:
+                pass
+        return extra
 
     if exists:
         extra.path.touch()
@@ -250,13 +291,13 @@ def _create_extra(
 
 
 @pytest.fixture
-def mock_album() -> Album:
+def mock_album(tmp_config) -> Album:
     """Creates an Album that does not exist on the filesystem."""
     return _create_album(exists=False)
 
 
 @pytest.fixture
-def real_album() -> Album:
+def real_album(tmp_config) -> Album:
     """Creates an Album that exists on the filesystem."""
     return _create_album(exists=True)
 
@@ -274,35 +315,95 @@ def album_factory() -> Callable[[], Album]:
 
 
 def _create_album(
-    num_tracks: int = 2, num_extras: int = 2, exists: bool = False, **kwargs
+    config: Optional[Config] = None,
+    num_tracks: int = 2,
+    num_extras: int = 2,
+    num_discs: int = 1,
+    exists: bool = False,
+    dup_album: Optional[Album] = None,
+    **kwargs,
 ) -> Album:
     """Creates an album.
 
     Args:
         num_tracks: Number of tracks to add to the album.
         num_extras: Number of extras to add to the album.
+        num_discs: Number of discs on the album. Will have disc sub dirs.
         exists: Whether the album should exist on the filesystem.
+        dup_album: If given, the new album created will be a duplicate of `dup_album`.
         **kwargs: Any other fields to assign to the album.
 
     Returns:
         Created album.
     """
-    year = random.randint(datetime.MINYEAR, datetime.MAXYEAR)
-
+    config = config or MagicMock()
     artist = kwargs.pop("artist", "Outkast")
     title = kwargs.pop("title", "ATLiens")
-    date = kwargs.pop("date", datetime.date(year, 1, 1))
-    path = kwargs.pop("path", LIBRARY_PATH / f"{artist}" / f"{title} ({year})")
+    date = kwargs.pop(
+        "date", datetime.date(random.randint(datetime.MINYEAR, datetime.MAXYEAR), 1, 1)
+    )
+    path = kwargs.pop("path", LIBRARY_PATH / f"{artist}" / f"{title} ({date.year})")
 
-    album = Album(path=path, artist=artist, title=title, date=date, **kwargs)
+    album = Album(
+        config=config,
+        path=path,
+        artist=artist,
+        title=title,
+        date=date,
+        disc_total=num_discs,
+        **kwargs,
+    )
+
+    if dup_album:
+        for field in dup_album.fields():
+            if field not in ["tracks", "extras"]:
+                value = getattr(dup_album, field)
+                try:
+                    setattr(album, field, value)
+                except AttributeError:
+                    pass
+
+        dup_tracks = dup_album.tracks.copy()
+        for track in dup_tracks:
+            album.tracks.append(
+                _create_track(
+                    config=config,
+                    album=None,
+                    exists=exists,
+                    dup_track=track,
+                )
+            )
+
+        dup_extras = dup_album.extras.copy()
+        for extra in dup_extras:
+            album.extras.append(
+                _create_extra(
+                    config=config,
+                    album=None,
+                    exists=exists,
+                    dup_extra=extra,
+                )
+            )
+
+        return album
 
     if exists:
         album.path.mkdir(exist_ok=True, parents=True)
 
-    for track_num in range(1, num_tracks + 1):
-        _create_track(album=album, exists=exists, track_num=track_num)
+    if num_tracks < num_discs and num_tracks != 0:
+        num_tracks = num_discs
+    tracks_per_disc = int(num_tracks / num_discs)
+    for disc in range(1, num_discs + 1):
+        for track_num in range(1, tracks_per_disc + 1):
+            _create_track(
+                config=config,
+                album=album,
+                exists=exists,
+                track_num=track_num,
+                disc=disc,
+            )
 
     for _ in range(1, num_extras):
-        _create_extra(album=album, exists=exists)
+        _create_extra(config, album=album, exists=exists)
 
     return album

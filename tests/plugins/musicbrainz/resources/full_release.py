@@ -2,6 +2,7 @@
 # flake8: noqa
 
 import datetime
+from unittest.mock import MagicMock
 
 from moe.library.album import Album
 from moe.library.track import Track
@@ -1676,6 +1677,7 @@ release = {
 
 # Album representation
 album = Album(
+    config=MagicMock(),
     artist="Kanye West",
     title="My Beautiful Dark Twisted Fantasy",
     date=datetime.date(2010, 11, 22),
@@ -1683,6 +1685,7 @@ album = Album(
     mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
 )
 track1 = Track(
+    config=MagicMock(),
     album=album,
     track_num=1,
     path=None,  # type: ignore
@@ -1692,6 +1695,7 @@ track1 = Track(
     disc=1,
 )
 track2 = Track(
+    config=MagicMock(),
     album=album,
     track_num=2,
     path=None,  # type: ignore
