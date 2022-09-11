@@ -1,7 +1,7 @@
 """Tests the ``write`` plugin."""
 
 import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -53,7 +53,7 @@ class TestWriteTags:
 
         moe_write.write_tags(real_track)
 
-        new_track = Track.from_file(real_track.path)
+        new_track = Track.from_file(MagicMock(), real_track.path)
         assert new_track.album == album
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist

@@ -112,7 +112,7 @@ def import_candidates(config: Config, album: Album) -> Album:
         A new album containing all the corrected metadata from musicbrainz. Note, this
         album is not complete, as it will not contain any references to the filesystem.
     """
-    return get_matching_album(album)
+    return get_matching_album(config, album)
 
 
 @moe.hookimpl
@@ -285,10 +285,11 @@ def set_collection(
     add_releases_to_collection(config, new_releases, collection)
 
 
-def get_matching_album(album: Album) -> Album:
+def get_matching_album(config: Config, album: Album) -> Album:
     """Gets a matching musicbrainz album for a given album.
 
     Args:
+        config: Moe config.
         album: Album used to search for the release.
 
     Returns:
@@ -296,7 +297,7 @@ def get_matching_album(album: Album) -> Album:
         directory for an idea of what this contains.
     """
     if album.mb_album_id:
-        return get_album_by_id(album.mb_album_id)
+        return get_album_by_id(config, album.mb_album_id)
 
     log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")
 
@@ -312,13 +313,14 @@ def get_matching_album(album: Album) -> Album:
 
     log.info(f"Determined matching release from musicbrainz. [match={release_id!r}]")
 
-    return get_album_by_id(release_id)  # searching by id provides more info
+    return get_album_by_id(config, release_id)  # searching by id provides more info
 
 
-def get_album_by_id(release_id: str) -> Album:
+def get_album_by_id(config: Config, release_id: str) -> Album:
     """Gets a musicbrainz album from a release ID.
 
     Args:
+        config: Moe config.
         release_id: Musicbrainz release ID to search.
 
     Returns:
@@ -333,10 +335,10 @@ def get_album_by_id(release_id: str) -> Album:
 
     log.info(f"Fetched release from musicbrainz. [release={release_id!r}]")
 
-    return _create_album(release["release"])
+    return _create_album(config, release["release"])
 
 
-def _create_album(release: dict) -> Album:
+def _create_album(config: Config, release: dict) -> Album:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
@@ -352,6 +354,7 @@ def _create_album(release: dict) -> Album:
         day = 1
 
     album = Album(
+        config,
         artist=_flatten_artist_credit(release["artist-credit"]),
         date=datetime.date(year, month, day),
         disc_total=int(release["medium-count"]),
@@ -362,6 +365,7 @@ def _create_album(release: dict) -> Album:
     for medium in release["medium-list"]:
         for track in medium["track-list"]:
             Track(
+                config=config,
                 album=album,
                 track_num=int(track["position"]),
                 path=None,  # type: ignore # this will get set in `add_prompt`
@@ -387,10 +391,11 @@ def _flatten_artist_credit(artist_credit: list[dict]) -> str:
     return full_artist
 
 
-def update_album(album: Album):
+def update_album(config: Config, album: Album):
     """Updates an album with metadata from musicbrainz.
 
     Args:
+        config: Moe config.
         album: Album to update.
 
     Raises:
@@ -403,4 +408,4 @@ def update_album(album: Album):
             "Unable to update album, no musicbrainz id found. [{album=!r}]"
         )
 
-    album.merge(get_album_by_id(album.mb_album_id), overwrite=True)
+    album.merge(get_album_by_id(config, album.mb_album_id), overwrite=True)

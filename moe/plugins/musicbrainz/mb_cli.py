@@ -41,6 +41,6 @@ def _enter_id(
         "Re-running import prompt for different musicbrainz release. [{mb_id=!r}]"
     )
 
-    album = moe_mb.get_album_by_id(mb_id)
+    album = moe_mb.get_album_by_id(config, mb_id)
 
     moe_import.import_prompt(config, old_album, album)

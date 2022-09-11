@@ -110,7 +110,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
     for path in paths:
         if path.is_file():
             try:
-                track = Track.from_file(path)
+                track = Track.from_file(config, path)
             except TrackError as err:
                 log.error(err)
                 error_count += 1
@@ -118,7 +118,7 @@ def _parse_args(config: Config, args: argparse.Namespace):
                 moe_add.add_item(config, track)
         elif path.is_dir():
             try:
-                album = Album.from_dir(path)
+                album = Album.from_dir(config, path)
             except AlbumError as err:
                 log.error(err)
                 error_count += 1

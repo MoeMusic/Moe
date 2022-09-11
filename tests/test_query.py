@@ -62,11 +62,6 @@ class TestQuery:
         with pytest.raises(QueryError):
             query("invalid")
 
-    def test_invalid_query_field(self, tmp_session):
-        """Invalid queries should raise a QueryError."""
-        with pytest.raises(QueryError):
-            query("invalid:a")
-
     def test_invalid_query_type(self, tmp_session):
         """A query type should be one of: 'extra', 'track', or 'album'."""
         with pytest.raises(QueryError):
@@ -275,3 +270,11 @@ class TestQuery:
         tmp_session.merge(album2)
 
         assert len(query("*", "album")) == 2
+
+    def test_custom_field(self, mock_track, tmp_session):
+        """Test querying a custom field."""
+        mock_track._custom_fields["custom"] = "query"
+
+        tmp_session.add(mock_track)
+
+        assert query("custom:query")

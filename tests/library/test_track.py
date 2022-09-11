@@ -2,12 +2,67 @@
 
 import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
+import moe
 import moe.plugins.write as moe_write
+from moe.config import ExtraPlugin
 from moe.library.track import Track, TrackError
 from moe.plugins.write import write_tags
+
+
+class MyTrackPlugin:
+    """Plugin that implements the extra hooks for testing."""
+
+    @staticmethod
+    @moe.hookimpl
+    def create_custom_track_fields(config):
+        """Create a new custom field."""
+        return ["track_field", "another_field"]
+
+
+class TestCustomFields:
+    """Test getting and setting operations on custom fields."""
+
+    def test_get_custom_field(self, mock_track):
+        """We can get a custom field like a normal attribute."""
+        mock_track._custom_fields["custom"] = "field"
+
+        assert mock_track.custom == "field"
+
+    def test_set_custom_field(self, mock_track):
+        """We can set a custom field like a normal attribute."""
+        mock_track._custom_fields["custom_key"] = None
+        mock_track.custom_key = "test"
+
+        assert mock_track._custom_fields["custom_key"] == "test"
+
+    def test_set_non_key(self, mock_track):
+        """Don't set just any attribute as a custom field if the key doesn't exist."""
+        mock_track.custom_key = 1
+
+        with pytest.raises(KeyError):
+            assert mock_track._custom_fields["custom_key"] == 1
+
+    def test_db_persistence(self, mock_track, tmp_session):
+        """Ensure custom fields persist in the database."""
+        mock_track._custom_fields["db"] = "persist"
+
+        tmp_session.add(mock_track)
+        tmp_session.flush()
+
+        db_track = tmp_session.query(Track).one()
+        assert db_track.db == "persist"
+
+    def test_plugin_defined_custom_fields(self, track_factory, tmp_config):
+        """Plugins can define new custom fields."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory(config)
+
+        assert "track_field" in track._custom_fields
+        assert "another_field" in track._custom_fields
 
 
 class TestInit:
@@ -39,8 +94,12 @@ class TestInit:
         track1.path = track1_path
         track2.path = track2_path
 
-        new_track1 = Track(real_album, track1.path, track1.title, track1.track_num)
-        new_track2 = Track(real_album, track2.path, track2.title, track2.track_num)
+        new_track1 = Track(
+            MagicMock(), real_album, track1.path, track1.title, track1.track_num
+        )
+        new_track2 = Track(
+            MagicMock(), real_album, track2.path, track2.title, track2.track_num
+        )
 
         assert new_track1.disc == 1
         assert new_track2.disc == 2
@@ -50,6 +109,7 @@ class TestInit:
         assert real_track.path.parent == real_track.album_obj.path
 
         new_track = Track(
+            MagicMock(),
             real_track.album_obj,
             real_track.path,
             real_track.title,
@@ -94,7 +154,7 @@ class TestFromFile:
         real_track.track_num = 1
         write_tags(real_track)
 
-        new_track = Track.from_file(real_track.path)
+        new_track = Track.from_file(MagicMock(), real_track.path)
 
         assert new_track.album == real_track.album
         assert new_track.albumartist == real_track.albumartist
@@ -111,7 +171,7 @@ class TestFromFile:
     def test_non_track_file(self, real_extra):
         """Raise `TrackError` if the given path does not correspond to a track file."""
         with pytest.raises(TrackError):
-            Track.from_file(real_extra.path)
+            Track.from_file(MagicMock(), real_extra.path)
 
     def test_albumartist_backup(self, real_track):
         """Use artist as a backup for albumartist if missing."""
@@ -119,7 +179,7 @@ class TestFromFile:
         real_track.artist = "Backup"
         moe_write.write_tags(real_track)
 
-        track = Track.from_file(real_track.path)
+        track = Track.from_file(MagicMock(), real_track.path)
         assert track.albumartist
 
 

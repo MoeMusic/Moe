@@ -1,12 +1,67 @@
 """Tests an Album object."""
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
+import moe
+from moe.config import ExtraPlugin
 from moe.library.album import Album, AlbumError
 from moe.library.extra import Extra
 from moe.plugins import write as moe_write
+
+
+class MyAlbumPlugin:
+    """Plugin that implements the extra hooks for testing."""
+
+    @staticmethod
+    @moe.hookimpl
+    def create_custom_album_fields(config):
+        """Create a new custom field."""
+        return ["album_field", "another_field"]
+
+
+class TestCustomFields:
+    """Test getting and setting operations on custom fields."""
+
+    def test_get_custom_field(self, mock_album):
+        """We can get a custom field like a normal attribute."""
+        mock_album._custom_fields["custom"] = "field"
+
+        assert mock_album.custom == "field"
+
+    def test_set_custom_field(self, mock_album):
+        """We can set a custom field like a normal attribute."""
+        mock_album._custom_fields["custom_key"] = None
+        mock_album.custom_key = "test"
+
+        assert mock_album._custom_fields["custom_key"] == "test"
+
+    def test_set_non_key(self, mock_album):
+        """Don't set just any attribute as a custom field if the key doesn't exist."""
+        mock_album.custom_key = 1
+
+        with pytest.raises(KeyError):
+            assert mock_album._custom_fields["custom_key"] == 1
+
+    def test_db_persistence(self, mock_album, tmp_session):
+        """Ensure custom fields persist in the database."""
+        mock_album._custom_fields["db"] = "persist"
+
+        tmp_session.add(mock_album)
+        tmp_session.flush()
+
+        db_album = tmp_session.query(Album).one()
+        assert db_album.db == "persist"
+
+    def test_plugin_defined_custom_fields(self, album_factory, tmp_config):
+        """Plugins can define new custom fields."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
+        album = album_factory(config)
+
+        assert "album_field" in album._custom_fields
+        assert "another_field" in album._custom_fields
 
 
 class TestFromDir:
@@ -14,11 +69,11 @@ class TestFromDir:
 
     def test_dir_album(self, real_album):
         """If a directory given, add to library as an album."""
-        assert Album.from_dir(real_album.path) == real_album
+        assert Album.from_dir(MagicMock(), real_album.path) == real_album
 
     def test_extras(self, real_album):
         """Add any extras that are within the album directory."""
-        new_album = Album.from_dir(real_album.path)
+        new_album = Album.from_dir(MagicMock(), real_album.path)
 
         for extra in real_album.extras:
             assert extra in new_album.extras
@@ -29,7 +84,7 @@ class TestFromDir:
         empty_path.mkdir()
 
         with pytest.raises(AlbumError):
-            Album.from_dir(empty_path)
+            Album.from_dir(MagicMock(), empty_path)
 
     def test_add_multi_disc(self, real_album):
         """We can add a multi-disc album."""
@@ -50,7 +105,7 @@ class TestFromDir:
         track1.path = track1_path
         track2.path = track2_path
 
-        album = Album.from_dir(real_album.path)
+        album = Album.from_dir(MagicMock(), real_album.path)
 
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
@@ -146,7 +201,7 @@ class TestMerge:
         """Merge in any new extras."""
         album1 = album_factory()
         album2 = album_factory()
-        new_extra = Extra(album2, album2.path / "new.txt")
+        new_extra = Extra(MagicMock(), album2, album2.path / "new.txt")
         assert album1.extras != album2.extras
         extras_count = len(album1.extras) + len(album2.extras)
 
@@ -160,7 +215,9 @@ class TestMerge:
         album1 = album_factory(exists=True)
         album2 = album_factory(exists=True)
 
-        conflict_extra = Extra(album2, album2.path / album1.extras[0].filename)
+        conflict_extra = Extra(
+            MagicMock(), album2, album2.path / album1.extras[0].filename
+        )
         overwrite_extra = album1.get_extra(conflict_extra.filename)
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()
