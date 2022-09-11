@@ -17,6 +17,43 @@ class TestParseTerm:
         """Simplest case field:value test."""
         match = moe.query._parse_term("field:value")
 
+        assert match["field_type"] == "track"
+        assert match["field"] == "field"
+        assert match["separator"] == ":"
+        assert match["value"] == "value"
+
+    def test_album_field_type(self):
+        """Use 'a:' before the rest of the term to specify it's an album field."""
+        match = moe.query._parse_term("a:field:value")
+
+        assert match["field_type"] == "album"
+        assert match["field"] == "field"
+        assert match["separator"] == ":"
+        assert match["value"] == "value"
+
+    def test_extra_field_type(self):
+        """Use 'a:' before the rest of the term to specify it's an extra field."""
+        match = moe.query._parse_term("e:field:value")
+
+        assert match["field_type"] == "extra"
+        assert match["field"] == "field"
+        assert match["separator"] == ":"
+        assert match["value"] == "value"
+
+    def test_track_field_type(self):
+        """Optionally use 't:' before the rest of the term to specify a track field."""
+        match = moe.query._parse_term("t:field:value")
+
+        assert match["field_type"] == "track"
+        assert match["field"] == "field"
+        assert match["separator"] == ":"
+        assert match["value"] == "value"
+
+    def test_lowercase_field(self):
+        """Fields should be case lowercase."""
+        match = moe.query._parse_term("t:FIELD:value")
+
+        assert match["field_type"] == "track"
         assert match["field"] == "field"
         assert match["separator"] == ":"
         assert match["value"] == "value"
@@ -28,6 +65,7 @@ class TestParseTerm:
         """
         match = moe.query._parse_term("field:val u e")
 
+        assert match["field_type"] == "track"
         assert match["field"] == "field"
         assert match["value"] == "val u e"
 
@@ -35,6 +73,7 @@ class TestParseTerm:
         """Regular expression values are indicated by a '::' separator."""
         match = moe.query._parse_term("field::A.*")
 
+        assert match["field_type"] == "track"
         assert match["field"] == "field"
         assert match["separator"] == "::"
         assert match["value"] == "A.*"
@@ -45,233 +84,214 @@ class TestParseTerm:
             moe.query._parse_term("invalid")
 
 
-class TestQuery:
-    """Test actual query."""
+class TestQueries:
+    """Test queries."""
 
     def test_empty_query_str(self):
         """Empty queries strings should raise a QueryError."""
         with pytest.raises(QueryError):
-            query("")
+            query("", "track")
 
     def test_empty_query(self, tmp_session):
         """Empty queries should return an empty list."""
-        assert not query("title:nope")
+        assert not query("title:nope", "track")
 
     def test_invalid_query_str(self, tmp_session):
         """Invalid queries should raise a QueryError."""
         with pytest.raises(QueryError):
-            query("invalid")
+            query("invalid", "track")
 
-    def test_invalid_query_field(self, tmp_session):
-        """Invalid queries should raise a QueryError."""
-        with pytest.raises(QueryError):
-            query("invalid:a")
+    def test_return_type(self, mock_album, tmp_session):
+        """Queries return the appropriate type."""
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-    def test_invalid_query_type(self, tmp_session):
-        """A query type should be one of: 'extra', 'track', or 'album'."""
-        with pytest.raises(QueryError):
-            query("title:a", "invalid")
+        albums = query(f"a:title:'{mock_album.title}'", "album")
+        extras = query(f"a:title:'{mock_album.title}'", "extra")
+        tracks = query(f"a:title:'{mock_album.title}'", "track")
 
-    def test_valid_query(self, mock_track, tmp_session):
-        """Simplest query."""
-        tmp_session.add(mock_track)
+        assert albums
+        for album in albums:
+            assert isinstance(album, Album)
+        assert extras
+        for extra in extras:
+            assert isinstance(extra, Extra)
+        assert tracks
+        for track in tracks:
+            assert isinstance(track, Track)
 
-        assert query(f"title:'{mock_track.title}'")
-
-    def test_space_value(self, mock_track, tmp_session):
-        """If a value has whitespace, it must be encolsed by quotes."""
-        mock_track.title = "Holy cow"
-        tmp_session.add(mock_track)
-
-        assert query("'title:Holy cow'")
-
-    def test_multiple_terms(self, mock_track, tmp_session):
+    def test_multiple_terms(self, mock_album, tmp_session):
         """We should be able to query for multiple terms at once."""
-        mock_track.title = "C.R.E.A.M."
-        tmp_session.add(mock_track)
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        assert query(f"track_num:{mock_track.track_num} title:{mock_track.title}")
+        assert query(f"a:year:{mock_album.year} album:{mock_album.title}", "album")
 
     def test_regex(self, mock_track, tmp_session):
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
+        tmp_session.flush()
 
-        assert query("title::.*")
+        assert query("title::.*", "track")
 
-    def test_track_path(self, real_track, tmp_session):
-        """We can query a track's path."""
-        tmp_session.add(real_track)
+    def test_path_query(self, real_album, tmp_session):
+        """We can query for paths."""
+        tmp_session.add(real_album)
+        tmp_session.flush()
 
-        assert query(f"'path:{str(real_track.path.resolve())}'")
-        assert query("'path::.*'")
+        assert query(f"'a:path:{str(real_album.path.resolve())}'", "album")
+        assert query("'a:path::.*'", "album")
 
-    def test_extra_path(self, real_album, tmp_session):
-        """We can query for Extra paths."""
-        tmp_session.merge(real_album)
+    def test_case_insensitive_value(self, mock_album, tmp_session):
+        """Query values should be case-insensitive."""
+        mock_album.title = "TMP"
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        extra_path_str = str(real_album.extras.pop().path.resolve())
-        assert query(f"'extra_path:{extra_path_str}'")
-        assert query("'extra_path::.*'")
+        assert query("a:title:tmp", "album")
 
-    def test_album_path(self, real_album, tmp_session):
-        """We can query for Extra paths."""
-        tmp_session.merge(real_album)
+    def test_regex_non_str(self, mock_album, tmp_session):
+        """Non string fields should be converted to strings for matching."""
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        assert query(f"'album_path:{str(real_album.path.resolve())}'")
-        assert query("'album_path::.*'")
+        assert query("a:year::.*", "album")
 
-    def test_date(self, mock_track, tmp_session):
-        """We can query an album's date."""
-        tmp_session.add(mock_track)
+    def test_invalid_regex(self, tmp_session, mock_album):
+        """Invalid regex queries should raise a QueryError."""
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        assert query(f"'date:{str(mock_track.date)}'")
-        assert query("'date::.*'")
+        with pytest.raises(QueryError):
+            query("title::[", "album")
 
-    def test_track_album_field(self, real_track, tmp_session):
+    def test_regex_case_insensitive(self, mock_album, tmp_session):
+        """Regex queries should be case-insensitive."""
+        mock_album.title = "TMP"
+        tmp_session.add(mock_album)
+        tmp_session.flush()
+
+        assert query("a:title::tmp", "album")
+
+    def test_track_album_field(self, mock_album, tmp_session):
         """We should be able to query tracks that match album-related fields.
 
         These fields belong to the Album table and thus aren't normally exposed
         through a track.
         """
-        tmp_session.add(real_track)
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        assert query(f"'album:{real_track.album}'")
-        assert query(f"'albumartist:{real_track.albumartist}'")
-        assert query(f"year:{real_track.year}")
-
-    def test_case_insensitive_value(self, mock_track, tmp_session):
-        """Query values should be case-insensitive."""
-        mock_track.title = "TMP"
-        mock_track.album = "TMP"
-        tmp_session.add(mock_track)
-
-        assert query("title:tmp")
-
-    def test_case_insensitive_field(self, mock_track, tmp_session):
-        """Fields should be able to be specified case-insensitive."""
-        mock_track.title = "tmp"
-        mock_track.album = "tmp"
-        tmp_session.add(mock_track)
-
-        assert query("Title:tmp")
-
-    def test_regex_non_str(self, mock_track, tmp_session):
-        """Non string fields should be converted to strings for matching."""
-        tmp_session.add(mock_track)
-
-        assert query("track_num::.*")
-
-    def test_invalid_regex(self, tmp_session, mock_track):
-        """Invalid regex queries should return an empty list."""
-        tmp_session.add(mock_track)
-
-        with pytest.raises(QueryError):
-            query("title::[")
-
-    def test_regex_case_insensitive(self, mock_track, tmp_session):
-        """Regex queries should be case-insensitive."""
-        mock_track.title = "TMP"
-        mock_track.album = "TMP"
-        tmp_session.add(mock_track)
-
-        assert query("title::tmp")
-
-    def test_track_query(self, mock_track, tmp_session):
-        """A track query should return Track objects."""
-        tmp_session.add(mock_track)
-
-        tracks = query(f"title:'{mock_track.title}'", query_type="track")
-
-        assert tracks
-        for track in tracks:
-            assert isinstance(track, Track)
-
-    def test_album_query(self, mock_track, tmp_session):
-        """An album query should return Album objects."""
-        tmp_session.add(mock_track)
-
-        albums = query(f"title:'{mock_track.title}'", query_type="album")
-
-        assert albums
-        for album in albums:
-            assert isinstance(album, Album)
-
-    def test_extra_query(self, mock_album, tmp_session):
-        """An extra query should return Extra objects."""
-        tmp_session.merge(mock_album)
-
-        extras = query(f"album:'{mock_album.title}'", query_type="extra")
-
-        assert extras
-        for extra in extras:
-            assert isinstance(extra, Extra)
-
-    def test_album_query_track_fields(self, mock_track, tmp_session):
-        """Album queries should still be filtered based off Track fields."""
-        mock_track.album = "ATLiens"
-        tmp_session.add(mock_track)
-
-        albums = query("album:ATLiens", query_type="album")
-
-        assert albums
-        for album in albums:
-            assert isinstance(album, Album)
+        assert query(f"'album:{mock_album.title}'", "track")
 
     def test_like_query(self, mock_track, tmp_session):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
-        tmp_session.add(mock_track)
         mock_track.track_num = 1
+        tmp_session.add(mock_track)
+        tmp_session.flush()
 
-        assert query("track_num:_")
-        assert query("track_num:%")
+        assert query("track_num:_", "track")
+        assert query("track_num:%", "track")
 
-    def test_like_escape_query(self, track_factory, tmp_session):
+    def test_like_escape_query(self, album_factory, tmp_session):
         r"""We should be able to escape the LIKE wildcard characters with '/'.
 
-        Note, I think '\' would be the preferred backslash character, but for
-        some reason it doesn't work.
+        Note, I think '\' would be the preferred backslash character, but shlex
+        removes them from strings.
         """
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.title = "_"
-        track2.title = "b"
-        tmp_session.merge(track1)
-        tmp_session.merge(track2)
+        album1 = album_factory(title="a")
+        album2 = album_factory(title="_")
+        tmp_session.add(album1)
+        tmp_session.add(album2)
+        tmp_session.flush()
 
-        assert len(query("title:/_")) == 1
+        assert len(query("a:title:/_", "album")) == 1
 
-    def test_multi_value_query(self, mock_track, tmp_session):
+    def test_multi_value_query(self, mock_album, tmp_session):
         """We should be able to query multi-value fields transparently.
 
         ``genre`` is a list of genres for a Track.
         """
-        mock_track.genres = ["hip hop", "rock"]
-        tmp_session.add(mock_track)
+        mock_album.tracks[0].genres = ["hip hop", "rock"]
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        assert query("'genre::.*'")
-        assert query("'genre:hip hop'")
-        assert query("genre:rock")
-        assert query("genre:rock 'genre:hip hop'")
+        assert query("'genre::.*'", "track")
+        assert query("'genre:hip hop'", "track")
 
-    def test_wildcard_query(self, track_factory, tmp_session):
+    def test_wildcard_query(self, mock_album, tmp_session):
         """'*' as a query should return all items."""
-        track1 = track_factory()
-        track2 = track_factory()
+        tmp_session.add(mock_album)
+        tmp_session.flush()
 
-        tmp_session.merge(track1)
-        tmp_session.merge(track2)
-
-        assert len(query("*")) == 2
+        assert len(query("*", "album")) == 1
 
     def test_missing_extras(self, album_factory, tmp_session):
         """Ensure albums without extras are still returned by a valid query."""
-        album1 = album_factory()
-        album2 = album_factory()
-        album2.extras = []
-        assert album1.extras
-        assert not album2.extras
+        album = album_factory(num_extras=0)
 
-        tmp_session.merge(album1)
-        tmp_session.merge(album2)
+        tmp_session.add(album)
+        tmp_session.flush()
 
-        assert len(query("*", "album")) == 2
+        assert len(query("*", "album")) == 1
+
+    def test_custom_fields(self, mock_album, tmp_session):
+        """We can query a custom field."""
+        track = mock_album.tracks[0]
+        extra = mock_album.extras[0]
+
+        mock_album.custom_fields = ["custom"]
+        mock_album._custom_fields["custom"] = "album"
+        extra.custom_fields = ["custom"]
+        extra._custom_fields["custom"] = "extra"
+        track.custom_fields = ["custom"]
+        track._custom_fields["custom"] = "track"
+
+        tmp_session.add(mock_album)
+        tmp_session.flush()
+
+        assert query("a:custom:album t:custom:track e:custom:extra", "album")
+
+    def test_custom_field_regex(self, mock_album, tmp_session):
+        """We can regex query a custom field."""
+        track = mock_album.tracks[0]
+        extra = mock_album.extras[0]
+
+        mock_album.custom_fields = ["custom"]
+        mock_album._custom_fields["custom"] = "album"
+        extra.custom_fields = ["custom"]
+        extra._custom_fields["custom"] = 3
+        track.custom_fields = ["custom"]
+        track._custom_fields["custom"] = "track"
+
+        tmp_session.add(mock_album)
+        tmp_session.flush()
+
+        assert query("a:custom::albu. t:custom::trac. e:custom::3", "album")
+
+    def test_custom_list_field(self, mock_album, tmp_session):
+        """We can query custom list fields."""
+        track = mock_album.tracks[0]
+        extra = mock_album.extras[0]
+
+        mock_album.custom_fields = ["custom"]
+        mock_album._custom_fields["custom"] = ["album", 1]
+        extra.custom_fields = ["custom"]
+        extra._custom_fields["custom"] = ["extra", 2]
+        track.custom_fields = ["custom"]
+        track._custom_fields["custom"] = ["track", 3]
+
+        tmp_session.add(mock_album)
+        tmp_session.flush()
+
+        import sqlalchemy as sa
+
+        field = "custom"
+        custom_func = sa.func.json_each(
+            Album._custom_fields, f"$.{field}"
+        ).table_valued("value", joins_implicitly=True)
+        tmp_session.query(Album).filter(custom_func.c.value.ilike(1)).one()
+
+        assert query("a:custom:album t:custom:track e:custom:extra", "album")
+        assert query("a:custom:1 e:custom:2 t:custom:3", "album")
+        assert query("t:custom:3 t:custom:track", "album")

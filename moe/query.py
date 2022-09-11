@@ -1,22 +1,9 @@
-"""Provides a positional commandline argument for querying the database.
-
-Plugins wishing to use the query argument should define query as a parent parser
-when using the add_command() hook.
-
-Example:
-    Inside your `add_command` hook implemention::
-
-        my_parser = cmd_parser.add_parser("my_plugin", parents=[query.query_parser])
-
-Then, in your argument parsing function, call ``query.query(args.query)``
-to get a list of Tracks matching the query from the library.
-"""
+"""Provides functionality to query the library for albums, extras, and tracks."""
 
 import logging
 import re
 import shlex
 from pathlib import Path
-from typing import Any
 
 import sqlalchemy as sa
 import sqlalchemy.orm
@@ -38,14 +25,14 @@ class QueryError(Exception):
 
 
 HELP_STR = r"""
-The query must be in the format 'field:value' where field is a track's field to
-match and value is that field's value. Internally, this 'field:value' pair is referred
-to as a single term. The match is case-insensitive.
+The query must be in the format 'field:value' where field is, by default, a track's
+field to match and value is that field's value (case-insensitive). To match an album's
+field or an extra's field, prepend the field with `a:` or `e:` respectively.
+Internally, this 'field:value' pair is referred to as a single term.
 
-Album queries, specified with the `-a, --album` option, will return albums that contain
-any tracks matching the given query. Similarly, extra queries, specified with the
-`-e, --extra` option, will return extras that are attached to albums that contain any
-tracks matching the given query.
+By default, tracks will be returned by the query, but you can choose to return albums
+by using the ``-a, --album`` option, or you can return extras using the ``-e, --extra``
+option.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
 term in quotes.
@@ -74,64 +61,58 @@ https://mrmoe.readthedocs.io/en/latest/query.html
 """
 
 # each query will be split into these groups
-FIELD_GROUP = "field"
-SEPARATOR_GROUP = "separator"
-VALUE_GROUP = "value"
+FIELD_TYPE = "field_type"
+FIELD = "field"
+SEPARATOR = "separator"
+VALUE = "value"
 
 
-def query(query_str: str, query_type: str = "track") -> list[LibItem]:
-    """Queries the database for the given query string.
+def query(query_str: str, query_type: str) -> list[LibItem]:
+    """Queries the database for items matching the given query string.
 
     Args:
         query_str: Query string to parse. See HELP_STR for more info.
-        query_type: Type of query. Should be one of "album", "extra", or "track"
+        query_type: Type of library item to return: either 'album', 'extra', or 'track'.
 
     Returns:
-        All tracks matching the query.
+        All items matching the query of type ``query_type``.
 
     Raises:
         QueryError: Invalid query.
+
+    See Also:
+        `The query docs <https://mrmoe.readthedocs.io/en/latest/query.html>`_
     """
     log.debug(f"Querying library for items. [{query_str=!r}, {query_type=!r}]")
+    session = MoeSession()
 
     terms = shlex.split(query_str)
     if not terms:
         raise QueryError(f"No query given.\n{HELP_STR}")
 
-    items = _create_query(terms, query_type).all()
+    if query_type == "album":
+        library_query = session.query(Album).join(Track)
+    elif query_type == "extra":
+        library_query = session.query(Extra).join(Album).join(Track)
+    else:
+        library_query = session.query(Track).join(Album)
+    if query_type != "extra" and session.query(Extra).first():
+        library_query = library_query.join(Extra)
+
+    for term in terms:
+        parsed_term = _parse_term(term)
+        library_query = library_query.filter(
+            _create_filter_expression(
+                parsed_term[FIELD_TYPE],
+                parsed_term[FIELD],
+                parsed_term[SEPARATOR],
+                parsed_term[VALUE],
+            )
+        )
+    items = library_query.all()
 
     log.debug(f"Queried library for items. [{items=!r}]")
     return items
-
-
-def _create_query(terms: list[str], query_type: str) -> sqlalchemy.orm.query.Query:
-    """Creates a query statement.
-
-    Args:
-        terms: Query terms to parse.
-        query_type: Type of query. Should be one of "album", "extra", or "track"
-
-    Returns:
-        Sqlalchemy query statement.
-
-    Raises:
-        QueryError: Invalid query terms or type.
-    """
-    session = MoeSession()
-
-    if query_type == "track":
-        library_query = session.query(Track).join(Album, Extra, isouter=True)
-    elif query_type == "album":
-        library_query = session.query(Album).join(Track, Extra, isouter=True)
-    elif query_type == "extra":
-        library_query = session.query(Extra).join(Album, Track, isouter=True)
-    else:
-        raise QueryError(f"Invalid query type. [{query_type=!r}]")
-
-    for term in terms:
-        library_query = library_query.filter(_create_expression(_parse_term(term)))
-
-    return library_query
 
 
 def _parse_term(term: str) -> dict[str, str]:
@@ -144,15 +125,16 @@ def _parse_term(term: str) -> dict[str, str]:
 
     Returns:
         A dictionary containing each named group and its value.
-        The named groups are field, separator, and value.
+        The named groups are field_type, field, separator, and value.
 
     Example:
-        >>> parse_term('artist:name')
-        {"field": "artist", "separator": ":", "value": "name"}
+        >>> parse_term('a:artist:name')
+        {"field_type": "album", "field": "artist", "separator": ":", "value": "name"}
 
     Note:
-        The fields are meant to be programatically accessed with the respective
-        group constant e.g. `expression[FIELD_GROUP] == "artist"`
+        * The fields are meant to be programatically accessed with the respective
+        group constant e.g. `expression[FIELD] == "artist"`
+        * All `field` values are automatically converted to lowercase.
 
     Raises:
         QueryError: Invalid query term.
@@ -161,13 +143,14 @@ def _parse_term(term: str) -> dict[str, str]:
     # We use track_num as all tracks are guaranteed to have a track number.
     # '%' is an SQL LIKE query special character.
     if term == "*":
-        return {FIELD_GROUP: "_id", SEPARATOR_GROUP: ":", VALUE_GROUP: "%"}
+        return {FIELD_TYPE: "album", FIELD: "_id", SEPARATOR: ":", VALUE: "%"}
 
     query_re = re.compile(
         rf"""
-        (?P<{FIELD_GROUP}>\S+?)
-        (?P<{SEPARATOR_GROUP}>::?)
-        (?P<{VALUE_GROUP}>\S.*)
+        (?P<{FIELD_TYPE}>[aet]:)?
+        (?P<{FIELD}>\S+?)
+        (?P<{SEPARATOR}>::?)
+        (?P<{VALUE}>.*)
         """,
         re.VERBOSE,
     )
@@ -177,16 +160,25 @@ def _parse_term(term: str) -> dict[str, str]:
         raise QueryError(f"Invalid query term. [{term=!r}]\n{HELP_STR}")
 
     match_dict = match.groupdict()
-    match_dict[FIELD_GROUP] = match_dict[FIELD_GROUP].lower()
+    match_dict[FIELD] = match_dict[FIELD].lower()
+    if match_dict[FIELD_TYPE] == "a:":
+        match_dict[FIELD_TYPE] = "album"
+    elif match_dict[FIELD_TYPE] == "e:":
+        match_dict[FIELD_TYPE] = "extra"
+    else:
+        match_dict[FIELD_TYPE] = "track"
 
     return match_dict
 
 
-def _create_expression(term: dict[str, str]) -> sqlalchemy.sql.elements.ClauseElement:
+def _create_filter_expression(field_type: str, field: str, separator: str, value: str):
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
-        term: A parsed query term defined by `_parse_term()`.
+        field_type: LibItem type of ``field``.
+        field: The field to query for.
+        separator: Indicates the type of query.
+        value: Value of ``field`` to match.
 
     Returns:
         A filter for the database query.
@@ -197,27 +189,16 @@ def _create_expression(term: dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
     Raises:
         QueryError: Invalid query given.
     """
-    field = term[FIELD_GROUP].lower()
-    separator = term[SEPARATOR_GROUP]
-    value = term[VALUE_GROUP]
-
-    attr = _get_item_attr(field)
+    attr = _get_field_attr(field, field_type)
 
     if separator == ":":
-        # path matching
-        if str(attr) == "Track.path":
-            return Track.path == Path(value)  # type: ignore
-        elif str(attr) == "Extra.path":
-            return Extra.path == Path(value)  # type: ignore
-        elif str(attr) == "Album.path":
-            return Album.path == Path(value)  # type: ignore
+        if str(attr).endswith(".path"):
+            return attr == Path(value)
 
         # normal string match query - should be case insensitive
         return attr.ilike(value, escape="/")
 
     elif separator == "::":
-        # Regular expression query.
-        # Note, this is a custom sqlite function created in config.py
         try:
             re.compile(value)
         except re.error as re_err:
@@ -227,35 +208,38 @@ def _create_expression(term: dict[str, str]) -> sqlalchemy.sql.elements.ClauseEl
 
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
-    raise QueryError(f"Invalid query type. [type={separator}]")
+    raise QueryError(f"Invalid query type separator. [{separator=!r}]")
 
 
-def _get_item_attr(query_field: str) -> Any:
-    """Gets the matching attribute for a given query field.
+def _get_field_attr(field: str, field_type: str):
+    """Gets the corresponding attribute for the given field to use in a query filter."""
+    if field == "genre":
+        field = "genres"
 
-    Args:
-        query_field: Library item field to query.
-
-    Returns:
-        Matching library item attribute for the given query field.
-
-    Raises:
-        QueryError: Invalid query field.
-    """
-    attr: Any
-    if query_field == "extra_path":
-        attr = Extra.path
-    elif query_field == "album_path":
-        attr = Album.path
-    elif query_field == "genre":
-        attr = Track.genres
-    else:
-        # match track query_fields (all album fields should also be exposed)
+    if field_type == "album":
         try:
-            attr = getattr(Track, query_field)
-        except AttributeError as track_err:
-            raise QueryError(
-                f"Invalid Track query_field. {query_field=!r}"
-            ) from track_err
-
-    return attr
+            return getattr(Album, field)
+        except AttributeError:
+            # assume custom field
+            custom_func = sa.func.json_each(
+                Album._custom_fields, f"$.{field}"
+            ).table_valued("value", joins_implicitly=True)
+            return custom_func.c.value
+    elif field_type == "extra":
+        try:
+            return getattr(Extra, field)
+        except AttributeError:
+            # assume custom field
+            custom_func = sa.func.json_each(
+                Extra._custom_fields, f"$.{field}"
+            ).table_valued("value", joins_implicitly=True)
+            return custom_func.c.value
+    else:
+        try:
+            return getattr(Track, field)
+        except AttributeError:
+            # assume custom field
+            custom_func = sa.func.json_each(
+                Track._custom_fields, f"$.{field}"
+            ).table_valued("value", joins_implicitly=True)
+            return custom_func.c.value

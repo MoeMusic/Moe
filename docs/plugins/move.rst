@@ -30,7 +30,7 @@ Path Configuration Options
         - The ``if`` statement inside the path simply means that if there is more than one disc in the album, the tracks will be put into separate directories for their respective disc.
         - Include ``track.path.suffix`` at the end if you wish to retain the file extension of the track file.
 
-``extra_path = "{extra.filename}"``
+``extra_path = "{extra.path.name}"``
     Extra filesystem path format relative to ``album_path``.
 
 Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals>`_ which, as demonstrated by the default track path, allow all the advanced formatting and expression evaluation that come with them. You can access any of the :ref:`respective item's fields <fields:Fields>` in these strings using ``{[album/track/extra].field}`` notation as shown.

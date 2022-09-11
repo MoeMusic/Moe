@@ -1,12 +1,16 @@
 """Test the core api of the ``remove`` plugin."""
 
+from unittest.mock import MagicMock
+
 import pytest
+import sqlalchemy
+import sqlalchemy.event
+import sqlalchemy.orm
 
 import moe
-from moe.config import Config, ExtraPlugin
+from moe.config import Config, ExtraPlugin, MoeSession
 from moe.library.album import Album
 from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import remove as moe_rm
 
@@ -17,15 +21,25 @@ def tmp_rm_config(tmp_config) -> Config:
     return tmp_config('default_plugins = ["remove"]', tmp_db=True)
 
 
-class RemovePlugin:
-    """Test plugin that implements the remove hookspecs."""
+def rm_track_before_flush(session, flush_context, instances):
+    """Remove a track while the session is already flushing."""
+    for item in session.new | session.dirty:
+        if isinstance(item, Track) and item.title == "remove me":
+            moe_rm.remove_item(MagicMock(), item)
+
+
+class RmPlugin:
+    """Test plugin for remove."""
 
     @staticmethod
     @moe.hookimpl
-    def post_remove(config: Config, item: LibItem):
-        """Apply the new title onto the old album."""
-        if isinstance(item, Track):
-            item.title = "removed"
+    def register_sa_event_listeners(config, session):
+        """Registers event listeners for editing and processing new items."""
+        sqlalchemy.event.listen(
+            session,
+            "before_flush",
+            rm_track_before_flush,
+        )
 
 
 class TestRemoveItem:
@@ -63,20 +77,58 @@ class TestRemoveItem:
 
         assert not tmp_session.query(Extra).scalar()
 
+    def test_pending(self, mock_track, tmp_rm_config):
+        """We can remove items that have not yet been flushed."""
+        session = MoeSession()
+        session.add(mock_track)
 
-class TestPostRemove:
-    """Test the `post_remove` hookspec."""
+        moe_rm.remove_item(tmp_rm_config, mock_track)
+        session.flush()
 
-    def test_post_add(self, mock_track, tmp_config):
-        """Ensure plugins can implement the `pre_add` hook."""
-        config = tmp_config(
+        assert not session.query(Track).all()
+
+    def test_in_flush(self, track_factory, tmp_config):
+        """If the session is already flushing, ensure the delete happens first.
+
+        This is to prevent potential duplciates from inserting into the database before
+        their conflicts can be removed.
+        """
+        tmp_config(
             "default_plugins = ['remove']",
-            extra_plugins=[ExtraPlugin(RemovePlugin, "remove_plugin")],
+            extra_plugins=[ExtraPlugin(RmPlugin, "rm_test")],
+            tmp_db=True,
         )
+        session = MoeSession()
+        track = track_factory()
+        conflict_track = track_factory(path=track.path, title="remove me")
 
-        config.plugin_manager.hook.post_remove(config=config, item=mock_track)
+        session.add(track)
+        session.flush()
+        session.add(conflict_track)
+        session.flush()
 
-        assert mock_track.title == "removed"
+        db_track = session.query(Track).one()
+        assert db_track == track
+
+    def test_in_flush_rm_existing(self, track_factory, tmp_config):
+        """Remove an already existing item while a session is flushing."""
+        tmp_config(
+            "default_plugins = ['remove']",
+            extra_plugins=[ExtraPlugin(RmPlugin, "rm_test")],
+            tmp_db=True,
+        )
+        session = MoeSession()
+        track = track_factory()
+        conflict_track = track_factory(path=track.path)
+
+        session.add(track)
+        session.flush()
+        track.title = "remove me"
+        session.add(conflict_track)
+        session.flush()
+
+        db_track = session.query(Track).one()
+        assert db_track == conflict_track
 
 
 class TestPluginRegistration:

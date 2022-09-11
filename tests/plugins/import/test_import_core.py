@@ -1,6 +1,5 @@
 """Tests the import core plugin."""
 
-import copy
 from unittest.mock import patch
 
 import moe
@@ -16,10 +15,9 @@ class ImportPlugin:
     @moe.hookimpl
     def import_candidates(config: Config, album: Album) -> Album:
         """Changes the album title."""
-        new_album = copy.deepcopy(album)
-        new_album.title = "candidate title"
+        album.title = "candidate title"
 
-        return new_album
+        return album
 
     @staticmethod
     @moe.hookimpl
@@ -45,9 +43,10 @@ class TestHookSpecs:
         assert candidates
         assert candidates[0].title == "candidate title"
 
-    def test_process_candidates(self, mock_album, tmp_config):
+    def test_process_candidates(self, album_factory, tmp_config):
         """Plugins can process candidate albums."""
-        new_album = copy.deepcopy(mock_album)
+        mock_album = album_factory()
+        new_album = album_factory()
         new_album.title = "new title"
 
         config = tmp_config(

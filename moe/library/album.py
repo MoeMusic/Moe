@@ -3,34 +3,79 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
+import pluggy
 import sqlalchemy as sa
-from sqlalchemy import Column, Date, Integer, String, and_, or_
-from sqlalchemy.orm import joinedload, relationship
+from sqlalchemy import JSON, Column, Date, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import relationship
 
-from moe.config import MoeSession
+import moe
+from moe.config import Config
 from moe.library import SABase
-from moe.library.lib_item import LibItem, PathType
+from moe.library.lib_item import LibItem, LibraryError, PathType
 
-# This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
     from moe.library.extra import Extra
     from moe.library.track import Track
-
-    # Makes hybrid_property's have the same typing as a normal properties.
-    # Use until the stubs are improved.
-    typed_hybrid_property = property
-else:
-    from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Album"]
 
 log = logging.getLogger("moe.album")
 
 
-class AlbumError(Exception):
-    """Error creating an Album."""
+class Hooks:
+    """Album hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def create_custom_album_fields(config: Config) -> dict[str, Any]:  # type: ignore
+        """Creates new custom fields for an Album.
+
+        Args:
+            config: Moe config.
+
+        Returns:
+            Dict of the field names to their default values or ``None`` for no default.
+
+        Example:
+            Inside your hook implementation::
+
+                return {"my_new_field": "default value", "other_field": None}
+
+            You can then access your new field as if it were a normal field::
+
+                album.my_new_field = "awesome new value"
+
+        Important:
+            Your custom field should follow the same naming rules as any other python
+            variable i.e. no spaces, starts with a letter, and consists solely of
+            alpha-numeric and underscore characters.
+        """  # noqa: DAR202
+
+    @staticmethod
+    @moe.hookspec
+    def is_unique_album(album: "Album", other: "Album") -> bool:  # type: ignore
+        """Add new conditions to determine whether two albums are unique.
+
+        "Uniqueness" is meant in terms of whether the two albums should be considered
+        duplicates in the library. These additional conditions will be applied inside a
+        album's :meth:`is_unique` method.
+        """
+
+
+@moe.hookimpl
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `album` hookspecs to Moe."""
+    from moe.library.album import Hooks
+
+    plugin_manager.add_hookspecs(Hooks)
+
+
+class AlbumError(LibraryError):
+    """Error performing some operation on an Album."""
 
 
 # Album generic, used for typing classmethod
@@ -44,10 +89,11 @@ class Album(LibItem, SABase):
 
     Attributes:
         artist (str): AKA albumartist.
+        custom_fields set[str]: All custom fields. To add to this set, you should
+            implement the ``create_custom_album_fields`` hook.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
-        mb_album_id (str): Musicbrainz album aka release id.
         path (Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
@@ -60,9 +106,13 @@ class Album(LibItem, SABase):
     artist: str = cast(str, Column(String, nullable=False))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
-    mb_album_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
+    _custom_fields: dict[str, Any] = cast(
+        dict[str, Any],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
+    )
+    custom_fields = set()
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -79,6 +129,7 @@ class Album(LibItem, SABase):
 
     def __init__(
         self,
+        config: Config,
         path: Path,
         artist: str,
         title: str,
@@ -89,6 +140,7 @@ class Album(LibItem, SABase):
         """Creates an Album.
 
         Args:
+            config: Moe config.
             path: Filesystem path of the album directory.
             artist: Album artist.
             title: Album title.
@@ -96,6 +148,17 @@ class Album(LibItem, SABase):
             disc_total: Number of discs in the album.
             **kwargs: Any other fields to assign to the album.
         """
+        self.config = config
+        self._custom_fields = {}
+        self.custom_fields = set()
+        custom_fields = config.plugin_manager.hook.create_custom_album_fields(
+            config=config
+        )
+        for plugin_fields in custom_fields:
+            for plugin_field, default_val in plugin_fields.items():
+                self._custom_fields[plugin_field] = default_val
+                self.custom_fields.add(plugin_field)
+
         self.path = path
         self.artist = artist
         self.title = title
@@ -103,16 +166,16 @@ class Album(LibItem, SABase):
         self.disc_total = disc_total
 
         for key, value in kwargs.items():
-            if value:
-                setattr(self, key, value)
+            setattr(self, key, value)
 
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
-    def from_dir(cls: type[A], album_path: Path) -> A:
+    def from_dir(cls: type[A], config: Config, album_path: Path) -> A:
         """Creates an album from a directory.
 
         Args:
+            config: Moe config.
             album_path: Album directory path. The directory will be scanned for any
                 files to be added to the album. Any non-track files will be added as
                 extras.
@@ -133,7 +196,7 @@ class Album(LibItem, SABase):
         album: Optional[Album] = None
         for file_path in album_file_paths:
             try:
-                track = Track.from_file(file_path, album)
+                track = Track.from_file(config, file_path, album)
             except TrackError:
                 extra_paths.append(file_path)
             else:
@@ -144,7 +207,7 @@ class Album(LibItem, SABase):
             raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")
 
         for extra_path in extra_paths:
-            Extra(album, extra_path)
+            Extra(config, album, extra_path)
 
         log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
@@ -156,48 +219,15 @@ class Album(LibItem, SABase):
             "date",
             "disc_total",
             "extras",
-            "mb_album_id",
             "path",
             "title",
             "tracks",
             "year",
-        )
+        ) + tuple(self._custom_fields)
 
-    def get_existing(self) -> Optional["Album"]:
-        """Gets a matching Album in the library by its unique attributes.
-
-        Returns:
-            Duplicate album or the same album if it already exists in the library.
-        """
-        log.debug(f"Searching library for existing album. [album={self!r}]")
-
-        session = MoeSession()
-        existing_album = (
-            session.query(Album)
-            .filter(
-                or_(
-                    Album.path == self.path,
-                    and_(
-                        Album.mb_album_id == self.mb_album_id,
-                        Album.mb_album_id != None,  # noqa: E711
-                    ),
-                )
-            )
-            .options(joinedload("*"))
-            .one_or_none()
-        )
-        if not existing_album:
-            log.debug("No matching album found.")
-            return None
-
-        log.debug(f"Matching album found. [match={existing_album!r}]")
-        return existing_album
-
-    def get_extra(self, filename: str) -> Optional["Extra"]:
-        """Gets an Extra by its filename."""
-        return next(
-            (extra for extra in self.extras if extra.filename == filename), None
-        )
+    def get_extra(self, path: Path) -> Optional["Extra"]:
+        """Gets an Extra by its path."""
+        return next((extra for extra in self.extras if extra.path == path), None)
 
     def get_track(self, track_num: int, disc: int = 1) -> Optional["Track"]:
         """Gets a Track by its track number."""
@@ -210,6 +240,22 @@ class Album(LibItem, SABase):
             None,
         )
 
+    def is_unique(self, other: "Album") -> bool:
+        """Returns whether an album is unique in the library from ``other``."""
+        if not isinstance(other, Album):
+            return True
+
+        if self.path == other.path:
+            return False
+
+        custom_uniqueness = self.config.plugin_manager.hook.is_unique_album(
+            album=self, other=other
+        )
+        if False in custom_uniqueness:
+            return False
+
+        return True
+
     def merge(self, other: "Album", overwrite: bool = False) -> None:
         """Merges another album into this one.
 
@@ -217,18 +263,9 @@ class Album(LibItem, SABase):
             other: Other album to be merged with the current album.
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
-        log.debug(
-            f"Merging albums. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
-        )
+        log.debug(f"Merging albums. [album_a={self!r}, album_b={other!r}")
 
-        for field in self.fields():
-            if field not in {"path", "year", "tracks", "extras"}:
-                other_value = getattr(other, field)
-                self_value = getattr(self, field)
-                if other_value and (overwrite or (not overwrite and not self_value)):
-                    setattr(self, field, other_value)
-
-        new_tracks: list[Track] = []
+        new_tracks: list["Track"] = []
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
@@ -237,21 +274,29 @@ class Album(LibItem, SABase):
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
 
-        new_extras: list[Extra] = []
+        new_extras: list["Extra"] = []
         for other_extra in other.extras:
-            conflict_extra = self.get_extra(other_extra.filename)
-            if conflict_extra and overwrite:
-                self.extras.remove(conflict_extra)
-                new_extras.append(other_extra)
-            elif not conflict_extra:
+            conflict_extra = self.get_extra(
+                self.path / (other_extra.path.relative_to(other.path))
+            )
+            if conflict_extra:
+                conflict_extra.merge(other_extra, overwrite)
+            else:
                 new_extras.append(other_extra)
         self.extras.extend(new_extras)
+
+        for field in self.fields():
+            if field not in {"year", "tracks", "extras"}:
+                other_value = getattr(other, field)
+                self_value = getattr(self, field)
+                if other_value and (overwrite or (not overwrite and not self_value)):
+                    setattr(self, field, other_value)
 
         log.debug(
             f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
         )
 
-    @typed_hybrid_property
+    @hybrid_property
     def year(self) -> int:  # type: ignore
         """Gets an Album's year."""
         return self.date.year
@@ -262,16 +307,20 @@ class Album(LibItem, SABase):
         return sa.extract("year", cls.date)
 
     def __eq__(self, other) -> bool:
-        """Compares Albums by their 'uniqueness' in the database."""
+        """Compares Albums by their fields."""
         if not isinstance(other, Album):
             return False
 
-        if self.mb_album_id and self.mb_album_id == other.mb_album_id:
-            return True
-        if self.path == other.path:
-            return True
+        eq_fields = (
+            field for field in self.fields() if field not in ["extras", "tracks"]
+        )  # don't compare extras or tracks to prevent recursion
+        for field in eq_fields:
+            if not hasattr(other, field) or (
+                getattr(self, field) != getattr(other, field)
+            ):
+                return False
 
-        return False
+        return True
 
     def __lt__(self, other: "Album") -> bool:
         """Sort an album based on its title, then artist, then date."""
@@ -285,34 +334,35 @@ class Album(LibItem, SABase):
 
     def __repr__(self):
         """Represents an Album using its fields."""
-        repr_str = "Album("
-
         repr_fields = [
             "artist",
             "title",
             "date",
-            "mb_album_id",
             "path",
         ]
         field_reprs = []
         for field in repr_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str += ", ".join(field_reprs)
+        repr_str = "Album(" + ", ".join(field_reprs)
 
-        repr_str += ", tracks=["
+        custom_field_reprs = []
+        for custom_field, value in self._custom_fields.items():
+            custom_field_reprs.append(f"{custom_field}={value}")
+        if custom_field_reprs:
+            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
+
         track_reprs = []
         for track in sorted(self.tracks):
             track_reprs.append(f"{track.disc}.{track.track_num} - {track.title}")
-        repr_str += ", ".join(track_reprs) + "]"
+        repr_str += ", tracks=[" + ", ".join(track_reprs) + "]"
 
-        repr_str += ", extras=["
         extra_reprs = []
         for extra in sorted(self.extras):
-            extra_reprs.append(f"{extra.filename}")
-        repr_str += ", ".join(extra_reprs) + "]"
+            extra_reprs.append(f"{extra.path.name}")
+        repr_str += ", extras=[" + ", ".join(extra_reprs) + "]"
 
-        repr_str += "]"
+        repr_str += ")"
         return repr_str
 
     def __str__(self):

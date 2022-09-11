@@ -26,7 +26,7 @@ log = logging.getLogger("moe.move")
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     default_album_path = "{album.artist}/{album.title} ({album.year})"
-    default_extra_path = "{extra.filename}"
+    default_extra_path = "{extra.path.name}"
     default_track_path = (
         "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/"
         "{track.track_num:02} - {track.title}{track.path.suffix}"
@@ -41,18 +41,11 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(*validators)
 
 
-@moe.hookimpl
-def post_add(config: Config, item: LibItem):
+@moe.hookimpl(trylast=True)
+def edit_new_items(config: Config, items: list[LibItem]):
     """Copies and formats the path of an item after it has been added to the library."""
-    # copy the whole album in case album attributes have changed
-    if isinstance(item, Album):
-        album = item
-    elif isinstance(item, (Extra, Track)):
-        album = item.album_obj
-    else:
-        raise NotImplementedError
-
-    copy_item(config, album)
+    for item in items:
+        copy_item(config, item)
 
 
 ########################################################################################
@@ -132,7 +125,7 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
             All library items should have their own template and refer to variables as:
                 Album: album (e.g. {album.title}, {album.artist})
                 Track: track (e.g. {track.title}, {track.artist})
-                Extra: extra (e.g. {extra.filename}
+                Extra: extra (e.g. {extra.path.name}
         lib_item: Library item referenced in the template.
 
 

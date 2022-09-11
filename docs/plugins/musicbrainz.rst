@@ -38,3 +38,25 @@ The following options involve auto updating a specific collection on musicbrainz
 
 ``auto_remove = False``
     Whether to automatically remove releases from ``collection_id`` when removed from the library.
+
+*************
+Custom Fields
+*************
+
+Track Fields
+------------
+.. csv-table::
+    :header: "Field", "Description", "Notes"
+    :widths: 4, 10, 6
+    :width: 100%
+
+    "mb_track_id", "Musicbrainz track id", ""
+
+Album Fields
+------------
+.. csv-table::
+    :header: "Field", "Description", "Notes"
+    :widths: 4, 10, 6
+    :width: 100%
+
+    "mb_album_id", "Musicbrainz album aka release id", ""

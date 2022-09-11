@@ -7,8 +7,7 @@ import dynaconf
 import pytest
 
 import moe
-from moe.config import Config, ConfigValidationError, ExtraPlugin
-from moe.library.track import Track
+from moe.config import CORE_PLUGINS, Config, ConfigValidationError, ExtraPlugin
 
 
 class TestInit:
@@ -29,11 +28,11 @@ class TestInit:
     def test_default_plugins(self, tmp_config):
         """Only register enabled + default plugins.
 
-        The config and cli "plugins" will always be registered.
+        The config, track, album, and extra "plugins" will always be registered.
         """
         config = tmp_config(settings='default_plugins = ["list", "write"]')
 
-        plugins = ["config", "list", "write"]
+        plugins = list(CORE_PLUGINS) + ["list", "write"]
         for plugin_name, _ in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
 
@@ -56,11 +55,11 @@ class TestPlugins:
         """All plugins specified in the configuration are registered.
 
         Note:
-            The config plugin will always be registered.
+            The config, track, album, and extra "plugins" will always be registered.
         """
         config = tmp_config(settings='default_plugins = ["cli", "list"]')
 
-        plugins = ["config", "cli", "list"]
+        plugins = list(CORE_PLUGINS) + ["cli", "list"]
         for plugin_name, plugin_module in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
             assert plugin_module
@@ -77,22 +76,6 @@ class TestPlugins:
 
 class ConfigPlugin:
     """Plugin that implements the config hooks for testing."""
-
-    @staticmethod
-    @moe.hookimpl
-    def edit_new_items(config, items):
-        """Edit the incoming items."""
-        for item in items:
-            if isinstance(item, Track):
-                item.title = "config"
-
-    @staticmethod
-    @moe.hookimpl
-    def process_new_items(config, items):
-        """Process the incoming items."""
-        for item in items:
-            if isinstance(item, Track):
-                item.track_num = 3
 
     @staticmethod
     @moe.hookimpl
@@ -121,36 +104,6 @@ class TestHooks:
         )
 
         assert config.settings.config_plugin == "hello!"
-
-    def test_edit_new_items(self, mock_track, tmp_config, tmp_session):
-        """Ensure plugins can implement the `edit_new_items` hook."""
-        tmp_config(
-            """default_plugins = []
-            CONFIG_PLUGIN = true
-            """,
-            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
-            tmp_db=True,
-        )
-
-        tmp_session.add(mock_track)
-        tmp_session.flush()
-
-        assert mock_track.title == "config"
-
-    def test_process_new_items(self, mock_track, tmp_config, tmp_session):
-        """Ensure plugins can implement the `add_hooks` hook."""
-        tmp_config(
-            """default_plugins = []
-            CONFIG_PLUGIN = true
-            """,
-            extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
-            tmp_db=True,
-        )
-
-        tmp_session.add(mock_track)
-        tmp_session.flush()
-
-        assert mock_track.track_num == 3
 
     def test_plugin_registration(self, tmp_config):
         """Ensure plugins can implement the `plugin_registration` hook."""
