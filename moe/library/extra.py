@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import pluggy
 from sqlalchemy import JSON, Column, Integer
@@ -33,19 +33,19 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_custom_extra_fields(config: Config) -> list[str]:  # type: ignore
+    def create_custom_extra_fields(config: Config) -> dict[str, Any]:  # type: ignore
         """Creates new custom fields for an Extra.
 
         Args:
             config: Moe config.
 
         Returns:
-            A list of any new fields you wish to create.
+            Dict of the field names to their default values or ``None`` for no default.
 
         Example:
             Inside your hook implementation::
 
-                return "my_new_field"
+                return {"my_new_field": "default value", "other_field": None}
 
             You can then access your new field as if it were a normal field::
 
@@ -103,8 +103,8 @@ class Extra(LibItem, SABase):
             config=config
         )
         for plugin_fields in custom_fields:
-            for plugin_field in plugin_fields:
-                self._custom_fields[plugin_field] = None
+            for plugin_field, default_val in plugin_fields.items():
+                self._custom_fields[plugin_field] = default_val
 
         album.extras.append(self)
         self.path = path

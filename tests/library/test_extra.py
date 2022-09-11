@@ -14,7 +14,7 @@ class MyExtraPlugin:
     @moe.hookimpl
     def create_custom_extra_fields(config):
         """Create a new custom field."""
-        return ["extra_field", "another_field"]
+        return {"no_default": None, "default": "value"}
 
 
 class TestCustomFields:
@@ -55,8 +55,8 @@ class TestCustomFields:
         config = tmp_config(extra_plugins=[ExtraPlugin(MyExtraPlugin, "extra_plugin")])
         extra = extra_factory(config)
 
-        assert "extra_field" in extra._custom_fields
-        assert "another_field" in extra._custom_fields
+        assert not extra.no_default
+        assert extra.default == "value"
 
 
 class TestGetExisting:

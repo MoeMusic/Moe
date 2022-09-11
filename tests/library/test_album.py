@@ -19,7 +19,7 @@ class MyAlbumPlugin:
     @moe.hookimpl
     def create_custom_album_fields(config):
         """Create a new custom field."""
-        return ["album_field", "another_field"]
+        return {"no_default": None, "default": "value"}
 
 
 class TestCustomFields:
@@ -60,8 +60,8 @@ class TestCustomFields:
         config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
         album = album_factory(config)
 
-        assert "album_field" in album._custom_fields
-        assert "another_field" in album._custom_fields
+        assert not album.no_default
+        assert album.default == "value"
 
 
 class TestFromDir:

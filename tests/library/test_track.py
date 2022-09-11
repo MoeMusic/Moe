@@ -20,7 +20,7 @@ class MyTrackPlugin:
     @moe.hookimpl
     def create_custom_track_fields(config):
         """Create a new custom field."""
-        return ["track_field", "another_field"]
+        return {"no_default": None, "default": "value"}
 
 
 class TestCustomFields:
@@ -61,8 +61,8 @@ class TestCustomFields:
         config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
         track = track_factory(config)
 
-        assert "track_field" in track._custom_fields
-        assert "another_field" in track._custom_fields
+        assert not track.no_default
+        assert track.default == "value"
 
 
 class TestInit:
