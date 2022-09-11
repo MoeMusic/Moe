@@ -29,11 +29,11 @@ class TestInit:
     def test_default_plugins(self, tmp_config):
         """Only register enabled + default plugins.
 
-        The config and cli "plugins" will always be registered.
+        The config, track, album, and extra "plugins" will always be registered.
         """
         config = tmp_config(settings='default_plugins = ["list", "write"]')
 
-        plugins = ["config", "list", "write"]
+        plugins = ["config", "album", "extra", "track", "list", "write"]
         for plugin_name, _ in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
 
@@ -56,11 +56,11 @@ class TestPlugins:
         """All plugins specified in the configuration are registered.
 
         Note:
-            The config plugin will always be registered.
+            The config, track, album, and extra "plugins" will always be registered.
         """
         config = tmp_config(settings='default_plugins = ["cli", "list"]')
 
-        plugins = ["config", "cli", "list"]
+        plugins = ["config", "album", "extra", "track", "list", "cli"]
         for plugin_name, plugin_module in config.plugin_manager.list_name_plugin():
             assert plugin_name in plugins
             assert plugin_module

@@ -1,6 +1,5 @@
 """Tests the import cli plugin."""
 
-import copy
 from unittest.mock import Mock, patch
 
 import pytest
@@ -21,13 +20,11 @@ def tmp_import_config(tmp_config) -> Config:
 class TestPrompt:
     """Test the import prompt."""
 
-    def test_multi_disc_album(self, mock_album, tmp_config, tmp_session):
+    def test_multi_disc_album(self, album_factory, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
         config = tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
-        mock_album.disc_total = 2
-        mock_album.tracks[1].disc = 2
-        mock_album.tracks[1].track_num = 1
-        new_album = copy.deepcopy(mock_album)
+        old_album = album_factory(num_discs=2)
+        new_album = album_factory(num_discs=2)
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
@@ -35,10 +32,10 @@ class TestPrompt:
             return_value=mock_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(config, mock_album, new_album)
+            moe_import.import_prompt(config, old_album, new_album)
 
-        assert mock_album.disc_total == 2
-        assert mock_album.get_track(1, disc=2)
+        assert old_album.disc_total == 2
+        assert old_album.get_track(1, disc=2)
 
 
 class ImportPlugin:
@@ -217,9 +214,10 @@ class TestAddImportPromptChoice:
         assert old_album.get_track(1).path == og_path2
         assert old_album.get_track(2).path == og_path1
 
-    def test_apply_extras(self, mock_album, extra_factory, tmp_import_config):
+    def test_apply_extras(self, album_factory, extra_factory, tmp_import_config):
         """`apply` prompt choice should keep any extras."""
-        new_album = copy.deepcopy(mock_album)
+        mock_album = album_factory()
+        new_album = album_factory()
         new_extra = extra_factory(album=mock_album)
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
@@ -232,9 +230,10 @@ class TestAddImportPromptChoice:
 
         assert new_extra in mock_album.extras
 
-    def test_apply_fields(self, mock_album, tmp_import_config):
+    def test_apply_fields(self, album_factory, tmp_import_config):
         """Fields get applied onto the old album."""
-        new_album = copy.deepcopy(mock_album)
+        mock_album = album_factory()
+        new_album = album_factory()
         new_album.title = "new title"
         assert mock_album.title != new_album.title
 

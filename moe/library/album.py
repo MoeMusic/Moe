@@ -5,11 +5,14 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, TypeVar, cast
 
+import pluggy
 import sqlalchemy as sa
-from sqlalchemy import Column, Date, Integer, String, and_, or_
+from sqlalchemy import JSON, Column, Date, Integer, String, and_, or_
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import joinedload, relationship
 
-from moe.config import MoeSession
+import moe
+from moe.config import Config, MoeSession
 from moe.library import SABase
 from moe.library.lib_item import LibItem, PathType
 
@@ -27,6 +30,44 @@ else:
 __all__ = ["Album"]
 
 log = logging.getLogger("moe.album")
+
+
+class Hooks:
+    """Album hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def create_custom_album_fields(config: Config) -> list[str]:  # type: ignore
+        """Creates new custom fields for an Album.
+
+        Args:
+            config: Moe config.
+
+        Returns:
+            A list of any new fields you wish to create.
+
+        Example:
+            Inside your hook implementation::
+
+                return "my_new_field"
+
+            You can then access your new field as if it were a normal field::
+
+                album.my_new_field = "awesome new value"
+
+        Important:
+            Your custom field should follow the same naming rules as any other python
+            variable i.e. no spaces, starts with a letter, and consists solely of
+            alpha-numeric and underscore characters.
+        """  # noqa: DAR202
+
+
+@moe.hookimpl
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `album` hookspecs to Moe."""
+    from moe.library.album import Hooks
+
+    plugin_manager.add_hookspecs(Hooks)
 
 
 class AlbumError(Exception):
@@ -63,6 +104,10 @@ class Album(LibItem, SABase):
     mb_album_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
+    _custom_fields: dict[str, Optional[str]] = cast(
+        dict[str, Optional[str]],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    )
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -79,6 +124,7 @@ class Album(LibItem, SABase):
 
     def __init__(
         self,
+        config: Config,
         path: Path,
         artist: str,
         title: str,
@@ -89,6 +135,7 @@ class Album(LibItem, SABase):
         """Creates an Album.
 
         Args:
+            config: Moe config.
             path: Filesystem path of the album directory.
             artist: Album artist.
             title: Album title.
@@ -96,6 +143,15 @@ class Album(LibItem, SABase):
             disc_total: Number of discs in the album.
             **kwargs: Any other fields to assign to the album.
         """
+        self.config = config
+        self.__dict__["_custom_fields"] = {}
+        custom_fields = config.plugin_manager.hook.create_custom_album_fields(
+            config=config
+        )
+        for plugin_fields in custom_fields:
+            for plugin_field in plugin_fields:
+                self._custom_fields[plugin_field] = None
+
         self.path = path
         self.artist = artist
         self.title = title
@@ -109,10 +165,11 @@ class Album(LibItem, SABase):
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
-    def from_dir(cls: type[A], album_path: Path) -> A:
+    def from_dir(cls: type[A], config: Config, album_path: Path) -> A:
         """Creates an album from a directory.
 
         Args:
+            config: Moe config.
             album_path: Album directory path. The directory will be scanned for any
                 files to be added to the album. Any non-track files will be added as
                 extras.
@@ -133,7 +190,7 @@ class Album(LibItem, SABase):
         album: Optional[Album] = None
         for file_path in album_file_paths:
             try:
-                track = Track.from_file(file_path, album)
+                track = Track.from_file(config, file_path, album)
             except TrackError:
                 extra_paths.append(file_path)
             else:
@@ -144,7 +201,7 @@ class Album(LibItem, SABase):
             raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")
 
         for extra_path in extra_paths:
-            Extra(album, extra_path)
+            Extra(config, album, extra_path)
 
         log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
@@ -285,8 +342,6 @@ class Album(LibItem, SABase):
 
     def __repr__(self):
         """Represents an Album using its fields."""
-        repr_str = "Album("
-
         repr_fields = [
             "artist",
             "title",
@@ -298,21 +353,25 @@ class Album(LibItem, SABase):
         for field in repr_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str += ", ".join(field_reprs)
+        repr_str = "Album(" + ", ".join(field_reprs)
 
-        repr_str += ", tracks=["
+        custom_field_reprs = []
+        for custom_field, value in self._custom_fields.items():
+            custom_field_reprs.append(f"{custom_field}={value}")
+        if custom_field_reprs:
+            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
+
         track_reprs = []
         for track in sorted(self.tracks):
             track_reprs.append(f"{track.disc}.{track.track_num} - {track.title}")
-        repr_str += ", ".join(track_reprs) + "]"
+        repr_str += ", tracks=[" + ", ".join(track_reprs) + "]"
 
-        repr_str += ", extras=["
         extra_reprs = []
         for extra in sorted(self.extras):
             extra_reprs.append(f"{extra.filename}")
-        repr_str += ", ".join(extra_reprs) + "]"
+        repr_str += ", extras=[" + ", ".join(extra_reprs) + "]"
 
-        repr_str += "]"
+        repr_str += ")"
         return repr_str
 
     def __str__(self):

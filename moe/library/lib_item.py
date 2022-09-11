@@ -1,6 +1,7 @@
 """Shared functionality between library albums, extras, and tracks."""
 
 from pathlib import Path
+from typing import Any
 
 import sqlalchemy as sa
 
@@ -22,6 +23,23 @@ class LibItem:
     def get_existing(self) -> "LibItem":
         """Returns a matching item in the library by its unique attributes."""
         raise NotImplementedError
+
+    def __getattr__(self, name: str) -> Any:
+        """See if ``name`` is a custom field."""
+        try:
+            return self.__dict__["_custom_fields"][name]
+        except KeyError:
+            raise AttributeError from None
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set custom fields if a valid key."""
+        if (
+            "_custom_fields" in self.__dict__
+            and name in self.__dict__["_custom_fields"]
+        ):
+            self._custom_fields[name] = value
+        else:
+            super().__setattr__(name, value)
 
 
 class PathType(sa.types.TypeDecorator):

@@ -6,13 +6,16 @@ from pathlib import Path
 from typing import Optional, TypeVar, cast
 
 import mediafile
+import pluggy
 import sqlalchemy.orm as sa_orm
-from sqlalchemy import Column, Integer, String, and_, or_
+from sqlalchemy import JSON, Column, Integer, String, and_, or_
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
-from moe.config import MoeSession
+import moe
+from moe.config import Config, MoeSession
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
@@ -20,6 +23,44 @@ from moe.library.lib_item import LibItem, PathType
 __all__ = ["Track", "TrackError"]
 
 log = logging.getLogger("moe.track")
+
+
+class Hooks:
+    """Track hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def create_custom_track_fields(config: Config) -> list[str]:  # type: ignore
+        """Creates new custom fields for a Track.
+
+        Args:
+            config: Moe config.
+
+        Returns:
+            A list of any new fields you wish to create.
+
+        Example:
+            Inside your hook implementation::
+
+                return "my_new_field"
+
+            You can then access your new field as if it were a normal field::
+
+                track.my_new_field = "awesome new value"
+
+        Important:
+            Your custom field should follow the same naming rules as any other python
+            variable i.e. no spaces, starts with a letter, and consists solely of
+            alpha-numeric and underscore characters.
+        """  # noqa: DAR202
+
+
+@moe.hookimpl
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `track` hookspecs to Moe."""
+    from moe.library.track import Hooks
+
+    plugin_manager.add_hookspecs(Hooks)
 
 
 class TrackError(Exception):
@@ -84,6 +125,10 @@ class Track(LibItem, SABase):
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
+    _custom_fields: dict[str, Optional[str]] = cast(
+        dict[str, Optional[str]],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="tracks")
@@ -106,6 +151,7 @@ class Track(LibItem, SABase):
 
     def __init__(
         self,
+        config: Config,
         album: Album,
         path: Path,
         title: str,
@@ -115,12 +161,22 @@ class Track(LibItem, SABase):
         """Creates a Track.
 
         Args:
+            config: Moe config.
             album: Album the track belongs to.
             path: Filesystem path of the track file.
             title: Title of the track.
             track_num: Track number.
             **kwargs: Any other fields to assign to the track.
         """
+        self.config = config
+        self.__dict__["_custom_fields"] = {}
+        custom_fields = config.plugin_manager.hook.create_custom_track_fields(
+            config=config
+        )
+        for plugin_fields in custom_fields:
+            for plugin_field in plugin_fields:
+                self._custom_fields[plugin_field] = None
+
         album.tracks.append(self)
         self.path = path
         self.title = title
@@ -166,12 +222,15 @@ class Track(LibItem, SABase):
         return 1
 
     @classmethod
-    def from_file(cls: type[T], track_path: Path, album: Optional[Album] = None) -> T:
+    def from_file(
+        cls: type[T], config: Config, track_path: Path, album: Optional[Album] = None
+    ) -> T:
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
+            config: Moe config.
             track_path: Filesystem path of the track.
             album: Corresponding album for the track. If not given, the album will be
                 created.
@@ -196,6 +255,7 @@ class Track(LibItem, SABase):
             albumartist = audio_file.albumartist or audio_file.artist
 
             album = Album(
+                config=config,
                 artist=albumartist,
                 title=audio_file.album,
                 date=audio_file.date,
@@ -205,6 +265,7 @@ class Track(LibItem, SABase):
             )
 
         return cls(
+            config=config,
             album=album,
             path=track_path,
             track_num=audio_file.track,
@@ -336,8 +397,6 @@ class Track(LibItem, SABase):
 
     def __repr__(self):
         """Represents a Track using track-specific and relevant album fields."""
-        repr_str = "Track("
-
         repr_fields = [
             "track_num",
             "disc",
@@ -352,8 +411,15 @@ class Track(LibItem, SABase):
         for field in repr_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str += ", ".join(field_reprs) + ")"
+        repr_str = "Track(" + ", ".join(field_reprs)
 
+        custom_field_reprs = []
+        for custom_field, value in self._custom_fields.items():
+            custom_field_reprs.append(f"{custom_field}={value}")
+        if custom_field_reprs:
+            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
+
+        repr_str += ")"
         return repr_str
 
     def __str__(self):

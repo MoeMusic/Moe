@@ -31,7 +31,6 @@ import sqlalchemy.orm
 import alembic.command
 import alembic.config
 import moe
-import moe.config
 from moe.library.lib_item import LibItem, PathType
 
 session_factory = sqlalchemy.orm.sessionmaker()
@@ -362,7 +361,18 @@ class Config:
 
         # need to validate `config` specific settings separately so we have access to
         # the 'default_plugins' setting
-        self.plugin_manager.register(moe.config, name="config")
+        self.plugin_manager.register(
+            importlib.import_module("moe.config"), name="config"
+        )
+        self.plugin_manager.register(
+            importlib.import_module("moe.library.album"), name="album"
+        )
+        self.plugin_manager.register(
+            importlib.import_module("moe.library.extra"), name="extra"
+        )
+        self.plugin_manager.register(
+            importlib.import_module("moe.library.track"), name="track"
+        )
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self._validate_settings()

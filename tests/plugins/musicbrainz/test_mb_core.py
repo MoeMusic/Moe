@@ -1,7 +1,7 @@
 """Tests the musicbrainz plugin."""
 
 import datetime
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -130,7 +130,7 @@ class TestImportCandidates:
                 config=config, album=mock_album
             )
 
-        mock_gma.assert_called_once_with(mock_album)
+        mock_gma.assert_called_once_with(config, mock_album)
         assert candidates == [mock_album]
 
 
@@ -267,7 +267,7 @@ class TestGetMatchingAlbum:
         mock_album.artist = "Kanye West"
         mock_album.title = "My Beautiful Dark Twisted Fantasy"
 
-        mb_album = moe_mb.get_matching_album(mock_album)
+        mb_album = moe_mb.get_matching_album(MagicMock(), mock_album)
 
         # don't test every field since we can't actually guarantee the accuracy of
         # musicbrainz's search results every time
@@ -292,7 +292,7 @@ class TestGetMatchingAlbum:
             return_value=mb_rsrc.full_release.search,
             autospec=True,
         ) as mock_mb_search:
-            mb_album = moe_mb.get_matching_album(mock_album)
+            mb_album = moe_mb.get_matching_album(MagicMock(), mock_album)
 
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
         assert mb_album == mb_rsrc.full_release.album
@@ -300,13 +300,14 @@ class TestGetMatchingAlbum:
     def test_dont_search_if_mbid(self, mock_album):
         """Use ``mb_album_id`` to search by id if it exists."""
         mock_album.mb_album_id = "1"
+        mock_config = MagicMock()
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True
         ) as mock_mb_by_id:
-            moe_mb.get_matching_album(mock_album)
+            moe_mb.get_matching_album(mock_config, mock_album)
 
-        mock_mb_by_id.assert_called_once_with(mock_album.mb_album_id)
+        mock_mb_by_id.assert_called_once_with(mock_config, mock_album.mb_album_id)
 
 
 class TestGetAlbumById:
@@ -328,7 +329,7 @@ class TestGetAlbumById:
         mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
         mock_mb_by_id.return_value = mb_rsrc.full_release.release
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         mock_mb_by_id.assert_called_once_with(
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
@@ -340,7 +341,7 @@ class TestGetAlbumById:
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year_mon
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 12, 1)
 
@@ -349,7 +350,7 @@ class TestGetAlbumById:
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 1, 1)
 
@@ -358,7 +359,7 @@ class TestGetAlbumById:
         mb_album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
         mock_mb_by_id.return_value = mb_rsrc.multi_disc.release
 
-        mb_album = moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
 
         assert mb_album.disc_total == 2
         assert any(track.disc == 1 for track in mb_album.tracks)
@@ -643,14 +644,15 @@ class TestUpdateAlbum:
         """We can update a given album."""
         old_album = album_factory(title="old", mb_album_id="1")
         new_album = album_factory(title="new")
+        mock_config = MagicMock()
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True, return_value=new_album
         ) as mock_album_by_id:
-            moe_mb.update_album(old_album)
+            moe_mb.update_album(mock_config, old_album)
 
         assert old_album.title == new_album.title
-        mock_album_by_id.assert_called_once_with(old_album.mb_album_id)
+        mock_album_by_id.assert_called_once_with(mock_config, old_album.mb_album_id)
 
     def test_no_id(self, mock_album):
         """Raise ValueError if not mb album id present."""
@@ -658,7 +660,7 @@ class TestUpdateAlbum:
 
         with patch.object(moe_mb.mb_core, "get_album_by_id", autospec=True):
             with pytest.raises(ValueError, match=r"album="):
-                moe_mb.update_album(mock_album)
+                moe_mb.update_album(MagicMock(), mock_album)
 
 
 class TestPluginRegistration:

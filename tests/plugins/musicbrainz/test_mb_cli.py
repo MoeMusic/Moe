@@ -43,7 +43,7 @@ class TestAddImportPromptChoice:
                 ) as mock_prompt:
                     prompt_choices[0].func(config, old_album, new_album)
 
-        mock_get_album.assert_called_once_with("new id")
+        mock_get_album.assert_called_once_with(config, "new id")
         mock_prompt.assert_called_once_with(config, old_album, mock_album)
 
 

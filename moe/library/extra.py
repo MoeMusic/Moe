@@ -4,11 +4,14 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
-from sqlalchemy import Column, Integer
+import pluggy
+from sqlalchemy import JSON, Column, Integer
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import joinedload, relationship
 from sqlalchemy.schema import ForeignKey
 
-from moe.config import MoeSession
+import moe
+from moe.config import Config, MoeSession
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
@@ -25,6 +28,44 @@ __all__ = ["Extra"]
 log = logging.getLogger("moe.extra")
 
 
+class Hooks:
+    """Extra hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def create_custom_extra_fields(config: Config) -> list[str]:  # type: ignore
+        """Creates new custom fields for an Extra.
+
+        Args:
+            config: Moe config.
+
+        Returns:
+            A list of any new fields you wish to create.
+
+        Example:
+            Inside your hook implementation::
+
+                return "my_new_field"
+
+            You can then access your new field as if it were a normal field::
+
+                extra.my_new_field = "awesome new value"
+
+        Important:
+            Your custom field should follow the same naming rules as any other python
+            variable i.e. no spaces, starts with a letter, and consists solely of
+            alpha-numeric and underscore characters.
+        """  # noqa: DAR202
+
+
+@moe.hookimpl
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `extra` hookspecs to Moe."""
+    from moe.library.extra import Hooks
+
+    plugin_manager.add_hookspecs(Hooks)
+
+
 class Extra(LibItem, SABase):
     """An Album can have any number of extra files such as logs, cues, etc.
 
@@ -39,19 +80,38 @@ class Extra(LibItem, SABase):
 
     _id: int = cast(int, Column(Integer, primary_key=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
+    _custom_fields: dict[str, Optional[str]] = cast(
+        dict[str, Optional[str]],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
 
-    def __init__(self, album: Album, path: Path):
+    def __init__(self, config: Config, album: Album, path: Path, **kwargs):
         """Creates an Extra.
 
         Args:
+            config: Moe config.
             album: Album the extra file belongs to.
             path: Filesystem path of the extra file.
+            **kwargs: Any other fields to assign to the extra.
         """
+        self.config = config
+        self.__dict__["_custom_fields"] = {}
+        custom_fields = config.plugin_manager.hook.create_custom_extra_fields(
+            config=config
+        )
+        for plugin_fields in custom_fields:
+            for plugin_field in plugin_fields:
+                self._custom_fields[plugin_field] = None
+
         album.extras.append(self)
         self.path = path
+
+        for key, value in kwargs.items():
+            if value:
+                setattr(self, key, value)
 
         log.debug(f"Extra created. [extra={self!r}]")
 
@@ -105,6 +165,22 @@ class Extra(LibItem, SABase):
 
     def __repr__(self):
         """Represents an Extra using its path and album."""
+        repr_fields = ["path"]
+        field_reprs = []
+        for field in repr_fields:
+            if hasattr(self, field):
+                field_reprs.append(f"{field}={getattr(self, field)!r}")
+        repr_str = "Extra(" + ", ".join(field_reprs) + f", album={self.album_obj.title}"
+
+        custom_field_reprs = []
+        for custom_field, value in self._custom_fields.items():
+            custom_field_reprs.append(f"{custom_field}={value}")
+        if custom_field_reprs:
+            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
+
+        repr_str += ")"
+        return repr_str
+
         return f"Extra(path={self.path}, album={self.album_obj.title})"
 
     def __str__(self):

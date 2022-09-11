@@ -1,6 +1,5 @@
 """Tests the add plugin."""
 
-import copy
 from types import FunctionType
 from typing import Iterator
 from unittest.mock import patch
@@ -95,7 +94,7 @@ class TestPreAdd:
         album = album_factory()
         dup_album = album_factory()
         album.mb_album_id = "123"
-        dup_album = copy.deepcopy(album)
+        dup_album.mb_album_id = "123"
 
         dup_album = tmp_session.merge(dup_album)
         assert album.get_existing()

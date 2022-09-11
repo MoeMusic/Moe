@@ -253,9 +253,8 @@ def _get_item_attr(query_field: str) -> Any:
         # match track query_fields (all album fields should also be exposed)
         try:
             attr = getattr(Track, query_field)
-        except AttributeError as track_err:
-            raise QueryError(
-                f"Invalid Track query_field. {query_field=!r}"
-            ) from track_err
+        except AttributeError:
+            # assume custom_field
+            attr = Track._custom_fields[query_field].as_string()  # type: ignore
 
     return attr

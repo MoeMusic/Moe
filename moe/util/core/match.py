@@ -94,7 +94,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         if not any(b_track == track_match[1] for track_match in track_matches):
             track_matches.append((None, b_track))
 
-    log.debug("Found matching tracks. [matches={track_matches!r}]")
+    log.debug(f"Found matching tracks. [matches={track_matches!r}]")
     return track_matches
 
 
@@ -134,5 +134,5 @@ def get_match_value(
 
     match_value = sum(match_values) / sum(field_weights.values())
 
-    log.debug("Determing match value between tracks. [{match_value=!r}]")
+    log.debug(f"Determined match value between tracks. [{match_value=!r}]")
     return match_value
