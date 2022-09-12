@@ -59,30 +59,14 @@ class TestCustomFields:
         assert extra.default == "value"
 
 
-class TestGetExisting:
-    """Test we can match an existing extra based on unique attributes."""
-
-    def test_by_path(self, extra_factory, tmp_session):
-        """Get an exisiting extra from a matching path."""
-        extra1 = extra_factory()
-        extra2 = extra_factory()
-        extra1.path = extra2.path
-
-        tmp_session.merge(extra2)
-
-        assert extra1.get_existing()
-
-
 class TestEquality:
     """Test equality of extras."""
 
-    def test_equals_path(self, extra_factory):
-        """Extras with the same `path` are equal."""
-        extra1 = extra_factory()
-        extra2 = extra_factory()
-        assert extra1 != extra2
+    def test_equals(self, extra_factory):
+        """Extras with the same fields are equal."""
+        extra1 = extra_factory(custom="custom")
+        extra2 = extra_factory(dup_extra=extra1)
 
-        extra1.path = extra2.path
         assert extra1 == extra2
 
     def test_not_equals(self, extra_factory):

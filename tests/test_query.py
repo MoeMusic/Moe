@@ -272,9 +272,17 @@ class TestQuery:
         assert len(query("*", "album")) == 2
 
     def test_custom_field(self, mock_track, tmp_session):
-        """Test querying a custom field."""
+        """We can query a custom field."""
         mock_track._custom_fields["custom"] = "query"
 
         tmp_session.add(mock_track)
 
         assert query("custom:query")
+
+    def test_custom_field_regex(self, mock_track, tmp_session):
+        """We can regex query a custom field."""
+        mock_track._custom_fields["custom"] = "query"
+
+        tmp_session.add(mock_track)
+
+        assert query("custom::query")

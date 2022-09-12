@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 import pluggy
 import sqlalchemy as sa
-from sqlalchemy import JSON, Column, Date, Integer, String, and_, or_
+from sqlalchemy import JSON, Column, Date, Integer, String
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import joinedload, relationship
+from sqlalchemy.orm import relationship
 
 import moe
-from moe.config import Config, MoeSession
+from moe.config import Config
 from moe.library import SABase
-from moe.library.lib_item import LibItem, PathType
+from moe.library.lib_item import LibItem, LibraryError, PathType
 
 # This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
@@ -70,8 +70,8 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     plugin_manager.add_hookspecs(Hooks)
 
 
-class AlbumError(Exception):
-    """Error creating an Album."""
+class AlbumError(LibraryError):
+    """Error performing some operation on an Album."""
 
 
 # Album generic, used for typing classmethod
@@ -88,7 +88,6 @@ class Album(LibItem, SABase):
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
-        mb_album_id (str): Musicbrainz album aka release id.
         path (Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
@@ -101,12 +100,11 @@ class Album(LibItem, SABase):
     artist: str = cast(str, Column(String, nullable=False))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
-    mb_album_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
-    _custom_fields: dict[str, Optional[str]] = cast(
-        dict[str, Optional[str]],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    _custom_fields: dict[str, Any] = cast(
+        dict[str, Any],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
 
     tracks: list["Track"] = relationship(
@@ -213,42 +211,11 @@ class Album(LibItem, SABase):
             "date",
             "disc_total",
             "extras",
-            "mb_album_id",
             "path",
             "title",
             "tracks",
             "year",
-        )
-
-    def get_existing(self) -> Optional["Album"]:
-        """Gets a matching Album in the library by its unique attributes.
-
-        Returns:
-            Duplicate album or the same album if it already exists in the library.
-        """
-        log.debug(f"Searching library for existing album. [album={self!r}]")
-
-        session = MoeSession()
-        existing_album = (
-            session.query(Album)
-            .filter(
-                or_(
-                    Album.path == self.path,
-                    and_(
-                        Album.mb_album_id == self.mb_album_id,
-                        Album.mb_album_id != None,  # noqa: E711
-                    ),
-                )
-            )
-            .options(joinedload("*"))
-            .one_or_none()
-        )
-        if not existing_album:
-            log.debug("No matching album found.")
-            return None
-
-        log.debug(f"Matching album found. [match={existing_album!r}]")
-        return existing_album
+        ) + tuple(self._custom_fields)
 
     def get_extra(self, filename: str) -> Optional["Extra"]:
         """Gets an Extra by its filename."""
@@ -319,16 +286,20 @@ class Album(LibItem, SABase):
         return sa.extract("year", cls.date)
 
     def __eq__(self, other) -> bool:
-        """Compares Albums by their 'uniqueness' in the database."""
+        """Compares Albums by their fields."""
         if not isinstance(other, Album):
             return False
 
-        if self.mb_album_id and self.mb_album_id == other.mb_album_id:
-            return True
-        if self.path == other.path:
-            return True
+        eq_fields = (
+            field for field in self.fields() if field not in ["extras", "tracks"]
+        )  # don't compare extras or tracks to prevent recursion
+        for field in eq_fields:
+            if not hasattr(other, field) or (
+                getattr(self, field) != getattr(other, field)
+            ):
+                return False
 
-        return False
+        return True
 
     def __lt__(self, other: "Album") -> bool:
         """Sort an album based on its title, then artist, then date."""
@@ -346,7 +317,6 @@ class Album(LibItem, SABase):
             "artist",
             "title",
             "date",
-            "mb_album_id",
             "path",
         ]
         field_reprs = []

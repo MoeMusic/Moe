@@ -1,7 +1,6 @@
 """Tests a Track object."""
 
 import datetime
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -72,37 +71,26 @@ class TestInit:
         """Creating a Track should also create the corresponding Album."""
         assert mock_track.album_obj
 
-    def test_guess_disc_multi_disc(self, real_album):
+    def test_guess_disc_multi_disc(self, album_factory):
         """Guess the disc if not given."""
-        track1 = real_album.tracks[0]
-        track2 = real_album.tracks[1]
-        track1.track_num = track2.track_num
-        track1.disc = 1
-        track2.disc = 1  # should be 2!
-        real_album.disc_total = 2
-        moe_write.write_tags(track1)
-        moe_write.write_tags(track2)
-        assert track1 == track2
-
-        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
-        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
-        Path(real_album.path / "artwork (1996)").mkdir()
-        track1_path.parent.mkdir()
-        track2_path.parent.mkdir()
-        track1.path.rename(track1_path)
-        track2.path.rename(track2_path)
-        track1.path = track1_path
-        track2.path = track2_path
+        album = album_factory(num_discs=3, exists=True)
+        track1 = album.get_track(1, disc=1)
+        track2 = album.get_track(1, disc=2)
+        track3 = album.get_track(1, disc=3)
 
         new_track1 = Track(
-            MagicMock(), real_album, track1.path, track1.title, track1.track_num
+            MagicMock(), album, track1.path, track1.title, track1.track_num
         )
         new_track2 = Track(
-            MagicMock(), real_album, track2.path, track2.title, track2.track_num
+            MagicMock(), album, track2.path, track2.title, track2.track_num
+        )
+        new_track3 = Track(
+            MagicMock(), album, track3.path, track3.title, track3.track_num
         )
 
         assert new_track1.disc == 1
         assert new_track2.disc == 2
+        assert new_track3.disc == 3
 
     def test_guess_disc_single_disc(self, real_track):
         """Guess the disc if there are no disc sub directories."""
@@ -148,8 +136,6 @@ class TestFromFile:
         real_track.disc = 1
         real_track.disc_total = 2
         real_track.genres = {"hip hop", "rock"}
-        real_track.mb_album_id = "1234"
-        real_track.mb_track_id = "123"
         real_track.title = "Full"
         real_track.track_num = 1
         write_tags(real_track)
@@ -163,8 +149,6 @@ class TestFromFile:
         assert new_track.disc == real_track.disc
         assert new_track.disc_total == real_track.disc_total
         assert new_track.genres == real_track.genres
-        assert new_track.mb_album_id == real_track.mb_album_id
-        assert new_track.mb_track_id == real_track.mb_track_id
         assert new_track.title == real_track.title
         assert new_track.track_num == real_track.track_num
 
@@ -183,73 +167,20 @@ class TestFromFile:
         assert track.albumartist
 
 
-class TestGetExisting:
-    """Test `get_existing()`."""
-
-    def test_path(self, track_factory, tmp_session):
-        """We match an existing track by it's path."""
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.path = track2.path
-
-        tmp_session.merge(track1)
-
-        assert track1.get_existing()
-
-    def test_mb_track_id(self, track_factory, tmp_session):
-        """We match an existing track by it's mb_track_id."""
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.mb_track_id = "123"
-        track1.mb_track_id = track2.mb_track_id
-
-        tmp_session.merge(track1)
-
-        assert track1.get_existing()
-
-    def test_null_match(self, track_factory, tmp_session):
-        """Don't match off of null values."""
-        track1 = track_factory()
-        track2 = track_factory()
-        assert not track1.mb_track_id
-        assert not track2.mb_track_id
-        assert track1.path != track2.path
-
-        tmp_session.merge(track1)
-
-        assert not track2.get_existing()
-
-
 class TestEquality:
     """Test equality of tracks."""
 
-    def test_equals_mb_track_id(self, track_factory):
-        """Tracks with the same `mb_track_id` are equal."""
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.mb_track_id = "1"
-        assert track1 != track2
+    def test_equals(self, track_factory):
+        """Tracks with the same metadata are equal."""
+        track1 = track_factory(custom="custom")
+        track2 = track_factory(dup_track=track1)
 
-        track2.mb_track_id = track1.mb_track_id
-        assert track1 == track2
-
-    def test_equals_path(self, track_factory):
-        """Tracks with the same `path` are equal."""
-        track1 = track_factory()
-        track2 = track_factory()
-        assert track1 != track2
-
-        track1.path = track2.path
         assert track1 == track2
 
     def test_not_equals(self, track_factory):
-        """Tracks with different designated unique fields are not equal."""
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.mb_track_id = "1"
-
-        assert track1.mb_track_id != track2.mb_track_id
-        assert track1.path != track2.path
+        """Tracks with different fields are not equal."""
+        track1 = track_factory(title="track1")
+        track2 = track_factory(title="track2")
 
         assert track1 != track2
 
@@ -309,7 +240,7 @@ class TestMerge:
 
         track.merge(other_track)
 
-        assert not track.get_existing()
+        assert tmp_session.query(Track).one()
 
 
 class TestDupListField:
@@ -317,10 +248,8 @@ class TestDupListField:
 
     def test_genre(self, track_factory, tmp_session):
         """Duplicate genres don't error."""
-        track1 = track_factory()
-        track2 = track_factory()
-        track1.genre = "pop"
-        track2.genre = "pop"
+        track1 = track_factory(genre="pop")
+        track2 = track_factory(genre="pop")
 
         tmp_session.add(track1)
         tmp_session.merge(track2)

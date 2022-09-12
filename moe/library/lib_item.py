@@ -1,11 +1,77 @@
 """Shared functionality between library albums, extras, and tracks."""
 
+import functools
 from pathlib import Path
 from typing import Any
 
+import pluggy
+import sqlalchemy
 import sqlalchemy as sa
+import sqlalchemy.event
+import sqlalchemy.orm
 
-__all__ = ["LibItem"]
+import moe
+from moe.config import Config
+
+__all__ = ["LibItem", "LibraryError"]
+
+
+class LibraryError(Exception):
+    """General library error."""
+
+
+class Hooks:
+    """General usage library item hooks."""
+
+    @staticmethod
+    @moe.hookspec
+    def process_new_items(config: Config, items: list["LibItem"]):
+        """Process any new or changed items after they have been added to the library.
+
+        Args:
+            config: Moe config.
+            items: Any new or changed items that have been successfully added to the
+                library during the current session.
+        """
+
+
+@moe.hookimpl
+def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    """Registers `add` hookspecs to Moe."""
+    from moe.library.lib_item import Hooks
+
+    plugin_manager.add_hookspecs(Hooks)
+
+
+@moe.hookimpl
+def register_sa_event_listeners(config: Config, session: sqlalchemy.orm.Session):
+    """Registers event listeners for editing and processing new items."""
+    sqlalchemy.event.listen(
+        session,
+        "after_flush",
+        functools.partial(_process_new_items, config=config),
+    )
+
+
+def _process_new_items(
+    session: sqlalchemy.orm.Session,
+    flush_context: sqlalchemy.orm.UOWTransaction,
+    config: Config,
+):
+    """Runs the ``process_new_items`` hook specification.
+
+    This uses the sqlalchemy ORM event ``after_flush`` in the background to determine
+    the time of execution and to provide any new or changed items to the hook
+    implementations.
+
+    Args:
+        session: Current db session.
+        flush_context: sqlalchemy obj which handles the details of the flush.
+        config: Moe config.
+    """
+    config.plugin_manager.hook.process_new_items(
+        config=config, items=session.new.union(session.dirty)
+    )
 
 
 class LibItem:
@@ -18,10 +84,6 @@ class LibItem:
 
     def fields(self) -> tuple[str, ...]:
         """Returns the public attributes of an item."""
-        raise NotImplementedError
-
-    def get_existing(self) -> "LibItem":
-        """Returns a matching item in the library by its unique attributes."""
         raise NotImplementedError
 
     def __getattr__(self, name: str) -> Any:

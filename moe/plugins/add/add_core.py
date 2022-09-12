@@ -9,10 +9,7 @@ import pluggy
 
 import moe
 from moe.config import Config, MoeSession
-from moe.library.album import Album
-from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
-from moe.library.track import Track
 
 __all__ = ["AddAbortError", "AddError", "add_item"]
 
@@ -43,15 +40,8 @@ class Hooks:
 
         See Also:
             * The :meth:`post_add` hook for any post-processing operations.
-            * The :meth:`~moe.config.Hooks.edit_new_items` hook.
-              The difference between them is that the :meth:`pre_add` hook will only
-              operate on an `add` operation, while the
-              :meth:`~moe.config.Hooks.edit_new_items` hook will run anytime an item is
-              changed or added.
             * `Pluggy hook wrapper documention
               <https://pluggy.readthedocs.io/en/stable/#wrappers>`_
-            * :meth:`~moe.library.lib_item.LibItem.get_existing` for detecting duplicate
-              items.
         """
 
     @staticmethod
@@ -105,34 +95,7 @@ def add_item(config: Config, item: LibItem):
     session = MoeSession()
 
     config.plugin_manager.hook.pre_add(config=config, item=item)
-
-    _check_db_dups(item)
     item = session.merge(item)
     log.info(f"Item added to the library. [{item=!r}]")
 
     config.plugin_manager.hook.post_add(config=config, item=item)
-
-
-def _check_db_dups(item: LibItem):
-    """Checks for any duplicates in the library for the given item and its relatives.
-
-    Args:
-        item: Library item to check.
-
-    Raises:
-        AddError: Duplicate found.
-    """
-    if item.get_existing():
-        raise AddError(f"Duplicate item cannot be added to the db. [{item=!r}]")
-    elif isinstance(item, (Extra, Track)):
-        if item.album_obj.get_existing():
-            raise AddError(
-                f"Item has duplicate album in the db. [album={item.album_obj!r}]"
-            )
-    elif isinstance(item, Album):
-        for track in item.tracks:
-            if track.get_existing():
-                raise AddError(f"Album has duplicate track in the db. [{track=!r}]")
-        for extra in item.extras:
-            if extra.get_existing():
-                raise AddError(f"Album has duplicate extra in the db. [{extra=!r}]")

@@ -23,7 +23,6 @@ class TestFmtAlbumChanges:
         new_album.title = "new title"
         new_album.artist = "new artist"
         new_album.date = datetime.date(1999, 12, 31)
-        new_album.mb_album_id = "1234"
 
         for track in new_album.tracks:
             track.title = "new title"

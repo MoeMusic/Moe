@@ -2,16 +2,16 @@
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pluggy
 from sqlalchemy import JSON, Column, Integer
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import joinedload, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 
 import moe
-from moe.config import Config, MoeSession
+from moe.config import Config
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
@@ -76,13 +76,13 @@ class Extra(LibItem, SABase):
         path (Path): Filesystem path of the extra file.
     """
 
-    __tablename__ = "extras"
+    __tablename__ = "extra"
 
     _id: int = cast(int, Column(Integer, primary_key=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
-    _custom_fields: dict[str, Optional[str]] = cast(
-        dict[str, Optional[str]],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    _custom_fields: dict[str, Any] = cast(
+        dict[str, Any],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
@@ -122,39 +122,20 @@ class Extra(LibItem, SABase):
 
     def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Extra."""
-        return "filename", "path"
-
-    def get_existing(self) -> Optional["Extra"]:
-        """Gets a matching Extra in the library by its unique attributes.
-
-        Returns:
-            Duplicate extra or the same extra if it already exists in the library.
-        """
-        log.debug(f"Searching library for existing extra. [extra={self!r}]")
-
-        session = MoeSession()
-        existing_extra = (
-            session.query(Extra)
-            .filter(Extra.path == self.path)
-            .options(joinedload("*"))
-            .one_or_none()
-        )
-        if not existing_extra:
-            log.debug("No matching extra found.")
-            return None
-
-        log.debug(f"Matching extra found. [match={existing_extra!r}]")
-        return existing_extra
+        return ("album_obj", "filename", "path") + tuple(self._custom_fields)
 
     def __eq__(self, other):
-        """Compares Extras by their 'uniqueness' in the database."""
+        """Compares Extras by their fields."""
         if not isinstance(other, Extra):
             return False
 
-        if self.path == other.path:
-            return True
+        for field in self.fields():
+            if not hasattr(other, field) or (
+                getattr(self, field) != getattr(other, field)
+            ):
+                return False
 
-        return False
+        return True
 
     def __lt__(self, other: "Extra") -> bool:
         """Sort based on album then path."""

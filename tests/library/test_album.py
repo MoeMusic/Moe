@@ -111,43 +111,6 @@ class TestFromDir:
         assert album.get_track(track2.track_num, track2.disc)
 
 
-class TestGetExisting:
-    """Test we can match an existing album based on unique attributes."""
-
-    def test_by_path(self, album_factory, tmp_session):
-        """Get an exisiting album from a matching path."""
-        album1 = album_factory()
-        album2 = album_factory()
-        album1.path = album2.path
-
-        tmp_session.merge(album2)
-
-        assert album1.get_existing()
-
-    def test_by_mb_album_id(self, album_factory, tmp_session):
-        """Get an exisiting album from a matching mb_album_id."""
-        album1 = album_factory()
-        album2 = album_factory()
-        album1.mb_album_id = "123"
-        album2.mb_album_id = album1.mb_album_id
-
-        tmp_session.merge(album2)
-
-        assert album1.get_existing()
-
-    def test_null_match(self, album_factory, tmp_session):
-        """Don't match off of null values."""
-        album1 = album_factory()
-        album2 = album_factory()
-        assert not album1.mb_album_id
-        assert not album2.mb_album_id
-        assert album1.path != album2.path
-
-        tmp_session.merge(album1)
-
-        assert not album2.get_existing()
-
-
 class TestMerge:
     """Test merging two albums together."""
 
@@ -155,47 +118,47 @@ class TestMerge:
         """Don't overwrite any conflicts."""
         album = album_factory()
         other_album = album_factory()
-        album.mb_album_id = "123"
-        other_album.mb_album_id = "456"
-        keep_mb_album_id = album.mb_album_id
+        album.title = "123"
+        other_album.title = "456"
+        keep_title = album.title
 
         album.merge(other_album)
 
-        assert album.mb_album_id == keep_mb_album_id
+        assert album.title == keep_title
 
     def test_merge_non_conflict(self, album_factory):
         """Apply any non-conflicting fields."""
         album = album_factory()
         other_album = album_factory()
-        album.mb_album_id = None
-        other_album.mb_album_id = "456"
+        album.title = None
+        other_album.title = "new"
 
         album.merge(other_album)
 
-        assert album.mb_album_id == "456"
+        assert album.title == "new"
 
     def test_none_merge(self, album_factory):
         """Don't merge in any null values."""
         album = album_factory()
         other_album = album_factory()
-        album.mb_album_id = "123"
-        other_album.mb_album_id = None
+        album.title = "123"
+        other_album.title = None
 
         album.merge(other_album)
 
-        assert album.mb_album_id == "123"
+        assert album.title == "123"
 
     def test_overwrite_field(self, album_factory):
         """Overwrite fields if the option is given."""
         album = album_factory()
         other_album = album_factory()
-        album.mb_album_id = "123"
-        other_album.mb_album_id = "456"
-        keep_mb_album_id = other_album.mb_album_id
+        album.title = "123"
+        other_album.title = "456"
+        keep_title = other_album.title
 
         album.merge(other_album, overwrite=True)
 
-        assert album.mb_album_id == keep_mb_album_id
+        assert album.title == keep_title
 
     def test_merge_extras(self, album_factory):
         """Merge in any new extras."""
@@ -263,75 +226,20 @@ class TestMerge:
 class TestEquality:
     """Test equality of albums."""
 
-    def test_equals_mb_album_id(self, album_factory):
-        """Albums with the same `mb_album_id` are equal."""
+    def test_equals(self, album_factory):
+        """Albums with the same fields are equal."""
         album1 = album_factory()
-        album2 = album_factory()
-        album1.mb_album_id = "1"
-        assert album1 != album2
+        album2 = album_factory(dup_album=album1)
 
-        album2.mb_album_id = album1.mb_album_id
-        assert album1 == album2
-
-    def test_equals_path(self, album_factory):
-        """Albums with the same `path` are equal."""
-        album1 = album_factory()
-        album2 = album_factory()
-        assert album1 != album2
-
-        album1.path = album2.path
         assert album1 == album2
 
     def test_not_equals(self, album_factory):
-        """Albums with different designated unique fields are not equal."""
-        album1 = album_factory()
-        album2 = album_factory()
-        album1.mb_album_id = "1"
-
-        assert album1.mb_album_id != album2.mb_album_id
-        assert album1.path != album2.path
+        """Albums with different fields are not equal."""
+        album1 = album_factory(title="diff")
+        album2 = album_factory(title="erent")
 
         assert album1 != album2
 
     def test_not_equals_not_album(self, real_album):
         """Not equal if not comparing two albums."""
         assert real_album != "test"
-
-
-class TestDuplicate:
-    """Test behavior when there is an attempt to add a duplicate Album to the db.
-
-    A duplicate Album is defined as having any of the same unique attributes: path, or
-    mb_album_id.
-
-    To handle duplicates by tags, you should use ``album.get_existing(session)`` to get
-    the existing album. At this point, you can either delete the existing album from the
-    session using ``session.delete()``, or you can merge it with the current album
-    using ``album.merge()``. For examples on how to resolve duplicates, check out the
-    ``pre_add()`` hook of the ``add_cli`` plugin.
-
-
-    Note:
-        This error will only occur upon the session being flushed or committed.
-        If you wish to catch this error, then you should use a new session scope. This
-        will allow you to catch the error by wrapping the `with` statement with a
-        `try/except`.
-    """
-
-    def test_dup_deleted(self, album_factory, tmp_session):
-        """Duplicate errors should not occur if the existing album is deleted."""
-        album1 = album_factory()
-        album2 = album_factory()
-        album1.date = album2.date
-        album1.path = album2.path
-
-        album1.tracks.pop(0)
-        album1.extras.pop(0)
-
-        tmp_session.add(album1)
-        tmp_session.delete(album2.get_existing())
-        tmp_session.merge(album2)
-
-        db_album = tmp_session.query(Album).one()
-        assert sorted(db_album.tracks) == sorted(album2.tracks)
-        assert sorted(db_album.extras) == sorted(album2.extras)

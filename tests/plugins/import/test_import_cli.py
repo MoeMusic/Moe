@@ -263,8 +263,6 @@ class TestAddImportPromptChoice:
         """The `abort` prompt choice should raise an AbortImport error."""
         album1 = album_factory()
         album2 = album_factory()
-        album1.mb_album_id = "1234"
-        assert album1.mb_album_id != album2.mb_album_id
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._abort_changes)
         with patch(

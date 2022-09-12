@@ -28,9 +28,6 @@ def fmt_album_changes(old_album: Album, new_album: Album) -> str:
     if old_album.year != new_album.year:
         album_year = album_year + f" -> {new_album.year}"
     album_info_str += "\n" + album_year
-    if new_album.mb_album_id:
-        mb_album_id = f"Musicbrainz ID: {new_album.mb_album_id}"
-        album_info_str += "\n" + mb_album_id
 
     tracklist_str = _fmt_tracklist(old_album, new_album)
 

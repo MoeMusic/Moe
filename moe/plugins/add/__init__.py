@@ -20,9 +20,3 @@ def plugin_registration(config: Config):
     config.plugin_manager.register(add_core, "add_core")
     if config.plugin_manager.has_plugin("cli"):
         config.plugin_manager.register(add_cli, "add_cli")
-
-        if not config.plugin_manager.has_plugin("remove"):
-            log.warning(
-                "Duplicate resolution when adding an item to the library requires the"
-                " 'remove' plugin to work properly."
-            )

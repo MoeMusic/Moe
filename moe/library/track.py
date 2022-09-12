@@ -8,17 +8,17 @@ from typing import Any, Optional, TypeVar, cast
 import mediafile
 import pluggy
 import sqlalchemy.orm as sa_orm
-from sqlalchemy import JSON, Column, Integer, String, and_, or_
+from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import joinedload, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 import moe
-from moe.config import Config, MoeSession
+from moe.config import Config
 from moe.library import SABase
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, PathType
+from moe.library.lib_item import LibItem, LibraryError, PathType
 
 __all__ = ["Track", "TrackError"]
 
@@ -63,8 +63,8 @@ def add_hooks(plugin_manager: pluggy.manager.PluginManager):
     plugin_manager.add_hookspecs(Hooks)
 
 
-class TrackError(Exception):
-    """Error creating a Track."""
+class TrackError(LibraryError):
+    """Error performing some operation on a Track."""
 
 
 class _Genre(SABase):
@@ -104,8 +104,6 @@ class Track(LibItem, SABase):
         disc_total (int): Number of discs in the album.
         genre (str): String of all genres concatenated with ';'.
         genres (list[str]): List of all genres.
-        mb_album_id (str): Musicbrainz album aka release ID.
-        mb_track_id (str): Musicbrainz track ID.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -121,13 +119,12 @@ class Track(LibItem, SABase):
     _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
-    mb_track_id: str = cast(str, Column(String, nullable=True, unique=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
-    _custom_fields: dict[str, Optional[str]] = cast(
-        dict[str, Optional[str]],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True))),
+    _custom_fields: dict[str, Any] = cast(
+        dict[str, Any],
+        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
@@ -136,7 +133,6 @@ class Track(LibItem, SABase):
     albumartist: str = association_proxy("album_obj", "artist")
     date: datetime.date = association_proxy("album_obj", "date")
     disc_total: int = association_proxy("album_obj", "disc_total")
-    mb_album_id: str = association_proxy("album_obj", "mb_album_id")
     year: int = association_proxy("album_obj", "year")
 
     _genres: list[_Genre] = relationship(
@@ -260,7 +256,6 @@ class Track(LibItem, SABase):
                 title=audio_file.album,
                 date=audio_file.date,
                 disc_total=audio_file.disctotal,
-                mb_album_id=audio_file.mb_albumid,
                 path=track_path.parent,
             )
 
@@ -272,7 +267,6 @@ class Track(LibItem, SABase):
             artist=audio_file.artist,
             disc=audio_file.disc,
             genres=audio_file.genres,
-            mb_track_id=audio_file.mb_releasetrackid,
             title=audio_file.title,
         )
 
@@ -302,48 +296,11 @@ class Track(LibItem, SABase):
             "disc_total",
             "genre",
             "genres",
-            "mb_album_id",
-            "mb_track_id",
             "path",
             "title",
             "track_num",
             "year",
-        )
-
-    def get_existing(self) -> Optional["Track"]:
-        """Gets a matching Track in the library by its unique attributes.
-
-        Returns:
-            Duplicate track or the same track if it already exists in the library.
-        """
-        log.debug(f"Searching library for existing track. [track={self!r}]")
-
-        session = MoeSession()
-        existing_track = (
-            session.query(Track)
-            .filter(
-                or_(
-                    Track.path == self.path,
-                    and_(
-                        Track.mb_track_id == self.mb_track_id,
-                        Track.mb_track_id != None,  # noqa: E711
-                    ),
-                    and_(
-                        Track.track_num == self.track_num,
-                        Track.disc == self.disc,
-                        Track._album_id == self._album_id,
-                    ),
-                )
-            )
-            .options(joinedload("*"))
-            .one_or_none()
-        )
-        if not existing_track:
-            log.debug("No matching track found.")
-            return None
-
-        log.debug(f"Matching track found. [match={existing_track!r}]")
-        return existing_track
+        ) + tuple(self._custom_fields)
 
     def merge(self, other: "Track", overwrite: bool = False):
         """Merges another track into this one.
@@ -368,22 +325,17 @@ class Track(LibItem, SABase):
         )
 
     def __eq__(self, other) -> bool:
-        """Compares Tracks by their 'uniqueness' in the database."""
+        """Compares Tracks by their fields."""
         if not isinstance(other, Track):
             return False
 
-        if self.mb_track_id and self.mb_track_id == other.mb_track_id:
-            return True
-        if self.path == other.path:
-            return True
-        if (
-            self.track_num == other.track_num
-            and self.disc == other.disc
-            and self.album_obj == other.album_obj
-        ):
-            return True
+        for field in self.fields():
+            if not hasattr(other, field) or (
+                getattr(self, field) != getattr(other, field)
+            ):
+                return False
 
-        return False
+        return True
 
     def __lt__(self, other) -> bool:
         """Sort based on album, then disc, then track number."""
@@ -403,7 +355,6 @@ class Track(LibItem, SABase):
             "title",
             "artist",
             "genre",
-            "mb_track_id",
             "album",
             "path",
         ]

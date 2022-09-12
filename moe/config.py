@@ -10,7 +10,6 @@ A configuration shuold only be instantiated once per instance of Moe. Plugins sh
 pass along that instance through their hooks.
 """
 
-import functools
 import importlib
 import importlib.util
 import logging
@@ -20,7 +19,7 @@ import sys
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
-from typing import Any, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 import dynaconf
 import pluggy
@@ -31,7 +30,6 @@ import sqlalchemy.orm
 import alembic.command
 import alembic.config
 import moe
-from moe.library.lib_item import LibItem, PathType
 
 session_factory = sqlalchemy.orm.sessionmaker()
 MoeSession = sqlalchemy.orm.scoped_session(session_factory)
@@ -52,6 +50,13 @@ DEFAULT_PLUGINS = (
     "remove",
     "write",
 )
+CORE_PLUGINS = {
+    "config": "moe.config",
+    "album": "moe.library.album",
+    "extra": "moe.library.extra",
+    "track": "moe.library.track",
+    "lib_item": "moe.library.lib_item",
+}  # {name: module} of plugins that cannot be overwritten by the config
 
 
 class ConfigValidationError(Exception):
@@ -97,36 +102,6 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_new_items(config: "Config", items: list[LibItem]):
-        """Edit any new or changed items prior to them being added to the library.
-
-        Args:
-            config: Moe config.
-            items: Any new or changed items in the current session. The items and
-                their changes have not yet been committed to the library.
-
-        See Also:
-            The :meth:`process_new_items` hook if you wish to process any items after
-            any final edits have been made and they have been successfully added to
-            the library.
-        """
-
-    @staticmethod
-    @moe.hookspec
-    def process_new_items(config: "Config", items: list[LibItem]):
-        """Process any new or changed items after they have been added to the library.
-
-        Args:
-            config: Moe config.
-            items: Any new or changed items that have been successfully added to the
-                library during the current session.
-
-        See Also:
-            The :meth:`edit_new_items` hook if you wish to edit the items.
-        """
-
-    @staticmethod
-    @moe.hookspec
     def plugin_registration(config: "Config"):
         """Allows actions after the initial plugin registration.
 
@@ -164,12 +139,46 @@ class Hooks:
                     log.warning("You can't list stuff without a cli!")
 
         See Also:
-            The ``PluginManager`` api documentation:
-            https://pluggy.readthedocs.io/en/latest/api_reference.html
+            `pluggy.PluginManager documentation <https://pluggy.readthedocs.io/en/latest/api_reference.html>`_
 
         Args:
             config: Moe config.
-        """
+        """  # noqa: E501
+
+    @staticmethod
+    @moe.hookspec
+    def register_sa_event_listeners(config: "Config", session: sqlalchemy.orm.Session):
+        """Registers new sqlalchemy event listeners.
+
+        Args:
+            config: Moe config.
+            session: Session to attach the listener to.
+
+        Important:
+            This hooks is for Moe internal use only and should not be used by plugins.
+
+        Example:
+            In your hook implementation::
+
+                sqlalchemy.event.listen(
+                    session,
+                    "before_flush",
+                    functools.partial(_my_func, config=config),
+                )
+
+            Then you can define ``_my_func`` as such::
+
+                def _my_func(
+                    session: sqlalchemy.orm.Session,
+                    flush_context: sqlalchemy.orm.UOWTransaction,
+                    instances: Optional[Any],
+                    config: Config,
+                ):
+                    print("we made it")
+
+        See Also:
+            `SQLAlchemy ORM even documentation <https://docs.sqlalchemy.org/en/14/orm/events.html#orm-events>`_
+        """  # noqa: E501
 
 
 @moe.hookimpl
@@ -279,17 +288,8 @@ class Config:
                 alembic_cfg.attributes["connection"] = connection
                 alembic.command.upgrade(alembic_cfg, "head")
 
-        # initialize sqlalchemy event listeners
-        session = MoeSession()
-        sqlalchemy.event.listen(
-            session,
-            "before_flush",
-            functools.partial(_edit_new_items, config=self),
-        )
-        sqlalchemy.event.listen(
-            session,
-            "after_flush",
-            functools.partial(_process_new_items, config=self),
+        self.plugin_manager.hook.register_sa_event_listeners(
+            config=self, session=MoeSession()
         )
 
         # create regular expression function for sqlite queries
@@ -325,6 +325,8 @@ class Config:
         Raises:
             ConfigValidationError: Unable to parse the configuration file.
         """
+        from moe.library.lib_item import PathType
+
         log.debug(f"Reading configuration file. [config_file={self.config_file}]")
 
         self.config_file.touch(exist_ok=True)
@@ -353,26 +355,23 @@ class Config:
         except dynaconf.validator.ValidationError as err:
             raise ConfigValidationError(err) from err
 
-    def _setup_plugins(self):
-        """Setup plugin_manager and hook logic."""
+    def _setup_plugins(self, core_plugins: dict[str, str] = CORE_PLUGINS):
+        """Setup plugin_manager and hook logic.
+
+        Args:
+            core_plugins: Optional mapping of core plugin modules to names.
+                These plugins cannot be overwritten by the user configuration.
+        """
         log.debug("Setting up plugins.")
 
         self.plugin_manager = pluggy.PluginManager("moe")
 
+        # register core modules that are not considered plugins
+        for plugin_name, module in core_plugins.items():
+            self.plugin_manager.register(importlib.import_module(module), plugin_name)
+
         # need to validate `config` specific settings separately so we have access to
         # the 'default_plugins' setting
-        self.plugin_manager.register(
-            importlib.import_module("moe.config"), name="config"
-        )
-        self.plugin_manager.register(
-            importlib.import_module("moe.library.album"), name="album"
-        )
-        self.plugin_manager.register(
-            importlib.import_module("moe.library.extra"), name="extra"
-        )
-        self.plugin_manager.register(
-            importlib.import_module("moe.library.track"), name="track"
-        )
         self.plugin_manager.add_hookspecs(Hooks)
         self.plugin_manager.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
@@ -416,47 +415,3 @@ class Config:
             if plugin_path.stem in enabled_plugins:
                 plugin = importlib.import_module("moe.plugins." + plugin_name)
                 self.plugin_manager.register(plugin, plugin_name)
-
-
-def _edit_new_items(
-    session: sqlalchemy.orm.Session,
-    flush_context: sqlalchemy.orm.UOWTransaction,
-    instances: Optional[Any],
-    config: Config,
-):
-    """Runs the ``edit_new_items`` hook specification.
-
-    This uses the sqlalchemy ORM event ``before_flush`` in the background to determine
-    the time of execution and to provide any new or changed items to the hook
-    implementations.
-
-    Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
-        instances: List of objects passed to the ``flush()`` method.
-        config: Moe config.
-    """
-    config.plugin_manager.hook.edit_new_items(
-        config=config, items=session.new.union(session.dirty)
-    )
-
-
-def _process_new_items(
-    session: sqlalchemy.orm.Session,
-    flush_context: sqlalchemy.orm.UOWTransaction,
-    config: Config,
-):
-    """Runs the ``process_new_items`` hook specification.
-
-    This uses the sqlalchemy ORM event ``after_flush`` in the background to determine
-    the time of execution and to provide any new or changed items to the hook
-    implementations.
-
-    Args:
-        session: Current db session.
-        flush_context: sqlalchemy obj which handles the details of the flush.
-        config: Moe config.
-    """
-    config.plugin_manager.hook.process_new_items(
-        config=config, items=session.new.union(session.dirty)
-    )

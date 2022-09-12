@@ -101,6 +101,18 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
 
 
 @moe.hookimpl
+def create_custom_album_fields(config: Config) -> dict[str, Any]:  # type: ignore
+    """Adds relevant musicbrainz fields to an album."""
+    return {"mb_album_id": None}
+
+
+@moe.hookimpl
+def create_custom_track_fields(config: Config) -> dict[str, Any]:  # type: ignore
+    """Adds relevant musicbrainz fields to a track."""
+    return {"mb_track_id": None}
+
+
+@moe.hookimpl
 def import_candidates(config: Config, album: Album) -> Album:
     """Applies musicbrainz metadata changes to a given album.
 
@@ -296,7 +308,7 @@ def get_matching_album(config: Config, album: Album) -> Album:
         Dictionary of release information. See the ``tests/musicbrainz/resources``
         directory for an idea of what this contains.
     """
-    if album.mb_album_id:
+    if hasattr(album, "mb_album_id"):
         return get_album_by_id(config, album.mb_album_id)
 
     log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")
