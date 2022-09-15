@@ -222,6 +222,7 @@ class TestDupListField:
         track2 = track_factory(genre="pop")
 
         tmp_session.add(track1)
+        tmp_session.flush()
         tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()

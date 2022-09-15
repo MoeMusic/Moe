@@ -1,5 +1,7 @@
 """Tests the add plugin."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 import moe
@@ -66,6 +68,32 @@ class TestAddItem:
         db_track = tmp_session.query(Track).one()
 
         assert db_track.title == "pre_add"
+
+    def test_duplicate_list_fields_album(self, album_factory, tmp_session):
+        """Duplicate list fields don't error when adding an album."""
+        album = album_factory(num_tracks=2)
+        track1 = album.tracks[0]
+        track2 = album.tracks[1]
+        track1.genre = "pop"
+        track2.genre = "pop"
+
+        add.add_item(MagicMock(), album)
+
+        db_tracks = tmp_session.query(Track).all()
+        for track in db_tracks:
+            assert track.genre == "pop"
+
+    def test_duplicate_list_field_tracks(self, track_factory, tmp_session):
+        """Duplicate list fields don't error when adding multiple tracks."""
+        track1 = track_factory(genre="pop")
+        track2 = track_factory(genre="pop")
+
+        add.add_item(MagicMock(), track1)
+        add.add_item(MagicMock(), track2)
+
+        db_tracks = tmp_session.query(Track).all()
+        for track in db_tracks:
+            assert track.genre == "pop"
 
 
 class TestHookSpecs:

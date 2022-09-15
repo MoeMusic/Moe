@@ -104,6 +104,7 @@ class TestQueries:
     def test_return_type(self, mock_album, tmp_session):
         """Queries return the appropriate type."""
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         albums = query(f"a:title:'{mock_album.title}'", "album")
         extras = query(f"a:title:'{mock_album.title}'", "extra")
@@ -122,18 +123,21 @@ class TestQueries:
     def test_multiple_terms(self, mock_album, tmp_session):
         """We should be able to query for multiple terms at once."""
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query(f"a:year:{mock_album.year} album:{mock_album.title}", "album")
 
     def test_regex(self, mock_track, tmp_session):
         """Queries can use regular expression matching."""
         tmp_session.add(mock_track)
+        tmp_session.flush()
 
         assert query("title::.*", "track")
 
     def test_path_query(self, real_album, tmp_session):
         """We can query for paths."""
         tmp_session.add(real_album)
+        tmp_session.flush()
 
         assert query(f"'a:path:{str(real_album.path.resolve())}'", "album")
         assert query("'a:path::.*'", "album")
@@ -142,18 +146,21 @@ class TestQueries:
         """Query values should be case-insensitive."""
         mock_album.title = "TMP"
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("a:title:tmp", "album")
 
     def test_regex_non_str(self, mock_album, tmp_session):
         """Non string fields should be converted to strings for matching."""
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("a:year::.*", "album")
 
     def test_invalid_regex(self, tmp_session, mock_album):
         """Invalid regex queries should raise a QueryError."""
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         with pytest.raises(QueryError):
             query("title::[", "album")
@@ -162,6 +169,7 @@ class TestQueries:
         """Regex queries should be case-insensitive."""
         mock_album.title = "TMP"
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("a:title::tmp", "album")
 
@@ -172,6 +180,7 @@ class TestQueries:
         through a track.
         """
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query(f"'album:{mock_album.title}'", "track")
 
@@ -179,6 +188,7 @@ class TestQueries:
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
         mock_track.track_num = 1
         tmp_session.add(mock_track)
+        tmp_session.flush()
 
         assert query("track_num:_", "track")
         assert query("track_num:%", "track")
@@ -193,6 +203,7 @@ class TestQueries:
         album2 = album_factory(title="_")
         tmp_session.add(album1)
         tmp_session.add(album2)
+        tmp_session.flush()
 
         assert len(query("a:title:/_", "album")) == 1
 
@@ -203,6 +214,7 @@ class TestQueries:
         """
         mock_album.tracks[0].genres = ["hip hop", "rock"]
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("'genre::.*'", "track")
         assert query("'genre:hip hop'", "track")
@@ -210,6 +222,7 @@ class TestQueries:
     def test_wildcard_query(self, mock_album, tmp_session):
         """'*' as a query should return all items."""
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert len(query("*", "album")) == 1
 
@@ -218,6 +231,7 @@ class TestQueries:
         album = album_factory(num_extras=0)
 
         tmp_session.add(album)
+        tmp_session.flush()
 
         assert len(query("*", "album")) == 1
 
@@ -234,6 +248,7 @@ class TestQueries:
         track._custom_fields["custom"] = "track"
 
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("a:custom:album t:custom:track e:custom:extra", "album")
 
@@ -250,6 +265,7 @@ class TestQueries:
         track._custom_fields["custom"] = "track"
 
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         assert query("a:custom::albu. t:custom::trac. e:custom::3", "album")
 
@@ -266,6 +282,7 @@ class TestQueries:
         track._custom_fields["custom"] = ["track", 3]
 
         tmp_session.add(mock_album)
+        tmp_session.flush()
 
         import sqlalchemy as sa
 

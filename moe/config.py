@@ -30,7 +30,7 @@ import alembic.command
 import alembic.config
 import moe
 
-session_factory = sqlalchemy.orm.sessionmaker()
+session_factory = sqlalchemy.orm.sessionmaker(autoflush=False)
 MoeSession = sqlalchemy.orm.scoped_session(session_factory)
 
 __all__ = ["Config", "ConfigValidationError", "ExtraPlugin"]

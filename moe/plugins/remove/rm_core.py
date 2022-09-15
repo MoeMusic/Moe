@@ -16,5 +16,6 @@ def remove_item(config: Config, item: LibItem):
 
     session = MoeSession()
     session.delete(item)
+    session.flush()
 
     log.info(f"Removed item from the library. [{item=!r}]")

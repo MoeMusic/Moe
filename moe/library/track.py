@@ -7,7 +7,6 @@ from typing import Any, Optional, TypeVar, cast
 
 import mediafile
 import pluggy
-import sqlalchemy.orm as sa_orm
 from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
@@ -380,16 +379,3 @@ class Track(LibItem, SABase):
     def __str__(self):
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
-
-    @sa_orm.validates("_genres")
-    def _append_genre(self, key: str, genre: _Genre) -> _Genre:
-        """Prevents duplicate genres in the database by returning any existing ones."""
-        genre_session = sa_orm.sessionmaker.object_session(self)
-        if not genre_session:
-            return genre
-
-        persistent_genre = genre_session.get(_Genre, genre.name)
-        if persistent_genre:
-            return persistent_genre
-
-        return genre
