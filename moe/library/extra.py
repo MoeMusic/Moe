@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import pluggy
 from sqlalchemy import JSON, Column, Integer
@@ -15,13 +15,6 @@ from moe.config import Config
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, PathType
-
-# Makes hybrid_property's have the same typing as a normal properties.
-# Use until the stubs are improved.
-if TYPE_CHECKING:
-    typed_hybrid_property = property
-else:
-    from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Extra"]
 
@@ -71,8 +64,8 @@ class Extra(LibItem, SABase):
 
     Attributes:
         album_obj (Album): Album the extra file belongs to.
-        filename (str): Base file name of the extra file.
-            Read-only. Set ``path`` instead.
+        custom_fields list[str]: All custom fields. To add to this list, you should
+            implement the ``create_custom_extra_fields`` hook.
         path (Path): Filesystem path of the extra file.
     """
 
@@ -84,6 +77,7 @@ class Extra(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
+    custom_fields = []
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
@@ -98,13 +92,14 @@ class Extra(LibItem, SABase):
             **kwargs: Any other fields to assign to the extra.
         """
         self.config = config
-        self.__dict__["_custom_fields"] = {}
+        self._custom_fields = {}
         custom_fields = config.plugin_manager.hook.create_custom_extra_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
+                self.custom_fields.append(plugin_field)
 
         album.extras.append(self)
         self.path = path
@@ -115,14 +110,9 @@ class Extra(LibItem, SABase):
 
         log.debug(f"Extra created. [extra={self!r}]")
 
-    @typed_hybrid_property
-    def filename(self) -> str:
-        """Gets an Extra's filename."""
-        return self.path.name
-
     def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Extra."""
-        return ("album_obj", "filename", "path") + tuple(self._custom_fields)
+        return ("album_obj", "path") + tuple(self._custom_fields)
 
     def __eq__(self, other):
         """Compares Extras by their fields."""
@@ -166,4 +156,4 @@ class Extra(LibItem, SABase):
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album_obj}: {self.filename}"
+        return f"{self.album_obj}: {self.path.name}"

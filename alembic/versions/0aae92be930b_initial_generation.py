@@ -6,6 +6,7 @@ Create Date: 2022-09-11 09:32:40.094676
 
 """
 import sqlalchemy as sa
+from sqlalchemy.ext.mutable import MutableDict
 
 import moe
 from alembic import op
@@ -28,7 +29,10 @@ def upgrade():
         sa.Column("path", moe.library.lib_item.PathType(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column(
-            "_custom_fields", sa.JSON(none_as_null=True), nullable=False, default="{}"
+            "_custom_fields",
+            MutableDict.as_mutable(sa.JSON(none_as_null=True)),
+            nullable=False,
+            default={},
         ),
         sa.PrimaryKeyConstraint("_id"),
         sa.UniqueConstraint("path"),
@@ -43,7 +47,10 @@ def upgrade():
         sa.Column("_id", sa.Integer(), nullable=False),
         sa.Column("path", moe.library.lib_item.PathType(), nullable=False),
         sa.Column(
-            "_custom_fields", sa.JSON(none_as_null=True), nullable=False, default="{}"
+            "_custom_fields",
+            MutableDict.as_mutable(sa.JSON(none_as_null=True)),
+            nullable=False,
+            default="{}",
         ),
         sa.Column("_album_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -62,7 +69,10 @@ def upgrade():
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("track_num", sa.Integer(), nullable=False),
         sa.Column(
-            "_custom_fields", sa.JSON(none_as_null=True), nullable=False, default="{}"
+            "_custom_fields",
+            MutableDict.as_mutable(sa.JSON(none_as_null=True)),
+            nullable=False,
+            default="{}",
         ),
         sa.Column("_album_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(

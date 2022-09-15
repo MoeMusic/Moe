@@ -26,7 +26,7 @@ log = logging.getLogger("moe.move")
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     default_album_path = "{album.artist}/{album.title} ({album.year})"
-    default_extra_path = "{extra.filename}"
+    default_extra_path = "{extra.path.name}"
     default_track_path = (
         "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/"
         "{track.track_num:02} - {track.title}{track.path.suffix}"
@@ -132,7 +132,7 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
             All library items should have their own template and refer to variables as:
                 Album: album (e.g. {album.title}, {album.artist})
                 Track: track (e.g. {track.title}, {track.artist})
-                Extra: extra (e.g. {extra.filename}
+                Extra: extra (e.g. {extra.path.name}
         lib_item: Library item referenced in the template.
 
 

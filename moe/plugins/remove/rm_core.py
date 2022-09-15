@@ -2,32 +2,12 @@
 
 import logging
 
-import pluggy
-
-import moe
 from moe.config import Config, MoeSession
 from moe.library.lib_item import LibItem
 
 __all__ = ["remove_item"]
 
 log = logging.getLogger("moe.remove")
-
-
-class Hooks:
-    """Remove plugin hook specifications."""
-
-    @staticmethod
-    @moe.hookspec
-    def post_remove(config: Config, item: LibItem):
-        """Provides an item after it has been removed from the library."""
-
-
-@moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
-    """Registers `add` hookspecs to Moe."""
-    from moe.plugins.remove.rm_core import Hooks
-
-    plugin_manager.add_hookspecs(Hooks)
 
 
 def remove_item(config: Config, item: LibItem):
@@ -38,5 +18,3 @@ def remove_item(config: Config, item: LibItem):
     session.delete(item)
 
     log.info(f"Removed item from the library. [{item=!r}]")
-
-    config.plugin_manager.hook.post_remove(config=config, item=item)

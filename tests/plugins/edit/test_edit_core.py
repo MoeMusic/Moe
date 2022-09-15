@@ -63,6 +63,7 @@ class TestEditItem:
     def test_custom_field(self, mock_track):
         """We can edit custom fields."""
         mock_track._custom_fields["my_title"] = "test"
+        mock_track.custom_fields = "my_title"
         edit.edit_item(mock_track, "my_title", "new")
 
         assert mock_track.my_title == "new"

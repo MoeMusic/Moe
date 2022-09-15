@@ -49,8 +49,3 @@ Import
 ------
 .. autoclass:: moe.plugins.moe_import.import_core.Hooks
    :members:
-
-Remove
-------
-.. autoclass:: moe.plugins.remove.rm_core.Hooks
-   :members:

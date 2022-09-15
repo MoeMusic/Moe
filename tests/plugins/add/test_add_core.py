@@ -27,13 +27,6 @@ class AddPlugin:
         if isinstance(item, Track):
             item.title = "pre_add"
 
-    @staticmethod
-    @moe.hookimpl
-    def post_add(config: Config, item: LibItem):
-        """Apply the new title onto the old album."""
-        if isinstance(item, Track):
-            item.genre = "post_add"
-
 
 class TestAddItem:
     """General functionality of `add_item`."""
@@ -41,18 +34,21 @@ class TestAddItem:
     def test_track(self, mock_track, tmp_session, tmp_add_config):
         """We can add tracks to the library."""
         add.add_item(tmp_add_config, mock_track)
+        tmp_session.flush()
 
         assert tmp_session.query(Track).one() == mock_track
 
     def test_album(self, mock_album, tmp_session, tmp_add_config):
         """We can add albums to the library."""
         add.add_item(tmp_add_config, mock_album)
+        tmp_session.flush()
 
         assert tmp_session.query(Album).one() == mock_album
 
     def test_extra(self, real_extra, tmp_session, tmp_add_config):
         """We can add extras to the library."""
         add.add_item(tmp_add_config, real_extra)
+        tmp_session.flush()
 
         assert tmp_session.query(Extra).one() == real_extra
 
@@ -65,11 +61,11 @@ class TestAddItem:
         )
 
         add.add_item(config, mock_track)
+        tmp_session.flush()
 
         db_track = tmp_session.query(Track).one()
 
         assert db_track.title == "pre_add"
-        assert db_track.genre == "post_add"
 
 
 class TestHookSpecs:
@@ -85,17 +81,6 @@ class TestHookSpecs:
         config.plugin_manager.hook.pre_add(config=config, item=mock_track)
 
         assert mock_track.title == "pre_add"
-
-    def test_post_add(self, mock_track, tmp_config):
-        """Ensure plugins can implement the `pre_add` hook."""
-        config = tmp_config(
-            "default_plugins = ['add']",
-            extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
-        )
-
-        config.plugin_manager.hook.post_add(config=config, item=mock_track)
-
-        assert mock_track.genre == "post_add"
 
 
 class TestPluginRegistration:

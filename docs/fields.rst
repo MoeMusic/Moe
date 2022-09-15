@@ -12,7 +12,8 @@ Track Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 20, 50, 50
+    :widths: 4, 10, 6
+    :width: 100%
 
     "album", "Album title", ""
     "albumartist", "Album artist", ""
@@ -31,7 +32,8 @@ Album Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 20, 50, 50
+    :widths: 4, 10, 6
+    :width: 100%
 
     "artist", "Album artist", ""
     "date", "Album release date", "YYYY-MM-DD format"
@@ -45,7 +47,12 @@ Extra Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 20, 50, 50
+    :widths: 4, 10, 6
+    :width: 100%
 
-    "filename", "The filename of the extra.", ""
     "path", "Filesystem path of the extra", ""
+
+*************
+Custom Fields
+*************
+In addition to the above fields, plugins may add any number of custom fields to Moe. These fields don't behave any differently i.e. they can be queried, edited, accessed, etc, the same as any normal field. You can check each plugin's documentation for more information on the custom fields they expose.

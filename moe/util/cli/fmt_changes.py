@@ -33,7 +33,7 @@ def fmt_album_changes(old_album: Album, new_album: Album) -> str:
 
     extra_str = ""
     extra_str += "\nExtras:\n"
-    extra_str += "\n".join([extra.filename for extra in old_album.extras])
+    extra_str += "\n".join([extra.path.name for extra in old_album.extras])
 
     album_str = album_info_str + "\n" + tracklist_str
     if old_album.extras:

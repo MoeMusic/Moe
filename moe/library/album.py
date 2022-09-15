@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 import pluggy
 import sqlalchemy as sa
 from sqlalchemy import JSON, Column, Date, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
@@ -16,16 +17,9 @@ from moe.config import Config
 from moe.library import SABase
 from moe.library.lib_item import LibItem, LibraryError, PathType
 
-# This would normally cause a cyclic dependency.
 if TYPE_CHECKING:
     from moe.library.extra import Extra
     from moe.library.track import Track
-
-    # Makes hybrid_property's have the same typing as a normal properties.
-    # Use until the stubs are improved.
-    typed_hybrid_property = property
-else:
-    from sqlalchemy.ext.hybrid import hybrid_property as typed_hybrid_property
 
 __all__ = ["Album"]
 
@@ -85,6 +79,8 @@ class Album(LibItem, SABase):
 
     Attributes:
         artist (str): AKA albumartist.
+        custom_fields list[str]: All custom fields. To add to this list, you should
+            implement the ``create_custom_album_fields`` hook.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
@@ -106,6 +102,7 @@ class Album(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
+    custom_fields = []
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -142,13 +139,14 @@ class Album(LibItem, SABase):
             **kwargs: Any other fields to assign to the album.
         """
         self.config = config
-        self.__dict__["_custom_fields"] = {}
+        self._custom_fields = {}
         custom_fields = config.plugin_manager.hook.create_custom_album_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
+                self.custom_fields.append(plugin_field)
 
         self.path = path
         self.artist = artist
@@ -217,11 +215,9 @@ class Album(LibItem, SABase):
             "year",
         ) + tuple(self._custom_fields)
 
-    def get_extra(self, filename: str) -> Optional["Extra"]:
-        """Gets an Extra by its filename."""
-        return next(
-            (extra for extra in self.extras if extra.filename == filename), None
-        )
+    def get_extra(self, path: Path) -> Optional["Extra"]:
+        """Gets an Extra by its path."""
+        return next((extra for extra in self.extras if extra.path == path), None)
 
     def get_track(self, track_num: int, disc: int = 1) -> Optional["Track"]:
         """Gets a Track by its track number."""
@@ -252,7 +248,7 @@ class Album(LibItem, SABase):
                 if other_value and (overwrite or (not overwrite and not self_value)):
                     setattr(self, field, other_value)
 
-        new_tracks: list[Track] = []
+        new_tracks: list["Track"] = []
         for other_track in other.tracks:
             conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
@@ -261,9 +257,11 @@ class Album(LibItem, SABase):
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
 
-        new_extras: list[Extra] = []
+        new_extras: list["Extra"] = []
         for other_extra in other.extras:
-            conflict_extra = self.get_extra(other_extra.filename)
+            conflict_extra = self.get_extra(
+                self.path / (other_extra.path.relative_to(other.path))
+            )
             if conflict_extra and overwrite:
                 self.extras.remove(conflict_extra)
                 new_extras.append(other_extra)
@@ -275,7 +273,7 @@ class Album(LibItem, SABase):
             f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
         )
 
-    @typed_hybrid_property
+    @hybrid_property
     def year(self) -> int:  # type: ignore
         """Gets an Album's year."""
         return self.date.year
@@ -338,7 +336,7 @@ class Album(LibItem, SABase):
 
         extra_reprs = []
         for extra in sorted(self.extras):
-            extra_reprs.append(f"{extra.filename}")
+            extra_reprs.append(f"{extra.path.name}")
         repr_str += ", extras=[" + ", ".join(extra_reprs) + "]"
 
         repr_str += ")"

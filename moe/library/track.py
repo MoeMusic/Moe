@@ -99,6 +99,8 @@ class Track(LibItem, SABase):
         albumartist (str)
         album_obj (Album): Corresponding Album object.
         artist (str)
+        custom_fields list[str]: All custom fields. To add to this list, you should
+            implement the ``create_custom_track_fields`` hook.
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
@@ -126,6 +128,7 @@ class Track(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
+    custom_fields = []
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="tracks")
@@ -165,13 +168,14 @@ class Track(LibItem, SABase):
             **kwargs: Any other fields to assign to the track.
         """
         self.config = config
-        self.__dict__["_custom_fields"] = {}
+        self._custom_fields = {}
         custom_fields = config.plugin_manager.hook.create_custom_track_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
+                self.custom_fields.append(plugin_field)
 
         album.tracks.append(self)
         self.path = path

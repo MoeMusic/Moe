@@ -22,40 +22,10 @@ class MyTrackPlugin:
         return {"no_default": None, "default": "value"}
 
 
-class TestCustomFields:
-    """Test getting and setting operations on custom fields."""
+class TestHooks:
+    """Test track hooks."""
 
-    def test_get_custom_field(self, mock_track):
-        """We can get a custom field like a normal attribute."""
-        mock_track._custom_fields["custom"] = "field"
-
-        assert mock_track.custom == "field"
-
-    def test_set_custom_field(self, mock_track):
-        """We can set a custom field like a normal attribute."""
-        mock_track._custom_fields["custom_key"] = None
-        mock_track.custom_key = "test"
-
-        assert mock_track._custom_fields["custom_key"] == "test"
-
-    def test_set_non_key(self, mock_track):
-        """Don't set just any attribute as a custom field if the key doesn't exist."""
-        mock_track.custom_key = 1
-
-        with pytest.raises(KeyError):
-            assert mock_track._custom_fields["custom_key"] == 1
-
-    def test_db_persistence(self, mock_track, tmp_session):
-        """Ensure custom fields persist in the database."""
-        mock_track._custom_fields["db"] = "persist"
-
-        tmp_session.add(mock_track)
-        tmp_session.flush()
-
-        db_track = tmp_session.query(Track).one()
-        assert db_track.db == "persist"
-
-    def test_plugin_defined_custom_fields(self, track_factory, tmp_config):
+    def test_create_custom_fields(self, track_factory, tmp_config):
         """Plugins can define new custom fields."""
         config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
         track = track_factory(config)

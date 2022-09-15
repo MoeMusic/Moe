@@ -22,40 +22,10 @@ class MyAlbumPlugin:
         return {"no_default": None, "default": "value"}
 
 
-class TestCustomFields:
-    """Test getting and setting operations on custom fields."""
+class TestHooks:
+    """Test album hooks."""
 
-    def test_get_custom_field(self, mock_album):
-        """We can get a custom field like a normal attribute."""
-        mock_album._custom_fields["custom"] = "field"
-
-        assert mock_album.custom == "field"
-
-    def test_set_custom_field(self, mock_album):
-        """We can set a custom field like a normal attribute."""
-        mock_album._custom_fields["custom_key"] = None
-        mock_album.custom_key = "test"
-
-        assert mock_album._custom_fields["custom_key"] == "test"
-
-    def test_set_non_key(self, mock_album):
-        """Don't set just any attribute as a custom field if the key doesn't exist."""
-        mock_album.custom_key = 1
-
-        with pytest.raises(KeyError):
-            assert mock_album._custom_fields["custom_key"] == 1
-
-    def test_db_persistence(self, mock_album, tmp_session):
-        """Ensure custom fields persist in the database."""
-        mock_album._custom_fields["db"] = "persist"
-
-        tmp_session.add(mock_album)
-        tmp_session.flush()
-
-        db_album = tmp_session.query(Album).one()
-        assert db_album.db == "persist"
-
-    def test_plugin_defined_custom_fields(self, album_factory, tmp_config):
+    def test_create_custom_fields(self, album_factory, tmp_config):
         """Plugins can define new custom fields."""
         config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
         album = album_factory(config)
@@ -178,10 +148,8 @@ class TestMerge:
         album1 = album_factory(exists=True)
         album2 = album_factory(exists=True)
 
-        conflict_extra = Extra(
-            MagicMock(), album2, album2.path / album1.extras[0].filename
-        )
-        overwrite_extra = album1.get_extra(conflict_extra.filename)
+        Extra(MagicMock(), album2, album2.path / album1.extras[0].path.name)  # conflict
+        overwrite_extra = album1.extras[0]
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()
 

@@ -15,7 +15,6 @@ import importlib.util
 import logging
 import os
 import re
-import sys
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
@@ -295,12 +294,7 @@ class Config:
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")
         def sqlite_engine_connect(conn):
-            if (sys.version_info.major, sys.version_info.minor) < (3, 8):
-                conn.connection.create_function("regexp", 2, _regexp)
-            else:
-                conn.connection.create_function(
-                    "regexp", 2, _regexp, deterministic=True
-                )
+            conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
 
         def _regexp(pattern: str, col_value) -> bool:
             """Use the python re module for sqlite regular expression functionality.

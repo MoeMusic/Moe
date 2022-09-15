@@ -24,9 +24,8 @@ class Hooks:
     def pre_add(config: Config, item: LibItem):
         """Provides an item prior to it being added to the library.
 
-        Use this hook if you wish to change the item's metadata. You must also ensure
-        there will be no conflicts with existing items in the database if you are
-        altering any applicable, i.e. unique, fields.
+        Use this hook if you wish to change an item's metadata prior to it being
+        added to the library.
 
         Args:
             config: Moe config.
@@ -39,29 +38,11 @@ class Hooks:
             ``pre_add`` hook is complete, but before the item has been added to the db.
 
         See Also:
-            * The :meth:`post_add` hook for any post-processing operations.
+            * The :meth:`~moe.library.lib_item.Hooks.edit_new_items` hook for editing
+              items that have been added
+              to the library.
             * `Pluggy hook wrapper documention
               <https://pluggy.readthedocs.io/en/stable/#wrappers>`_
-        """
-
-    @staticmethod
-    @moe.hookspec
-    def post_add(config: Config, item: LibItem):
-        """Provides an item after it has been added to the library.
-
-        Use this hook if you want to operate on an item after its metadata has been set.
-
-        Args:
-            config: Moe config.
-            item: Library item added.
-
-        See Also:
-            * The :meth:`pre_add` hook if you wish to alter item metadata.
-            * The :meth:`~moe.config.Hooks.process_new_items` hook.
-              The difference between them is that the :meth:`post_add` hook will only
-              operate on an `add` operation, while the
-              :meth:`~moe.config.Hooks.process_new_items` hook will run anytime an item
-              is changed or added.
         """
 
 
@@ -96,6 +77,5 @@ def add_item(config: Config, item: LibItem):
 
     config.plugin_manager.hook.pre_add(config=config, item=item)
     item = session.merge(item)
-    log.info(f"Item added to the library. [{item=!r}]")
 
-    config.plugin_manager.hook.post_add(config=config, item=item)
+    log.info(f"Item added to the library. [{item=!r}]")

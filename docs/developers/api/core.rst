@@ -61,7 +61,7 @@ Extra
 
 .. automodule:: moe.library.extra
    :members:
-   :exclude-members: filename, path
+   :exclude-members: path
    :show-inheritance:
 
 

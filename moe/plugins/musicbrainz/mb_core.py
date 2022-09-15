@@ -128,14 +128,19 @@ def import_candidates(config: Config, album: Album) -> Album:
 
 
 @moe.hookimpl
-def post_remove(config: Config, item: LibItem):
+def process_removed_items(config: Config, items: list[LibItem]):
     """Removes a release from a collection when removed from the library."""
     if not config.settings.musicbrainz.collection.auto_remove:
         return
 
-    if isinstance(item, Album) and item.mb_album_id:
+    mb_ids = []
+    for item in items:
+        if isinstance(item, Album) and item.mb_album_id:
+            mb_ids.append(item.mb_album_id)
+
+    if mb_ids:
         try:
-            rm_releases_from_collection(config, {item.mb_album_id})
+            rm_releases_from_collection(config, set(mb_ids))
         except MBAuthError as err:
             log.error(err)
 
@@ -308,7 +313,7 @@ def get_matching_album(config: Config, album: Album) -> Album:
         Dictionary of release information. See the ``tests/musicbrainz/resources``
         directory for an idea of what this contains.
     """
-    if hasattr(album, "mb_album_id"):
+    if album.mb_album_id:
         return get_album_by_id(config, album.mb_album_id)
 
     log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")

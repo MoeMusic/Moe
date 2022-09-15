@@ -2,11 +2,9 @@
 
 import pytest
 
-import moe
-from moe.config import Config, ExtraPlugin
+from moe.config import Config
 from moe.library.album import Album
 from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import remove as moe_rm
 
@@ -15,17 +13,6 @@ from moe.plugins import remove as moe_rm
 def tmp_rm_config(tmp_config) -> Config:
     """A temporary config for the edit plugin with the cli."""
     return tmp_config('default_plugins = ["remove"]', tmp_db=True)
-
-
-class RemovePlugin:
-    """Test plugin that implements the remove hookspecs."""
-
-    @staticmethod
-    @moe.hookimpl
-    def post_remove(config: Config, item: LibItem):
-        """Apply the new title onto the old album."""
-        if isinstance(item, Track):
-            item.title = "removed"
 
 
 class TestRemoveItem:
@@ -62,21 +49,6 @@ class TestRemoveItem:
         moe_rm.remove_item(tmp_rm_config, mock_extra)
 
         assert not tmp_session.query(Extra).scalar()
-
-
-class TestPostRemove:
-    """Test the `post_remove` hookspec."""
-
-    def test_post_add(self, mock_track, tmp_config):
-        """Ensure plugins can implement the `pre_add` hook."""
-        config = tmp_config(
-            "default_plugins = ['remove']",
-            extra_plugins=[ExtraPlugin(RemovePlugin, "remove_plugin")],
-        )
-
-        config.plugin_manager.hook.post_remove(config=config, item=mock_track)
-
-        assert mock_track.title == "removed"
 
 
 class TestPluginRegistration:
