@@ -94,7 +94,8 @@ class Album(LibItem, SABase):
         path (Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
-        year (int): Album release year.
+        year (int): Album release year. Note, this field is read-only. Set ``date``
+            instead.
     """
 
     __tablename__ = "album"

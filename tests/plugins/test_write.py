@@ -27,8 +27,9 @@ def _tmp_write_config(tmp_config):
 class TestWriteTags:
     """Tests `write_tags()`."""
 
-    def test_write_tags(self):
+    def test_write_tags(self, tmp_config):
         """We can write track changes to the file."""
+        tmp_config()
         track = track_factory(exists=True)
         album = "Bigger, Better, Faster, More!"
         albumartist = "4 Non Blondes"

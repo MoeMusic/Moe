@@ -28,6 +28,13 @@ class MyTrackPlugin:
         if track.title == other.title:
             return False
 
+    @staticmethod
+    @moe.hookimpl
+    def read_custom_tags(track_path, album_fields, track_fields):
+        """Override a new fields for the track and album."""
+        album_fields["title"] = "custom album title"
+        track_fields["title"] = "custom track title"
+
 
 class TestHooks:
     """Test track hooks."""
@@ -104,8 +111,9 @@ class TestAlbumSet:
 class TestFromFile:
     """Test initialization from given file path."""
 
-    def test_read_tags(self):
+    def test_read_tags(self, tmp_config):
         """We can initialize a track with tags from a file if present."""
+        tmp_config()
         track = track_factory(exists=True)
         track.album = "The Lost Album"
         track.albumartist = "Wu-Tang Clan"
@@ -135,8 +143,9 @@ class TestFromFile:
         with pytest.raises(TrackError):
             Track.from_file(extra_factory().path)
 
-    def test_albumartist_backup(self):
+    def test_albumartist_backup(self, tmp_config):
         """Use artist as a backup for albumartist if missing."""
+        tmp_config()
         track = track_factory(exists=True)
         track.albumartist = ""
         track.artist = "Backup"
@@ -144,6 +153,23 @@ class TestFromFile:
 
         track = Track.from_file(track.path)
         assert track.albumartist
+
+    def test_read_custom_tags(self, tmp_config):
+        """Plugins can add additional track and album fields via `read_custom_tags`."""
+        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory(exists=True)
+        new_track = Track.from_file(track.path)
+
+        assert new_track.album == "custom album title"
+        assert new_track.title == "custom track title"
+
+    def test_read_track_fields(self, tmp_config):
+        """Plugins can add additional album fields via the `read_album_fields` hook."""
+        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory(exists=True)
+        new_track = Track.from_file(track.path)
+
+        assert new_track.title == "custom track title"
 
 
 class TestEquality:
