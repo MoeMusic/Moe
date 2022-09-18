@@ -6,23 +6,25 @@ import pytest
 
 import moe
 import moe.cli
-from moe.config import Config, ExtraPlugin
+from moe import config
+from moe.config import ExtraPlugin
 from moe.plugins import moe_import
 from moe.util.cli import PromptChoice
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
-def tmp_import_config(tmp_config) -> Config:
+def _tmp_import_config(tmp_config):
     """A temporary config for the import plugin with the cli."""
-    return tmp_config('default_plugins = ["cli", "import"]')
+    tmp_config('default_plugins = ["cli", "import"]')
 
 
 class TestPrompt:
     """Test the import prompt."""
 
-    def test_multi_disc_album(self, album_factory, tmp_config, tmp_session):
+    def test_multi_disc_album(self, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
-        config = tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
+        tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
         old_album = album_factory(num_discs=2)
         new_album = album_factory(num_discs=2)
 
@@ -32,7 +34,7 @@ class TestPrompt:
             return_value=mock_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(config, old_album, new_album)
+            moe_import.import_prompt(old_album, new_album)
 
         assert old_album.disc_total == 2
         assert old_album.get_track(1, disc=2)
@@ -42,7 +44,7 @@ class ImportPlugin:
     """Test plugin that implements the ``import_metadata`` hook for testing."""
 
     @staticmethod
-    def change_title(config, old_album, new_album):
+    def change_title(old_album, new_album):
         """Change the albums title for testing."""
         old_album.title = "ImportPlugin"
 
@@ -60,12 +62,12 @@ class ImportPlugin:
 class TestHookSpecs:
     """Test the various plugin hook specifications."""
 
-    def test_add_import_prompt_choice(self, album_factory, tmp_config):
+    def test_add_import_prompt_choice(self, tmp_config):
         """Plugins can add prompt choices to the import prompt."""
         old_album = album_factory()
         new_album = album_factory()
         old_album.title = "not ImportPlugin"
-        config = tmp_config(
+        tmp_config(
             "default_plugins = ['cli', 'import']",
             tmp_db=True,
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
@@ -75,15 +77,16 @@ class TestHookSpecs:
             return_value=ImportPlugin.test_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(config, old_album, new_album)
+            moe_import.import_prompt(old_album, new_album)
 
         assert old_album.title == "ImportPlugin"
 
 
+@pytest.mark.usefixtures("_tmp_import_config")
 class TestProcessCandidates:
     """Test the `process_candidates` hook implementation."""
 
-    def test_process_candidates(self, tmp_import_config):
+    def test_process_candidates(self):
         """The `import_prompt` should be used to process the candidate albums."""
         mock_old_album = Mock()
         mock_candidates = [Mock()]
@@ -91,17 +94,14 @@ class TestProcessCandidates:
         with patch(
             "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
-            tmp_import_config.pm.hook.process_candidates(
-                config=tmp_import_config,
+            config.CONFIG.pm.hook.process_candidates(
                 old_album=mock_old_album,
                 candidates=mock_candidates,
             )
 
-        mock_import_prompt.assert_called_once_with(
-            tmp_import_config, mock_old_album, mock_candidates[0]
-        )
+        mock_import_prompt.assert_called_once_with(mock_old_album, mock_candidates[0])
 
-    def test_abort_import(self, tmp_import_config):
+    def test_abort_import(self):
         """Raise SystemExit if the import is aborted."""
         with patch(
             "moe.plugins.moe_import.import_cli.import_prompt",
@@ -109,42 +109,37 @@ class TestProcessCandidates:
             autospec=True,
         ):
             with pytest.raises(SystemExit) as error:
-                tmp_import_config.pm.hook.process_candidates(
-                    config=tmp_import_config,
-                    old_album=Mock(),
-                    candidates=[Mock()],
+                config.CONFIG.pm.hook.process_candidates(
+                    old_album=Mock(), candidates=[Mock()]
                 )
 
         assert error.value.code == 0
 
-    def test_process_no_candidates(self, tmp_import_config):
+    def test_process_no_candidates(self):
         """Don't display the import prompt if there are no candidates to process."""
         with patch(
             "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
-            tmp_import_config.pm.hook.process_candidates(
-                config=tmp_import_config, old_album=Mock(), candidates=[]
-            )
+            config.CONFIG.pm.hook.process_candidates(old_album=Mock(), candidates=[])
 
         mock_import_prompt.assert_not_called()
 
 
+@pytest.mark.usefixtures("_tmp_import_config")
 class TestAddImportPromptChoice:
     """Test the `add_import_prompt_choice` hook implementation."""
 
-    def test_add_choices(self, tmp_import_config):
+    def test_add_choices(self):
         """The apply and abort import prompt choices are added."""
         prompt_choices = []
 
-        tmp_import_config.pm.hook.add_import_prompt_choice(
-            prompt_choices=prompt_choices
-        )
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
         assert len(prompt_choices) == 2
         assert any(choice.shortcut_key == "a" for choice in prompt_choices)
         assert any(choice.shortcut_key == "x" for choice in prompt_choices)
 
-    def test_apply_tracks(self, album_factory, track_factory, tmp_import_config):
+    def test_apply_tracks(self):
         """`apply` prompt choice should apply any matching Tracks.
 
         Missing and unmatched tracks should not be present in the final album.
@@ -166,15 +161,13 @@ class TestAddImportPromptChoice:
             return_value=mock_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(tmp_import_config, old_album, new_album)
+            moe_import.import_prompt(old_album, new_album)
 
         assert old_album.tracks
         assert not old_album.get_track(missing_track.track_num)
         assert not old_album.get_track(unmatched_track.track_num)
 
-    def test_apply_diff_get_track(
-        self, album_factory, track_factory, tmp_import_config
-    ):
+    def test_apply_diff_get_track(self):
         """Apply matches that don't have corresponding track and disc numbers.
 
         Track conflicts are defined by their track and disc on an album, and are the
@@ -182,12 +175,12 @@ class TestAddImportPromptChoice:
         two matching tracks don't conflict (i.e. matching track and disc numbers), that
         they can still merge properly.
         """
-        old_album = album_factory()
-        new_album = album_factory()
-        old_album.get_track(1).title = "old track 1"
-        new_album.get_track(1).title = "new track 1"
-        old_album.get_track(2).title = "old track 2"
-        new_album.get_track(2).title = "new track 2"
+        old_album = album_factory(num_tracks=0)
+        new_album = album_factory(num_tracks=0)
+        track_factory(album=old_album, track_num=1, title="old track 1")
+        track_factory(album=new_album, track_num=1, title="new track 1")
+        track_factory(album=old_album, track_num=2, title="old track 2")
+        track_factory(album=new_album, track_num=2, title="new track 2")
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         mock_matches = [
@@ -204,16 +197,24 @@ class TestAddImportPromptChoice:
                 return_value=mock_choice,
                 autospec=True,
             ):
-                moe_import.import_prompt(tmp_import_config, old_album, new_album)
+                moe_import.import_prompt(old_album, new_album)
 
-        assert old_album.get_track(1).title == new_album.get_track(1).title
-        assert old_album.get_track(2).title == new_album.get_track(2).title
+        old_track1 = old_album.get_track(1)
+        assert old_track1
+        new_track1 = new_album.get_track(1)
+        assert new_track1
+        old_track2 = old_album.get_track(2)
+        assert old_track2
+        new_track2 = new_album.get_track(2)
+        assert new_track2
+        assert old_track1.title == new_track1.title
+        assert old_track2.title == new_track2.title
 
-    def test_apply_extras(self, album_factory, extra_factory, tmp_import_config):
+    def test_apply_extras(self):
         """`apply` prompt choice should keep any extras."""
-        mock_album = album_factory()
+        album = album_factory()
         new_album = album_factory()
-        new_extra = extra_factory(album=mock_album)
+        new_extra = extra_factory(album=album)
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
@@ -221,23 +222,22 @@ class TestAddImportPromptChoice:
             return_value=mock_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(tmp_import_config, mock_album, new_album)
+            moe_import.import_prompt(album, new_album)
 
-        assert new_extra in mock_album.extras
+        assert new_extra in album.extras
 
-    def test_apply_fields(self, album_factory, tmp_import_config):
+    def test_apply_fields(self):
         """Fields get applied onto the old album."""
-        mock_album = album_factory()
-        new_album = album_factory()
-        new_album.title = "new title"
-        assert mock_album.title != new_album.title
+        album = album_factory()
+        new_album = album_factory(title="new title")
+        assert album.title != new_album.title
 
         # new albums won't have paths
-        new_album.path = None
+        new_album.path = None  # type: ignore
         for new_track in new_album.tracks:
-            new_track.path = None
+            new_track.path = None  # type: ignore
         for new_extra in new_album.extras:
-            new_extra.album_obj = None
+            new_extra.album_obj = None  # type: ignore
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(
@@ -245,16 +245,16 @@ class TestAddImportPromptChoice:
             return_value=mock_choice,
             autospec=True,
         ):
-            moe_import.import_prompt(tmp_import_config, mock_album, new_album)
+            moe_import.import_prompt(album, new_album)
 
-        assert mock_album.title == new_album.title
-        assert mock_album.path == mock_album.path
-        for track in mock_album.tracks:
+        assert album.title == new_album.title
+        assert album.path == album.path
+        for track in album.tracks:
             assert track.path
-        for extra in mock_album.tracks:
+        for extra in album.tracks:
             assert extra.path
 
-    def test_abort(self, album_factory, tmp_import_config):
+    def test_abort(self):
         """The `abort` prompt choice should raise an AbortImport error."""
         album1 = album_factory()
         album2 = album_factory()
@@ -266,7 +266,7 @@ class TestAddImportPromptChoice:
             autospec=True,
         ):
             with pytest.raises(moe_import.AbortImport):
-                moe_import.import_prompt(tmp_import_config, album1, album2)
+                moe_import.import_prompt(album1, album2)
 
         assert album1 != album2
 
@@ -276,12 +276,12 @@ class TestPluginRegistration:
 
     def test_no_cli(self, tmp_config):
         """Don't enable the impot cli plugin if the `cli` plugin is not enabled."""
-        config = tmp_config(settings='default_plugins = ["import"]')
+        tmp_config(settings='default_plugins = ["import"]')
 
-        assert not config.pm.has_plugin("import_cli")
+        assert not config.CONFIG.pm.has_plugin("import_cli")
 
     def test_cli(self, tmp_config):
         """Enable the import cli plugin if the `cli` plugin is enabled."""
-        config = tmp_config(settings='default_plugins = ["import", "cli"]')
+        tmp_config(settings='default_plugins = ["import", "cli"]')
 
-        assert config.pm.has_plugin("import_cli")
+        assert config.CONFIG.pm.has_plugin("import_cli")

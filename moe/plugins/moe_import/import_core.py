@@ -5,7 +5,7 @@ import logging
 import pluggy
 
 import moe
-from moe.config import Config
+from moe import config
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
@@ -21,7 +21,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def import_candidates(config: Config, album: Album) -> Album:  # type: ignore
+    def import_candidates(album: Album) -> Album:  # type: ignore
         """Imports candidate albums from implemented sources based on the given album.
 
         This hook should be used to import metadata from an external source and return
@@ -32,7 +32,6 @@ class Hooks:
             This hook runs within the :meth:`pre_add` hook.
 
         Args:
-            config: Moe config.
             album: Album being added to the library.
 
         Returns:
@@ -41,7 +40,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(config: Config, old_album: Album, candidates: list[Album]):
+    def process_candidates(old_album: Album, candidates: list[Album]):
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied
@@ -51,7 +50,6 @@ class Hooks:
         resolved.
 
         Args:
-            config: Moe config.
             old_album: Album being added to the library.
             candidates: New candidate albums with imported metadata.
         """
@@ -66,7 +64,7 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def pre_add(config: Config, item: LibItem):
+def pre_add(item: LibItem):
     """Fixes album metadata via external sources prior to it being added to the lib."""
     if isinstance(item, Album):
         album = item
@@ -75,16 +73,15 @@ def pre_add(config: Config, item: LibItem):
     else:
         raise NotImplementedError
 
-    import_album(config, album)
+    import_album(album)
 
 
-def import_album(config: Config, album: Album):
+def import_album(album: Album):
     """Imports album metadata for an album."""
     log.debug(f"Importing album metadata. [{album=!r}]")
 
-    candidates = config.pm.hook.import_candidates(config=config, album=album)
-    config.pm.hook.process_candidates(
-        config=config,
+    candidates = config.CONFIG.pm.hook.import_candidates(album=album)
+    config.CONFIG.pm.hook.process_candidates(
         old_album=album,
         candidates=candidates,
     )

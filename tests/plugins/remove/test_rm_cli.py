@@ -8,6 +8,7 @@ import pytest
 
 import moe.cli
 from moe.query import QueryError
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
@@ -31,74 +32,78 @@ def mock_query() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
-def tmp_rm_config(tmp_config):
+def _tmp_rm_config(tmp_config):
     """A temporary config for the edit plugin with the cli."""
-    return tmp_config('default_plugins = ["cli", "remove"]')
+    tmp_config('default_plugins = ["cli", "remove"]')
 
 
+@pytest.mark.usefixtures("_tmp_rm_config")
 class TestCommand:
     """Test the `remove` command."""
 
-    def test_track(self, mock_track, mock_query, mock_rm, tmp_rm_config):
+    def test_track(self, mock_query, mock_rm):
         """Tracks are removed from the database with valid query."""
+        track = track_factory()
         cli_args = ["remove", "*"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
-        moe.cli.main(cli_args, tmp_rm_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="track")
-        mock_rm.assert_called_once_with(tmp_rm_config, mock_track)
+        mock_rm.assert_called_once_with(track)
 
-    def test_album(self, mock_album, mock_query, mock_rm, tmp_rm_config):
+    def test_album(self, mock_query, mock_rm):
         """Albums are removed from the database with valid query."""
+        album = album_factory()
         cli_args = ["remove", "-a", "*"]
-        mock_query.return_value = [mock_album]
+        mock_query.return_value = [album]
 
-        moe.cli.main(cli_args, tmp_rm_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="album")
-        mock_rm.assert_called_once_with(tmp_rm_config, mock_album)
+        mock_rm.assert_called_once_with(album)
 
-    def test_extra(self, mock_extra, mock_query, mock_rm, tmp_rm_config):
+    def test_extra(self, mock_query, mock_rm):
         """Extras are removed from the database with valid query."""
+        extra = extra_factory()
         cli_args = ["remove", "-e", "*"]
-        mock_query.return_value = [mock_extra]
+        mock_query.return_value = [extra]
 
-        moe.cli.main(cli_args, tmp_rm_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="extra")
-        mock_rm.assert_called_once_with(tmp_rm_config, mock_extra)
+        mock_rm.assert_called_once_with(extra)
 
-    def test_multiple_items(self, track_factory, mock_query, mock_rm, tmp_rm_config):
+    def test_multiple_items(self, mock_query, mock_rm):
         """All items returned from the query are removed."""
         cli_args = ["remove", "*"]
-        mock_tracks = [track_factory(), track_factory()]
-        mock_query.return_value = mock_tracks
+        tracks = [track_factory(), track_factory()]
+        mock_query.return_value = tracks
 
-        moe.cli.main(cli_args, tmp_rm_config)
+        moe.cli.main(cli_args)
 
-        for mock_track in mock_tracks:
-            mock_rm.assert_any_call(tmp_rm_config, mock_track)
+        for track in tracks:
+            mock_rm.assert_any_call(track)
         assert mock_rm.call_count == 2
 
-    def test_exit_code(self, mock_query, mock_rm, tmp_rm_config):
+    def test_exit_code(self, mock_query, mock_rm):
         """Return a non-zero exit code if no items are removed."""
         cli_args = ["remove", "*"]
         mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_rm_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
         mock_rm.assert_not_called()
 
-    def test_bad_query(self, mock_query, tmp_rm_config):
+    def test_bad_query(self, mock_query):
         """Raise SystemExit if given a bad query."""
         cli_args = ["remove", "*"]
         mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_rm_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 

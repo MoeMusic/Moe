@@ -1,14 +1,16 @@
 """Tests the musicbrainz plugin."""
 
 import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import call, patch
 
 import pytest
 
 import tests.plugins.musicbrainz.resources as mb_rsrc
+from moe import config
 from moe.config import ConfigValidationError
 from moe.plugins import musicbrainz as moe_mb
 from moe.plugins.musicbrainz.mb_core import MBAuthError
+from tests.conftest import album_factory
 
 
 @pytest.fixture
@@ -118,42 +120,37 @@ class TestConfiguration:
 class TestImportCandidates:
     """Test the ``import_candidtates`` hook implementation."""
 
-    def test_get_matching_albums(self, mock_album, tmp_config):
+    def test_get_matching_albums(self, tmp_config):
         """Get matching albums when searching for candidates to import."""
+        album = album_factory()
         config = tmp_config("default_plugins = ['import', 'musicbrainz']")
 
         with patch.object(
             moe_mb.mb_core, "get_matching_album", autospec=True
         ) as mock_gma:
-            mock_gma.return_value = mock_album
-            candidates = config.pm.hook.import_candidates(
-                config=config, album=mock_album
-            )
+            mock_gma.return_value = album
+            candidates = config.pm.hook.import_candidates(album=album)
 
-        mock_gma.assert_called_once_with(config, mock_album)
-        assert candidates == [mock_album]
+        mock_gma.assert_called_once_with(album)
+        assert candidates == [album]
 
 
 class TestCollectionsAutoRemove:
     """Test the collection auto remove functionality."""
 
-    def test_auto_remove_true(self, mock_album, mb_config):
+    def test_auto_remove_true(self, mb_config):
         """Remove items from the collection if `auto_remove` is true."""
-        mock_album.mb_album_id = "184"
+        album = album_factory(mb_album_id="184")
         mb_config.settings.musicbrainz.collection.auto_remove = True
 
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.pm.hook.process_removed_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_removed_items(items=[album])
 
-        mock_rm_releases_call.assert_called_once_with(
-            mb_config, {mock_album.mb_album_id}
-        )
+        mock_rm_releases_call.assert_called_once_with({album.mb_album_id})
 
-    def test_all_items(self, album_factory, mb_config):
+    def test_all_items(self, mb_config):
         """Remove all items from the collection if `auto_remove` is true."""
         album1 = album_factory(mb_album_id="1")
         album2 = album_factory(mb_album_id="2")
@@ -162,45 +159,40 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.pm.hook.process_removed_items(
-                config=mb_config, items=[album1, album2]
-            )
+            mb_config.pm.hook.process_removed_items(items=[album1, album2])
 
         mock_rm_releases_call.assert_called_once_with(
-            mb_config, {album1.mb_album_id, album2.mb_album_id}
+            {album1.mb_album_id, album2.mb_album_id}
         )
 
-    def test_auto_remove_false(self, mock_album, mb_config):
+    def test_auto_remove_false(self, mb_config):
         """Don't remove any items from the collection if `auto_remove` set to false."""
+        album = album_factory()
         mb_config.settings.musicbrainz.collection.auto_remove = False
 
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.pm.hook.process_removed_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_removed_items(items=[album])
 
         mock_rm_releases_call.assert_not_called()
 
-    def test_no_releases_to_remove(self, mock_album, mb_config):
+    def test_no_releases_to_remove(self, mb_config):
         """Don't remove any items if there are no releases."""
-        mock_album.mb_album_id = None
+        album = album_factory()
         mb_config.settings.musicbrainz.collection.auto_remove = True
 
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.pm.hook.process_removed_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_removed_items(items=[album])
 
         mock_rm_releases_call.assert_not_called()
 
-    def test_invalid_credentials(self, caplog, mock_album, mb_config):
+    def test_invalid_credentials(self, caplog, mb_config):
         """Don't raise an error if bad credentials, just log."""
         mb_config.settings.musicbrainz.collection.auto_remove = True
-        mock_album.mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        album = album_factory(mb_album_id="112dec42-65f2-3bde-8d7d-26deddde10b2")
 
         with patch.object(
             moe_mb.mb_core,
@@ -208,9 +200,7 @@ class TestCollectionsAutoRemove:
             autospec=True,
             side_effect=MBAuthError,
         ):
-            mb_config.pm.hook.process_removed_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_removed_items(items=[album])
 
         assert any(record.levelname == "ERROR" for record in caplog.records)
 
@@ -218,47 +208,46 @@ class TestCollectionsAutoRemove:
 class TestCollectionsAutoAdd:
     """Test the collection auto add functionality in the `process_new_items` hook."""
 
-    def test_auto_add_true(self, mock_album, mb_config):
+    def test_auto_add_true(self, mb_config):
         """Add an album to the collection if `auto_add` is true."""
-        mock_album.mb_album_id = "184"
+        album = album_factory(mb_album_id="184")
         mb_config.settings.musicbrainz.collection.auto_add = True
 
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
+            mb_config.pm.hook.process_new_items(items=[album])
 
-        mock_add_releases_call.assert_called_once_with(
-            mb_config, {mock_album.mb_album_id}
-        )
+        mock_add_releases_call.assert_called_once_with({album.mb_album_id})
 
-    def test_auto_add_false(self, mock_album, mb_config):
+    def test_auto_add_false(self, mb_config):
         """Don't add any items if `auto_add` set to false."""
+        album = album_factory()
         mb_config.settings.musicbrainz.collection.auto_add = False
 
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
+            mb_config.pm.hook.process_new_items(items=[album])
 
         mock_add_releases_call.assert_not_called()
 
-    def test_no_releases_to_add(self, mock_album, mb_config):
+    def test_no_releases_to_add(self, mb_config):
         """Don't add any items if there are no releases."""
+        album = album_factory()
         mb_config.settings.musicbrainz.collection.auto_add = True
-        mock_album.mb_album_id = None
 
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
+            mb_config.pm.hook.process_new_items(items=[album])
 
         mock_add_releases_call.assert_not_called()
 
-    def test_invalid_credentials(self, caplog, mock_album, mb_config):
+    def test_invalid_credentials(self, caplog, mb_config):
         """Don't raise an error if bad credentials, just log an error."""
         mb_config.settings.musicbrainz.collection.auto_add = True
-        mock_album.mb_album_id = "123"
+        album = album_factory(mb_album_id="123")
 
         with patch.object(
             moe_mb.mb_core,
@@ -266,7 +255,7 @@ class TestCollectionsAutoAdd:
             autospec=True,
             side_effect=MBAuthError,
         ):
-            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
+            mb_config.pm.hook.process_new_items(items=[album])
 
         assert any(record.levelname == "ERROR" for record in caplog.records)
 
@@ -275,7 +264,7 @@ class TestGetMatchingAlbum:
     """Test `get_matching_album()`."""
 
     @pytest.mark.network
-    def test_network(self, album_factory, mb_config):
+    def test_network(self, mb_config):
         """Make sure we can actually hit the real API.
 
         Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
@@ -287,14 +276,14 @@ class TestGetMatchingAlbum:
             title="My Beautiful Dark Twisted Fantasy",
         )
 
-        mb_album = moe_mb.get_matching_album(mb_config, album)
+        mb_album = moe_mb.get_matching_album(album)
 
         # don't test every field since we can't actually guarantee the accuracy of
         # musicbrainz's search results every time
         assert mb_album.artist == album.artist
         assert mb_album.title == album.title
 
-    def test_album_search(self, album_factory, mock_mb_by_id, mb_config):
+    def test_album_search(self, mock_mb_by_id, mb_config):
         """Searching for a release uses the expected parameters."""
         album = album_factory(
             config=mb_config,
@@ -315,22 +304,21 @@ class TestGetMatchingAlbum:
             return_value=mb_rsrc.full_release.search,
             autospec=True,
         ) as mock_mb_search:
-            mb_album = moe_mb.get_matching_album(mb_config, album)
+            mb_album = moe_mb.get_matching_album(album)
 
         mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
-        assert mb_album == mb_rsrc.full_release.album
+        assert mb_album == mb_rsrc.full_release.album()
 
-    def test_dont_search_if_mbid(self, mock_album):
+    def test_dont_search_if_mbid(self):
         """Use ``mb_album_id`` to search by id if it exists."""
-        mock_album.mb_album_id = "1"
-        mock_config = MagicMock()
+        album = album_factory(mb_album_id="1")
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True
         ) as mock_mb_by_id:
-            moe_mb.get_matching_album(mock_config, mock_album)
+            moe_mb.get_matching_album(album)
 
-        mock_mb_by_id.assert_called_once_with(mock_config, mock_album.mb_album_id)
+        mock_mb_by_id.assert_called_once_with(album.mb_album_id)
 
 
 class TestGetAlbumById:
@@ -352,19 +340,19 @@ class TestGetAlbumById:
         mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
         mock_mb_by_id.return_value = mb_rsrc.full_release.release
 
-        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
 
         mock_mb_by_id.assert_called_once_with(
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
         )
-        assert mb_album == mb_rsrc.full_release.album
+        assert mb_album == mb_rsrc.full_release.album()
 
     def test_partial_date_year_mon(self, mock_mb_by_id):
         """If given date is missing the day, default to 1."""
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year_mon
 
-        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 12, 1)
 
@@ -373,7 +361,7 @@ class TestGetAlbumById:
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
         mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year
 
-        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
 
         assert mb_album.date == datetime.date(1992, 1, 1)
 
@@ -382,7 +370,7 @@ class TestGetAlbumById:
         mb_album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
         mock_mb_by_id.return_value = mb_rsrc.multi_disc.release
 
-        mb_album = moe_mb.get_album_by_id(MagicMock(), mb_album_id)
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
 
         assert mb_album.disc_total == 2
         assert any(track.disc == 1 for track in mb_album.tracks)
@@ -400,7 +388,7 @@ class TestAddReleasesToCollection:
         with patch.object(
             moe_mb.mb_core.musicbrainzngs, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            moe_mb.add_releases_to_collection(mb_config, releases, collection)
+            moe_mb.add_releases_to_collection(releases, collection)
 
         mock_add_releases_call.assert_called_once_with(
             collection=collection, releases=releases
@@ -414,7 +402,7 @@ class TestAddReleasesToCollection:
         with patch.object(
             moe_mb.mb_core.musicbrainzngs, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            moe_mb.add_releases_to_collection(mb_config, releases)
+            moe_mb.add_releases_to_collection(releases)
 
         mock_add_releases_call.assert_called_once_with(
             collection=mb_config.settings.musicbrainz.collection.collection_id,
@@ -429,7 +417,7 @@ class TestAddReleasesToCollection:
             with patch.object(
                 moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
-                moe_mb.add_releases_to_collection(mb_config, {"432"}, "1")
+                moe_mb.add_releases_to_collection({"432"}, "1")
 
         mock_auth_call.assert_called_once_with(
             mb_config.settings.musicbrainz.username,
@@ -445,7 +433,7 @@ class TestAddReleasesToCollection:
         mb_config.settings.musicbrainz.password = "slim shady"
 
         with pytest.raises(moe_mb.MBAuthError):
-            moe_mb.add_releases_to_collection(mb_config, releases, collection)
+            moe_mb.add_releases_to_collection(releases, collection)
 
 
 class TestRmReleasesFromCollection:
@@ -461,7 +449,7 @@ class TestRmReleasesFromCollection:
             "remove_releases_from_collection",
             autospec=True,
         ) as mock_remove_releases_call:
-            moe_mb.rm_releases_from_collection(mb_config, releases, collection)
+            moe_mb.rm_releases_from_collection(releases, collection)
 
         mock_remove_releases_call.assert_called_once_with(
             collection=collection, releases=releases
@@ -477,7 +465,7 @@ class TestRmReleasesFromCollection:
             "remove_releases_from_collection",
             autospec=True,
         ) as mock_remove_releases_call:
-            moe_mb.rm_releases_from_collection(mb_config, releases)
+            moe_mb.rm_releases_from_collection(releases)
 
         mock_remove_releases_call.assert_called_once_with(
             collection=mb_config.settings.musicbrainz.collection.collection_id,
@@ -494,7 +482,7 @@ class TestRmReleasesFromCollection:
             with patch.object(
                 moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
             ) as mock_auth_call:
-                moe_mb.rm_releases_from_collection(mb_config, set("123"), "1")
+                moe_mb.rm_releases_from_collection(set("123"), "1")
 
         mock_auth_call.assert_called_once_with(
             mb_config.settings.musicbrainz.username,
@@ -510,7 +498,7 @@ class TestRmReleasesFromCollection:
         mb_config.settings.musicbrainz.password = "slim shady"
 
         with pytest.raises(moe_mb.MBAuthError):
-            moe_mb.rm_releases_from_collection(mb_config, releases, collection)
+            moe_mb.rm_releases_from_collection(releases, collection)
 
 
 class TestSetCollection:
@@ -529,7 +517,7 @@ class TestSetCollection:
                 with patch.object(
                     moe_mb.mb_core, "add_releases_to_collection", autospec=True
                 ):
-                    moe_mb.set_collection(mb_config, {"1"})
+                    moe_mb.set_collection({"1"})
 
         mock_get_releases_call.assert_called_once_with(
             collection=mb_config.settings.musicbrainz.collection.collection_id,
@@ -553,7 +541,7 @@ class TestSetCollection:
                 with patch.object(
                     moe_mb.mb_core, "add_releases_to_collection", autospec=True
                 ):
-                    moe_mb.set_collection(mb_config, {"1"}, collection)
+                    moe_mb.set_collection({"1"}, collection)
 
         expected_calls = [
             call(collection=collection, limit=100, offset=0),
@@ -580,9 +568,9 @@ class TestSetCollection:
                 with patch.object(
                     moe_mb.mb_core, "add_releases_to_collection", autospec=True
                 ) as mock_add_releases:
-                    moe_mb.set_collection(mb_config, releases, collection_id)
+                    moe_mb.set_collection(releases, collection_id)
 
-        mock_add_releases.assert_called_once_with(mb_config, {"3"}, collection_id)
+        mock_add_releases.assert_called_once_with({"3"}, collection_id)
 
     def test_rm_releases(self, mb_config):
         """Remove releases from the collection if they are in `releases`."""
@@ -602,9 +590,9 @@ class TestSetCollection:
                 with patch.object(
                     moe_mb.mb_core, "add_releases_to_collection", autospec=True
                 ):
-                    moe_mb.set_collection(mb_config, releases, collection_id)
+                    moe_mb.set_collection(releases, collection_id)
 
-        mock_rm_releases.assert_called_once_with(mb_config, {"0"}, collection_id)
+        mock_rm_releases.assert_called_once_with({"0"}, collection_id)
 
     def test_get_collection_from_config(self, mb_config):
         """Use the collection in the config if not specified."""
@@ -619,7 +607,7 @@ class TestSetCollection:
                 with patch.object(
                     moe_mb.mb_core, "add_releases_to_collection", autospec=True
                 ):
-                    moe_mb.set_collection(mb_config, {"89"})
+                    moe_mb.set_collection({"89"})
 
         mock_set_releases.assert_called_once_with(
             collection=mb_config.settings.musicbrainz.collection.collection_id,
@@ -641,7 +629,7 @@ class TestSetCollection:
                     with patch.object(
                         moe_mb.mb_core.musicbrainzngs, "auth", autospec=True
                     ) as mock_auth_call:
-                        moe_mb.set_collection(mb_config, {"123"}, "1")
+                        moe_mb.set_collection({"123"}, "1")
 
         mock_auth_call.assert_called_once_with(
             mb_config.settings.musicbrainz.username,
@@ -649,7 +637,7 @@ class TestSetCollection:
         )
 
     @pytest.mark.network
-    def test_invalid_credentials(self, mock_album, mb_config):
+    def test_invalid_credentials(self, mb_config):
         """Raise MBAuthError if invalid user credentials given."""
         collection = "56418762-9bbd-4d67-b6cf-30cd36d93cd1"
         releases = {"11b6532c-0de0-45bb-84fc-7e99514a4cd5"}
@@ -657,32 +645,32 @@ class TestSetCollection:
         mb_config.settings.musicbrainz.password = "slim shady"
 
         with pytest.raises(moe_mb.MBAuthError):
-            moe_mb.set_collection(mb_config, releases, collection)
+            moe_mb.set_collection(releases, collection)
 
 
 class TestUpdateAlbum:
     """Test ``update_album``."""
 
-    def test_update_album(self, album_factory, mb_config):
+    def test_update_album(self, mb_config):
         """We can update a given album."""
         old_album = album_factory(title="old", mb_album_id="1", config=mb_config)
         new_album = album_factory(title="new", config=mb_config)
 
         with patch.object(
             moe_mb.mb_core, "get_album_by_id", autospec=True, return_value=new_album
-        ) as mock_album_by_id:
-            moe_mb.update_album(mb_config, old_album)
+        ) as album_by_id:
+            moe_mb.update_album(old_album)
 
         assert old_album.title == new_album.title
-        mock_album_by_id.assert_called_once_with(mb_config, old_album.mb_album_id)
+        album_by_id.assert_called_once_with(old_album.mb_album_id)
 
-    def test_no_id(self, mock_album):
+    def test_no_id(self, mb_config):
         """Raise ValueError if not mb album id present."""
-        mock_album.mb_album_id = None
+        album = album_factory()
 
         with patch.object(moe_mb.mb_core, "get_album_by_id", autospec=True):
             with pytest.raises(ValueError, match=r"album="):
-                moe_mb.update_album(MagicMock(), mock_album)
+                moe_mb.update_album(album)
 
 
 class TestPluginRegistration:
@@ -694,6 +682,6 @@ class TestPluginRegistration:
 
     def test_musicbrainz_core(self, tmp_config):
         """Enable the musicbrainz core plugin if specified in the config."""
-        config = tmp_config(settings='default_plugins = ["musicbrainz"]')
+        tmp_config(settings='default_plugins = ["musicbrainz"]')
 
-        assert config.pm.has_plugin("musicbrainz_core")
+        assert config.CONFIG.pm.has_plugin("musicbrainz_core")

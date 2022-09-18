@@ -12,7 +12,6 @@ import questionary
 
 import moe
 import moe.cli
-from moe.config import Config
 from moe.library.album import Album
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
@@ -30,7 +29,6 @@ def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
 
 
 def _enter_id(
-    config: Config,
     old_album: Album,
     new_album: Album,
 ):
@@ -41,6 +39,6 @@ def _enter_id(
         "Re-running import prompt for different musicbrainz release. [{mb_id=!r}]"
     )
 
-    album = moe_mb.get_album_by_id(config, mb_id)
+    album = moe_mb.get_album_by_id(mb_id)
 
-    moe_import.import_prompt(config, old_album, album)
+    moe_import.import_prompt(old_album, album)

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import moe
 import moe.cli
-from moe.config import Config
 from moe.library.album import Album, AlbumError
 from moe.library.track import Track, TrackError
 from moe.plugins import add as moe_add
@@ -31,13 +30,12 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     add_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):
+def _parse_args(args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
 
     Args:
-        config: Moe config.
         args: Commandline arguments to parse.
 
     Raises:
@@ -49,20 +47,20 @@ def _parse_args(config: Config, args: argparse.Namespace):
     for path in paths:
         if path.is_file():
             try:
-                track = Track.from_file(config, path)
+                track = Track.from_file(path)
             except TrackError as err:
                 log.error(err)
                 error_count += 1
             else:
-                moe_add.add_item(config, track)
+                moe_add.add_item(track)
         elif path.is_dir():
             try:
-                album = Album.from_dir(config, path)
+                album = Album.from_dir(path)
             except AlbumError as err:
                 log.error(err)
                 error_count += 1
             else:
-                moe_add.add_item(config, album)
+                moe_add.add_item(album)
         else:
             log.error(f"Path not found. [{path=}]")
             error_count += 1

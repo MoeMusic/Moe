@@ -4,13 +4,15 @@ from unittest.mock import patch
 
 import pytest
 
+from moe import config
 from moe.plugins import move as moe_move
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture()
-def tmp_move_config(tmp_config):
+def _tmp_move_config(tmp_config):
     """Creates a configuration with a temporary library path."""
-    return tmp_config(settings="default_plugins = ['move']")
+    tmp_config(settings="default_plugins = ['move']")
 
 
 @pytest.fixture
@@ -26,9 +28,9 @@ def mock_copy():
 class TestReplaceChars:
     """Test replacing of illegal or unwanted characters in paths."""
 
-    def test_replace_chars(self, track_factory, tmp_config):
+    def test_replace_chars(self, tmp_config):
         """Replace all the defined illegal characters from any paths."""
-        config = tmp_config(
+        tmp_config(
             settings="""
             default_plugins = ["move"]
             [move]
@@ -48,7 +50,7 @@ class TestReplaceChars:
 
         formatted_paths = []
         for track in tracks:
-            formatted_paths.append(moe_move.fmt_item_path(config, track))
+            formatted_paths.append(moe_move.fmt_item_path(track))
 
         for path in formatted_paths:
             assert any(replacement == path.name for replacement in replacements)
@@ -57,122 +59,124 @@ class TestReplaceChars:
 class TestFmtAlbumPath:
     """Tests `fmt_item_path(album)`."""
 
-    def test_relative_to_lib_path(self, real_album, tmp_move_config):
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_relative_to_lib_path(self):
         """The album path should be relative to the library path configuration."""
-        lib_path = Path(tmp_move_config.settings.library_path)
+        album = album_factory()
+        lib_path = Path(config.CONFIG.settings.library_path)
 
-        album_path = moe_move.fmt_item_path(tmp_move_config, real_album)
+        album_path = moe_move.fmt_item_path(album)
 
         assert album_path.is_relative_to(lib_path)
 
-    def test_album_asciify_paths(self, real_album, tmp_config):
+    def test_album_asciify_paths(self, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""
-        tmp_settings = """
+        album = album_factory(title="café")
+        tmp_config(
+            settings="""
         default_plugins = ["move"]
         [move]
         asciify_paths = true
         """
-        config = tmp_config(tmp_settings)
-        ascii_title = "café"
+        )
 
         # assumes that an album's title will be part of the new path
-        real_album.title = ascii_title
-        assert str(moe_move.fmt_item_path(config, real_album)).isascii()
+        assert str(moe_move.fmt_item_path(album)).isascii()
 
 
 class TestFmtExtraPath:
     """Tests `fmt_item_path(extra)`."""
 
-    def test_relative_to_album(self, real_extra, tmp_move_config):
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_relative_to_album(self):
         """The extra path should be relative to its album path."""
-        extra_path = moe_move.fmt_item_path(tmp_move_config, real_extra)
+        extra = extra_factory()
+        extra_path = moe_move.fmt_item_path(extra)
 
-        assert extra_path.is_relative_to(
-            moe_move.fmt_item_path(tmp_move_config, real_extra.album_obj)
-        )
+        assert extra_path.is_relative_to(moe_move.fmt_item_path(extra.album_obj))
 
-    def test_extra_asciify_paths(self, real_extra, tmp_config):
+    def test_extra_asciify_paths(self, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""
-        tmp_settings = """
+        tmp_config(
+            settings="""
         default_plugins = ["move"]
         [move]
         asciify_paths = true
         """
-        config = tmp_config(tmp_settings)
-        ascii_title = "café"
+        )
+        extra = extra_factory()
 
         # test assumes that an extra's path name will be part of the new path
-        real_extra.path = real_extra.path.with_name(ascii_title)
-        assert str(moe_move.fmt_item_path(config, real_extra)).isascii()
+        extra.path = extra.path.with_name("café")
+        assert str(moe_move.fmt_item_path(extra)).isascii()
 
 
 class TestFmtTrackPath:
     """Tests `fmt_item_path(extra)`."""
 
-    def test_relative_to_album(self, real_track, tmp_move_config):
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_relative_to_album(self):
         """The track path should be relative to its album path."""
-        track_path = moe_move.fmt_item_path(tmp_move_config, real_track)
+        track = track_factory()
+        track_path = moe_move.fmt_item_path(track)
 
-        assert track_path.is_relative_to(real_track.album_obj.path)
+        assert track_path.is_relative_to(track.album_obj.path)
 
-    def test_extra_asciify_paths(self, real_track, tmp_config):
+    def test_extra_asciify_paths(self, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""
-        tmp_settings = """
+        tmp_config(
+            settings="""
         default_plugins = ["move"]
         [move]
         asciify_paths = true
         """
-        config = tmp_config(tmp_settings)
-        ascii_title = "café"
+        )
+        track = track_factory(title="café")
 
         # assumes that a track's title will be part of the new path
-        real_track.title = ascii_title
-        assert str(moe_move.fmt_item_path(config, real_track)).isascii()
+        assert str(moe_move.fmt_item_path(track)).isascii()
 
 
 ########################################################################################
 # Test copy
 ########################################################################################
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestCopyAlbum:
     """Tests `copy_item(album)`."""
 
-    def test_copy_album(self, tmp_path, album_factory, tmp_move_config):
+    def test_copy_album(self, tmp_path):
         """We can copy an album that was added to the library.
 
         The album desination should be formatted according to `fmt_item_path()`.
         """
         album = album_factory(path=tmp_path, exists=True)
-        album_dest = moe_move.fmt_item_path(tmp_move_config, album)
+        album_dest = moe_move.fmt_item_path(album)
         assert album.path != album_dest
 
         og_paths = [track.path for track in album.tracks]
         og_paths += [extra.path for extra in album.extras]
         og_paths.append(album.path)
 
-        moe_move.copy_item(tmp_move_config, album)
+        moe_move.copy_item(album)
 
         assert album.path == album_dest
         assert album.path.exists()
         for copied_track in album.tracks:
-            assert copied_track.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_track
-            )
+            assert copied_track.path == moe_move.fmt_item_path(copied_track)
             assert copied_track.path.is_file()
         for copied_extra in album.extras:
-            assert copied_extra.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_extra
-            )
+            assert copied_extra.path == moe_move.fmt_item_path(copied_extra)
             assert copied_extra.path.is_file()
         for og_path in og_paths:
             assert og_path.exists()
 
-    def test_copy_multi_disc_album(self, tmp_path, album_factory, tmp_move_config):
+    def test_copy_multi_disc_album(self, tmp_path):
         """We can copy albums containing multiple discs.
 
         The album desination should be formatted according to `fmt_item_path()`.
         """
         album = album_factory(path=tmp_path, exists=True)
-        album_dest = moe_move.fmt_item_path(tmp_move_config, album)
+        album_dest = moe_move.fmt_item_path(album)
         assert album.path != album_dest
 
         album.tracks[1].disc = 2
@@ -183,38 +187,35 @@ class TestCopyAlbum:
         og_paths += [extra.path for extra in album.extras]
         og_paths.append(album.path)
 
-        moe_move.copy_item(tmp_move_config, album)
+        moe_move.copy_item(album)
 
         assert album.path == album_dest
         assert album.path.exists()
         for copied_track in album.tracks:
-            assert copied_track.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_track
-            )
+            assert copied_track.path == moe_move.fmt_item_path(copied_track)
             assert copied_track.path.is_file()
         for copied_extra in album.extras:
-            assert copied_extra.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_extra
-            )
+            assert copied_extra.path == moe_move.fmt_item_path(copied_extra)
             assert copied_extra.path.is_file()
         for og_path in og_paths:
             assert og_path.exists()
 
 
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestCopyExtra:
     """Tests `copy_item(extra)`."""
 
-    def test_copy_extra(self, tmp_path, extra_factory, tmp_move_config):
+    def test_copy_extra(self, tmp_path):
         """We can copy an extra.
 
         The extra desination should be formatted according to `fmt_item_path()`.
         """
         extra = extra_factory(path=tmp_path / "move me.txt", exists=True)
-        extra_dest = moe_move.fmt_item_path(tmp_move_config, extra)
+        extra_dest = moe_move.fmt_item_path(extra)
         og_path = extra.path
         assert og_path != extra_dest
 
-        moe_move.copy_item(tmp_move_config, extra)
+        moe_move.copy_item(extra)
 
         assert extra.path.exists()
         assert og_path.exists()
@@ -222,20 +223,21 @@ class TestCopyExtra:
         assert extra.path == extra_dest
 
 
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestCopyTrack:
     """Tests `copy_item(track)`."""
 
-    def test_copy_track(self, tmp_path, track_factory, tmp_move_config):
+    def test_copy_track(self, tmp_path):
         """We can copy a track.
 
         The track desination should be formatted according to `fmt_item_path()`.
         """
         track = track_factory(path=tmp_path / "move me.mp3", exists=True)
-        track_dest = moe_move.fmt_item_path(tmp_move_config, track)
+        track_dest = moe_move.fmt_item_path(track)
         og_path = track.path
         assert og_path != track_dest
 
-        moe_move.copy_item(tmp_move_config, track)
+        moe_move.copy_item(track)
 
         assert track.path.exists()
         assert og_path.exists()
@@ -246,40 +248,37 @@ class TestCopyTrack:
 ########################################################################################
 # Test move
 ########################################################################################
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestMoveAlbum:
     """Tests `move_item(album)`."""
 
-    def test_move_album(self, tmp_path, album_factory, tmp_move_config):
+    def test_move_album(self, tmp_path):
         """We can move an album that was added to the library."""
         album = album_factory(path=tmp_path, exists=True)
-        album_dest = moe_move.fmt_item_path(tmp_move_config, album)
+        album_dest = moe_move.fmt_item_path(album)
         assert album.path != album_dest
 
         og_paths = [track.path for track in album.tracks]
         og_paths += [extra.path for extra in album.extras]
         og_paths.append(album.path)
 
-        moe_move.move_item(tmp_move_config, album)
+        moe_move.move_item(album)
 
         assert album.path == album_dest
         assert album.path.exists()
         for copied_track in album.tracks:
-            assert copied_track.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_track
-            )
+            assert copied_track.path == moe_move.fmt_item_path(copied_track)
             assert copied_track.path.is_file()
         for copied_extra in album.extras:
-            assert copied_extra.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_extra
-            )
+            assert copied_extra.path == moe_move.fmt_item_path(copied_extra)
             assert copied_extra.path.is_file()
         for og_path in og_paths:
             assert not og_path.exists()
 
-    def test_move_multi_disc_album(self, tmp_path, album_factory, tmp_move_config):
+    def test_move_multi_disc_album(self, tmp_path):
         """We can copy albums containing multiple discs."""
         album = album_factory(path=tmp_path, exists=True)
-        album_dest = moe_move.fmt_item_path(tmp_move_config, album)
+        album_dest = moe_move.fmt_item_path(album)
         assert album.path != album_dest
 
         album.tracks[1].disc = 2
@@ -290,112 +289,139 @@ class TestMoveAlbum:
         og_paths += [extra.path for extra in album.extras]
         og_paths.append(album.path)
 
-        moe_move.move_item(tmp_move_config, album)
+        moe_move.move_item(album)
 
         assert album.path == album_dest
         assert album.path.exists()
         for copied_track in album.tracks:
-            assert copied_track.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_track
-            )
+            assert copied_track.path == moe_move.fmt_item_path(copied_track)
             assert copied_track.path.is_file()
         for copied_extra in album.extras:
-            assert copied_extra.path == moe_move.fmt_item_path(
-                tmp_move_config, copied_extra
-            )
+            assert copied_extra.path == moe_move.fmt_item_path(copied_extra)
             assert copied_extra.path.is_file()
         for og_path in og_paths:
             assert not og_path.exists()
 
-    def test_rm_empty_leftover_dirs(self, real_album, tmp_move_config):
+    def test_rm_empty_leftover_dirs(self, tmp_path):
         """Remove any leftover empty directories after a move."""
-        real_album.disc_total = 2  # also remove empty child directories
-        lib_path = tmp_move_config.settings.library_path
+        lib_path = Path(config.CONFIG.settings.library_path)
+        album = album_factory(num_discs=2, exists=True, path=lib_path / "empty/album")
+        og_path = album.path
+        assert any(path.is_dir() for path in album.path.rglob("*"))
 
-        # first move the album to a nested sub directory
-        nested_lib_path = lib_path + "/should/be/deleted"
-        tmp_move_config.settings.library_path = nested_lib_path
-        moe_move.move_item(tmp_move_config, real_album)
+        # move the item to it's final directory
+        config.CONFIG.settings.library_path = tmp_path
+        moe_move.move_item(album)
 
-        # now move the item to it's final directory
-        tmp_move_config.settings.library_path = lib_path
-        moe_move.move_item(tmp_move_config, real_album)
+        assert not og_path.exists()  # original path and subdirs should be removed
+        assert not og_path.parent.exists()  # removed 'empty' dir
 
-        # all the original nestesd sub dirs of the first album path should be deleted
-        nested_lib_path = Path(nested_lib_path)
-        assert not nested_lib_path.exists()
-        for parent in nested_lib_path.parents:
-            if parent == Path(lib_path):
-                break
+    def test_dont_rm_full_leftover_dirs(self, tmp_path):
+        """Don't remove any leftover dirs that still have leftover items."""
+        lib_path = Path(config.CONFIG.settings.library_path)
+        album = album_factory(num_discs=2, exists=True, path=lib_path / "empty/album")
+        og_path = album.path
+        assert any(path.is_dir() for path in album.path.rglob("*"))
+        (og_path / "leftover_file.txt").touch()
+        (og_path.parent / "leftover_file.txt").touch()
 
-            assert not parent.exists()
+        # move the item to it's final directory
+        config.CONFIG.settings.library_path = tmp_path
+        moe_move.move_item(album)
+
+        assert og_path.exists()  # original path and subdirs should be removed
+        assert og_path.parent.exists()  # removed 'empty' dir
 
 
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestMoveExtra:
     """Tests `move_item(extra)`."""
 
-    def test_move_extra(self, tmp_path, extra_factory, tmp_move_config):
+    def test_move_extra(self, tmp_path):
         """We can move an extra.
 
         The extra desination should be formatted according to `fmt_item_path()`.
         """
         extra = extra_factory(path=tmp_path / "move me.txt", exists=True)
-        extra_dest = moe_move.fmt_item_path(tmp_move_config, extra)
+        extra_dest = moe_move.fmt_item_path(extra)
         og_path = extra.path
         assert og_path != extra_dest
 
-        moe_move.move_item(tmp_move_config, extra)
+        moe_move.move_item(extra)
 
         assert extra.path.exists()
         assert not og_path.exists()
         assert og_path != extra.path
         assert extra.path == extra_dest
 
+    def test_same_des(self, tmp_path):
+        """Don't do anything if the destination is the same as the current path."""
+        extra = extra_factory(path=tmp_path / "in my place.mp3", exists=True)
+        og_path = extra.path
 
+        with patch("moe.plugins.move.move_core.fmt_item_path", return_value=extra.path):
+            moe_move.move_item(extra)
+
+        assert extra.path == og_path
+
+
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestMoveTrack:
     """Tests `move_item(track)`."""
 
-    def test_move_track(self, tmp_path, track_factory, tmp_move_config):
+    def test_move_track(self, tmp_path):
         """We can move a track.
 
         The track desination should be formatted according to `fmt_item_path()`.
         """
         track = track_factory(path=tmp_path / "move me.mp3", exists=True)
-        track_dest = moe_move.fmt_item_path(tmp_move_config, track)
+        track_dest = moe_move.fmt_item_path(track)
         og_path = track.path
         assert og_path != track_dest
 
-        moe_move.move_item(tmp_move_config, track)
+        moe_move.move_item(track)
 
         assert track.path.exists()
         assert not og_path.exists()
         assert og_path != track.path
         assert track.path == track_dest
 
+    def test_same_des(self, tmp_path):
+        """Don't do anything if the destination is the same as the current path."""
+        track = track_factory(path=tmp_path / "in my place.mp3", exists=True)
+        og_path = track.path
+
+        with patch("moe.plugins.move.move_core.fmt_item_path", return_value=track.path):
+            moe_move.move_item(track)
+
+        assert track.path == og_path
+
 
 ########################################################################################
 # Test hooks
 ########################################################################################
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestConfigOptions:
     """Test adding options and validation to the configuration."""
 
-    def test_asciify_paths(self, tmp_move_config):
+    def test_asciify_paths(self):
         """`asciify_paths` is not required and defaults to 'False'."""
-        assert tmp_move_config.settings.move.asciify_paths == False  # noqa: E712
+        assert config.CONFIG.settings.move.asciify_paths == False  # noqa: E712
 
-    def test_album_path(self, tmp_move_config):
+    def test_album_path(self):
         """`album_path` is not required and has a default."""
-        assert tmp_move_config.settings.move.album_path
+        assert config.CONFIG.settings.move.album_path
 
-    def test_extra_path(self, tmp_move_config):
+    def test_extra_path(self):
         """`extra_path` is not required and has a default."""
-        assert tmp_move_config.settings.move.extra_path
+        assert config.CONFIG.settings.move.extra_path
 
-    def test_track_path(self, tmp_move_config):
+    def test_track_path(self):
         """`track_path` is not required and has a default."""
-        assert tmp_move_config.settings.move.track_path
+        assert config.CONFIG.settings.move.track_path
 
 
+@pytest.mark.usefixtures("_tmp_move_config")
 class TestEditNewItems:
     """Test the `edit_new_items` hook implementation.
 
@@ -403,29 +429,26 @@ class TestEditNewItems:
     albums are copied in case album attributes have changed.
     """
 
-    def test_album(self, mock_album, tmp_config, mock_copy):
+    def test_album(self, mock_copy):
         """Albums are copied after they are added to the library."""
-        config = tmp_config("default_plugins = ['add', 'move']")
+        album = album_factory()
+        config.CONFIG.pm.hook.edit_new_items(items=[album])
 
-        config.pm.hook.edit_new_items(config=config, items=[mock_album])
+        mock_copy.assert_called_once_with(album)
 
-        mock_copy.assert_called_once_with(config, mock_album)
-
-    def test_track(self, mock_track, tmp_config, mock_copy):
+    def test_track(self, mock_copy):
         """Tracks are copied after they are added to the library."""
-        config = tmp_config("default_plugins = ['add', 'move']")
+        track = track_factory()
+        config.CONFIG.pm.hook.edit_new_items(items=[track])
 
-        config.pm.hook.edit_new_items(config=config, items=[mock_track])
+        mock_copy.assert_called_once_with(track)
 
-        mock_copy.assert_called_once_with(config, mock_track)
-
-    def test_extra(self, mock_extra, tmp_config, mock_copy):
+    def test_extra(self, mock_copy):
         """Extras are copied after they are added to the library."""
-        config = tmp_config("default_plugins = ['add', 'move']")
+        extra = extra_factory()
+        config.CONFIG.pm.hook.edit_new_items(items=[extra])
 
-        config.pm.hook.edit_new_items(config=config, items=[mock_extra])
-
-        mock_copy.assert_called_once_with(config, mock_extra)
+        mock_copy.assert_called_once_with(extra)
 
 
 class TestPluginRegistration:
@@ -433,6 +456,6 @@ class TestPluginRegistration:
 
     def test_move_core(self, tmp_config):
         """Enable the move core plugin if specified in the config."""
-        config = tmp_config(settings='default_plugins = ["move"]')
+        tmp_config(settings='default_plugins = ["move"]')
 
-        assert config.pm.has_plugin("move_core")
+        assert config.CONFIG.pm.has_plugin("move_core")

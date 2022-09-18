@@ -9,7 +9,6 @@ import logging
 
 import moe
 import moe.cli
-from moe.config import Config
 from moe.plugins import remove as moe_rm
 from moe.query import QueryError, query
 
@@ -31,11 +30,10 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     rm_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):
+def _parse_args(args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
-        config: Configuration in use.
         args: Commandline arguments to parse.
 
     Raises:
@@ -52,4 +50,4 @@ def _parse_args(config: Config, args: argparse.Namespace):
         raise SystemExit(1)
 
     for item in items:
-        moe_rm.remove_item(config, item)
+        moe_rm.remove_item(item)

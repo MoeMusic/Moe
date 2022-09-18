@@ -1,53 +1,60 @@
 """Tests the CLI."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 import moe
 import moe.cli
-from moe.config import ConfigValidationError, ExtraPlugin, MoeSession
+from moe import config
 from moe.library.track import Track
+from tests.conftest import track_factory
 
 
-def test_no_args():
+def test_no_args(tmp_config):
     """Test exit if 0 subcommands given."""
+    tmp_config()
     with pytest.raises(SystemExit) as error:
-        moe.cli._parse_args([], Mock())
+        moe.cli._parse_args([])
 
     assert error.value.code != 0
 
 
-def test_commit_on_systemexit(real_track, tmp_config):
+def test_commit_on_systemexit(tmp_config):
     """If SystemExit intentionally raised, still commit the session."""
-    cli_args = ["add", "bad file", str(real_track.path)]
-    config = tmp_config(settings='default_plugins = ["add", "cli"]', tmp_db=True)
+    tmp_config(settings='default_plugins = ["add", "cli"]', tmp_db=True)
+    track = track_factory(exists=True)
+    cli_args = ["add", "bad file", str(track.path)]
 
     with pytest.raises(SystemExit) as error:
-        moe.cli.main(cli_args, config)
+        moe.cli.main(cli_args)
 
     assert error.value.code != 0
 
-    session = MoeSession()
+    session = config.MoeSession()
     with session.begin():
         session.query(Track).one()
 
 
-def test_default_config(tmp_config, real_track):
+def test_default_config(tmp_config):
     """Ensure we can initialize a configuration with its default values."""
     cli_args = ["list", "*"]
-    config = tmp_config(init_db=True)
+    tmp_config(init_db=True)
+    track = track_factory(exists=True)
 
-    session = MoeSession()
+    session = config.MoeSession()
     with session.begin():
-        session.add(real_track)
+        session.add(track)
 
-    moe.cli.main(cli_args, config)
+    moe.cli.main(cli_args)
 
 
 def test_config_validation_error():
     """Raise SystemExit if the config fails to pass its validation."""
-    with patch("moe.cli.Config", autospec=True, side_effect=ConfigValidationError):
+    config.CONFIG = None
+    with patch.object(
+        moe.cli, "Config", autospec=True, side_effect=config.ConfigValidationError
+    ):
         with pytest.raises(SystemExit) as error:
             moe.cli.main(["-h"])
 
@@ -62,7 +69,7 @@ class CLIPlugin:
     def add_command(cmd_parsers):
         """Add a `cli` command to Moe."""
 
-        def say_hello(config, args):
+        def say_hello(args):
             print("hello")
 
         cli_parser = cmd_parsers.add_parser("cli")
@@ -76,10 +83,10 @@ class TestHookSpecs:
     def test_add_command(self, capsys, tmp_config):
         """Ensure plugins can properly implement the `add_command` hook."""
         cli_args = ["cli", "1 2 3 4"]
-        config = tmp_config(
+        tmp_config(
             settings='default_plugins = ["cli"]',
-            extra_plugins=[ExtraPlugin(CLIPlugin, "cli_plugin")],
+            extra_plugins=[config.ExtraPlugin(CLIPlugin, "cli_plugin")],
         )
-        moe.cli.main(cli_args, config)
+        moe.cli.main(cli_args)
 
         assert capsys.readouterr().out == "hello\n"

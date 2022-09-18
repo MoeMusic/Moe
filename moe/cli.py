@@ -9,12 +9,12 @@ For general shared CLI functionality, see the ``moe.util.cli`` package.
 import argparse
 import logging
 import sys
-from typing import Optional
 
 import pkg_resources
 import pluggy
 
 import moe
+from moe import config
 from moe.config import Config, ConfigValidationError, MoeSession
 
 __all__ = ["query_parser"]
@@ -105,29 +105,28 @@ def add_hooks(pm: pluggy.manager.PluginManager):
     pm.add_hookspecs(Hooks)
 
 
-def main(args: list[str] = sys.argv[1:], config: Optional[Config] = None):
+def main(args: list[str] = sys.argv[1:]):
     """Runs the CLI."""
     log.debug(f"Commandline arguments received. [{args=!r}]")
 
-    if not config:
+    if not config.CONFIG:
         try:
-            config = Config()
+            Config()
         except ConfigValidationError as err:
             log.error(err)
             raise SystemExit(1) from err
-    _parse_args(args, config)
+    _parse_args(args)
 
 
 if __name__ == "__main__":
     main()
 
 
-def _parse_args(args: list[str], config: Config):
+def _parse_args(args: list[str]):
     """Parses the commandline arguments.
 
     Args:
         args: Arguments to parse. Should not include 'moe'.
-        config: User configuration for moe.
 
     Raises:
         SystemExit: No sub-commands given.
@@ -137,7 +136,7 @@ def _parse_args(args: list[str], config: Config):
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.pm.hook.add_command(cmd_parsers=cmd_parsers)
+    config.CONFIG.pm.hook.add_command(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
 
@@ -152,7 +151,7 @@ def _parse_args(args: list[str], config: Config):
     cli_session = MoeSession()
     with cli_session.begin():
         try:
-            parsed_args.func(config, args=parsed_args)
+            parsed_args.func(args=parsed_args)
         except SystemExit:
             cli_session.commit()
             raise

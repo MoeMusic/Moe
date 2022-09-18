@@ -3,7 +3,7 @@
 import logging
 
 import moe
-from moe.config import Config
+from moe import config
 
 from . import dup_cli, dup_core
 from .dup_core import *
@@ -15,8 +15,8 @@ log = logging.getLogger("moe.dup")
 
 
 @moe.hookimpl
-def plugin_registration(config: Config):
+def plugin_registration():
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.pm.register(dup_core, "dup_core")
-    if config.pm.has_plugin("cli"):
-        config.pm.register(dup_cli, "dup_cli")
+    config.CONFIG.pm.register(dup_core, "dup_core")
+    if config.CONFIG.pm.has_plugin("cli"):
+        config.CONFIG.pm.register(dup_cli, "dup_cli")

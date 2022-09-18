@@ -3,7 +3,7 @@
 import pluggy
 
 import moe
-from moe.config import Config
+from moe import config
 
 from . import move_cli, move_core
 from .move_core import *
@@ -13,8 +13,8 @@ __all__.extend(move_core.__all__)
 
 
 @moe.hookimpl
-def plugin_registration(config: Config):
+def plugin_registration():
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.pm.register(move_core, "move_core")
-    if config.pm.has_plugin("cli"):
-        config.pm.register(move_cli, "move_cli")
+    config.CONFIG.pm.register(move_core, "move_core")
+    if config.CONFIG.pm.has_plugin("cli"):
+        config.CONFIG.pm.register(move_cli, "move_cli")

@@ -6,7 +6,7 @@ import pluggy
 
 import moe
 import moe.cli
-from moe.config import Config
+from moe import config
 from moe.library.album import Album
 from moe.util.cli import PromptChoice, choice_prompt, fmt_item_changes
 from moe.util.core import get_matching_tracks
@@ -31,7 +31,6 @@ class Hooks:
         ``func`` should return the album to be added to the library (or ``None`` if no
         album should be added) and will be supplied the following keyword arguments:
 
-            * ``config``: Moe config.
             * ``old_album``: Old album with no changes applied.
             * ``new_album``: New album consisting of all the new changes.
 
@@ -59,7 +58,7 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def process_candidates(config: Config, old_album: Album, candidates):
+def process_candidates(old_album: Album, candidates):
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
         chosen_candidate = candidates[0]
@@ -68,7 +67,7 @@ def process_candidates(config: Config, old_album: Album, candidates):
             f"[candidate={chosen_candidate!r}]"
         )
         try:
-            import_prompt(config, old_album, chosen_candidate)
+            import_prompt(old_album, chosen_candidate)
         except AbortImport as err:
             log.debug(err)
             raise SystemExit(0) from err
@@ -86,14 +85,12 @@ def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
 
 
 def import_prompt(
-    config: Config,
     old_album: Album,
     new_album: Album,
 ):
     """Runs the interactive prompt for the given album changes.
 
     Args:
-        config: Moe config.
         old_album: Album to be added. Any changes will be applied to this album.
         new_album: New album with all metadata changes. Will be compared against
             ``old_album``.
@@ -106,14 +103,13 @@ def import_prompt(
     print(fmt_item_changes(old_album, new_album))
 
     prompt_choices: list[PromptChoice] = []
-    config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+    config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
     prompt_choice = choice_prompt(prompt_choices)
-    prompt_choice.func(config, old_album, new_album)
+    prompt_choice.func(old_album, new_album)
 
 
 def _apply_changes(
-    config: Config,
     old_album: Album,
     new_album: Album,
 ):
@@ -138,7 +134,6 @@ def _apply_changes(
 
 
 def _abort_changes(
-    config: Config,
     old_album: Album,
     new_album: Album,
 ):

@@ -8,7 +8,7 @@ See Also:
 import pluggy
 
 import moe
-from moe.config import Config
+from moe import config
 
 from . import mb_cli, mb_core
 from .mb_core import *
@@ -18,8 +18,8 @@ __all__.extend(mb_core.__all__)
 
 
 @moe.hookimpl
-def plugin_registration(config: Config):
+def plugin_registration():
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.pm.register(mb_core, "musicbrainz_core")
-    if config.pm.has_plugin("cli"):
-        config.pm.register(mb_cli, "musicbrainz_cli")
+    config.CONFIG.pm.register(mb_core, "musicbrainz_core")
+    if config.CONFIG.pm.has_plugin("cli"):
+        config.CONFIG.pm.register(mb_cli, "musicbrainz_cli")

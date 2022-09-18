@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
-from moe.config import Config
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
@@ -18,64 +18,69 @@ def mock_add() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
-def tmp_add_config(tmp_config) -> Config:
+def _tmp_add_config(tmp_config):
     """A temporary config for the add plugin with the cli."""
-    return tmp_config('default_plugins = ["cli", "add"]')
+    tmp_config('default_plugins = ["cli", "add"]')
 
 
+@pytest.mark.usefixtures("_tmp_add_config")
 class TestCommand:
     """Test the `add` command."""
 
-    def test_track_file(self, real_track, mock_add, tmp_add_config):
+    def test_track_file(self, mock_add):
         """Track files are added as tracks."""
-        cli_args = ["add", str(real_track.path)]
+        track = track_factory(exists=True)
+        cli_args = ["add", str(track.path)]
 
-        moe.cli.main(cli_args, tmp_add_config)
+        moe.cli.main(cli_args)
 
-        mock_add.assert_called_once_with(tmp_add_config, real_track)
+        mock_add.assert_called_once_with(track)
 
-    def test_non_track_file(self, real_extra, mock_add, tmp_add_config):
+    def test_non_track_file(self, mock_add):
         """Raise SystemExit if bad track file given."""
-        cli_args = ["add", str(real_extra.path)]
+        cli_args = ["add", str(extra_factory(exists=True).path)]
 
         with pytest.raises(SystemExit) as err:
-            moe.cli.main(cli_args, tmp_add_config)
+            moe.cli.main(cli_args)
 
         assert err.value.code != 0
         mock_add.assert_not_called()
 
-    def test_bad_album_dir(self, tmp_path, mock_add, tmp_add_config):
+    def test_bad_album_dir(self, tmp_path, mock_add):
         """Raise SystemExit if bad album directory given."""
         cli_args = ["add", str(tmp_path)]
 
         with pytest.raises(SystemExit) as err:
-            moe.cli.main(cli_args, tmp_add_config)
+            moe.cli.main(cli_args)
 
         assert err.value.code != 0
         mock_add.assert_not_called()
 
-    def test_multiple_items(self, real_track, real_album, mock_add, tmp_add_config):
+    def test_multiple_items(self, mock_add):
         """Items are added to the library when given a path."""
-        cli_args = ["add", str(real_track.path), str(real_album.path)]
+        track = track_factory(exists=True)
+        album = album_factory(exists=True)
+        cli_args = ["add", str(track.path), str(album.path)]
 
-        moe.cli.main(cli_args, tmp_add_config)
+        moe.cli.main(cli_args)
 
-        mock_add.assert_any_call(tmp_add_config, real_track)
-        mock_add.assert_any_call(tmp_add_config, real_album)
+        mock_add.assert_any_call(track)
+        mock_add.assert_any_call(album)
         assert mock_add.call_count == 2
 
-    def test_single_error(self, tmp_path, real_track, mock_add, tmp_add_config):
+    def test_single_error(self, tmp_path, mock_add):
         """Don't exit after the first failed item if more to be added.
 
         Still exit with non-zero code if any failures occured.
         """
-        cli_args = ["add", str(tmp_path), str(real_track.path)]
+        track = track_factory(exists=True)
+        cli_args = ["add", str(tmp_path), str(track.path)]
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_add_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
-        mock_add.assert_called_once_with(tmp_add_config, real_track)
+        mock_add.assert_called_once_with(track)
 
 
 class TestPluginRegistration:

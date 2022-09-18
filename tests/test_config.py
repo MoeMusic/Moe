@@ -7,6 +7,7 @@ import dynaconf
 import pytest
 
 import moe
+from moe import config
 from moe.config import CORE_PLUGINS, Config, ConfigValidationError, ExtraPlugin
 
 
@@ -39,8 +40,8 @@ class TestInit:
     def test_config_dir_env(self, tmp_path):
         """The configuration directory can be set with an env var."""
         with patch.dict("os.environ", {"MOE_CONFIG_DIR": str(tmp_path)}):
-            config = Config(init_db=False)
-            assert config.config_dir == tmp_path
+            Config(init_db=False)
+            assert config.CONFIG.config_dir == tmp_path
 
     def test_bad_validation(self, tmp_config):
         """Raise a ConfigValidationError if the configuration is invalid."""
@@ -87,10 +88,10 @@ class ConfigPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def plugin_registration(config):
+    def plugin_registration():
         """Alter the `config_dir` at plugin registration."""
-        config.pm.unregister(ConfigPlugin)
-        config.pm.register(ConfigPlugin, "config2")
+        config.CONFIG.pm.unregister(ConfigPlugin)
+        config.CONFIG.pm.register(ConfigPlugin, "config2")
 
 
 class TestHooks:

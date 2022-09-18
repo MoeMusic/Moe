@@ -1,22 +1,22 @@
 """Tests the add plugin."""
 
-from unittest.mock import MagicMock
-
 import pytest
 
 import moe
-from moe.config import Config, ExtraPlugin
+from moe import config
+from moe.config import ExtraPlugin
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.plugins import add
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
-def tmp_add_config(tmp_config) -> Config:
+def _tmp_add_config(tmp_config):
     """A temporary config for the edit plugin with the cli."""
-    return tmp_config('default_plugins = ["add"]', tmp_db=True)
+    tmp_config('default_plugins = ["add"]', tmp_db=True)
 
 
 class AddPlugin:
@@ -24,7 +24,7 @@ class AddPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def pre_add(config: Config, item: LibItem):
+    def pre_add(item: LibItem):
         """Changes the album title."""
         if isinstance(item, Track):
             item.title = "pre_add"
@@ -33,39 +33,45 @@ class AddPlugin:
 class TestAddItem:
     """General functionality of `add_item`."""
 
-    def test_track(self, mock_track, tmp_session, tmp_add_config):
+    @pytest.mark.usefixtures("_tmp_add_config")
+    def test_track(self, tmp_session):
         """We can add tracks to the library."""
-        add.add_item(tmp_add_config, mock_track)
+        track = track_factory()
+        add.add_item(track)
 
-        assert tmp_session.query(Track).one() == mock_track
+        assert tmp_session.query(Track).one() == track
 
-    def test_album(self, mock_album, tmp_session, tmp_add_config):
+    @pytest.mark.usefixtures("_tmp_add_config")
+    def test_album(self, tmp_session):
         """We can add albums to the library."""
-        add.add_item(tmp_add_config, mock_album)
+        album = album_factory()
+        add.add_item(album)
 
-        assert tmp_session.query(Album).one() == mock_album
+        assert tmp_session.query(Album).one() == album
 
-    def test_extra(self, mock_extra, tmp_session, tmp_add_config):
+    @pytest.mark.usefixtures("_tmp_add_config")
+    def test_extra(self, tmp_session):
         """We can add extras to the library."""
-        add.add_item(tmp_add_config, mock_extra)
+        extra = extra_factory()
+        add.add_item(extra)
 
-        assert tmp_session.query(Extra).one() == mock_extra
+        assert tmp_session.query(Extra).one() == extra
 
-    def test_hooks(self, mock_track, tmp_config, tmp_session):
+    def test_hooks(self, tmp_config, tmp_session):
         """The pre and post add hooks are called when adding an item."""
-        config = tmp_config(
+        tmp_config(
             "default_plugins = ['add']",
             extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
             tmp_db=True,
         )
 
-        add.add_item(config, mock_track)
+        add.add_item(track_factory())
 
         db_track = tmp_session.query(Track).one()
-
         assert db_track.title == "pre_add"
 
-    def test_duplicate_list_fields_album(self, album_factory, tmp_session):
+    @pytest.mark.usefixtures("_tmp_add_config")
+    def test_duplicate_list_fields_album(self, tmp_session):
         """Duplicate list fields don't error when adding an album."""
         album = album_factory(num_tracks=2)
         track1 = album.tracks[0]
@@ -73,19 +79,20 @@ class TestAddItem:
         track1.genre = "pop"
         track2.genre = "pop"
 
-        add.add_item(MagicMock(), album)
+        add.add_item(album)
 
         db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:
             assert track.genre == "pop"
 
-    def test_duplicate_list_field_tracks(self, track_factory, tmp_session):
+    @pytest.mark.usefixtures("_tmp_add_config")
+    def test_duplicate_list_field_tracks(self, tmp_session):
         """Duplicate list fields don't error when adding multiple tracks."""
         track1 = track_factory(genre="pop")
         track2 = track_factory(genre="pop")
 
-        add.add_item(MagicMock(), track1)
-        add.add_item(MagicMock(), track2)
+        add.add_item(track1)
+        add.add_item(track2)
 
         db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:
@@ -95,16 +102,17 @@ class TestAddItem:
 class TestHookSpecs:
     """Test the various hook specifications."""
 
-    def test_pre_add(self, mock_track, tmp_config):
+    def test_pre_add(self, tmp_config):
         """Ensure plugins can implement the `pre_add` hook."""
-        config = tmp_config(
+        track = track_factory()
+        tmp_config(
             "default_plugins = ['add']",
             extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
         )
 
-        config.pm.hook.pre_add(config=config, item=mock_track)
+        config.CONFIG.pm.hook.pre_add(item=track)
 
-        assert mock_track.title == "pre_add"
+        assert track.title == "pre_add"
 
 
 class TestPluginRegistration:
@@ -112,6 +120,6 @@ class TestPluginRegistration:
 
     def test_add_core(self, tmp_config):
         """Enable the add core plugin if specified in the config."""
-        config = tmp_config(settings='default_plugins = ["add"]')
+        tmp_config(settings='default_plugins = ["add"]')
 
-        assert config.pm.has_plugin("add_core")
+        assert config.CONFIG.pm.has_plugin("add_core")

@@ -3,9 +3,11 @@
 from unittest.mock import patch
 
 import moe
-from moe.config import Config, ExtraPlugin
+from moe import config
+from moe.config import ExtraPlugin
 from moe.library.album import Album
 from moe.plugins import moe_import
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 class ImportPlugin:
@@ -13,7 +15,7 @@ class ImportPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def import_candidates(config: Config, album: Album) -> Album:
+    def import_candidates(album: Album) -> Album:
         """Changes the album title."""
         album.title = "candidate title"
 
@@ -21,7 +23,7 @@ class ImportPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def process_candidates(config: Config, old_album: Album, candidates: list[Album]):
+    def process_candidates(old_album: Album, candidates: list[Album]):
         """Apply the new title onto the old album."""
         old_album.title = candidates[0].title
 
@@ -29,86 +31,90 @@ class ImportPlugin:
 class TestHookSpecs:
     """Test the various plugin hook specifications."""
 
-    def test_import_candidates(self, mock_album, tmp_config):
+    def test_import_candidates(self, tmp_config):
         """Plugins can import candidate albums."""
-        config = tmp_config(
+        album = album_factory()
+        tmp_config(
             "default_plugins = []",
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        candidates = config.pm.hook.import_candidates(config=config, album=mock_album)
+        candidates = config.CONFIG.pm.hook.import_candidates(album=album)
 
         assert candidates
         assert candidates[0].title == "candidate title"
 
-    def test_process_candidates(self, album_factory, tmp_config):
+    def test_process_candidates(self, tmp_config):
         """Plugins can process candidate albums."""
-        mock_album = album_factory()
-        new_album = album_factory()
-        new_album.title = "new title"
+        album = album_factory()
+        new_album = album_factory(title="new title")
 
-        config = tmp_config(
+        tmp_config(
             "default_plugins = []",
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        config.pm.hook.process_candidates(
-            config=config, old_album=mock_album, candidates=[new_album]
+        config.CONFIG.pm.hook.process_candidates(
+            old_album=album, candidates=[new_album]
         )
 
-        assert mock_album.title == "new title"
+        assert album.title == "new title"
 
 
 class TestPreAdd:
     """Test the `pre_add` hook implementation."""
 
-    def test_pre_add_album(self, mock_album, tmp_config):
+    def test_pre_add_album(self, tmp_config):
         """Albums are imported in the `pre_add` hook."""
+        album = album_factory()
         config = tmp_config("default_plugins = ['add', 'import']")
 
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.pm.hook.pre_add(config=config, item=mock_album)
+            config.pm.hook.pre_add(item=album)
 
-        mock_import.assert_called_once_with(config, mock_album)
+        mock_import.assert_called_once_with(album)
 
-    def test_pre_add_track(self, mock_track, tmp_config):
+    def test_pre_add_track(self, tmp_config):
         """A track's album is imported in the `pre_add` hook."""
-        config = tmp_config("default_plugins = ['add', 'import']")
+        track = track_factory()
+        tmp_config("default_plugins = ['add', 'import']")
 
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.pm.hook.pre_add(config=config, item=mock_track)
+            config.CONFIG.pm.hook.pre_add(item=track)
 
-        mock_import.assert_called_once_with(config, mock_track.album_obj)
+        mock_import.assert_called_once_with(track.album_obj)
 
-    def test_pre_add_extra(self, mock_extra, tmp_config):
+    def test_pre_add_extra(self, tmp_config):
         """An extra's album is imported in the `pre_add` hook."""
-        config = tmp_config("default_plugins = ['add', 'import']")
+        extra = extra_factory()
+        tmp_config("default_plugins = ['add', 'import']")
 
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.pm.hook.pre_add(config=config, item=mock_extra)
+            config.CONFIG.pm.hook.pre_add(item=extra)
 
-        mock_import.assert_called_once_with(config, mock_extra.album_obj)
+        mock_import.assert_called_once_with(extra.album_obj)
 
 
 class TestImportAlbum:
     """Test ``import_album``."""
 
-    def test_hooks(self, mock_album, tmp_config):
+    def test_hooks(self, tmp_config):
         """Importing consists of calling import and process candidates hooks."""
-        config = tmp_config(
+        album = album_factory()
+        tmp_config(
             "default_plugins = ['import']",
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        moe_import.import_album(config, mock_album)
+        moe_import.import_album(album)
 
-        assert mock_album.title == "candidate title"
+        assert album.title == "candidate title"
 
 
 class TestPluginRegistration:
@@ -116,6 +122,6 @@ class TestPluginRegistration:
 
     def test_registration_as_import(self, tmp_config):
         """Enable the import core plugin if specified in the config."""
-        config = tmp_config(settings='default_plugins = ["import"]')
+        tmp_config(settings='default_plugins = ["import"]')
 
-        assert config.pm.has_plugin("import_core")
+        assert config.CONFIG.pm.has_plugin("import_core")

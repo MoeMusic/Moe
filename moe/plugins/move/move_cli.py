@@ -7,7 +7,6 @@ from typing import cast
 import sqlalchemy.orm
 
 import moe
-from moe.config import Config
 from moe.library.album import Album
 from moe.plugins import move as moe_move
 from moe.query import QueryError, query
@@ -33,13 +32,12 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     move_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):
+def _parse_args(args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Items will be moved according to the given user configuration.
 
     Args:
-        config: Configuration in use.
         args: Commandline arguments to parse.
 
     Raises:
@@ -56,20 +54,20 @@ def _parse_args(config: Config, args: argparse.Namespace):
         raise SystemExit(1)
 
     if args.dry_run:
-        dry_run_str = _dry_run(config, albums)
+        dry_run_str = _dry_run(albums)
         if dry_run_str:
             print(dry_run_str.lstrip())
     else:
         for album in albums:
-            moe_move.move_item(config, album)
+            moe_move.move_item(album)
 
 
-def _dry_run(config: Config, albums: list[Album]) -> str:
+def _dry_run(albums: list[Album]) -> str:
     """Returns a string of output representing a 'dry-run' of moving albums."""
     dry_run_str = ""
 
     for dry_album in albums:
-        album_dest = moe_move.fmt_item_path(config, dry_album)
+        album_dest = moe_move.fmt_item_path(dry_album)
         if album_dest != dry_album.path:
             dry_run_str += f"\n{dry_album.path}\n\t-> {album_dest}"
 
@@ -78,11 +76,11 @@ def _dry_run(config: Config, albums: list[Album]) -> str:
         sqlalchemy.orm.attributes.set_committed_value(dry_album, "path", album_dest)
 
         for dry_track in dry_album.tracks:
-            track_dest = moe_move.fmt_item_path(config, dry_track)
+            track_dest = moe_move.fmt_item_path(dry_track)
             if track_dest != dry_track.path:
                 dry_run_str += f"\n{dry_track.path}\n\t-> {track_dest}"
         for dry_extra in dry_album.extras:
-            extra_dest = moe_move.fmt_item_path(config, dry_extra)
+            extra_dest = moe_move.fmt_item_path(dry_extra)
             if extra_dest != dry_extra.path:
                 dry_run_str += f"\n{dry_extra.path}\n\t-> {extra_dest}"
 
