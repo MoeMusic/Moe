@@ -229,6 +229,10 @@ class LibItem:
         """Returns the public attributes of an item."""
         raise NotImplementedError
 
+    def is_unique(self, other: "LibItem") -> bool:
+        """Returns whether an item is unique in the library from ``other``."""
+        raise NotImplementedError
+
     def __getattr__(self, name: str):
         """See if ``name`` is a custom field."""
         if name in self.custom_fields:

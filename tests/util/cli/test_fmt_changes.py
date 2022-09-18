@@ -3,11 +3,11 @@
 import datetime
 import random
 
-from moe.util.cli import fmt_album_changes
+from moe.util.cli import fmt_item_changes
 
 
-class TestFmtAlbumChanges:
-    """Test formatting of album changes.
+class TestFmtItemChanges:
+    """Test formatting of item changes.
 
     These test cases aren't specifically testing what is output, as that
     is more of an implementation detail and harder to test than it's worth. Rather,
@@ -29,7 +29,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(fmt_album_changes(old_album, new_album))
+        print(fmt_item_changes(old_album, new_album))
 
     def test_unmatched_tracks(self, album_factory):
         """Print prompt for albums with non-matching tracks."""
@@ -41,7 +41,7 @@ class TestFmtAlbumChanges:
 
         assert old_album is not new_album
 
-        print(fmt_album_changes(old_album, new_album))
+        print(fmt_item_changes(old_album, new_album))
 
     def test_multi_disc_album(self, album_factory, track_factory):
         """Prompt supports multi_disc albums."""
@@ -52,4 +52,4 @@ class TestFmtAlbumChanges:
         mock_album.tracks[1].track_num = 1
         track_factory(track_num=2, album=mock_album)
 
-        print(fmt_album_changes(mock_album, new_album))
+        print(fmt_item_changes(mock_album, new_album))

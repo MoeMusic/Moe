@@ -8,7 +8,7 @@ import pytest
 import moe
 import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
-from moe.library.track import Track, TrackError
+from moe.library.track import Track, TrackError, _Genre
 from moe.plugins.write import write_tags
 
 
@@ -21,6 +21,13 @@ class MyTrackPlugin:
         """Create a new custom field."""
         return {"no_default": None, "default": "value"}
 
+    @staticmethod
+    @moe.hookimpl
+    def is_unique_track(track, other):
+        """Tracks with the same title aren't unique."""
+        if track.title == other.title:
+            return False
+
 
 class TestHooks:
     """Test track hooks."""
@@ -32,6 +39,14 @@ class TestHooks:
 
         assert not track.no_default
         assert track.default == "value"
+
+    def test_is_unique_track(self, track_factory, tmp_config):
+        """Plugins can add additional unique constraints."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory(config)
+        dup_track = track_factory(config, title=track.title)
+
+        assert not track.is_unique(dup_track)
 
 
 class TestInit:
@@ -159,16 +174,44 @@ class TestEquality:
         assert real_track != "test"
 
 
+class TestIsUnique:
+    """Test `is_unique()`."""
+
+    def test_non_track(self, mock_track):
+        """Non-tracks are unique."""
+        assert mock_track.is_unique(None)
+
+    def test_same_path(self, track_factory):
+        """Tracks with the same path are not unique."""
+        track = track_factory()
+        dup_track = track_factory(path=track.path)
+
+        assert not track.is_unique(dup_track)
+
+    def test_same_track_disc_num(self, track_factory):
+        """Tracks with the same album, track #, and disc # are not unique."""
+        track = track_factory()
+        dup_track = track_factory(
+            album=track.album_obj, track_num=track.track_num, disc=track.disc
+        )
+
+        assert not track.is_unique(dup_track)
+
+    def test_default(self, track_factory):
+        """Tracks with no matching parameters are unique."""
+        track1 = track_factory()
+        track2 = track_factory()
+
+        assert track1.is_unique(track2)
+
+
 class TestMerge:
     """Test merging two tracks."""
 
     def test_conflict_persists(self, track_factory):
         """Don't overwrite any conflicts."""
-        track = track_factory()
-        other_track = track_factory()
-
-        track.title = "keep"
-        other_track.title = "discard"
+        track = track_factory(title="keep")
+        other_track = track_factory(title="discard")
 
         track.merge(other_track)
 
@@ -177,24 +220,19 @@ class TestMerge:
     def test_merge_non_conflict(self, track_factory):
         """Apply any non-conflicting fields."""
         track = track_factory()
-        other_track = track_factory()
-
+        other_track = track_factory(title="keep", genres=["keep"])
         track.title = None
         track.genres = []
-        other_track.title = "keep"
-        other_track.genres = ["keep"]
 
         track.merge(other_track)
 
         assert track.title == "keep"
-        assert track.genres == ["keep"]
+        assert track.genres == {"keep"}
 
     def test_none_merge(self, track_factory):
         """Don't merge in any null values."""
-        track = track_factory()
+        track = track_factory(title="keep")
         other_track = track_factory()
-
-        track.title = "keep"
         other_track.title = None
 
         track.merge(other_track)
@@ -213,8 +251,8 @@ class TestMerge:
         assert tmp_session.query(Track).one()
 
 
-class TestDupListField:
-    """Ensure duplicate list fields can be assigned/created without error."""
+class TestListDuplicates:
+    """List fields should not cause duplicate errors (just merge silently)."""
 
     def test_genre(self, track_factory, tmp_session):
         """Duplicate genres don't error."""
@@ -222,9 +260,11 @@ class TestDupListField:
         track2 = track_factory(genre="pop")
 
         tmp_session.add(track1)
+        tmp_session.add(track2)
         tmp_session.flush()
-        tmp_session.merge(track2)
 
         tracks = tmp_session.query(Track).all()
         for track in tracks:
             track.genre = "new genre"
+
+        assert tmp_session.query(_Genre).one()

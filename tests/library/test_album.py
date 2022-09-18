@@ -21,6 +21,13 @@ class MyAlbumPlugin:
         """Create a new custom field."""
         return {"no_default": None, "default": "value"}
 
+    @staticmethod
+    @moe.hookimpl
+    def is_unique_album(album, other):
+        """Albums with the same title aren't unique."""
+        if album.title == other.title:
+            return False
+
 
 class TestHooks:
     """Test album hooks."""
@@ -32,6 +39,14 @@ class TestHooks:
 
         assert not album.no_default
         assert album.default == "value"
+
+    def test_is_unique_album(self, album_factory, tmp_config):
+        """Plugins can add additional unique constraints."""
+        config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
+        album = album_factory(config)
+        dup_album = album_factory(config, title=album.title)
+
+        assert not album.is_unique(dup_album)
 
 
 class TestFromDir:
@@ -79,6 +94,28 @@ class TestFromDir:
 
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
+
+
+class TestIsUnique:
+    """Test `is_unique()`."""
+
+    def test_non_album(self, mock_album):
+        """Non-albums are unique."""
+        assert mock_album.is_unique(None)
+
+    def test_same_path(self, album_factory):
+        """Albums with the same path are not unique."""
+        album = album_factory()
+        dup_album = album_factory(path=album.path)
+
+        assert not album.is_unique(dup_album)
+
+    def test_default(self, album_factory):
+        """Albums with no matching parameters are unique."""
+        album1 = album_factory()
+        album2 = album_factory()
+
+        assert album1.is_unique(album2)
 
 
 class TestMerge:
@@ -145,8 +182,8 @@ class TestMerge:
 
     def test_overwrite_extras(self, album_factory):
         """Replace conflicting extras if told to overwrite."""
-        album1 = album_factory(exists=True)
-        album2 = album_factory(exists=True)
+        album1 = album_factory(exists=True, title="album1")
+        album2 = album_factory(exists=True, title="album2")
 
         Extra(MagicMock(), album2, album2.path / album1.extras[0].path.name)  # conflict
         overwrite_extra = album1.extras[0]

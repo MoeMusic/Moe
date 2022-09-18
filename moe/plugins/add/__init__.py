@@ -1,7 +1,5 @@
 """Adds music to the library."""
 
-import logging
-
 import moe
 from moe.config import Config
 
@@ -10,8 +8,6 @@ from .add_core import *
 
 __all__ = []
 __all__.extend(add_core.__all__)
-
-log = logging.getLogger("moe.add")
 
 
 @moe.hookimpl

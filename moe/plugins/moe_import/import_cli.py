@@ -8,7 +8,7 @@ import moe
 import moe.cli
 from moe.config import Config
 from moe.library.album import Album
-from moe.util.cli import PromptChoice, choice_prompt, fmt_album_changes
+from moe.util.cli import PromptChoice, choice_prompt, fmt_item_changes
 from moe.util.core import get_matching_tracks
 
 log = logging.getLogger("moe.cli.import")
@@ -103,7 +103,7 @@ def import_prompt(
     """
     log.debug("Running import prompt. [{old_album=!r}, {new_album=!r}]")
 
-    print(fmt_album_changes(old_album, new_album))
+    print(fmt_item_changes(old_album, new_album))
 
     prompt_choices: list[PromptChoice] = []
     config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)

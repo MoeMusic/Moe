@@ -55,6 +55,16 @@ class Hooks:
             alpha-numeric and underscore characters.
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec
+    def is_unique_album(album: "Album", other: "Album") -> bool:  # type: ignore
+        """Add new conditions to determine whether two albums are unique.
+
+        "Uniqueness" is meant in terms of whether the two albums should be considered
+        duplicates in the library. These additional conditions will be applied inside a
+        album's :meth:`is_unique` method.
+        """
+
 
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
@@ -79,7 +89,7 @@ class Album(LibItem, SABase):
 
     Attributes:
         artist (str): AKA albumartist.
-        custom_fields list[str]: All custom fields. To add to this list, you should
+        custom_fields set[str]: All custom fields. To add to this set, you should
             implement the ``create_custom_album_fields`` hook.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
@@ -102,7 +112,7 @@ class Album(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields = []
+    custom_fields = set()
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -140,13 +150,14 @@ class Album(LibItem, SABase):
         """
         self.config = config
         self._custom_fields = {}
+        self.custom_fields = set()
         custom_fields = config.plugin_manager.hook.create_custom_album_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
-                self.custom_fields.append(plugin_field)
+                self.custom_fields.add(plugin_field)
 
         self.path = path
         self.artist = artist
@@ -155,8 +166,7 @@ class Album(LibItem, SABase):
         self.disc_total = disc_total
 
         for key, value in kwargs.items():
-            if value:
-                setattr(self, key, value)
+            setattr(self, key, value)
 
         log.debug(f"Album created. [album={self!r}]")
 
@@ -230,6 +240,22 @@ class Album(LibItem, SABase):
             None,
         )
 
+    def is_unique(self, other: "Album") -> bool:
+        """Returns whether an album is unique in the library from ``other``."""
+        if not isinstance(other, Album):
+            return True
+
+        if self.path == other.path:
+            return False
+
+        custom_uniqueness = self.config.plugin_manager.hook.is_unique_album(
+            album=self, other=other
+        )
+        if False in custom_uniqueness:
+            return False
+
+        return True
+
     def merge(self, other: "Album", overwrite: bool = False) -> None:
         """Merges another album into this one.
 
@@ -237,16 +263,7 @@ class Album(LibItem, SABase):
             other: Other album to be merged with the current album.
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
-        log.debug(
-            f"Merging albums. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
-        )
-
-        for field in self.fields():
-            if field not in {"path", "year", "tracks", "extras"}:
-                other_value = getattr(other, field)
-                self_value = getattr(self, field)
-                if other_value and (overwrite or (not overwrite and not self_value)):
-                    setattr(self, field, other_value)
+        log.debug(f"Merging albums. [album_a={self!r}, album_b={other!r}")
 
         new_tracks: list["Track"] = []
         for other_track in other.tracks:
@@ -262,12 +279,18 @@ class Album(LibItem, SABase):
             conflict_extra = self.get_extra(
                 self.path / (other_extra.path.relative_to(other.path))
             )
-            if conflict_extra and overwrite:
-                self.extras.remove(conflict_extra)
-                new_extras.append(other_extra)
-            elif not conflict_extra:
+            if conflict_extra:
+                conflict_extra.merge(other_extra, overwrite)
+            else:
                 new_extras.append(other_extra)
         self.extras.extend(new_extras)
+
+        for field in self.fields():
+            if field not in {"year", "tracks", "extras"}:
+                other_value = getattr(other, field)
+                self_value = getattr(self, field)
+                if other_value and (overwrite or (not overwrite and not self_value)):
+                    setattr(self, field, other_value)
 
         log.debug(
             f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"

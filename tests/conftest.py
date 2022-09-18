@@ -273,7 +273,7 @@ def _create_extra(
     album = album or _create_album(config, num_tracks=0, num_extras=0, exists=exists)
     path = path or album.path / f"{random.randint(1,1000)}.txt"
 
-    extra = Extra(config=config, album=album, path=path)
+    extra = Extra(config=config, album=album, path=path, **kwargs)
 
     if dup_extra:
         for field in dup_extra.fields():

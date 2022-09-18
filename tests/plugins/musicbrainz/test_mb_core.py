@@ -283,21 +283,24 @@ class TestGetMatchingAlbum:
     """Test `get_matching_album()`."""
 
     @pytest.mark.network
-    def test_network(self, mock_album):
+    def test_network(self, album_factory, mb_config):
         """Make sure we can actually hit the real API.
 
         Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
         network test for both.
         """
-        mock_album.artist = "Kanye West"
-        mock_album.title = "My Beautiful Dark Twisted Fantasy"
+        album = album_factory(
+            config=mb_config,
+            artist="Kanye West",
+            title="My Beautiful Dark Twisted Fantasy",
+        )
 
-        mb_album = moe_mb.get_matching_album(MagicMock(), mock_album)
+        mb_album = moe_mb.get_matching_album(mb_config, album)
 
         # don't test every field since we can't actually guarantee the accuracy of
         # musicbrainz's search results every time
-        assert mb_album.artist == mock_album.artist
-        assert mb_album.title == mock_album.title
+        assert mb_album.artist == album.artist
+        assert mb_album.title == album.title
 
     def test_album_search(self, album_factory, mock_mb_by_id, mb_config):
         """Searching for a release uses the expected parameters."""

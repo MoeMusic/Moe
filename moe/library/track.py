@@ -53,6 +53,16 @@ class Hooks:
             alpha-numeric and underscore characters.
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec
+    def is_unique_track(track: "Track", other: "Track") -> bool:  # type: ignore
+        """Add new conditions to determine whether two tracks are unique.
+
+        "Uniqueness" is meant in terms of whether the two tracks should be considered
+        duplicates in the library. These additional conditions will be applied inside a
+        track's :meth:`is_unique` method.
+        """
+
 
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
@@ -71,7 +81,13 @@ class _Genre(SABase):
 
     __tablename__ = "genre"
 
-    name: str = cast(str, Column(String, nullable=False, primary_key=True))
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    name: str = cast(
+        str,
+        Column(
+            String, nullable=False, unique=True, sqlite_on_conflict_unique="REPLACE"
+        ),
+    )
 
     def __init__(self, name: str):
         self.name = name
@@ -80,8 +96,8 @@ class _Genre(SABase):
 track_genre = Table(
     "track_genre",
     SABase.metadata,
-    Column("genre", String, ForeignKey("genre.name")),
-    Column("track_id", Integer, ForeignKey("track._id")),
+    Column("genre", String, ForeignKey("genre._id")),
+    Column("track", Integer, ForeignKey("track._id")),
 )
 __table_args__ = ()
 
@@ -98,13 +114,13 @@ class Track(LibItem, SABase):
         albumartist (str)
         album_obj (Album): Corresponding Album object.
         artist (str)
-        custom_fields list[str]: All custom fields. To add to this list, you should
+        custom_fields set[str]: All custom fields. To add to this set, you should
             implement the ``create_custom_track_fields`` hook.
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
         genre (str): String of all genres concatenated with ';'.
-        genres (list[str]): List of all genres.
+        genres (set[str]): List of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -127,7 +143,7 @@ class Track(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields = []
+    custom_fields = set()
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="tracks")
@@ -137,13 +153,13 @@ class Track(LibItem, SABase):
     disc_total: int = association_proxy("album_obj", "disc_total")
     year: int = association_proxy("album_obj", "year")
 
-    _genres: list[_Genre] = relationship(
+    _genres: set[_Genre] = relationship(
         "_Genre",
         secondary=track_genre,
-        collection_class=list,
+        collection_class=set,
         cascade="save-update, merge, expunge",
     )
-    genres: list[str] = association_proxy("_genres", "name")
+    genres: set[str] = association_proxy("_genres", "name")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -168,13 +184,14 @@ class Track(LibItem, SABase):
         """
         self.config = config
         self._custom_fields = {}
+        self.custom_fields = set()
         custom_fields = config.plugin_manager.hook.create_custom_track_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
-                self.custom_fields.append(plugin_field)
+                self.custom_fields.add(plugin_field)
 
         album.tracks.append(self)
         self.path = path
@@ -184,8 +201,7 @@ class Track(LibItem, SABase):
         self.artist = self.albumartist  # default value
 
         for key, value in kwargs.items():
-            if value:
-                setattr(self, key, value)
+            setattr(self, key, value)
 
         if not self.disc:
             self.disc = self._guess_disc()
@@ -285,7 +301,7 @@ class Track(LibItem, SABase):
         Args:
             genre_str: For more than one genre, they should be split with ';'.
         """
-        self.genres = [genre.strip() for genre in genre_str.split(";")]
+        self.genres = {genre.strip() for genre in genre_str.split(";")}
 
     def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of a Track."""
@@ -305,6 +321,28 @@ class Track(LibItem, SABase):
             "year",
         ) + tuple(self._custom_fields)
 
+    def is_unique(self, other: "Track") -> bool:
+        """Returns whether a track is unique in the library from ``other``."""
+        if not isinstance(other, Track):
+            return True
+
+        if self.path == other.path:
+            return False
+        if (
+            self.track_num == other.track_num
+            and self.disc == other.disc
+            and self.album == other.album
+        ):
+            return False
+
+        custom_uniqueness = self.config.plugin_manager.hook.is_unique_track(
+            track=self, other=other
+        )
+        if False in custom_uniqueness:
+            return False
+
+        return True
+
     def merge(self, other: "Track", overwrite: bool = False):
         """Merges another track into this one.
 
@@ -317,7 +355,7 @@ class Track(LibItem, SABase):
         )
 
         for field in self.fields():
-            if field not in {"album_obj", "path", "year"}:
+            if field not in {"album_obj", "year"}:
                 other_value = getattr(other, field)
                 self_value = getattr(self, field)
                 if other_value and (overwrite or (not overwrite and not self_value)):

@@ -5,13 +5,29 @@ This module is used in various prompts of the CLI.
 from typing import Optional, cast
 
 from moe.library.album import Album
+from moe.library.lib_item import LibItem
 from moe.library.track import Track
 from moe.util.core import get_matching_tracks
 
-__all__ = ["fmt_album_changes"]
+__all__ = ["fmt_item_changes"]
 
 
-def fmt_album_changes(old_album: Album, new_album: Album) -> str:
+def fmt_item_changes(item_a: LibItem, item_b: LibItem) -> str:
+    """Formats the changes between two items."""
+    if type(item_a) != type(item_b):
+        raise ValueError(
+            "Cannot format changes of items of different types. "
+            f"[{item_a=!r}, {item_b=!r}]"
+        )
+    if isinstance(item_a, Track) and isinstance(item_b, Track):
+        return _fmt_track_changes(item_a, item_b)
+    elif isinstance(item_a, Album) and isinstance(item_b, Album):
+        return _fmt_album_changes(item_a, item_b)
+    else:
+        raise NotImplementedError
+
+
+def _fmt_album_changes(old_album: Album, new_album: Album) -> str:
     """Formats the changes between between two albums."""
     album_info_str = ""
     album_title = f"Album: {old_album.title}"

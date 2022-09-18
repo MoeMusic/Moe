@@ -76,7 +76,7 @@ def add_item(config: Config, item: LibItem):
     session = MoeSession()
 
     config.plugin_manager.hook.pre_add(config=config, item=item)
-    item = session.merge(item)
+    session.add(item)
     session.flush()
 
     log.info(f"Item added to the library. [{item=!r}]")

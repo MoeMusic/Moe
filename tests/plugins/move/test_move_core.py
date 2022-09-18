@@ -396,36 +396,36 @@ class TestConfigOptions:
         assert tmp_move_config.settings.move.track_path
 
 
-class TestPostAdd:
-    """Test the `post_add` hook implementation.
+class TestEditNewItems:
+    """Test the `edit_new_items` hook implementation.
 
     The hook should copy all items after they are added to the library. Track and extra
     albums are copied in case album attributes have changed.
     """
 
-    def test_post_add_album(self, mock_album, tmp_config, mock_copy):
+    def test_album(self, mock_album, tmp_config, mock_copy):
         """Albums are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.post_add(config=config, item=mock_album)
+        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_album])
 
         mock_copy.assert_called_once_with(config, mock_album)
 
-    def test_post_add_track(self, mock_track, tmp_config, mock_copy):
+    def test_track(self, mock_track, tmp_config, mock_copy):
         """Tracks are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.post_add(config=config, item=mock_track)
+        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_track])
 
-        mock_copy.assert_called_once_with(config, mock_track.album_obj)
+        mock_copy.assert_called_once_with(config, mock_track)
 
-    def test_post_add_extra(self, mock_extra, tmp_config, mock_copy):
+    def test_extra(self, mock_extra, tmp_config, mock_copy):
         """Extras are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.post_add(config=config, item=mock_extra)
+        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_extra])
 
-        mock_copy.assert_called_once_with(config, mock_extra.album_obj)
+        mock_copy.assert_called_once_with(config, mock_extra)
 
 
 class TestPluginRegistration:

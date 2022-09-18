@@ -36,23 +36,20 @@ class TestAddItem:
     def test_track(self, mock_track, tmp_session, tmp_add_config):
         """We can add tracks to the library."""
         add.add_item(tmp_add_config, mock_track)
-        tmp_session.flush()
 
         assert tmp_session.query(Track).one() == mock_track
 
     def test_album(self, mock_album, tmp_session, tmp_add_config):
         """We can add albums to the library."""
         add.add_item(tmp_add_config, mock_album)
-        tmp_session.flush()
 
         assert tmp_session.query(Album).one() == mock_album
 
-    def test_extra(self, real_extra, tmp_session, tmp_add_config):
+    def test_extra(self, mock_extra, tmp_session, tmp_add_config):
         """We can add extras to the library."""
-        add.add_item(tmp_add_config, real_extra)
-        tmp_session.flush()
+        add.add_item(tmp_add_config, mock_extra)
 
-        assert tmp_session.query(Extra).one() == real_extra
+        assert tmp_session.query(Extra).one() == mock_extra
 
     def test_hooks(self, mock_track, tmp_config, tmp_session):
         """The pre and post add hooks are called when adding an item."""
@@ -63,7 +60,6 @@ class TestAddItem:
         )
 
         add.add_item(config, mock_track)
-        tmp_session.flush()
 
         db_track = tmp_session.query(Track).one()
 

@@ -189,9 +189,6 @@ class TestAddImportPromptChoice:
         old_album.get_track(2).title = "old track 2"
         new_album.get_track(2).title = "new track 2"
 
-        og_path1 = old_album.get_track(1).path  # will become track 2
-        og_path2 = old_album.get_track(2).path  # will become track 1
-
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         mock_matches = [
             (old_album.get_track(1), new_album.get_track(2)),
@@ -211,8 +208,6 @@ class TestAddImportPromptChoice:
 
         assert old_album.get_track(1).title == new_album.get_track(1).title
         assert old_album.get_track(2).title == new_album.get_track(2).title
-        assert old_album.get_track(1).path == og_path2
-        assert old_album.get_track(2).path == og_path1
 
     def test_apply_extras(self, album_factory, extra_factory, tmp_import_config):
         """`apply` prompt choice should keep any extras."""

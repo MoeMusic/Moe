@@ -50,6 +50,16 @@ class Hooks:
             alpha-numeric and underscore characters.
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec
+    def is_unique_extra(extra: "Extra", other: "Extra") -> bool:  # type: ignore
+        """Add new conditions to determine whether two extras are unique.
+
+        "Uniqueness" is meant in terms of whether the two extras should be considered
+        duplicates in the library. These additional conditions will be applied inside a
+        extra's :meth:`is_unique` method.
+        """
+
 
 @moe.hookimpl
 def add_hooks(plugin_manager: pluggy.manager.PluginManager):
@@ -64,7 +74,7 @@ class Extra(LibItem, SABase):
 
     Attributes:
         album_obj (Album): Album the extra file belongs to.
-        custom_fields list[str]: All custom fields. To add to this list, you should
+        custom_fields set[str]: All custom fields. To add to this set, you should
             implement the ``create_custom_extra_fields`` hook.
         path (Path): Filesystem path of the extra file.
     """
@@ -77,7 +87,7 @@ class Extra(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields = []
+    custom_fields = set()
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
@@ -93,26 +103,64 @@ class Extra(LibItem, SABase):
         """
         self.config = config
         self._custom_fields = {}
+        self.custom_fields = set()
         custom_fields = config.plugin_manager.hook.create_custom_extra_fields(
             config=config
         )
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
-                self.custom_fields.append(plugin_field)
+                self.custom_fields.add(plugin_field)
 
         album.extras.append(self)
         self.path = path
 
         for key, value in kwargs.items():
-            if value:
-                setattr(self, key, value)
+            setattr(self, key, value)
 
         log.debug(f"Extra created. [extra={self!r}]")
 
     def fields(self) -> tuple[str, ...]:
         """Returns the public fields, or non-method attributes, of an Extra."""
         return ("album_obj", "path") + tuple(self._custom_fields)
+
+    def is_unique(self, other: "Extra") -> bool:
+        """Returns whether an extra is unique in the library from ``other``."""
+        if not isinstance(other, Extra):
+            return True
+
+        if self.path == other.path:
+            return False
+
+        custom_uniqueness = self.config.plugin_manager.hook.is_unique_extra(
+            extra=self, other=other
+        )
+        if False in custom_uniqueness:
+            return False
+
+        return True
+
+    def merge(self, other: "Extra", overwrite: bool = False):
+        """Merges another extra into this one.
+
+        Args:
+            other: Other extra to be merged with the current extra.
+            overwrite: Whether or not to overwrite self if a conflict exists.
+        """
+        log.debug(
+            f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
+        )
+
+        for field in self.fields():
+            if field not in {"album_obj"}:
+                other_value = getattr(other, field)
+                self_value = getattr(self, field)
+                if other_value and (overwrite or (not overwrite and not self_value)):
+                    setattr(self, field, other_value)
+
+        log.debug(
+            f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
+        )
 
     def __eq__(self, other):
         """Compares Extras by their fields."""

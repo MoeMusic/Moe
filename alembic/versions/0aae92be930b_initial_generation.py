@@ -39,8 +39,10 @@ def upgrade():
     )
     op.create_table(
         "genre",
+        sa.Column("_id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.PrimaryKeyConstraint("name"),
+        sa.PrimaryKeyConstraint("_id"),
+        sa.UniqueConstraint("name", sqlite_on_conflict="REPLACE"),
     )
     op.create_table(
         "extra",
@@ -86,13 +88,13 @@ def upgrade():
     op.create_table(
         "track_genre",
         sa.Column("genre", sa.String(), nullable=True),
-        sa.Column("track_id", sa.Integer(), nullable=True),
+        sa.Column("track", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["genre"],
-            ["genre.name"],
+            ["genre._id"],
         ),
         sa.ForeignKeyConstraint(
-            ["track_id"],
+            ["track"],
             ["track._id"],
         ),
     )

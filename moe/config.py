@@ -40,6 +40,7 @@ log = logging.getLogger("moe.config")
 DEFAULT_PLUGINS = (
     "add",
     "cli",
+    "duplicate",
     "edit",
     "import",
     "info",

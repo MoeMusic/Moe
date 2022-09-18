@@ -41,18 +41,11 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     settings.validators.register(*validators)
 
 
-@moe.hookimpl
-def post_add(config: Config, item: LibItem):
+@moe.hookimpl(trylast=True)
+def edit_new_items(config: Config, items: list[LibItem]):
     """Copies and formats the path of an item after it has been added to the library."""
-    # copy the whole album in case album attributes have changed
-    if isinstance(item, Album):
-        album = item
-    elif isinstance(item, (Extra, Track)):
-        album = item.album_obj
-    else:
-        raise NotImplementedError
-
-    copy_item(config, album)
+    for item in items:
+        copy_item(config, item)
 
 
 ########################################################################################
