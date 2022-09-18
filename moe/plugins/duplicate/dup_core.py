@@ -93,7 +93,7 @@ def resolve_duplicates(config, items: list[LibItem]):
             log.debug(
                 f"Resolving duplicate items. [item_a={item!r}, item_b={dup_item!r}]"
             )
-            config.plugin_manager.hook.resolve_dup_items(
+            config.pm.hook.resolve_dup_items(
                 config=config, item_a=item, item_b=dup_item
             )
             if (

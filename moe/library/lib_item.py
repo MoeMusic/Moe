@@ -102,11 +102,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
     from moe.library.lib_item import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -151,9 +151,7 @@ def _edit_before_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Editing changed items. [{changed_items=!r}]")
-        config.plugin_manager.hook.edit_changed_items(
-            config=config, items=changed_items
-        )
+        config.pm.hook.edit_changed_items(config=config, items=changed_items)
         log.debug(f"Edited changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -162,7 +160,7 @@ def _edit_before_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Editing new items. [{new_items=!r}]")
-        config.plugin_manager.hook.edit_new_items(config=config, items=new_items)
+        config.pm.hook.edit_new_items(config=config, items=new_items)
         log.debug(f"Edited new items. [{new_items=!r}]")
 
 
@@ -191,9 +189,7 @@ def _process_after_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Processing changed items. [{changed_items=!r}]")
-        config.plugin_manager.hook.process_changed_items(
-            config=config, items=changed_items
-        )
+        config.pm.hook.process_changed_items(config=config, items=changed_items)
         log.debug(f"Processed changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -202,7 +198,7 @@ def _process_after_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Processing new items. [{new_items=!r}]")
-        config.plugin_manager.hook.process_new_items(config=config, items=new_items)
+        config.pm.hook.process_new_items(config=config, items=new_items)
         log.debug(f"Processed new items. [{new_items=!r}]")
 
     removed_items = []
@@ -211,9 +207,7 @@ def _process_after_flush(
             removed_items.append(removed_item)
     if removed_items:
         log.debug(f"Processing removed items. [{removed_items=!r}]")
-        config.plugin_manager.hook.process_removed_items(
-            config=config, items=removed_items
-        )
+        config.pm.hook.process_removed_items(config=config, items=removed_items)
         log.debug(f"Processed removed items. [{removed_items=!r}]")
 
 

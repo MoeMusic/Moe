@@ -102,7 +102,7 @@ class TestHookSpecs:
             extra_plugins=[ExtraPlugin(AddPlugin, "add_plugin")],
         )
 
-        config.plugin_manager.hook.pre_add(config=config, item=mock_track)
+        config.pm.hook.pre_add(config=config, item=mock_track)
 
         assert mock_track.title == "pre_add"
 
@@ -114,4 +114,4 @@ class TestPluginRegistration:
         """Enable the add core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["add"]')
 
-        assert config.plugin_manager.has_plugin("add_core")
+        assert config.pm.has_plugin("add_core")

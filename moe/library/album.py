@@ -67,11 +67,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `album` hookspecs to Moe."""
     from moe.library.album import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 class AlbumError(LibraryError):
@@ -151,9 +151,7 @@ class Album(LibItem, SABase):
         self.config = config
         self._custom_fields = {}
         self.custom_fields = set()
-        custom_fields = config.plugin_manager.hook.create_custom_album_fields(
-            config=config
-        )
+        custom_fields = config.pm.hook.create_custom_album_fields(config=config)
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
@@ -248,9 +246,7 @@ class Album(LibItem, SABase):
         if self.path == other.path:
             return False
 
-        custom_uniqueness = self.config.plugin_manager.hook.is_unique_album(
-            album=self, other=other
-        )
+        custom_uniqueness = self.config.pm.hook.is_unique_album(album=self, other=other)
         if False in custom_uniqueness:
             return False
 

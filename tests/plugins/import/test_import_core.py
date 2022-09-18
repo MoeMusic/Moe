@@ -36,9 +36,7 @@ class TestHookSpecs:
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        candidates = config.plugin_manager.hook.import_candidates(
-            config=config, album=mock_album
-        )
+        candidates = config.pm.hook.import_candidates(config=config, album=mock_album)
 
         assert candidates
         assert candidates[0].title == "candidate title"
@@ -54,7 +52,7 @@ class TestHookSpecs:
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        config.plugin_manager.hook.process_candidates(
+        config.pm.hook.process_candidates(
             config=config, old_album=mock_album, candidates=[new_album]
         )
 
@@ -71,7 +69,7 @@ class TestPreAdd:
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.plugin_manager.hook.pre_add(config=config, item=mock_album)
+            config.pm.hook.pre_add(config=config, item=mock_album)
 
         mock_import.assert_called_once_with(config, mock_album)
 
@@ -82,7 +80,7 @@ class TestPreAdd:
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.plugin_manager.hook.pre_add(config=config, item=mock_track)
+            config.pm.hook.pre_add(config=config, item=mock_track)
 
         mock_import.assert_called_once_with(config, mock_track.album_obj)
 
@@ -93,7 +91,7 @@ class TestPreAdd:
         with patch(
             "moe.plugins.moe_import.import_core.import_album", autospec=True
         ) as mock_import:
-            config.plugin_manager.hook.pre_add(config=config, item=mock_extra)
+            config.pm.hook.pre_add(config=config, item=mock_extra)
 
         mock_import.assert_called_once_with(config, mock_extra.album_obj)
 
@@ -120,4 +118,4 @@ class TestPluginRegistration:
         """Enable the import core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["import"]')
 
-        assert config.plugin_manager.has_plugin("import_core")
+        assert config.pm.has_plugin("import_core")

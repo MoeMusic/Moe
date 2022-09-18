@@ -51,11 +51,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `import` cli hookspecs to Moe."""
     from moe.plugins.moe_import.import_cli import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -106,7 +106,7 @@ def import_prompt(
     print(fmt_item_changes(old_album, new_album))
 
     prompt_choices: list[PromptChoice] = []
-    config.plugin_manager.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+    config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
     prompt_choice = choice_prompt(prompt_choices)
     prompt_choice.func(config, old_album, new_album)

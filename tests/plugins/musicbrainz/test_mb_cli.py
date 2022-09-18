@@ -11,9 +11,7 @@ class TestAddImportPromptChoice:
         config = tmp_config("default_plugins = ['cli', 'musicbrainz']")
         prompt_choices = []
 
-        config.plugin_manager.hook.add_import_prompt_choice(
-            prompt_choices=prompt_choices
-        )
+        config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
         assert any(choice.shortcut_key == "m" for choice in prompt_choices)
 
@@ -23,9 +21,7 @@ class TestAddImportPromptChoice:
         old_album = album_factory()
         new_album = album_factory()
         prompt_choices = []
-        config.plugin_manager.hook.add_import_prompt_choice(
-            prompt_choices=prompt_choices
-        )
+        config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
         mock_album = Mock()
         with patch(
@@ -54,10 +50,10 @@ class TestPluginRegistration:
         """Don't enable the musicbrainz cli plugin if the `cli` plugin is disabled."""
         config = tmp_config(settings='default_plugins = ["musicbrainz"]')
 
-        assert not config.plugin_manager.has_plugin("musicbrainz_cli")
+        assert not config.pm.has_plugin("musicbrainz_cli")
 
     def test_cli(self, tmp_config):
         """Enable the musicbrainz cli plugin if the `cli` plugin is enabled."""
         config = tmp_config(settings='default_plugins = ["musicbrainz", "cli"]')
 
-        assert config.plugin_manager.has_plugin("musicbrainz_cli")
+        assert config.pm.has_plugin("musicbrainz_cli")

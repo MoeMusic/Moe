@@ -58,11 +58,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `import` core hookspecs to Moe."""
     from moe.plugins.moe_import.import_core import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -82,10 +82,8 @@ def import_album(config: Config, album: Album):
     """Imports album metadata for an album."""
     log.debug(f"Importing album metadata. [{album=!r}]")
 
-    candidates = config.plugin_manager.hook.import_candidates(
-        config=config, album=album
-    )
-    config.plugin_manager.hook.process_candidates(
+    candidates = config.pm.hook.import_candidates(config=config, album=album)
+    config.pm.hook.process_candidates(
         config=config,
         old_album=album,
         candidates=candidates,

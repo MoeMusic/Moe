@@ -91,7 +91,7 @@ class TestProcessCandidates:
         with patch(
             "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
-            tmp_import_config.plugin_manager.hook.process_candidates(
+            tmp_import_config.pm.hook.process_candidates(
                 config=tmp_import_config,
                 old_album=mock_old_album,
                 candidates=mock_candidates,
@@ -109,7 +109,7 @@ class TestProcessCandidates:
             autospec=True,
         ):
             with pytest.raises(SystemExit) as error:
-                tmp_import_config.plugin_manager.hook.process_candidates(
+                tmp_import_config.pm.hook.process_candidates(
                     config=tmp_import_config,
                     old_album=Mock(),
                     candidates=[Mock()],
@@ -122,7 +122,7 @@ class TestProcessCandidates:
         with patch(
             "moe.plugins.moe_import.import_cli.import_prompt", autospec=True
         ) as mock_import_prompt:
-            tmp_import_config.plugin_manager.hook.process_candidates(
+            tmp_import_config.pm.hook.process_candidates(
                 config=tmp_import_config, old_album=Mock(), candidates=[]
             )
 
@@ -136,7 +136,7 @@ class TestAddImportPromptChoice:
         """The apply and abort import prompt choices are added."""
         prompt_choices = []
 
-        tmp_import_config.plugin_manager.hook.add_import_prompt_choice(
+        tmp_import_config.pm.hook.add_import_prompt_choice(
             prompt_choices=prompt_choices
         )
 
@@ -278,10 +278,10 @@ class TestPluginRegistration:
         """Don't enable the impot cli plugin if the `cli` plugin is not enabled."""
         config = tmp_config(settings='default_plugins = ["import"]')
 
-        assert not config.plugin_manager.has_plugin("import_cli")
+        assert not config.pm.has_plugin("import_cli")
 
     def test_cli(self, tmp_config):
         """Enable the import cli plugin if the `cli` plugin is enabled."""
         config = tmp_config(settings='default_plugins = ["import", "cli"]')
 
-        assert config.plugin_manager.has_plugin("import_cli")
+        assert config.pm.has_plugin("import_cli")

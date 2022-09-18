@@ -76,4 +76,4 @@ class TestPluginRegistration:
         """Enable the edit core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["edit"]')
 
-        assert config.plugin_manager.has_plugin("edit_core")
+        assert config.pm.has_plugin("edit_core")
