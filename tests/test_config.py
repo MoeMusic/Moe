@@ -33,7 +33,7 @@ class TestInit:
         config = tmp_config(settings='default_plugins = ["list", "write"]')
 
         plugins = list(CORE_PLUGINS) + ["list", "write"]
-        for plugin_name, _ in config.plugin_manager.list_name_plugin():
+        for plugin_name, _ in config.pm.list_name_plugin():
             assert plugin_name in plugins
 
     def test_config_dir_env(self, tmp_path):
@@ -60,18 +60,18 @@ class TestPlugins:
         config = tmp_config(settings='default_plugins = ["cli", "list"]')
 
         plugins = list(CORE_PLUGINS) + ["cli", "list"]
-        for plugin_name, plugin_module in config.plugin_manager.list_name_plugin():
+        for plugin_name, plugin_module in config.pm.list_name_plugin():
             assert plugin_name in plugins
             assert plugin_module
 
         for plugin in plugins:
-            assert config.plugin_manager.has_plugin(plugin)
+            assert config.pm.has_plugin(plugin)
 
     def test_extra_plugins(self, tmp_config):
         """Any given additional plugins are also registered."""
         config = tmp_config(extra_plugins=[ExtraPlugin(TestPlugins, "config_plugin")])
 
-        assert config.plugin_manager.has_plugin("config_plugin")
+        assert config.pm.has_plugin("config_plugin")
 
 
 class ConfigPlugin:
@@ -89,8 +89,8 @@ class ConfigPlugin:
     @moe.hookimpl
     def plugin_registration(config):
         """Alter the `config_dir` at plugin registration."""
-        config.plugin_manager.unregister(ConfigPlugin)
-        config.plugin_manager.register(ConfigPlugin, "config2")
+        config.pm.unregister(ConfigPlugin)
+        config.pm.register(ConfigPlugin, "config2")
 
 
 class TestHooks:
@@ -114,7 +114,7 @@ class TestHooks:
             extra_plugins=[ExtraPlugin(ConfigPlugin, "config_plugin")],
         )
 
-        assert config.plugin_manager.has_plugin("config2")
+        assert config.pm.has_plugin("config2")
 
 
 class TestConfigOptions:

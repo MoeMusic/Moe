@@ -66,7 +66,7 @@ class TestProcessNewItems:
 
     def test_process_track(self, mock_track, mock_write, tmp_write_config):
         """Any altered Tracks have their tags written."""
-        tmp_write_config.plugin_manager.hook.process_new_items(
+        tmp_write_config.pm.hook.process_new_items(
             config=tmp_write_config, items=[mock_track]
         )
 
@@ -74,7 +74,7 @@ class TestProcessNewItems:
 
     def test_process_extra(self, mock_extra, mock_write, tmp_write_config):
         """Any altered extras are ignored."""
-        tmp_write_config.plugin_manager.hook.process_new_items(
+        tmp_write_config.pm.hook.process_new_items(
             config=tmp_write_config, items=[mock_extra]
         )
 
@@ -82,7 +82,7 @@ class TestProcessNewItems:
 
     def test_process_album(self, mock_album, mock_write, tmp_write_config):
         """Any altered albums are ignored."""
-        tmp_write_config.plugin_manager.hook.process_new_items(
+        tmp_write_config.pm.hook.process_new_items(
             config=tmp_write_config, items=[mock_album]
         )
 
@@ -92,7 +92,7 @@ class TestProcessNewItems:
         """All altered tracks are written."""
         mock_tracks = [track_factory(), track_factory()]
 
-        tmp_write_config.plugin_manager.hook.process_new_items(
+        tmp_write_config.pm.hook.process_new_items(
             config=tmp_write_config, items=mock_tracks
         )
 

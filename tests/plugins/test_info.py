@@ -104,10 +104,10 @@ class TestPluginRegistration:
         """Don't enable the info cli plugin if the `cli` plugin is not enabled."""
         config = tmp_config(settings='default_plugins = ["info"]')
 
-        assert not config.plugin_manager.has_plugin("info")
+        assert not config.pm.has_plugin("info")
 
     def test_cli(self, tmp_config):
         """Enable the info cli plugin if the `cli` plugin is enabled."""
         config = tmp_config(settings='default_plugins = ["info", "cli"]')
 
-        assert config.plugin_manager.has_plugin("info")
+        assert config.pm.has_plugin("info")

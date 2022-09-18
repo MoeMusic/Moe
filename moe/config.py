@@ -87,17 +87,17 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+    def add_hooks(pm: pluggy.manager.PluginManager):
         """Add hookspecs to be registered to Moe.
 
         Args:
-            plugin_manager: PluginManager that registers the hookspec.
+            pm: PluginManager that registers the hookspec.
 
         Example:
             Inside your hook implementation::
 
                 from moe.plugins.add import Hooks
-                plugin_manager.add_hookspecs(Hooks)
+                pm.add_hookspecs(Hooks)
         """
 
     @staticmethod
@@ -106,7 +106,7 @@ class Hooks:
         """Allows actions after the initial plugin registration.
 
         In order for a module to implement and register plugin hooks, it must be
-        registered as a separate plugin with the ``plugin_manager``. A plugin can be
+        registered as a separate plugin with the ``pm``. A plugin can be
         either just a module, or a full package.
 
         If a plugin is a package, only it's ``__init__.py`` will be initially
@@ -123,8 +123,8 @@ class Hooks:
 
             @moe.hookimpl
             def plugin_registration(config):
-                if config.plugin_manager.has_plugin("cli"):
-                    config.plugin_manager.register(edit_cli, "edit_cli")
+                if config.pm.has_plugin("cli"):
+                    config.pm.register(edit_cli, "edit_cli")
 
         This hook can also be used as a way of checking for plugin dependencies by
         inspecting the enabled plugins in the configuration.
@@ -134,8 +134,8 @@ class Hooks:
 
             @moe.hookimpl
             def plugin_registration(config):
-                if not config.plugin_manager.has_plugin("cli"):
-                    config.plugin_manager.set_blocked("list")
+                if not config.pm.has_plugin("cli"):
+                    config.pm.set_blocked("list")
                     log.warning("You can't list stuff without a cli!")
 
         See Also:
@@ -210,7 +210,7 @@ class Config:
         config_dir (Path): Filesystem path of the configuration directory.
         config_file (Path): Filesystem path of the configuration settings file.
         engine (sa.engine.base.Engine): Database engine in use.
-        plugin_manager (pluggy.manager.PluginManager): Manages plugin logic.
+        pm (pluggy.manager.PluginManager): Plugin manager that handles plugin logic.
         settings (dynaconf.base.LazySettings): User configuration settings.
 
     Example:
@@ -288,9 +288,7 @@ class Config:
                 alembic_cfg.attributes["connection"] = connection
                 alembic.command.upgrade(alembic_cfg, "head")
 
-        self.plugin_manager.hook.register_sa_event_listeners(
-            config=self, session=MoeSession()
-        )
+        self.pm.hook.register_sa_event_listeners(config=self, session=MoeSession())
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")
@@ -332,7 +330,7 @@ class Config:
         )
 
         self._setup_plugins()
-        self.plugin_manager.hook.add_config_validator(settings=self.settings)
+        self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
         PathType.library_path = Path(self.settings.library_path)
@@ -351,7 +349,7 @@ class Config:
             raise ConfigValidationError(err) from err
 
     def _setup_plugins(self, core_plugins: dict[str, str] = CORE_PLUGINS):
-        """Setup plugin_manager and hook logic.
+        """Setup pm and hook logic.
 
         Args:
             core_plugins: Optional mapping of core plugin modules to names.
@@ -359,16 +357,16 @@ class Config:
         """
         log.debug("Setting up plugins.")
 
-        self.plugin_manager = pluggy.PluginManager("moe")
+        self.pm = pluggy.PluginManager("moe")
 
         # register core modules that are not considered plugins
         for plugin_name, module in core_plugins.items():
-            self.plugin_manager.register(importlib.import_module(module), plugin_name)
+            self.pm.register(importlib.import_module(module), plugin_name)
 
         # need to validate `config` specific settings separately so we have access to
         # the 'default_plugins' setting
-        self.plugin_manager.add_hookspecs(Hooks)
-        self.plugin_manager.hook.add_config_validator(settings=self.settings)
+        self.pm.add_hookspecs(Hooks)
+        self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
         config_plugins = self.settings.default_plugins
@@ -379,26 +377,22 @@ class Config:
             config_plugins[import_index] = "moe_import"
 
         if "cli" in config_plugins:
-            self.plugin_manager.register(importlib.import_module("moe.cli"), name="cli")
+            self.pm.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
         self._register_internal_plugins(config_plugins)
 
         # register plugin hookimpls for all extra plugins
         for extra_plugin in self._extra_plugins:
-            self.plugin_manager.register(extra_plugin.plugin, extra_plugin.name)
+            self.pm.register(extra_plugin.plugin, extra_plugin.name)
 
         # register individual plugin sub-modules
-        self.plugin_manager.hook.plugin_registration(
-            config=self, plugin_manager=self.plugin_manager
-        )
+        self.pm.hook.plugin_registration(config=self, pm=self.pm)
 
         # register plugin hookspecs for all enabled plugins
-        self.plugin_manager.hook.add_hooks(plugin_manager=self.plugin_manager)
+        self.pm.hook.add_hooks(pm=self.pm)
 
-        log.debug(
-            f"Registered plugins. [plugins={self.plugin_manager.list_name_plugin()}]"
-        )
+        log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
 
     def _register_internal_plugins(self, enabled_plugins):
         """Registers all internal plugins in `enabled_plugins`."""
@@ -409,4 +403,4 @@ class Config:
 
             if plugin_path.stem in enabled_plugins:
                 plugin = importlib.import_module("moe.plugins." + plugin_name)
-                self.plugin_manager.register(plugin, plugin_name)
+                self.pm.register(plugin, plugin_name)

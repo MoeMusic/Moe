@@ -28,8 +28,8 @@ log = logging.getLogger("moe.cli.info")
 @moe.hookimpl
 def plugin_registration(config: Config):
     """Depend on the cli plugin."""
-    if not config.plugin_manager.has_plugin("cli"):
-        config.plugin_manager.set_blocked("info")
+    if not config.pm.has_plugin("cli"):
+        config.pm.set_blocked("info")
         log.warning("The 'info' plugin requires the 'cli' plugin to be enabled.")
 
 

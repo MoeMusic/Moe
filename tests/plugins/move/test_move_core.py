@@ -407,7 +407,7 @@ class TestEditNewItems:
         """Albums are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_album])
+        config.pm.hook.edit_new_items(config=config, items=[mock_album])
 
         mock_copy.assert_called_once_with(config, mock_album)
 
@@ -415,7 +415,7 @@ class TestEditNewItems:
         """Tracks are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_track])
+        config.pm.hook.edit_new_items(config=config, items=[mock_track])
 
         mock_copy.assert_called_once_with(config, mock_track)
 
@@ -423,7 +423,7 @@ class TestEditNewItems:
         """Extras are copied after they are added to the library."""
         config = tmp_config("default_plugins = ['add', 'move']")
 
-        config.plugin_manager.hook.edit_new_items(config=config, items=[mock_extra])
+        config.pm.hook.edit_new_items(config=config, items=[mock_extra])
 
         mock_copy.assert_called_once_with(config, mock_extra)
 
@@ -435,4 +435,4 @@ class TestPluginRegistration:
         """Enable the move core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["move"]')
 
-        assert config.plugin_manager.has_plugin("move_core")
+        assert config.pm.has_plugin("move_core")

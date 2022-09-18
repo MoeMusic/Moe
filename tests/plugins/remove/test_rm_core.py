@@ -138,4 +138,4 @@ class TestPluginRegistration:
         """Enable the remove core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["remove"]')
 
-        assert config.plugin_manager.has_plugin("remove_core")
+        assert config.pm.has_plugin("remove_core")

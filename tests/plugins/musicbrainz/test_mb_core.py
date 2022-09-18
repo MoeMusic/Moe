@@ -126,7 +126,7 @@ class TestImportCandidates:
             moe_mb.mb_core, "get_matching_album", autospec=True
         ) as mock_gma:
             mock_gma.return_value = mock_album
-            candidates = config.plugin_manager.hook.import_candidates(
+            candidates = config.pm.hook.import_candidates(
                 config=config, album=mock_album
             )
 
@@ -145,7 +145,7 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.process_removed_items(
+            mb_config.pm.hook.process_removed_items(
                 config=mb_config, items=[mock_album]
             )
 
@@ -162,7 +162,7 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.process_removed_items(
+            mb_config.pm.hook.process_removed_items(
                 config=mb_config, items=[album1, album2]
             )
 
@@ -177,7 +177,7 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.process_removed_items(
+            mb_config.pm.hook.process_removed_items(
                 config=mb_config, items=[mock_album]
             )
 
@@ -191,7 +191,7 @@ class TestCollectionsAutoRemove:
         with patch.object(
             moe_mb.mb_core, "rm_releases_from_collection", autospec=True
         ) as mock_rm_releases_call:
-            mb_config.plugin_manager.hook.process_removed_items(
+            mb_config.pm.hook.process_removed_items(
                 config=mb_config, items=[mock_album]
             )
 
@@ -208,7 +208,7 @@ class TestCollectionsAutoRemove:
             autospec=True,
             side_effect=MBAuthError,
         ):
-            mb_config.plugin_manager.hook.process_removed_items(
+            mb_config.pm.hook.process_removed_items(
                 config=mb_config, items=[mock_album]
             )
 
@@ -226,9 +226,7 @@ class TestCollectionsAutoAdd:
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.plugin_manager.hook.process_new_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
 
         mock_add_releases_call.assert_called_once_with(
             mb_config, {mock_album.mb_album_id}
@@ -241,9 +239,7 @@ class TestCollectionsAutoAdd:
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.plugin_manager.hook.process_new_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
 
         mock_add_releases_call.assert_not_called()
 
@@ -255,9 +251,7 @@ class TestCollectionsAutoAdd:
         with patch.object(
             moe_mb.mb_core, "add_releases_to_collection", autospec=True
         ) as mock_add_releases_call:
-            mb_config.plugin_manager.hook.process_new_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
 
         mock_add_releases_call.assert_not_called()
 
@@ -272,9 +266,7 @@ class TestCollectionsAutoAdd:
             autospec=True,
             side_effect=MBAuthError,
         ):
-            mb_config.plugin_manager.hook.process_new_items(
-                config=mb_config, items=[mock_album]
-            )
+            mb_config.pm.hook.process_new_items(config=mb_config, items=[mock_album])
 
         assert any(record.levelname == "ERROR" for record in caplog.records)
 
@@ -704,4 +696,4 @@ class TestPluginRegistration:
         """Enable the musicbrainz core plugin if specified in the config."""
         config = tmp_config(settings='default_plugins = ["musicbrainz"]')
 
-        assert config.plugin_manager.has_plugin("musicbrainz_core")
+        assert config.pm.has_plugin("musicbrainz_core")

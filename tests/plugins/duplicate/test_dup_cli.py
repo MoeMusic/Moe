@@ -26,7 +26,7 @@ class TestPrompt:
             "moe.plugins.duplicate.dup_cli.choice_prompt",
             autospec=True,
         ) as mock_prompt_choice:
-            tmp_dup_config.plugin_manager.hook.resolve_dup_items(
+            tmp_dup_config.pm.hook.resolve_dup_items(
                 config=tmp_dup_config, item_a=track_a, item_b=track_b
             )
 

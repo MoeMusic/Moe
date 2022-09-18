@@ -98,11 +98,11 @@ query_parser.set_defaults(query_type="track")
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `CLI` hookspecs to Moe."""
     from moe.cli import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 def main(args: list[str] = sys.argv[1:], config: Optional[Config] = None):
@@ -137,7 +137,7 @@ def _parse_args(args: list[str], config: Config):
 
     # load all sub-commands
     cmd_parsers = moe_parser.add_subparsers(help="command to run", dest="command")
-    config.plugin_manager.hook.add_command(cmd_parsers=cmd_parsers)
+    config.pm.hook.add_command(cmd_parsers=cmd_parsers)
 
     parsed_args = moe_parser.parse_args(args)
 

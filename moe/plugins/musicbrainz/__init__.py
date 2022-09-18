@@ -20,6 +20,6 @@ __all__.extend(mb_core.__all__)
 @moe.hookimpl
 def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.plugin_manager.register(mb_core, "musicbrainz_core")
-    if config.plugin_manager.has_plugin("cli"):
-        config.plugin_manager.register(mb_cli, "musicbrainz_cli")
+    config.pm.register(mb_core, "musicbrainz_core")
+    if config.pm.has_plugin("cli"):
+        config.pm.register(mb_cli, "musicbrainz_cli")

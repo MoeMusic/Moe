@@ -47,11 +47,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `add` hookspecs to Moe."""
     from moe.plugins.add.add_core import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 class AddError(Exception):
@@ -75,7 +75,7 @@ def add_item(config: Config, item: LibItem):
     log.debug(f"Adding item to the library. [{item=!r}]")
     session = MoeSession()
 
-    config.plugin_manager.hook.pre_add(config=config, item=item)
+    config.pm.hook.pre_add(config=config, item=item)
     session.add(item)
     session.flush()
 

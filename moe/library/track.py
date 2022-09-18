@@ -65,11 +65,11 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(plugin_manager: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy.manager.PluginManager):
     """Registers `track` hookspecs to Moe."""
     from moe.library.track import Hooks
 
-    plugin_manager.add_hookspecs(Hooks)
+    pm.add_hookspecs(Hooks)
 
 
 class TrackError(LibraryError):
@@ -185,9 +185,7 @@ class Track(LibItem, SABase):
         self.config = config
         self._custom_fields = {}
         self.custom_fields = set()
-        custom_fields = config.plugin_manager.hook.create_custom_track_fields(
-            config=config
-        )
+        custom_fields = config.pm.hook.create_custom_track_fields(config=config)
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
@@ -335,9 +333,7 @@ class Track(LibItem, SABase):
         ):
             return False
 
-        custom_uniqueness = self.config.plugin_manager.hook.is_unique_track(
-            track=self, other=other
-        )
+        custom_uniqueness = self.config.pm.hook.is_unique_track(track=self, other=other)
         if False in custom_uniqueness:
             return False
 

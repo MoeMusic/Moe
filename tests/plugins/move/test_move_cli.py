@@ -91,10 +91,10 @@ class TestPluginRegistration:
         """Don't enable the move cli plugin if the `cli` plugin is not enabled."""
         config = tmp_config(settings='default_plugins = ["move"]')
 
-        assert not config.plugin_manager.has_plugin("move_cli")
+        assert not config.pm.has_plugin("move_cli")
 
     def test_cli(self, tmp_config):
         """Enable the move cli plugin if the `cli` plugin is enabled."""
         config = tmp_config(settings='default_plugins = ["move", "cli"]')
 
-        assert config.plugin_manager.has_plugin("move_cli")
+        assert config.pm.has_plugin("move_cli")

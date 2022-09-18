@@ -15,6 +15,6 @@ __all__.extend(move_core.__all__)
 @moe.hookimpl
 def plugin_registration(config: Config):
     """Only register the cli sub-plugin if the cli is enabled."""
-    config.plugin_manager.register(move_core, "move_core")
-    if config.plugin_manager.has_plugin("cli"):
-        config.plugin_manager.register(move_cli, "move_cli")
+    config.pm.register(move_core, "move_core")
+    if config.pm.has_plugin("cli"):
+        config.pm.register(move_cli, "move_cli")
