@@ -52,13 +52,15 @@ class TestHooks:
 class TestFromDir:
     """Test a creating an album from a directory."""
 
-    def test_dir_album(self):
+    def test_dir_album(self, tmp_config):
         """If a directory given, add to library as an album."""
+        tmp_config()
         album = album_factory(exists=True)
         assert Album.from_dir(album.path) == album
 
-    def test_extras(self):
+    def test_extras(self, tmp_config):
         """Add any extras that are within the album directory."""
+        tmp_config()
         album = album_factory(exists=True)
         new_album = Album.from_dir(album.path)
 
@@ -73,8 +75,9 @@ class TestFromDir:
         with pytest.raises(AlbumError):
             Album.from_dir(empty_path)
 
-    def test_add_multi_disc(self):
+    def test_add_multi_disc(self, tmp_config):
         """We can add a multi-disc album."""
+        tmp_config()
         album = album_factory(exists=True)
         track1 = album.tracks[0]
         track2 = album.tracks[1]

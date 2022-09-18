@@ -60,6 +60,40 @@ class Hooks:
         track's :meth:`is_unique` method.
         """
 
+    @staticmethod
+    @moe.hookspec
+    def read_custom_tags(
+        track_path: Path, album_fields: dict[str, Any], track_fields: dict[str, Any]
+    ) -> None:
+        """Read and set any fields from a track_path.
+
+        How you read the file and assign tags is up to each individual plugin.
+        Internally, Moe uses the `mediafile <https://github.com/beetbox/mediafile>`_
+        library to read tags.
+
+        Args:
+            track_path: Path of the track file to read.
+            album_fields: Dictionary of album fields to read from the given track file's
+                tags. The dictionary may contain existing fields and values, and you
+                can choose to either override the existing fields, or to provide new
+                fields.
+            track_fields: Dictionary of track fields to read from the given track file's
+                tags. The dictionary may contain existing fields and values, and you
+                can choose to either override the existing fields, or to provide new
+                fields.
+
+        Example:
+            .. code:: python
+
+                audio_file = mediafile.MediaFile(track_path)
+                album_fields["title"] = audio_file.album
+                track_fields["title"] = audio_file.title
+
+        See Also:
+            * :ref:`Album and track fields <fields:Fields>`
+            * `Mediafile docs <https://mediafile.readthedocs.io/en/latest/>`_
+        """
+
 
 @moe.hookimpl
 def add_hooks(pm: pluggy.manager.PluginManager):
@@ -67,6 +101,27 @@ def add_hooks(pm: pluggy.manager.PluginManager):
     from moe.library.track import Hooks
 
     pm.add_hookspecs(Hooks)
+
+
+@moe.hookimpl(tryfirst=True)
+def read_custom_tags(
+    track_path: Path, album_fields: dict[str, Any], track_fields: dict[str, Any]
+) -> None:
+    """Read and set internally tracked fields."""
+    audio_file = mediafile.MediaFile(track_path)
+
+    album_fields["path"] = track_path.parent
+    album_fields["artist"] = audio_file.albumartist or audio_file.artist
+    album_fields["title"] = audio_file.album
+    album_fields["date"] = audio_file.date
+    album_fields["disc_total"] = audio_file.disctotal
+
+    track_fields["path"] = track_path
+    track_fields["title"] = audio_file.title
+    track_fields["track_num"] = audio_file.track
+    track_fields["artist"] = audio_file.artist
+    track_fields["disc"] = audio_file.disc
+    track_fields["genres"] = set(audio_file.genres)
 
 
 class TrackError(LibraryError):
@@ -248,32 +303,34 @@ class Track(LibItem, SABase):
         log.debug(f"Creating track from path. [path={track_path}, {album=}]")
 
         try:
-            audio_file = mediafile.MediaFile(track_path)
+            mediafile.MediaFile(track_path)
         except mediafile.UnreadableFileError as err:
             raise TrackError(
                 "Unable to create track; given path is not a track file. "
                 f"[path={track_path}]"
             ) from err
 
+        album_fields: dict[str, Any] = {}
+        track_fields: dict[str, Any] = {}
+        config.CONFIG.pm.hook.read_custom_tags(
+            track_path=track_path, album_fields=album_fields, track_fields=track_fields
+        )
         if not album:
-            albumartist = audio_file.albumartist or audio_file.artist
-
             album = Album(
-                artist=albumartist,
-                title=audio_file.album,
-                date=audio_file.date,
-                disc_total=audio_file.disctotal,
-                path=track_path.parent,
+                path=album_fields.pop("path"),
+                artist=album_fields.pop("artist"),
+                title=album_fields.pop("title"),
+                date=album_fields.pop("date"),
+                disc_total=album_fields.pop("disc_total"),
+                **album_fields,
             )
 
         return cls(
             album=album,
-            path=track_path,
-            track_num=audio_file.track,
-            artist=audio_file.artist,
-            disc=audio_file.disc,
-            genres=audio_file.genres,
-            title=audio_file.title,
+            path=track_fields.pop("path"),
+            title=track_fields.pop("title"),
+            track_num=track_fields.pop("track_num"),
+            **track_fields,
         )
 
     @property
