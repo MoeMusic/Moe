@@ -1,13 +1,12 @@
 """User configuration of moe.
 
-To avoid namespace confusion when using a variable named config, typical usage of this
-module should just import the Config class directly::
+Each instance of Moe should only create a single `Config` object. This object will
+contain all user settings and other related information and is set upon initializing
+the configuration for the first time i.e. calling `Config()`. Once initialized, the
+config can be accessed through import and should be treated as a constant::
 
-    from moe.config import Config
-    config = Config()
-
-A configuration shuold only be instantiated once per instance of Moe. Plugins should
-pass along that instance through their hooks.
+    from moe import config
+    print(config.CONFIG.settings.library_path)
 """
 
 import importlib
@@ -18,7 +17,7 @@ import re
 from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union, cast
 
 import dynaconf
 import pluggy
@@ -33,7 +32,7 @@ import moe
 session_factory = sqlalchemy.orm.sessionmaker(autoflush=False)
 MoeSession = sqlalchemy.orm.scoped_session(session_factory)
 
-__all__ = ["Config", "ConfigValidationError", "ExtraPlugin"]
+__all__ = ["CONFIG", "Config", "ConfigValidationError", "ExtraPlugin"]
 
 log = logging.getLogger("moe.config")
 
@@ -57,6 +56,8 @@ CORE_PLUGINS = {
     "track": "moe.library.track",
     "lib_item": "moe.library.lib_item",
 }  # {name: module} of plugins that cannot be overwritten by the config
+
+CONFIG = cast("Config", None)
 
 
 class ConfigValidationError(Exception):
@@ -102,7 +103,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def plugin_registration(config: "Config"):
+    def plugin_registration():
         """Allows actions after the initial plugin registration.
 
         In order for a module to implement and register plugin hooks, it must be
@@ -122,9 +123,9 @@ class Hooks:
         sub-module::
 
             @moe.hookimpl
-            def plugin_registration(config):
-                if config.pm.has_plugin("cli"):
-                    config.pm.register(edit_cli, "edit_cli")
+            def plugin_registration():
+                if config.CONFIG.pm.has_plugin("cli"):
+                    config.CONFIG.pm.register(edit_cli, "edit_cli")
 
         This hook can also be used as a way of checking for plugin dependencies by
         inspecting the enabled plugins in the configuration.
@@ -133,25 +134,21 @@ class Hooks:
         un-register itself and log a warning if the cli plugin is not enabled::
 
             @moe.hookimpl
-            def plugin_registration(config):
-                if not config.pm.has_plugin("cli"):
-                    config.pm.set_blocked("list")
+            def plugin_registration():
+                if not config.CONFIG.pm.has_plugin("cli"):
+                    config.CONFIG.pm.set_blocked("list")
                     log.warning("You can't list stuff without a cli!")
 
         See Also:
             `pluggy.PluginManager documentation <https://pluggy.readthedocs.io/en/latest/api_reference.html>`_
-
-        Args:
-            config: Moe config.
         """  # noqa: E501
 
     @staticmethod
     @moe.hookspec
-    def register_sa_event_listeners(config: "Config", session: sqlalchemy.orm.Session):
+    def register_sa_event_listeners(session: sqlalchemy.orm.Session):
         """Registers new sqlalchemy event listeners.
 
         Args:
-            config: Moe config.
             session: Session to attach the listener to.
 
         Important:
@@ -163,7 +160,7 @@ class Hooks:
                 sqlalchemy.event.listen(
                     session,
                     "before_flush",
-                    functools.partial(_my_func, config=config),
+                    _my_func,
                 )
 
             Then you can define ``_my_func`` as such::
@@ -172,7 +169,6 @@ class Hooks:
                     session: sqlalchemy.orm.Session,
                     flush_context: sqlalchemy.orm.UOWTransaction,
                     instances: Optional[Any],
-                    config: Config,
                 ):
                     print("we made it")
 
@@ -212,15 +208,6 @@ class Config:
         engine (sa.engine.base.Engine): Database engine in use.
         pm (pluggy.manager.PluginManager): Plugin manager that handles plugin logic.
         settings (dynaconf.base.LazySettings): User configuration settings.
-
-    Example:
-        In your plugin, to access the library_path setting (assuming a Config object
-        named config)::
-
-            config.settings.library_path
-
-        See the dynaconf documentation for more info on reading settings variables.
-        https://www.dynaconf.com/#reading-settings-variables
     """
 
     def __init__(
@@ -244,6 +231,9 @@ class Config:
                 in the ``config_dir``.
             init_db: Whether or not to initialize the database.
         """
+        global CONFIG
+        CONFIG = self
+
         try:
             self.config_dir = Path(os.environ["MOE_CONFIG_DIR"])
         except KeyError:
@@ -387,7 +377,7 @@ class Config:
             self.pm.register(extra_plugin.plugin, extra_plugin.name)
 
         # register individual plugin sub-modules
-        self.pm.hook.plugin_registration(config=self, pm=self.pm)
+        self.pm.hook.plugin_registration(pm=self.pm)
 
         # register plugin hookspecs for all enabled plugins
         self.pm.hook.add_hooks(pm=self.pm)

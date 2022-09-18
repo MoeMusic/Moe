@@ -7,8 +7,8 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
-from moe.config import Config
 from moe.query import QueryError
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
@@ -25,11 +25,12 @@ def mock_query() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
-def tmp_info_config(tmp_config) -> Config:
+def _tmp_info_config(tmp_config):
     """A temporary config for the info plugin with the cli."""
-    return tmp_config('default_plugins = ["cli", "info"]')
+    tmp_config('default_plugins = ["cli", "info"]')
 
 
+@pytest.mark.usefixtures("_tmp_info_config")
 class TestCommand:
     """Test the plugin argument parser.
 
@@ -37,62 +38,65 @@ class TestCommand:
     `assert capsys.readouterr().out` and add `assert 0` to the end of the test.
     """
 
-    def test_track(self, capsys, mock_track, mock_query, tmp_info_config):
+    def test_track(self, capsys, mock_query):
         """Tracks are printed to stdout with valid query."""
+        track = track_factory()
         cli_args = ["info", "*"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
-        moe.cli.main(cli_args, tmp_info_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="track")
         assert capsys.readouterr().out
 
-    def test_album(self, capsys, mock_album, mock_query, tmp_info_config):
+    def test_album(self, capsys, mock_query):
         """Albums are printed to stdout with valid query."""
+        album = album_factory()
         cli_args = ["info", "-a", "*"]
-        mock_query.return_value = [mock_album]
+        mock_query.return_value = [album]
 
-        moe.cli.main(cli_args, tmp_info_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="album")
         assert capsys.readouterr().out
 
-    def test_extra(self, capsys, mock_extra, mock_query, tmp_info_config):
+    def test_extra(self, capsys, mock_query):
         """Extras are printed to stdout with valid query."""
+        extra = extra_factory()
         cli_args = ["info", "-e", "*"]
-        mock_query.return_value = [mock_extra]
+        mock_query.return_value = [extra]
 
-        moe.cli.main(cli_args, tmp_info_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="extra")
         assert capsys.readouterr().out
 
-    def test_multiple_items(self, capsys, track_factory, mock_query, tmp_info_config):
+    def test_multiple_items(self, capsys, mock_query):
         """All items returned from the query are printed."""
         cli_args = ["info", "*"]
         mock_query.return_value = [track_factory(), track_factory()]
 
-        moe.cli.main(cli_args, tmp_info_config)
+        moe.cli.main(cli_args)
 
         assert capsys.readouterr().out
 
-    def test_no_items(self, mock_query, tmp_info_config):
+    def test_no_items(self, mock_query):
         """If no item infos are printed, we should return a non-zero exit code."""
         cli_args = ["info", "*"]
         mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_info_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 
-    def test_bad_query(self, mock_query, tmp_info_config):
+    def test_bad_query(self, mock_query):
         """Raise SystemExit if given a bad query."""
         cli_args = ["info", "*"]
         mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_info_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 

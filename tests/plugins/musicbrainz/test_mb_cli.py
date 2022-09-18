@@ -2,26 +2,29 @@
 
 from unittest.mock import Mock, patch
 
+from moe import config
+from tests.conftest import album_factory
+
 
 class TestAddImportPromptChoice:
     """Test the `add_import_prompt_choice` hook implementation."""
 
     def test_add_choice(self, tmp_config):
         """The "m" key to add a musicbrainz id is added."""
-        config = tmp_config("default_plugins = ['cli', 'musicbrainz']")
+        tmp_config("default_plugins = ['cli', 'musicbrainz']")
         prompt_choices = []
 
-        config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
         assert any(choice.shortcut_key == "m" for choice in prompt_choices)
 
-    def test_enter_id(self, album_factory, tmp_config):
+    def test_enter_id(self, tmp_config):
         """When selected, the 'm' key should allow the user to enter an mb_id."""
-        config = tmp_config("default_plugins = ['cli', 'musicbrainz']", tmp_db=True)
+        tmp_config("default_plugins = ['cli', 'musicbrainz']", tmp_db=True)
         old_album = album_factory()
         new_album = album_factory()
         prompt_choices = []
-        config.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
         mock_album = Mock()
         with patch(
@@ -37,10 +40,10 @@ class TestAddImportPromptChoice:
                     "moe.plugins.musicbrainz.mb_cli.moe_import.import_prompt",
                     autospec=True,
                 ) as mock_prompt:
-                    prompt_choices[0].func(config, old_album, new_album)
+                    prompt_choices[0].func(old_album, new_album)
 
-        mock_get_album.assert_called_once_with(config, "new id")
-        mock_prompt.assert_called_once_with(config, old_album, mock_album)
+        mock_get_album.assert_called_once_with("new id")
+        mock_prompt.assert_called_once_with(old_album, mock_album)
 
 
 class TestPluginRegistration:
@@ -48,12 +51,12 @@ class TestPluginRegistration:
 
     def test_no_cli(self, tmp_config):
         """Don't enable the musicbrainz cli plugin if the `cli` plugin is disabled."""
-        config = tmp_config(settings='default_plugins = ["musicbrainz"]')
+        tmp_config(settings='default_plugins = ["musicbrainz"]')
 
-        assert not config.pm.has_plugin("musicbrainz_cli")
+        assert not config.CONFIG.pm.has_plugin("musicbrainz_cli")
 
     def test_cli(self, tmp_config):
         """Enable the musicbrainz cli plugin if the `cli` plugin is enabled."""
-        config = tmp_config(settings='default_plugins = ["musicbrainz", "cli"]')
+        tmp_config(settings='default_plugins = ["musicbrainz", "cli"]')
 
-        assert config.pm.has_plugin("musicbrainz_cli")
+        assert config.CONFIG.pm.has_plugin("musicbrainz_cli")

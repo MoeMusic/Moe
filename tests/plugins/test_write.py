@@ -1,12 +1,14 @@
 """Tests the ``write`` plugin."""
 
 import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
+from moe import config
 from moe.library.track import Track
 from moe.plugins import write as moe_write
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
@@ -17,39 +19,40 @@ def mock_write():
 
 
 @pytest.fixture
-def tmp_write_config(tmp_config):
+def _tmp_write_config(tmp_config):
     """Mock the `write_tags` api call."""
-    return tmp_config("default_plugins = ['write']")
+    tmp_config("default_plugins = ['write']")
 
 
 class TestWriteTags:
     """Tests `write_tags()`."""
 
-    def test_write_tags(self, real_track):
+    def test_write_tags(self):
         """We can write track changes to the file."""
+        track = track_factory(exists=True)
         album = "Bigger, Better, Faster, More!"
         albumartist = "4 Non Blondes"
         artist = "4 Non Blondes"
         date = datetime.date(1996, 10, 13)
         disc = 2
         disc_total = 2
-        genres = ["alternative", "rock"]
+        genres = {"alternative", "rock"}
         title = "What's Up"
         track_num = 3
 
-        real_track.album = album
-        real_track.albumartist = albumartist
-        real_track.artist = artist
-        real_track.date = date
-        real_track.disc = disc
-        real_track.disc_total = disc_total
-        real_track.genres = genres
-        real_track.title = title
-        real_track.track_num = track_num
+        track.album = album
+        track.albumartist = albumartist
+        track.artist = artist
+        track.date = date
+        track.disc = disc
+        track.disc_total = disc_total
+        track.genres = genres
+        track.title = title
+        track.track_num = track_num
 
-        moe_write.write_tags(real_track)
+        moe_write.write_tags(track)
 
-        new_track = Track.from_file(MagicMock(), real_track.path)
+        new_track = Track.from_file(track.path)
         assert new_track.album == album
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist
@@ -61,41 +64,35 @@ class TestWriteTags:
         assert new_track.track_num == track_num
 
 
+@pytest.mark.usefixtures("_tmp_write_config")
 class TestProcessNewItems:
     """Test the `process_new_items` hook implementation."""
 
-    def test_process_track(self, mock_track, mock_write, tmp_write_config):
+    def test_process_track(self, mock_write):
         """Any altered Tracks have their tags written."""
-        tmp_write_config.pm.hook.process_new_items(
-            config=tmp_write_config, items=[mock_track]
-        )
+        track = track_factory()
+        config.CONFIG.pm.hook.process_new_items(items=[track])
 
-        mock_write.assert_called_once_with(mock_track)
+        mock_write.assert_called_once_with(track)
 
-    def test_process_extra(self, mock_extra, mock_write, tmp_write_config):
+    def test_process_extra(self, mock_write):
         """Any altered extras are ignored."""
-        tmp_write_config.pm.hook.process_new_items(
-            config=tmp_write_config, items=[mock_extra]
-        )
+        config.CONFIG.pm.hook.process_new_items(items=[extra_factory()])
 
         mock_write.assert_not_called()
 
-    def test_process_album(self, mock_album, mock_write, tmp_write_config):
+    def test_process_album(self, mock_write):
         """Any altered albums are ignored."""
-        tmp_write_config.pm.hook.process_new_items(
-            config=tmp_write_config, items=[mock_album]
-        )
+        config.CONFIG.pm.hook.process_new_items(items=[album_factory()])
 
         mock_write.assert_not_called()
 
-    def test_process_multiple_tracks(self, track_factory, mock_write, tmp_write_config):
+    def test_process_multiple_tracks(self, mock_write):
         """All altered tracks are written."""
-        mock_tracks = [track_factory(), track_factory()]
+        tracks = [track_factory(), track_factory()]
 
-        tmp_write_config.pm.hook.process_new_items(
-            config=tmp_write_config, items=mock_tracks
-        )
+        config.CONFIG.pm.hook.process_new_items(items=tracks)
 
-        for mock_track in mock_tracks:
-            mock_write.assert_any_call(mock_track)
+        for track in tracks:
+            mock_write.assert_any_call(track)
         assert mock_write.call_count == 2

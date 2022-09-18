@@ -1,7 +1,6 @@
 """Tests a Track object."""
 
 import datetime
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -10,6 +9,7 @@ import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
 from moe.library.track import Track, TrackError, _Genre
 from moe.plugins.write import write_tags
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 class MyTrackPlugin:
@@ -17,7 +17,7 @@ class MyTrackPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def create_custom_track_fields(config):
+    def create_custom_track_fields():
         """Create a new custom field."""
         return {"no_default": None, "default": "value"}
 
@@ -32,19 +32,19 @@ class MyTrackPlugin:
 class TestHooks:
     """Test track hooks."""
 
-    def test_create_custom_fields(self, track_factory, tmp_config):
+    def test_create_custom_fields(self, tmp_config):
         """Plugins can define new custom fields."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
-        track = track_factory(config)
+        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory()
 
         assert not track.no_default
         assert track.default == "value"
 
-    def test_is_unique_track(self, track_factory, tmp_config):
+    def test_is_unique_track(self, tmp_config):
         """Plugins can add additional unique constraints."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
-        track = track_factory(config)
-        dup_track = track_factory(config, title=track.title)
+        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
+        track = track_factory()
+        dup_track = track_factory(title=track.title)
 
         assert not track.is_unique(dup_track)
 
@@ -52,41 +52,36 @@ class TestHooks:
 class TestInit:
     """Test Track initialization."""
 
-    def test_album_init(self, mock_track):
+    def test_album_init(self):
         """Creating a Track should also create the corresponding Album."""
-        assert mock_track.album_obj
+        assert track_factory().album_obj
 
-    def test_guess_disc_multi_disc(self, album_factory):
+    def test_guess_disc_multi_disc(self):
         """Guess the disc if not given."""
         album = album_factory(num_discs=3, exists=True)
         track1 = album.get_track(1, disc=1)
         track2 = album.get_track(1, disc=2)
         track3 = album.get_track(1, disc=3)
+        assert track1 and track2 and track3  # noqa: PT018
 
-        new_track1 = Track(
-            MagicMock(), album, track1.path, track1.title, track1.track_num
-        )
-        new_track2 = Track(
-            MagicMock(), album, track2.path, track2.title, track2.track_num
-        )
-        new_track3 = Track(
-            MagicMock(), album, track3.path, track3.title, track3.track_num
-        )
+        new_track1 = Track(album, track1.path, track1.title, track1.track_num)
+        new_track2 = Track(album, track2.path, track2.title, track2.track_num)
+        new_track3 = Track(album, track3.path, track3.title, track3.track_num)
 
         assert new_track1.disc == 1
         assert new_track2.disc == 2
         assert new_track3.disc == 3
 
-    def test_guess_disc_single_disc(self, real_track):
+    def test_guess_disc_single_disc(self):
         """Guess the disc if there are no disc sub directories."""
-        assert real_track.path.parent == real_track.album_obj.path
+        track = track_factory()
+        assert track.path.parent == track.album_obj.path
 
         new_track = Track(
-            MagicMock(),
-            real_track.album_obj,
-            real_track.path,
-            real_track.title,
-            real_track.track_num,
+            track.album_obj,
+            track.path,
+            track.title,
+            track.track_num,
         )
 
         assert new_track.disc == 1
@@ -98,97 +93,92 @@ class TestAlbumSet:
     Thus, all tracks in the album will reflect the new value.
     """
 
-    def test_album_set(self, mock_track, tmp_path):
+    def test_album_set(self, tmp_path):
         """Setting an album attribute maintains the same album object."""
-        album1 = mock_track.album_obj
-        mock_track.album = "TPAB"
-        mock_track.album_path = tmp_path
-        mock_track.albumartist = "Kendrick Lamar"
-        mock_track.date = datetime.date(2015, 3, 15)
+        track = track_factory()
+        track.album = "TPAB"
 
-        assert album1 is mock_track.album_obj
+        assert track.album_obj.title == track.album
 
 
 class TestFromFile:
     """Test initialization from given file path."""
 
-    def test_read_tags(self, real_track):
+    def test_read_tags(self):
         """We can initialize a track with tags from a file if present."""
-        real_track.album = "The Lost Album"
-        real_track.albumartist = "Wu-Tang Clan"
-        real_track.artist = "Wu-Tang Clan"
-        real_track.date = datetime.date(2020, 1, 12)
-        real_track.disc = 1
-        real_track.disc_total = 2
-        real_track.genres = {"hip hop", "rock"}
-        real_track.title = "Full"
-        real_track.track_num = 1
-        write_tags(real_track)
+        track = track_factory(exists=True)
+        track.album = "The Lost Album"
+        track.albumartist = "Wu-Tang Clan"
+        track.artist = "Wu-Tang Clan"
+        track.date = datetime.date(2020, 1, 12)
+        track.disc = 1
+        track.disc_total = 2
+        track.genres = {"hip hop", "rock"}
+        track.title = "Full"
+        track.track_num = 1
+        write_tags(track)
 
-        new_track = Track.from_file(MagicMock(), real_track.path)
+        new_track = Track.from_file(track.path)
 
-        assert new_track.album == real_track.album
-        assert new_track.albumartist == real_track.albumartist
-        assert new_track.artist == real_track.artist
-        assert new_track.date == real_track.date
-        assert new_track.disc == real_track.disc
-        assert new_track.disc_total == real_track.disc_total
-        assert new_track.genres == real_track.genres
-        assert new_track.title == real_track.title
-        assert new_track.track_num == real_track.track_num
+        assert new_track.album == track.album
+        assert new_track.albumartist == track.albumartist
+        assert new_track.artist == track.artist
+        assert new_track.date == track.date
+        assert new_track.disc == track.disc
+        assert new_track.disc_total == track.disc_total
+        assert new_track.genres == track.genres
+        assert new_track.title == track.title
+        assert new_track.track_num == track.track_num
 
-    def test_non_track_file(self, real_extra):
+    def test_non_track_file(self):
         """Raise `TrackError` if the given path does not correspond to a track file."""
         with pytest.raises(TrackError):
-            Track.from_file(MagicMock(), real_extra.path)
+            Track.from_file(extra_factory().path)
 
-    def test_albumartist_backup(self, real_track):
+    def test_albumartist_backup(self):
         """Use artist as a backup for albumartist if missing."""
-        real_track.albumartist = ""
-        real_track.artist = "Backup"
-        moe_write.write_tags(real_track)
+        track = track_factory(exists=True)
+        track.albumartist = ""
+        track.artist = "Backup"
+        moe_write.write_tags(track)
 
-        track = Track.from_file(MagicMock(), real_track.path)
+        track = Track.from_file(track.path)
         assert track.albumartist
 
 
 class TestEquality:
     """Test equality of tracks."""
 
-    def test_equals(self, track_factory):
+    def test_equals(self):
         """Tracks with the same metadata are equal."""
         track1 = track_factory(custom="custom")
         track2 = track_factory(dup_track=track1)
 
         assert track1 == track2
 
-    def test_not_equals(self, track_factory):
+    def test_not_equals(self):
         """Tracks with different fields are not equal."""
         track1 = track_factory(title="track1")
         track2 = track_factory(title="track2")
 
         assert track1 != track2
 
-    def test_not_equals_not_track(self, real_track):
+    def test_not_equals_not_track(self):
         """Not equal if not comparing two tracks."""
-        assert real_track != "test"
+        assert track_factory() != "test"
 
 
 class TestIsUnique:
     """Test `is_unique()`."""
 
-    def test_non_track(self, mock_track):
-        """Non-tracks are unique."""
-        assert mock_track.is_unique(None)
-
-    def test_same_path(self, track_factory):
+    def test_same_path(self):
         """Tracks with the same path are not unique."""
         track = track_factory()
         dup_track = track_factory(path=track.path)
 
         assert not track.is_unique(dup_track)
 
-    def test_same_track_disc_num(self, track_factory):
+    def test_same_track_disc_num(self):
         """Tracks with the same album, track #, and disc # are not unique."""
         track = track_factory()
         dup_track = track_factory(
@@ -197,7 +187,7 @@ class TestIsUnique:
 
         assert not track.is_unique(dup_track)
 
-    def test_default(self, track_factory):
+    def test_default(self):
         """Tracks with no matching parameters are unique."""
         track1 = track_factory()
         track2 = track_factory()
@@ -208,7 +198,7 @@ class TestIsUnique:
 class TestMerge:
     """Test merging two tracks."""
 
-    def test_conflict_persists(self, track_factory):
+    def test_conflict_persists(self):
         """Don't overwrite any conflicts."""
         track = track_factory(title="keep")
         other_track = track_factory(title="discard")
@@ -217,29 +207,29 @@ class TestMerge:
 
         assert track.title == "keep"
 
-    def test_merge_non_conflict(self, track_factory):
+    def test_merge_non_conflict(self):
         """Apply any non-conflicting fields."""
         track = track_factory()
         other_track = track_factory(title="keep", genres=["keep"])
-        track.title = None
-        track.genres = []
+        track.title = ""
+        track.genres = set()
 
         track.merge(other_track)
 
         assert track.title == "keep"
         assert track.genres == {"keep"}
 
-    def test_none_merge(self, track_factory):
+    def test_none_merge(self):
         """Don't merge in any null values."""
         track = track_factory(title="keep")
         other_track = track_factory()
-        other_track.title = None
+        other_track.title = ""
 
         track.merge(other_track)
 
         assert track.title == "keep"
 
-    def test_db_delete(self, track_factory, tmp_session):
+    def test_db_delete(self, tmp_session):
         """Remove the other track from the db if it exists."""
         track = track_factory()
         other_track = track_factory()
@@ -254,7 +244,7 @@ class TestMerge:
 class TestListDuplicates:
     """List fields should not cause duplicate errors (just merge silently)."""
 
-    def test_genre(self, track_factory, tmp_session):
+    def test_genre(self, tmp_session):
         """Duplicate genres don't error."""
         track1 = track_factory(genre="pop")
         track2 = track_factory(genre="pop")

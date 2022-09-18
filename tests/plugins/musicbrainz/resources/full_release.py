@@ -1675,32 +1675,26 @@ release = {
     }
 }
 
-# Album representation
-album = Album(
-    config=MagicMock(),
-    artist="Kanye West",
-    title="My Beautiful Dark Twisted Fantasy",
-    date=datetime.date(2010, 11, 22),
-    path=None,  # type: ignore
-    mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
-)
-track1 = Track(
-    config=MagicMock(),
-    album=album,
-    track_num=1,
-    path=None,  # type: ignore
-    artist="Kanye West",
-    title="Dark Fantasy",
-    mb_track_id="219e6b01-c962-355c-8a87-5d4ab3fc13bc",
-    disc=1,
-)
-track2 = Track(
-    config=MagicMock(),
-    album=album,
-    track_num=2,
-    path=None,  # type: ignore
-    artist="Kanye West feat. Kid Cudi & Raekwon",
-    title="Gorgeous",
-    mb_track_id="d4cbaf03-b40a-352d-9461-eadbc5986fc0",
-    disc=1,
-)
+
+def album() -> Album:
+    """Creates an album with the above release information."""
+    return Album(
+        artist="Kanye West",
+        title="My Beautiful Dark Twisted Fantasy",
+        date=datetime.date(2010, 11, 22),
+        path=None,  # type: ignore
+        mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
+    )
+
+
+def track() -> Track:
+    """Creates a track from the above release."""
+    return Track(
+        album=album(),
+        track_num=1,
+        path=None,  # type: ignore
+        artist="Kanye West",
+        title="Dark Fantasy",
+        mb_track_id="219e6b01-c962-355c-8a87-5d4ab3fc13bc",
+        disc=1,
+    )

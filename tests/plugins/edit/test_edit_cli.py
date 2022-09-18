@@ -7,9 +7,10 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
-from moe.config import Config
+from moe import config
 from moe.plugins.edit import EditError
 from moe.query import QueryError
+from tests.conftest import album_factory, extra_factory, track_factory
 
 
 @pytest.fixture
@@ -33,121 +34,125 @@ def mock_query() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
-def tmp_edit_config(tmp_config) -> Config:
+def _tmp_edit_config(tmp_config):
     """A temporary config for the edit plugin with the cli."""
-    return tmp_config('default_plugins = ["cli", "edit"]')
+    tmp_config('default_plugins = ["cli", "edit"]')
 
 
+@pytest.mark.usefixtures("_tmp_edit_config")
 class TestCommand:
     """Test general functionality of the argument parser."""
 
-    def test_track(self, mock_track, mock_query, mock_edit, tmp_edit_config):
+    def test_track(self, mock_query, mock_edit):
         """Tracks are edited."""
+        track = track_factory()
         cli_args = ["edit", "*", "track_num=3"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
-        moe.cli.main(cli_args, tmp_edit_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="track")
-        mock_edit.assert_called_once_with(mock_track, "track_num", "3")
+        mock_edit.assert_called_once_with(track, "track_num", "3")
 
-    def test_album(self, mock_album, mock_query, mock_edit, tmp_edit_config):
+    def test_album(self, mock_query, mock_edit):
         """Albums are edited."""
+        album = album_factory()
         cli_args = ["edit", "-a", "*", "title=edit"]
-        mock_query.return_value = [mock_album]
+        mock_query.return_value = [album]
 
-        moe.cli.main(cli_args, tmp_edit_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="album")
-        mock_edit.assert_called_once_with(mock_album, "title", "edit")
+        mock_edit.assert_called_once_with(album, "title", "edit")
 
-    def test_extra(self, mock_extra, mock_query, mock_edit, tmp_edit_config):
+    def test_extra(self, mock_query, mock_edit):
         """Extras are edited."""
+        extra = extra_factory()
         cli_args = ["edit", "-e", "*", "title=edit"]
-        mock_query.return_value = [mock_extra]
+        mock_query.return_value = [extra]
 
-        moe.cli.main(cli_args, tmp_edit_config)
+        moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with("*", query_type="extra")
-        mock_edit.assert_called_once_with(mock_extra, "title", "edit")
+        mock_edit.assert_called_once_with(extra, "title", "edit")
 
-    def test_multiple_items(
-        self, track_factory, mock_query, mock_edit, tmp_edit_config
-    ):
+    def test_multiple_items(self, mock_query, mock_edit):
         """All items returned from a query are edited."""
         cli_args = ["edit", "*", "track_num=3"]
         track1 = track_factory()
         track2 = track_factory()
         mock_query.return_value = [track1, track2]
 
-        moe.cli.main(cli_args, tmp_edit_config)
+        moe.cli.main(cli_args)
 
         mock_edit.assert_any_call(track1, "track_num", "3")
         mock_edit.assert_any_call(track2, "track_num", "3")
         assert mock_edit.call_count == 2
 
-    def test_multiple_terms(self, mock_track, mock_query, mock_edit, tmp_edit_config):
+    def test_multiple_terms(self, mock_query, mock_edit):
         """We can edit multiple terms at once."""
+        track = track_factory()
         cli_args = ["edit", "*", "track_num=3", "title=yo"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
-        moe.cli.main(cli_args, tmp_edit_config)
+        moe.cli.main(cli_args)
 
-        mock_edit.assert_any_call(mock_track, "track_num", "3")
-        mock_edit.assert_any_call(mock_track, "title", "yo")
+        mock_edit.assert_any_call(track, "track_num", "3")
+        mock_edit.assert_any_call(track, "title", "yo")
         assert mock_edit.call_count == 2
 
-    def test_invalid_fv_term(self, mock_track, mock_query, tmp_edit_config):
+    def test_invalid_fv_term(self, mock_query):
         """Raise SystemExit if field/value term is in the wrong format."""
+        track = track_factory()
         cli_args = ["edit", "*", "bad_format"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_edit_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 
-    def test_single_invalid_term(
-        self, mock_track, mock_query, mock_edit, tmp_edit_config
-    ):
+    def test_single_invalid_term(self, mock_query, mock_edit):
         """If only one out of multiple fields are invalid, still process the others."""
+        track = track_factory()
         cli_args = ["edit", "*", "bad_format", "track_num=3"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_edit_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
-        mock_edit.assert_called_once_with(mock_track, "track_num", "3")
+        mock_edit.assert_called_once_with(track, "track_num", "3")
 
-    def test_edit_error(self, mock_track, mock_query, mock_edit, tmp_edit_config):
+    def test_edit_error(self, mock_query, mock_edit):
         """Raise SystemExit if there is an error editing the item."""
+        track = track_factory()
         cli_args = ["edit", "*", "track_num=3"]
-        mock_query.return_value = [mock_track]
+        mock_query.return_value = [track]
         mock_edit.side_effect = EditError
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_edit_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 
-    def test_no_items(self, capsys, mock_query, tmp_edit_config):
+    def test_no_items(self, capsys, mock_query):
         """If no items found to edit, exit with non-zero code."""
         cli_args = ["edit", "*", "track_num=3"]
         mock_query.return_value = []
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_edit_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 
-    def test_bad_query(self, mock_query, tmp_edit_config):
+    def test_bad_query(self, mock_query):
         """Raise SystemExit if given a bad query."""
         cli_args = ["edit", "*", "track_num=3"]
         mock_query.side_effect = QueryError
 
         with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args, tmp_edit_config)
+            moe.cli.main(cli_args)
 
         assert error.value.code != 0
 
@@ -157,12 +162,12 @@ class TestPluginRegistration:
 
     def test_no_cli(self, tmp_config):
         """Don't enable the edit cli plugin if the `cli` plugin is not enabled."""
-        config = tmp_config(settings='default_plugins = ["edit"]')
+        tmp_config(settings='default_plugins = ["edit"]')
 
-        assert not config.pm.has_plugin("edit_cli")
+        assert not config.CONFIG.pm.has_plugin("edit_cli")
 
     def test_cli(self, tmp_config):
         """Enable the edit cli plugin if the `cli` plugin is enabled."""
-        config = tmp_config(settings='default_plugins = ["edit", "cli"]')
+        tmp_config(settings='default_plugins = ["edit", "cli"]')
 
-        assert config.pm.has_plugin("edit_cli")
+        assert config.CONFIG.pm.has_plugin("edit_cli")

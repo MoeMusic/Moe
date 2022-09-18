@@ -1,7 +1,6 @@
 """Tests an Album object."""
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -10,6 +9,7 @@ from moe.config import ExtraPlugin
 from moe.library.album import Album, AlbumError
 from moe.library.extra import Extra
 from moe.plugins import write as moe_write
+from tests.conftest import album_factory, track_factory
 
 
 class MyAlbumPlugin:
@@ -17,7 +17,7 @@ class MyAlbumPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def create_custom_album_fields(config):
+    def create_custom_album_fields():
         """Create a new custom field."""
         return {"no_default": None, "default": "value"}
 
@@ -32,19 +32,19 @@ class MyAlbumPlugin:
 class TestHooks:
     """Test album hooks."""
 
-    def test_create_custom_fields(self, album_factory, tmp_config):
+    def test_create_custom_fields(self, tmp_config):
         """Plugins can define new custom fields."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
-        album = album_factory(config)
+        tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
+        album = album_factory()
 
         assert not album.no_default
         assert album.default == "value"
 
-    def test_is_unique_album(self, album_factory, tmp_config):
+    def test_is_unique_album(self, tmp_config):
         """Plugins can add additional unique constraints."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
-        album = album_factory(config)
-        dup_album = album_factory(config, title=album.title)
+        tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
+        album = album_factory()
+        dup_album = album_factory(title=album.title)
 
         assert not album.is_unique(dup_album)
 
@@ -52,15 +52,17 @@ class TestHooks:
 class TestFromDir:
     """Test a creating an album from a directory."""
 
-    def test_dir_album(self, real_album):
+    def test_dir_album(self):
         """If a directory given, add to library as an album."""
-        assert Album.from_dir(MagicMock(), real_album.path) == real_album
+        album = album_factory(exists=True)
+        assert Album.from_dir(album.path) == album
 
-    def test_extras(self, real_album):
+    def test_extras(self):
         """Add any extras that are within the album directory."""
-        new_album = Album.from_dir(MagicMock(), real_album.path)
+        album = album_factory(exists=True)
+        new_album = Album.from_dir(album.path)
 
-        for extra in real_album.extras:
+        for extra in album.extras:
             assert extra in new_album.extras
 
     def test_no_valid_tracks(self, tmp_path):
@@ -69,20 +71,21 @@ class TestFromDir:
         empty_path.mkdir()
 
         with pytest.raises(AlbumError):
-            Album.from_dir(MagicMock(), empty_path)
+            Album.from_dir(empty_path)
 
-    def test_add_multi_disc(self, real_album):
+    def test_add_multi_disc(self):
         """We can add a multi-disc album."""
-        track1 = real_album.tracks[0]
-        track2 = real_album.tracks[1]
+        album = album_factory(exists=True)
+        track1 = album.tracks[0]
+        track2 = album.tracks[1]
         track1.disc = 1
         track2.disc = 2
-        real_album.disc_total = 2
+        album.disc_total = 2
         moe_write.write_tags(track1)
         moe_write.write_tags(track2)
 
-        track1_path = Path(real_album.path / "disc 01" / track1.path.name)
-        track2_path = Path(real_album.path / "disc 02" / track2.path.name)
+        track1_path = Path(album.path / "disc 01" / track1.path.name)
+        track2_path = Path(album.path / "disc 02" / track2.path.name)
         track1_path.parent.mkdir()
         track2_path.parent.mkdir()
         track1.path.rename(track1_path)
@@ -90,7 +93,7 @@ class TestFromDir:
         track1.path = track1_path
         track2.path = track2_path
 
-        album = Album.from_dir(MagicMock(), real_album.path)
+        album = Album.from_dir(album.path)
 
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
@@ -99,18 +102,14 @@ class TestFromDir:
 class TestIsUnique:
     """Test `is_unique()`."""
 
-    def test_non_album(self, mock_album):
-        """Non-albums are unique."""
-        assert mock_album.is_unique(None)
-
-    def test_same_path(self, album_factory):
+    def test_same_path(self):
         """Albums with the same path are not unique."""
         album = album_factory()
         dup_album = album_factory(path=album.path)
 
         assert not album.is_unique(dup_album)
 
-    def test_default(self, album_factory):
+    def test_default(self):
         """Albums with no matching parameters are unique."""
         album1 = album_factory()
         album2 = album_factory()
@@ -121,57 +120,49 @@ class TestIsUnique:
 class TestMerge:
     """Test merging two albums together."""
 
-    def test_conflict_persists(self, album_factory):
+    def test_conflict_persists(self):
         """Don't overwrite any conflicts."""
-        album = album_factory()
-        other_album = album_factory()
-        album.title = "123"
-        other_album.title = "456"
+        album = album_factory(title="123")
+        other_album = album_factory(title="456")
         keep_title = album.title
 
         album.merge(other_album)
 
         assert album.title == keep_title
 
-    def test_merge_non_conflict(self, album_factory):
+    def test_merge_non_conflict(self):
         """Apply any non-conflicting fields."""
-        album = album_factory()
-        other_album = album_factory()
-        album.title = None
-        other_album.title = "new"
+        album = album_factory(title="")
+        other_album = album_factory(title="new")
 
         album.merge(other_album)
 
         assert album.title == "new"
 
-    def test_none_merge(self, album_factory):
+    def test_none_merge(self):
         """Don't merge in any null values."""
-        album = album_factory()
-        other_album = album_factory()
-        album.title = "123"
-        other_album.title = None
+        album = album_factory(title="123")
+        other_album = album_factory(title="")
 
         album.merge(other_album)
 
         assert album.title == "123"
 
-    def test_overwrite_field(self, album_factory):
+    def test_overwrite_field(self):
         """Overwrite fields if the option is given."""
-        album = album_factory()
-        other_album = album_factory()
-        album.title = "123"
-        other_album.title = "456"
+        album = album_factory(title="123")
+        other_album = album_factory(title="456")
         keep_title = other_album.title
 
         album.merge(other_album, overwrite=True)
 
         assert album.title == keep_title
 
-    def test_merge_extras(self, album_factory):
+    def test_merge_extras(self):
         """Merge in any new extras."""
         album1 = album_factory()
         album2 = album_factory()
-        new_extra = Extra(MagicMock(), album2, album2.path / "new.txt")
+        new_extra = Extra(album2, album2.path / "new.txt")
         assert album1.extras != album2.extras
         extras_count = len(album1.extras) + len(album2.extras)
 
@@ -180,12 +171,12 @@ class TestMerge:
         assert new_extra in album1.extras
         assert len(album1.extras) == extras_count
 
-    def test_overwrite_extras(self, album_factory):
+    def test_overwrite_extras(self):
         """Replace conflicting extras if told to overwrite."""
         album1 = album_factory(exists=True, title="album1")
         album2 = album_factory(exists=True, title="album2")
 
-        Extra(MagicMock(), album2, album2.path / album1.extras[0].path.name)  # conflict
+        Extra(album2, album2.path / album1.extras[0].path.name)  # conflict
         overwrite_extra = album1.extras[0]
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()
@@ -196,7 +187,7 @@ class TestMerge:
             if extra.path.exists():
                 assert extra.path.read_text() != "overwrite"
 
-    def test_merge_tracks(self, album_factory, track_factory):
+    def test_merge_tracks(self):
         """Tracks should merge with the same behavior as fields."""
         album1 = album_factory()
         album2 = album_factory()
@@ -204,6 +195,7 @@ class TestMerge:
         new_track = track_factory(album=album2)
         conflict_track = album2.tracks[0]
         keep_track = album1.get_track(conflict_track.track_num)
+        assert keep_track
         keep_track.title = "keep"
         assert conflict_track.title != keep_track.title
         assert album1.tracks != album2.tracks
@@ -213,13 +205,14 @@ class TestMerge:
         assert new_track in album1.tracks
         assert keep_track.title == "keep"
 
-    def test_overwrite_tracks(self, album_factory, track_factory):
+    def test_overwrite_tracks(self):
         """Tracks should overwrite the same as fields if option given."""
         album1 = album_factory()
         album2 = album_factory()
 
         conflict_track = album2.tracks[0]
         overwrite_track = album1.get_track(conflict_track.track_num)
+        assert overwrite_track
         conflict_track.title = "conflict"
         assert conflict_track.title != overwrite_track.title
 
@@ -231,20 +224,20 @@ class TestMerge:
 class TestEquality:
     """Test equality of albums."""
 
-    def test_equals(self, album_factory):
+    def test_equals(self):
         """Albums with the same fields are equal."""
         album1 = album_factory()
         album2 = album_factory(dup_album=album1)
 
         assert album1 == album2
 
-    def test_not_equals(self, album_factory):
+    def test_not_equals(self):
         """Albums with different fields are not equal."""
         album1 = album_factory(title="diff")
         album2 = album_factory(title="erent")
 
         assert album1 != album2
 
-    def test_not_equals_not_album(self, real_album):
+    def test_not_equals_not_album(self):
         """Not equal if not comparing two albums."""
-        assert real_album != "test"
+        assert album_factory() != "test"

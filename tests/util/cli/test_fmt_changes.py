@@ -4,6 +4,7 @@ import datetime
 import random
 
 from moe.util.cli import fmt_item_changes
+from tests.conftest import album_factory
 
 
 class TestFmtItemChanges:
@@ -15,14 +16,13 @@ class TestFmtItemChanges:
     (add ``assert 0`` to the end of any test case to see it's output to stdout).
     """
 
-    def test_full_diff_album(self, album_factory):
+    def test_full_diff_album(self):
         """Print prompt for fully different albums."""
         old_album = album_factory()
-        new_album = album_factory()
+        new_album = album_factory(
+            title="new title", artist="new artist", date=datetime.date(1999, 12, 31)
+        )
         old_album.tracks[0].title = "really really long old title"
-        new_album.title = "new title"
-        new_album.artist = "new artist"
-        new_album.date = datetime.date(1999, 12, 31)
 
         for track in new_album.tracks:
             track.title = "new title"
@@ -31,7 +31,7 @@ class TestFmtItemChanges:
 
         print(fmt_item_changes(old_album, new_album))
 
-    def test_unmatched_tracks(self, album_factory):
+    def test_unmatched_tracks(self):
         """Print prompt for albums with non-matching tracks."""
         old_album = album_factory()
         new_album = album_factory()
@@ -43,13 +43,9 @@ class TestFmtItemChanges:
 
         print(fmt_item_changes(old_album, new_album))
 
-    def test_multi_disc_album(self, album_factory, track_factory):
+    def test_multi_disc_album(self):
         """Prompt supports multi_disc albums."""
-        mock_album = album_factory()
-        new_album = album_factory()
-        mock_album.disc_total = 2
-        mock_album.tracks[1].disc = 2
-        mock_album.tracks[1].track_num = 1
-        track_factory(track_num=2, album=mock_album)
+        album = album_factory(num_discs=2)
+        new_album = album_factory(num_discs=2)
 
-        print(fmt_item_changes(mock_album, new_album))
+        print(fmt_item_changes(album, new_album))

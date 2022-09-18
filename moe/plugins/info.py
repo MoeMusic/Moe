@@ -13,7 +13,7 @@ from typing import Any, Dict
 
 import moe
 import moe.cli
-from moe.config import Config
+from moe import config
 from moe.library.album import Album
 from moe.library.extra import Extra
 from moe.library.lib_item import LibItem
@@ -26,10 +26,10 @@ log = logging.getLogger("moe.cli.info")
 
 
 @moe.hookimpl
-def plugin_registration(config: Config):
+def plugin_registration():
     """Depend on the cli plugin."""
-    if not config.pm.has_plugin("cli"):
-        config.pm.set_blocked("info")
+    if not config.CONFIG.pm.has_plugin("cli"):
+        config.CONFIG.pm.set_blocked("info")
         log.warning("The 'info' plugin requires the 'cli' plugin to be enabled.")
 
 
@@ -45,11 +45,10 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     info_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):
+def _parse_args(args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
-        config: Configuration in use.
         args: Commandline arguments to parse.
 
     Raises:

@@ -13,7 +13,7 @@ from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
 import moe
-from moe.config import Config
+from moe import config
 from moe.library import SABase
 from moe.library.lib_item import LibItem, LibraryError, PathType
 
@@ -31,11 +31,8 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_custom_album_fields(config: Config) -> dict[str, Any]:  # type: ignore
+    def create_custom_album_fields() -> dict[str, Any]:  # type: ignore
         """Creates new custom fields for an Album.
-
-        Args:
-            config: Moe config.
 
         Returns:
             Dict of the field names to their default values or ``None`` for no default.
@@ -112,7 +109,7 @@ class Album(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields = set()
+    custom_fields: set[str] = set()
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -129,7 +126,6 @@ class Album(LibItem, SABase):
 
     def __init__(
         self,
-        config: Config,
         path: Path,
         artist: str,
         title: str,
@@ -140,7 +136,6 @@ class Album(LibItem, SABase):
         """Creates an Album.
 
         Args:
-            config: Moe config.
             path: Filesystem path of the album directory.
             artist: Album artist.
             title: Album title.
@@ -148,10 +143,9 @@ class Album(LibItem, SABase):
             disc_total: Number of discs in the album.
             **kwargs: Any other fields to assign to the album.
         """
-        self.config = config
         self._custom_fields = {}
         self.custom_fields = set()
-        custom_fields = config.pm.hook.create_custom_album_fields(config=config)
+        custom_fields = config.CONFIG.pm.hook.create_custom_album_fields()
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
@@ -169,11 +163,10 @@ class Album(LibItem, SABase):
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
-    def from_dir(cls: type[A], config: Config, album_path: Path) -> A:
+    def from_dir(cls: type[A], album_path: Path) -> A:
         """Creates an album from a directory.
 
         Args:
-            config: Moe config.
             album_path: Album directory path. The directory will be scanned for any
                 files to be added to the album. Any non-track files will be added as
                 extras.
@@ -194,7 +187,7 @@ class Album(LibItem, SABase):
         album: Optional[Album] = None
         for file_path in album_file_paths:
             try:
-                track = Track.from_file(config, file_path, album)
+                track = Track.from_file(file_path, album)
             except TrackError:
                 extra_paths.append(file_path)
             else:
@@ -205,7 +198,7 @@ class Album(LibItem, SABase):
             raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")
 
         for extra_path in extra_paths:
-            Extra(config, album, extra_path)
+            Extra(album, extra_path)
 
         log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
@@ -240,13 +233,12 @@ class Album(LibItem, SABase):
 
     def is_unique(self, other: "Album") -> bool:
         """Returns whether an album is unique in the library from ``other``."""
-        if not isinstance(other, Album):
-            return True
-
         if self.path == other.path:
             return False
 
-        custom_uniqueness = self.config.pm.hook.is_unique_album(album=self, other=other)
+        custom_uniqueness = config.CONFIG.pm.hook.is_unique_album(
+            album=self, other=other
+        )
         if False in custom_uniqueness:
             return False
 

@@ -8,7 +8,7 @@ import logging
 import pluggy
 
 import moe
-from moe.config import Config, MoeSession
+from moe import config
 from moe.library.lib_item import LibItem
 
 __all__ = ["AddAbortError", "AddError", "add_item"]
@@ -21,14 +21,13 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def pre_add(config: Config, item: LibItem):
+    def pre_add(item: LibItem):
         """Provides an item prior to it being added to the library.
 
         Use this hook if you wish to change an item's metadata prior to it being
         added to the library.
 
         Args:
-            config: Moe config.
             item: Library item being added.
 
         Note:
@@ -62,20 +61,19 @@ class AddAbortError(Exception):
     """Add process has been aborted by the user."""
 
 
-def add_item(config: Config, item: LibItem):
+def add_item(item: LibItem):
     """Adds a LibItem to the library.
 
     Args:
-        config: Moe config.
         item: Item to be added.
 
     Raises:
         AddError: Unable to add the item to the library.
     """
     log.debug(f"Adding item to the library. [{item=!r}]")
-    session = MoeSession()
+    session = config.MoeSession()
 
-    config.pm.hook.pre_add(config=config, item=item)
+    config.CONFIG.pm.hook.pre_add(item=item)
     session.add(item)
     session.flush()
 

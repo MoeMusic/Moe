@@ -5,68 +5,73 @@ import datetime
 import pytest
 
 from moe.plugins import edit
+from tests.conftest import album_factory, track_factory
 
 
 class TestEditItem:
     """Test `edit_item()`."""
 
-    def test_track(self, mock_track):
+    def test_track(self):
         """We can edit a track's field."""
-        edit.edit_item(mock_track, "title", "new title")
+        track = track_factory()
+        edit.edit_item(track, "title", "new title")
 
-        assert mock_track.title == "new title"
+        assert track.title == "new title"
 
-    def test_album(self, mock_album):
+    def test_album(self):
         """We can edit an album's field."""
-        edit.edit_item(mock_album, "title", "new title")
+        album = album_factory()
+        edit.edit_item(album, "title", "new title")
 
-        assert mock_album.title == "new title"
+        assert album.title == "new title"
 
-    def test_int_field(self, mock_track):
+    def test_int_field(self):
         """We can edit integer fields."""
-        edit.edit_item(mock_track, "track_num", "3")
+        track = track_factory()
+        edit.edit_item(track, "track_num", "3")
 
-        assert mock_track.track_num == 3
+        assert track.track_num == 3
 
-    def test_date_field(self, mock_track):
+    def test_date_field(self):
         """We can edit the date."""
-        edit.edit_item(mock_track, "date", "2020-11-01")
+        track = track_factory()
+        edit.edit_item(track, "date", "2020-11-01")
 
-        assert mock_track.date == datetime.date(2020, 11, 1)
+        assert track.date == datetime.date(2020, 11, 1)
 
-    def test_invalid_date_field(self, mock_track):
+    def test_invalid_date_field(self):
         """Invalid dates should raise an EditError."""
         with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "date", "2020")
+            edit.edit_item(track_factory(), "date", "2020")
 
-    def test_list_field(self, mock_track):
+    def test_list_field(self):
         """We can edit list fields."""
-        edit.edit_item(mock_track, "genre", "a; b")
+        track = track_factory()
+        edit.edit_item(track, "genre", "a; b")
 
-        assert set(mock_track.genres) == {"a", "b"}
+        assert set(track.genres) == {"a", "b"}
 
-    def test_non_editable_fields(self, mock_track):
+    def test_non_editable_fields(self):
         """Editing paths is not currently supported."""
         with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "path", "~")
+            edit.edit_item(track_factory(), "path", "~")
 
-    def test_invalid_track_field(self, mock_track):
+    def test_invalid_track_field(self):
         """Raise EditError if attempting to edit an invalid field."""
         with pytest.raises(edit.EditError):
-            edit.edit_item(mock_track, "lol", "bad field")
+            edit.edit_item(track_factory(), "lol", "bad field")
 
-    def test_invalid_album_field(self, mock_album):
+    def test_invalid_album_field(self):
         """Raise SystemExit if attempting to edit an invalid field."""
         with pytest.raises(edit.EditError):
-            edit.edit_item(mock_album, "lol", "bad field")
+            edit.edit_item(album_factory(), "lol", "bad field")
 
-    def test_custom_field(self, mock_track):
+    def test_custom_field(self):
         """We can edit custom fields."""
-        mock_track._custom_fields["my_title"] = "test"
-        mock_track.custom_fields = "my_title"
-        edit.edit_item(mock_track, "my_title", "new")
+        track = track_factory(custom_fields={"my_title": "test"})
+        edit.edit_item(track, "my_title", "new")
 
-        assert mock_track.my_title == "new"
+        assert track.my_title == "new"
 
 
 class TestPluginRegistration:

@@ -5,7 +5,6 @@ import logging
 
 import moe
 import moe.cli
-from moe.config import Config
 from moe.plugins import edit
 from moe.query import QueryError, query
 
@@ -38,11 +37,10 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     edit_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(config: Config, args: argparse.Namespace):  # noqa: C901
+def _parse_args(args: argparse.Namespace):  # noqa: C901
     """Parses the given commandline arguments.
 
     Args:
-        config: Configuration in use.
         args: Commandline arguments to parse.
 
     Raises:

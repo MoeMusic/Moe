@@ -14,7 +14,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 import moe
-from moe.config import Config
+from moe import config
 from moe.library import SABase
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, LibraryError, PathType
@@ -29,11 +29,8 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_custom_track_fields(config: Config) -> dict[str, Any]:  # type: ignore
+    def create_custom_track_fields() -> dict[str, Any]:  # type: ignore
         """Creates new custom fields for a Track.
-
-        Args:
-            config: Moe config.
 
         Returns:
             Dict of the field names to their default values or ``None`` for no default.
@@ -143,7 +140,7 @@ class Track(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields = set()
+    custom_fields: set[str] = set()
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="tracks")
@@ -165,7 +162,6 @@ class Track(LibItem, SABase):
 
     def __init__(
         self,
-        config: Config,
         album: Album,
         path: Path,
         title: str,
@@ -175,17 +171,15 @@ class Track(LibItem, SABase):
         """Creates a Track.
 
         Args:
-            config: Moe config.
             album: Album the track belongs to.
             path: Filesystem path of the track file.
             title: Title of the track.
             track_num: Track number.
             **kwargs: Any other fields to assign to the track.
         """
-        self.config = config
         self._custom_fields = {}
         self.custom_fields = set()
-        custom_fields = config.pm.hook.create_custom_track_fields(config=config)
+        custom_fields = config.CONFIG.pm.hook.create_custom_track_fields()
         for plugin_fields in custom_fields:
             for plugin_field, default_val in plugin_fields.items():
                 self._custom_fields[plugin_field] = default_val
@@ -235,15 +229,12 @@ class Track(LibItem, SABase):
         return 1
 
     @classmethod
-    def from_file(
-        cls: type[T], config: Config, track_path: Path, album: Optional[Album] = None
-    ) -> T:
+    def from_file(cls: type[T], track_path: Path, album: Optional[Album] = None) -> T:
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
-            config: Moe config.
             track_path: Filesystem path of the track.
             album: Corresponding album for the track. If not given, the album will be
                 created.
@@ -268,7 +259,6 @@ class Track(LibItem, SABase):
             albumartist = audio_file.albumartist or audio_file.artist
 
             album = Album(
-                config=config,
                 artist=albumartist,
                 title=audio_file.album,
                 date=audio_file.date,
@@ -277,7 +267,6 @@ class Track(LibItem, SABase):
             )
 
         return cls(
-            config=config,
             album=album,
             path=track_path,
             track_num=audio_file.track,
@@ -321,9 +310,6 @@ class Track(LibItem, SABase):
 
     def is_unique(self, other: "Track") -> bool:
         """Returns whether a track is unique in the library from ``other``."""
-        if not isinstance(other, Track):
-            return True
-
         if self.path == other.path:
             return False
         if (
@@ -333,7 +319,9 @@ class Track(LibItem, SABase):
         ):
             return False
 
-        custom_uniqueness = self.config.pm.hook.is_unique_track(track=self, other=other)
+        custom_uniqueness = config.CONFIG.pm.hook.is_unique_track(
+            track=self, other=other
+        )
         if False in custom_uniqueness:
             return False
 

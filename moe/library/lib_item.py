@@ -1,6 +1,5 @@
 """Shared functionality between library albums, extras, and tracks."""
 
-import functools
 import logging
 from pathlib import Path
 
@@ -11,7 +10,7 @@ import sqlalchemy.event
 import sqlalchemy.orm
 
 import moe
-from moe.config import Config
+from moe import config
 
 __all__ = ["LibItem", "LibraryError"]
 
@@ -27,11 +26,10 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_changed_items(config: Config, items: list["LibItem"]):
+    def edit_changed_items(items: list["LibItem"]):
         """Edit items in the library that were changed in some way.
 
         Args:
-            config: Moe config.
             items: Any changed items that existed in the library prior to the current
                 session.
 
@@ -42,11 +40,10 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_new_items(config: Config, items: list["LibItem"]):
+    def edit_new_items(items: list["LibItem"]):
         """Edit new items in the library.
 
         Args:
-            config: Moe config.
             items: Any items being added to the library for the first time.
 
         See Also:
@@ -56,22 +53,20 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_removed_items(config: Config, items: list["LibItem"]):
+    def process_removed_items(items: list["LibItem"]):
         """Process items that have been removed from the library.
 
         Args:
-            config: Moe config.
             items: Any items that existed in the library prior to the current session,
                 but have now been removed from the library.
         """
 
     @staticmethod
     @moe.hookspec
-    def process_changed_items(config: Config, items: list["LibItem"]):
+    def process_changed_items(items: list["LibItem"]):
         """Process items in the library that were changed in some way.
 
         Args:
-            config: Moe config.
             items: Any changed items that existed in the library prior to the current
                 session.
 
@@ -85,11 +80,10 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_new_items(config: Config, items: list["LibItem"]):
+    def process_new_items(items: list["LibItem"]):
         """Process new items in the library.
 
         Args:
-            config: Moe config.
             items: Any items being added to the library for the first time.
 
         Important:
@@ -110,17 +104,17 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def register_sa_event_listeners(config: Config, session: sqlalchemy.orm.Session):
+def register_sa_event_listeners(session: sqlalchemy.orm.Session):
     """Registers event listeners for editing and processing new items."""
     sqlalchemy.event.listen(
         session,
         "before_flush",
-        functools.partial(_edit_before_flush, config=config),
+        _edit_before_flush,
     )
     sqlalchemy.event.listen(
         session,
         "after_flush",
-        functools.partial(_process_after_flush, config=config),
+        _process_after_flush,
     )
 
 
@@ -128,7 +122,6 @@ def _edit_before_flush(
     session: sqlalchemy.orm.Session,
     flush_context: sqlalchemy.orm.UOWTransaction,
     instances,
-    config: Config,
 ):
     """Runs the ``edit_*_items`` hook specifications before items are flushed.
 
@@ -140,7 +133,6 @@ def _edit_before_flush(
         session: Current db session.
         flush_context: sqlalchemy obj which handles the details of the flush.
         instances: Objects passed to the `session.flush()` method (deprecated).
-        config: Moe config.
 
     See Also:
         `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/14/orm/session_state_management.html>`_
@@ -151,7 +143,7 @@ def _edit_before_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Editing changed items. [{changed_items=!r}]")
-        config.pm.hook.edit_changed_items(config=config, items=changed_items)
+        config.CONFIG.pm.hook.edit_changed_items(items=changed_items)
         log.debug(f"Edited changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -160,14 +152,13 @@ def _edit_before_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Editing new items. [{new_items=!r}]")
-        config.pm.hook.edit_new_items(config=config, items=new_items)
+        config.CONFIG.pm.hook.edit_new_items(items=new_items)
         log.debug(f"Edited new items. [{new_items=!r}]")
 
 
 def _process_after_flush(
     session: sqlalchemy.orm.Session,
     flush_context: sqlalchemy.orm.UOWTransaction,
-    config: Config,
 ):
     """Runs the ``process_*_items`` hook specifications after items are flushed.
 
@@ -178,7 +169,6 @@ def _process_after_flush(
     Args:
         session: Current db session.
         flush_context: sqlalchemy obj which handles the details of the flush.
-        config: Moe config.
 
     See Also:
         `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/14/orm/session_state_management.html>`_
@@ -189,7 +179,7 @@ def _process_after_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Processing changed items. [{changed_items=!r}]")
-        config.pm.hook.process_changed_items(config=config, items=changed_items)
+        config.CONFIG.pm.hook.process_changed_items(items=changed_items)
         log.debug(f"Processed changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -198,7 +188,7 @@ def _process_after_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Processing new items. [{new_items=!r}]")
-        config.pm.hook.process_new_items(config=config, items=new_items)
+        config.CONFIG.pm.hook.process_new_items(items=new_items)
         log.debug(f"Processed new items. [{new_items=!r}]")
 
     removed_items = []
@@ -207,7 +197,7 @@ def _process_after_flush(
             removed_items.append(removed_item)
     if removed_items:
         log.debug(f"Processing removed items. [{removed_items=!r}]")
-        config.pm.hook.process_removed_items(config=config, items=removed_items)
+        config.CONFIG.pm.hook.process_removed_items(items=removed_items)
         log.debug(f"Processed removed items. [{removed_items=!r}]")
 
 

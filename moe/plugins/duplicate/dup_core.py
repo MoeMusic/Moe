@@ -6,7 +6,7 @@ from typing import Optional, cast
 import sqlalchemy
 
 import moe
-from moe.config import Config
+from moe import config
 from moe.library.album import Album
 from moe.library.lib_item import LibItem
 from moe.query import query
@@ -25,7 +25,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def resolve_dup_items(config: Config, item_a: LibItem, item_b: LibItem):
+    def resolve_dup_items(item_a: LibItem, item_b: LibItem):
         """Resolve two duplicate items.
 
         A resolution should come in one of two forms:
@@ -50,7 +50,6 @@ class Hooks:
             addition to what's offered by default.
 
         Args:
-            config: Moe config.
             item_a: First item.
             item_b: Second item.
 
@@ -62,21 +61,21 @@ class Hooks:
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_changed_items(config: Config, items: list[LibItem]):
+def edit_changed_items(items: list[LibItem]):
     """Check for and resolve duplicates when items are edited."""
     yield  # run all `edit_changed_items` hook implementations
-    resolve_duplicates(config, items)
+    resolve_duplicates(items)
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_new_items(config: Config, items: list[LibItem]):
+def edit_new_items(items: list[LibItem]):
     """Check for and resolve duplicates when items are added to the library."""
     yield  # run all `edit_new_items` hook implementations
-    resolve_duplicates(config, items)
+    resolve_duplicates(items)
 
 
-def resolve_duplicates(config, items: list[LibItem]):
-    """Resolve any duplicates present in ``items``."""
+def resolve_duplicates(items: list[LibItem]):
+    """Search for and resolve any duplicates of items in ``items``."""
     log.debug(f"Checking for duplicate items. [{items=!r}]")
 
     albums = [item for item in items if isinstance(item, Album)]
@@ -93,9 +92,7 @@ def resolve_duplicates(config, items: list[LibItem]):
             log.debug(
                 f"Resolving duplicate items. [item_a={item!r}, item_b={dup_item!r}]"
             )
-            config.pm.hook.resolve_dup_items(
-                config=config, item_a=item, item_b=dup_item
-            )
+            config.CONFIG.pm.hook.resolve_dup_items(item_a=item, item_b=dup_item)
             if (
                 not item.is_unique(dup_item)
                 and not _is_removed(item)
@@ -148,7 +145,11 @@ def get_duplicates(
         others = query("*", type(item).__name__.lower())
 
     for other in others:
-        if item is not other and not item.is_unique(other):
+        if (
+            item is not other
+            and type(item) == type(other)
+            and not item.is_unique(other)
+        ):
             dup_items.append(other)
 
     return dup_items
