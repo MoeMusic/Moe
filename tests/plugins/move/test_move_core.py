@@ -12,7 +12,7 @@ from tests.conftest import album_factory, extra_factory, track_factory
 @pytest.fixture()
 def _tmp_move_config(tmp_config):
     """Creates a configuration with a temporary library path."""
-    tmp_config(settings="default_plugins = ['move']")
+    tmp_config(settings="default_plugins = ['move', 'write']")
 
 
 @pytest.fixture
@@ -222,6 +222,16 @@ class TestCopyExtra:
         assert og_path != extra.path
         assert extra.path == extra_dest
 
+    def test_same_des(self, tmp_path):
+        """Don't do anything if the destination is the same as the current path."""
+        extra = extra_factory(path=tmp_path / "in my place.mp3", exists=True)
+        og_path = extra.path
+
+        with patch("moe.plugins.move.move_core.fmt_item_path", return_value=extra.path):
+            moe_move.copy_item(extra)
+
+        assert extra.path == og_path
+
 
 @pytest.mark.usefixtures("_tmp_move_config")
 class TestCopyTrack:
@@ -243,6 +253,16 @@ class TestCopyTrack:
         assert og_path.exists()
         assert og_path != track.path
         assert track.path == track_dest
+
+    def test_same_des(self, tmp_path):
+        """Don't do anything if the destination is the same as the current path."""
+        track = track_factory(path=tmp_path / "in my place.txt", exists=True)
+        og_path = track.path
+
+        with patch("moe.plugins.move.move_core.fmt_item_path", return_value=track.path):
+            moe_move.copy_item(track)
+
+        assert track.path == og_path
 
 
 ########################################################################################
@@ -356,7 +376,7 @@ class TestMoveExtra:
 
     def test_same_des(self, tmp_path):
         """Don't do anything if the destination is the same as the current path."""
-        extra = extra_factory(path=tmp_path / "in my place.mp3", exists=True)
+        extra = extra_factory(path=tmp_path / "in my place.txt", exists=True)
         og_path = extra.path
 
         with patch("moe.plugins.move.move_core.fmt_item_path", return_value=extra.path):

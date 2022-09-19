@@ -20,7 +20,7 @@ def mock_add() -> Iterator[FunctionType]:
 @pytest.fixture
 def _tmp_add_config(tmp_config):
     """A temporary config for the add plugin with the cli."""
-    tmp_config('default_plugins = ["cli", "add"]')
+    tmp_config('default_plugins = ["cli", "add", "write"]')
 
 
 @pytest.mark.usefixtures("_tmp_add_config")

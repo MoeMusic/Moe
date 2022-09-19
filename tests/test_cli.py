@@ -13,7 +13,7 @@ from tests.conftest import track_factory
 
 def test_no_args(tmp_config):
     """Test exit if 0 subcommands given."""
-    tmp_config()
+    tmp_config(settings="default_plugins = ['cli']")
     with pytest.raises(SystemExit) as error:
         moe.cli._parse_args([])
 
@@ -22,7 +22,7 @@ def test_no_args(tmp_config):
 
 def test_commit_on_systemexit(tmp_config):
     """If SystemExit intentionally raised, still commit the session."""
-    tmp_config(settings='default_plugins = ["add", "cli"]', tmp_db=True)
+    tmp_config(settings='default_plugins = ["add", "cli", "write"]', tmp_db=True)
     track = track_factory(exists=True)
     cli_args = ["add", "bad file", str(track.path)]
 
@@ -39,7 +39,7 @@ def test_commit_on_systemexit(tmp_config):
 def test_default_config(tmp_config):
     """Ensure we can initialize a configuration with its default values."""
     cli_args = ["list", "*"]
-    tmp_config(init_db=True)
+    tmp_config(settings="default_plugins = ['cli', 'write', 'list']", init_db=True)
     track = track_factory(exists=True)
 
     session = config.MoeSession()

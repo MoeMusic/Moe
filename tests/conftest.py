@@ -91,7 +91,7 @@ def tmp_config(
     ) -> Config:
         config_dir = tmp_path_factory.mktemp("config")
         if "library_path" not in settings:
-            settings += f"\nlibrary_path='{LIBRARY_PATH.resolve()}'"
+            settings += f"\nlibrary_path = '{LIBRARY_PATH.resolve()}'"
 
         settings_path = config_dir / "config.toml"
         settings_path.write_text(textwrap.dedent(settings))
@@ -156,7 +156,8 @@ def track_factory(
 
     Args:
         album: Optional album to assign the track to.
-        exists: Whether or not the track should actually exist on the filesystem.
+        exists: Whether the track should exist on the filesystem. Note, this option
+            requires the write plugin.
         dup_track: If given, the new track created will be a duplicate of `dup_track`.
         custom_fields: Dict of custom_fields to values to assign to the track.
         **kwargs: Any other fields to assign to the Track.
@@ -270,7 +271,8 @@ def album_factory(
         num_tracks: Number of tracks to add to the album.
         num_extras: Number of extras to add to the album.
         num_discs: Number of discs on the album. Will have disc sub dirs.
-        exists: Whether the album should exist on the filesystem.
+        exists: Whether the album should exist on the filesystem. Note, this option
+            requires the write plugin.
         dup_album: If given, the new album created will be a duplicate of `dup_album`.
         custom_fields: Dict of custom_fields to values to assign to the album.
         **kwargs: Any other fields to assign to the album.
