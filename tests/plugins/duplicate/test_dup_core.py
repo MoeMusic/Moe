@@ -1,4 +1,5 @@
 """Test the duplicate plugin core."""
+import shutil
 from pathlib import Path
 
 import pytest
@@ -25,9 +26,9 @@ class DuplicatePlugin:
             if item_b.title == "remove me":
                 remove_item(item_b)
             if item_a.title == "change me":
-                item_a.path = Path("/")
-            if item_b.title == "change me":
-                item_b.path = Path("/")
+                dest = item_a.path.parent / "new.mp3"
+                shutil.copyfile(item_a.path, dest)
+                item_a.path = dest
         elif isinstance(item_a, Extra):
             item_a.path = Path("/")
 
@@ -36,7 +37,7 @@ class DuplicatePlugin:
 def _tmp_dup_config(tmp_config):
     """Tempory config enabling the cli and duplicate plugins."""
     tmp_config(
-        "default_plugins = ['duplicate']",
+        "default_plugins = ['duplicate', 'write']",
         extra_plugins=[ExtraPlugin(DuplicatePlugin, "dup_test")],
         tmp_db=True,
     )

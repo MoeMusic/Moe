@@ -137,8 +137,9 @@ class TestQueries:
 
         assert query("title::.*", "track")
 
-    def test_path_query(self, tmp_session):
+    def test_path_query(self, tmp_config, tmp_session):
         """We can query for paths."""
+        tmp_config(settings="default_plugins = ['write']")
         album = album_factory(exists=True)
         tmp_session.add(album)
         tmp_session.flush()

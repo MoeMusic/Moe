@@ -49,3 +49,8 @@ Import
 ------
 .. autoclass:: moe.plugins.moe_import.import_core.Hooks
    :members:
+
+Write
+-----
+.. autoclass:: moe.plugins.write.Hooks
+   :members:
