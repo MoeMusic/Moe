@@ -4,6 +4,29 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.11.0 (2022-09-19)
+====================
+
+Some big changes here, notably requiring python3.9 to take get the json1 extension in sqlite. This is what allows us to now support custom fields in plugins. This version introduces an non-backwards-compatible database change, and thus will require a deletion of any current library.
+
+New Features
+------------
+* Read and write musicbrainz ids (`ef82c67 <https://github.com/MoeMusic/Moe/commit/ef82c672d21d70c59f0454b0b4d6fa22ef4ad0a9>`_)
+* New hook to allow plugins to write custom tags to a track (`8ee8fcb <https://github.com/MoeMusic/Moe/commit/8ee8fcbebcab76a2fbf0ee096a0d346e51fe2874>`_)
+* New hook to allow plugins to read/set custom track tags (`b5069ba <https://github.com/MoeMusic/Moe/commit/b5069ba2fc2164775a07a8e8a6c562a338da2bc1>`_)
+* Custom fields can be set by plugins for all library items (`9606c1d <https://github.com/MoeMusic/Moe/commit/9606c1db0c2ce56fb84491a4d1db8af3bb6f6e20>`_)
+* MB: New api call to update an album from musicbrainz (`2a972de <https://github.com/MoeMusic/Moe/commit/2a972def93e20714dde54bcadd0f5addad3c0a1a>`_)
+* MB: Added new api call to set a mb collection to a set of releases (`aad7959 <https://github.com/MoeMusic/Moe/commit/aad7959a9edbec4e2d83c4a88d2c5bb83706daaa>`_)
+* MB: Ability to auto update a musicbrainz collection (`6e1cec1 <https://github.com/MoeMusic/Moe/commit/6e1cec166ae76def39bd0970200168f55d67cf3e>`_)
+
+Build Changes
+-------------
+* Move mccabe to dev dependencies (`ef373bc <https://github.com/MoeMusic/Moe/commit/ef373bcadbb0b32bb38a2a27612964c821a3e30f>`_)
+* Require python3.9 (`55a8651 <https://github.com/MoeMusic/Moe/commit/55a86519584be1f276a12a61cdfca589b3ea5041>`_)
+* Require python3.8 (`68f0640 <https://github.com/MoeMusic/Moe/commit/68f064099097465320f85f8f4107f99542cf19c4>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.10.0...v0.11.0>`__
+
 v0.10.0 (2022-09-05)
 ====================
 
