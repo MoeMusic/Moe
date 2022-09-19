@@ -8,9 +8,10 @@ import pytest
 import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe import config
 from moe.config import ConfigValidationError
+from moe.library.track import Track
 from moe.plugins import musicbrainz as moe_mb
 from moe.plugins.musicbrainz.mb_core import MBAuthError
-from tests.conftest import album_factory
+from tests.conftest import album_factory, track_factory
 
 
 @pytest.fixture
@@ -375,6 +376,21 @@ class TestGetAlbumById:
         assert mb_album.disc_total == 2
         assert any(track.disc == 1 for track in mb_album.tracks)
         assert any(track.disc == 2 for track in mb_album.tracks)
+
+
+class TestCustomFields:
+    """Test reading, writing, and setting musicbrainz custom fields."""
+
+    def test_read_write(self, tmp_config):
+        """We can read and write the custom fields."""
+        tmp_config(settings="default_plugins = ['musicbrainz', 'write']")
+        album = album_factory(mb_album_id="album id", exists=True)
+        track = track_factory(album=album, mb_track_id="track id", exists=True)
+
+        new_track = Track.from_file(track.path)
+
+        assert new_track.album_obj.mb_album_id == "album id"
+        assert new_track.mb_track_id == "track id"
 
 
 class TestAddReleasesToCollection:
