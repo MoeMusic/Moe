@@ -16,9 +16,11 @@ See Also:
 
 import datetime
 import logging
+from pathlib import Path
 from typing import Any, Callable, Optional
 
 import dynaconf
+import mediafile
 import musicbrainzngs
 import pkg_resources
 
@@ -160,6 +162,28 @@ def process_new_items(items: list[LibItem]):
             add_releases_to_collection(releases)
         except MBAuthError as err:
             log.error(err)
+
+
+@moe.hookimpl
+def read_custom_tags(
+    track_path: Path, album_fields: dict[str, Any], track_fields: dict[str, Any]
+) -> None:
+    """Read and set musicbrainz release IDs from a track file."""
+    audio_file = mediafile.MediaFile(track_path)
+
+    album_fields["mb_album_id"] = audio_file.mb_albumid
+    track_fields["mb_track_id"] = audio_file.mb_releasetrackid
+
+
+@moe.hookimpl
+def write_custom_tags(track: Track):
+    """Write musicbrainz ID fields as tags."""
+    audio_file = mediafile.MediaFile(track.path)
+
+    audio_file.mb_albumid = track.album_obj.mb_album_id
+    audio_file.mb_releasetrackid = track.mb_track_id
+
+    audio_file.save()
 
 
 def add_releases_to_collection(
