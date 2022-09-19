@@ -49,6 +49,7 @@ class Commit:
     scope: str
     breaking: bool
     summary: str
+    body: str
 
     COMMIT_TITLE_RE = re.compile(
         r"""
@@ -59,6 +60,14 @@ class Commit:
         """,
         re.VERBOSE,
     )
+    COMMIT_RE = re.compile(
+        r"""
+        hash=(?P<hash>\w{40});\s
+        title=(?P<title>.+);\s
+        body=(?P<body>.*);
+        """,
+        re.VERBOSE | re.S,
+    )  # based on "git_log_format defined below"
 
     def __init__(self, commit_log: str) -> None:
         """Parse a `git log` ouput for a single commit."""
@@ -66,9 +75,12 @@ class Commit:
         self.scope = ""
         self.breaking = False
 
-        lines = commit_log.split("\n")
-        self.commit_hash = lines[0]
-        title = lines[4].lstrip()
+        match = re.match(self.COMMIT_RE, commit_log)
+        assert match
+        self.commit_hash = match["hash"]
+        title = match["title"]
+        self.body = match["body"].strip()
+
         match = re.match(self.COMMIT_TITLE_RE, title)
         if match:
             self.commit_type = match.group("type")
@@ -99,7 +111,7 @@ def main() -> None:
 
     args = parser.parse_args()
     prepare_release_pr(args.token)
-    generate_changelog("v0.9.0", "v0.9.1")
+    generate_changelog("v0.10.0", "v0.11.0")
 
 
 def prepare_release_pr(token: str) -> None:
@@ -146,16 +158,29 @@ def generate_changelog(old_version: str, new_version: str) -> None:
     changelog_title = f"\n{release_title}\n"
     changelog_title += "=" * len(release_title) + "\n"
 
+    field_delim = ";"
+    commit_delim = ";|;"
+    git_log_format = (
+        f"hash=%H{field_delim} title=%s{field_delim} "
+        f"body=%b{field_delim}{commit_delim}"
+    )
     git_log = str(
         subprocess.run(
-            ["git", "log", f"{old_version}..HEAD"],
+            [
+                "git",
+                "log",
+                f"--pretty=format:{git_log_format}",
+                f"{old_version}..HEAD",
+            ],
             check=True,
             text=True,
             capture_output=True,
         ).stdout
     )
     commits = [
-        Commit(commit_log) for commit_log in git_log.split("commit ") if commit_log
+        Commit(commit_log.strip())
+        for commit_log in git_log.split(commit_delim)
+        if commit_log
     ]
 
     changelog_body = ""
@@ -177,7 +202,7 @@ def generate_changelog(old_version: str, new_version: str) -> None:
     changelog = changelog_title + "\n" + changelog_body
     changelog += (
         "`Full diff "
-        f"<https://github.com/{SLUG}/compare/{old_version}...{new_version}>`_\n"
+        f"<https://github.com/{SLUG}/compare/{old_version}...{new_version}>`__\n"
     )
 
     # write changelog
