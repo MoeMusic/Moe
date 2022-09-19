@@ -119,10 +119,6 @@ def _is_removed(item):
     if insp.deleted or insp.transient:
         return True
 
-    print(f"{item!r}")
-    print(f"pending? {insp.pending}")
-    print(f"persistent? {insp.persistent}")
-    print(f"detached? {insp.detached}")
     return False
 
 
