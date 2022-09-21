@@ -5,6 +5,7 @@ import logging
 import moe
 import moe.cli
 from moe.library import LibItem
+from moe.cli import console
 from moe.plugins.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt, fmt_item_changes
 
@@ -17,7 +18,7 @@ __all__: list[str] = []
 @moe.hookimpl(trylast=True)
 def resolve_dup_items(item_a: LibItem, item_b: LibItem):
     """Resolve any library duplicate conflicts using a user prompt."""
-    print(fmt_item_changes(item_a, item_b))
+    console.print(fmt_item_changes(item_a, item_b))
 
     # Each PromptChoice `func` should have the following signature:
     # func(item_a, item_b) # noqa: E800
