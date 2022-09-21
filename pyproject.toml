@@ -79,6 +79,7 @@ profile = 'black'
 
 [tool.pytest.ini_options]
 log_cli_level = 10
+addopts = "--color=yes"
 markers = [
     "network: tests that make network calls",
     "darwin: tests that should only run on apple",

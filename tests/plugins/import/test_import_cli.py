@@ -1,5 +1,6 @@
 """Tests the import cli plugin."""
 
+import datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 import moe
 import moe.cli
 from moe import config
+from moe.cli import console
 from moe.config import ExtraPlugin
 from moe.plugins import moe_import
 from moe.util.cli import PromptChoice
@@ -285,3 +287,30 @@ class TestPluginRegistration:
         tmp_config(settings='default_plugins = ["import", "cli"]')
 
         assert config.CONFIG.pm.has_plugin("import_cli")
+
+
+class TestImportCLIOutput:
+    """These tests exist as a convenience to view different changes to the import UI.
+
+    To view the output from any of the tests, simply append an `assert 0` to the end of
+    the test.
+
+    Note:
+        You will not see rich color with this approach unless you set
+        `force_terminal=True` on the Console constructor in `cli.py`.
+    """
+
+    def test_full_diff_album(self):
+        """Print prompt for fully different albums."""
+        old_album = album_factory(num_tracks=6, num_discs=2, artist="outkist")
+        new_album = album_factory(
+            title=old_album.title,
+            date=datetime.date(1999, 12, 31),
+            num_tracks=6,
+            num_discs=2,
+        )
+        old_album.tracks[0].title = "really really long old title"
+
+        assert old_album is not new_album
+
+        console.print(moe_import.import_cli._fmt_import_updates(old_album, new_album))

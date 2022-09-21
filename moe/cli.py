@@ -12,14 +12,17 @@ import sys
 
 import pkg_resources
 import pluggy
+from rich.console import Console
 
 import moe
 from moe import config
 from moe.config import Config, ConfigValidationError, MoeSession
 
-__all__ = ["query_parser"]
+__all__ = ["console", "query_parser"]
 
 log = logging.getLogger("moe.cli")
+
+console = Console()
 
 
 class Hooks:

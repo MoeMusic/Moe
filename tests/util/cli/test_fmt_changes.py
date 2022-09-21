@@ -1,7 +1,6 @@
 """Test the ``moe.util.cli.fmt_changes`` module."""
 
 import datetime
-import random
 
 from moe.util.cli import fmt_item_changes
 from tests.conftest import album_factory
@@ -30,22 +29,3 @@ class TestFmtItemChanges:
         assert old_album is not new_album
 
         print(fmt_item_changes(old_album, new_album))
-
-    def test_unmatched_tracks(self):
-        """Print prompt for albums with non-matching tracks."""
-        old_album = album_factory()
-        new_album = album_factory()
-
-        for track in old_album.tracks:
-            track.track_num = random.randint(1, 1000)
-
-        assert old_album is not new_album
-
-        print(fmt_item_changes(old_album, new_album))
-
-    def test_multi_disc_album(self):
-        """Prompt supports multi_disc albums."""
-        album = album_factory(num_discs=2)
-        new_album = album_factory(num_discs=2)
-
-        print(fmt_item_changes(album, new_album))
