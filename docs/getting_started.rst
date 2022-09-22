@@ -63,6 +63,9 @@ Most configuration options reside in their relevant plugin, however there are th
 ``default_plugins = ["add", "edit", "info", "ls", "move", "musicbrainz", "rm", "write"]``
     Overrides the list of default plugins.
 
+``disable_plugins = []``
+    List of any plugins to explicitly disable.
+
 .. _library_path config option:
 
 ``library_path = "~/Music"``

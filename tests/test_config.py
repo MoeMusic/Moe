@@ -58,21 +58,24 @@ class TestPlugins:
         Note:
             The config, track, album, and extra "plugins" will always be registered.
         """
-        config = tmp_config(settings='default_plugins = ["cli", "list"]')
+        tmp_config(
+            settings="""default_plugins = ["cli", "list"]
+        disable_plugins = ["list"]"""
+        )
 
-        plugins = list(CORE_PLUGINS) + ["cli", "list"]
-        for plugin_name, plugin_module in config.pm.list_name_plugin():
+        plugins = list(CORE_PLUGINS) + ["cli"]
+        for plugin_name, plugin_module in config.CONFIG.pm.list_name_plugin():
             assert plugin_name in plugins
             assert plugin_module
 
         for plugin in plugins:
-            assert config.pm.has_plugin(plugin)
+            assert config.CONFIG.pm.has_plugin(plugin)
 
     def test_extra_plugins(self, tmp_config):
         """Any given additional plugins are also registered."""
-        config = tmp_config(extra_plugins=[ExtraPlugin(TestPlugins, "config_plugin")])
+        tmp_config(extra_plugins=[ExtraPlugin(TestPlugins, "config_plugin")])
 
-        assert config.pm.has_plugin("config_plugin")
+        assert config.CONFIG.pm.has_plugin("config_plugin")
 
 
 class ConfigPlugin:
