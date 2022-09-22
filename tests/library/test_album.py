@@ -178,8 +178,11 @@ class TestMerge:
         album1 = album_factory(exists=True, title="album1")
         album2 = album_factory(exists=True, title="album2")
 
-        Extra(album2, album2.path / album1.extras[0].path.name)  # conflict
+        conflict_extra = Extra(
+            album2, album2.path / album1.extras[0].path.name
+        )  # conflict
         overwrite_extra = album1.extras[0]
+        assert album1.get_extra(conflict_extra.rel_path) == overwrite_extra
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()
 

@@ -1,13 +1,13 @@
 """Detect and handle duplicates in the library."""
 
 import logging
-from typing import Optional, cast
+from typing import Optional
 
 import sqlalchemy
 
 import moe
 from moe import config
-from moe.library import Album, LibItem
+from moe.library import Album, Extra, LibItem, Track
 from moe.query import query
 
 __all__ = ["get_duplicates"]
@@ -63,29 +63,40 @@ class Hooks:
 def edit_changed_items(items: list[LibItem]):
     """Check for and resolve duplicates when items are edited."""
     yield  # run all `edit_changed_items` hook implementations
-    resolve_duplicates(items)
+    albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
+    tracks = [item for item in items if isinstance(item, Track)]
+    extras = [item for item in items if isinstance(item, Extra)]
+    resolve_duplicates(albums)  # type: ignore
+    resolve_duplicates(tracks)  # type: ignore
+    resolve_duplicates(extras)  # type: ignore
 
 
 @moe.hookimpl(hookwrapper=True)
 def edit_new_items(items: list[LibItem]):
     """Check for and resolve duplicates when items are added to the library."""
     yield  # run all `edit_new_items` hook implementations
-    resolve_duplicates(items)
+    albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
+    tracks = [item for item in items if isinstance(item, Track)]
+    extras = [item for item in items if isinstance(item, Extra)]
+    resolve_duplicates(albums)  # type: ignore
+    resolve_duplicates(tracks)  # type: ignore
+    resolve_duplicates(extras)  # type: ignore
 
 
 def resolve_duplicates(items: list[LibItem]):
     """Search for and resolve any duplicates of items in ``items``."""
     log.debug(f"Checking for duplicate items. [{items=!r}]")
 
-    albums = [item for item in items if isinstance(item, Album)]
-    items = cast(list[LibItem], albums + items)  # resolve albums first
     resolved_items = []
     for item in items:
+        if _is_removed(item):
+            continue
+
         dup_items = get_duplicates(item, items)
         dup_items += get_duplicates(item)
 
         for dup_item in dup_items:
-            if dup_item in resolved_items:
+            if dup_item in resolved_items or _is_removed(item):
                 continue
 
             log.debug(

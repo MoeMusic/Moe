@@ -2,7 +2,7 @@
 
 import datetime
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 import pluggy
@@ -208,9 +208,11 @@ class Album(LibItem, SABase):
             "tracks",
         }.union(self._custom_fields)
 
-    def get_extra(self, path: Path) -> Optional["Extra"]:
+    def get_extra(self, rel_path: PurePath) -> Optional["Extra"]:
         """Gets an Extra by its path."""
-        return next((extra for extra in self.extras if extra.path == path), None)
+        return next(
+            (extra for extra in self.extras if extra.rel_path == rel_path), None
+        )
 
     def get_track(self, track_num: int, disc: int = 1) -> Optional["Track"]:
         """Gets a Track by its track number."""
@@ -256,9 +258,7 @@ class Album(LibItem, SABase):
 
         new_extras: list["Extra"] = []
         for other_extra in other.extras:
-            conflict_extra = self.get_extra(
-                self.path / (other_extra.path.relative_to(other.path))
-            )
+            conflict_extra = self.get_extra(other_extra.rel_path)
             if conflict_extra:
                 conflict_extra.merge(other_extra, overwrite)
             else:
