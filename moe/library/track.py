@@ -344,7 +344,7 @@ class Track(LibItem, SABase):
         if (
             self.track_num == other.track_num
             and self.disc == other.disc
-            and self.album == other.album
+            and self.album_obj == other.album_obj
         ):
             return False
 

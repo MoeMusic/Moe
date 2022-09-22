@@ -1,7 +1,7 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, cast
 
 import pluggy
@@ -109,6 +109,11 @@ class Extra(LibItem, SABase):
         """Returns any editable, extra fields."""
         return {"album_obj", "path"}.union(self._custom_fields)
 
+    @property
+    def rel_path(self) -> PurePath:
+        """Returns the extra's path relative to its album's path."""
+        return self.path.relative_to(self.album_obj.path)
+
     def is_unique(self, other: "Extra") -> bool:
         """Returns whether an extra is unique in the library from ``other``."""
         if self.path == other.path:
@@ -184,7 +189,7 @@ class Extra(LibItem, SABase):
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album_obj}: {self.path.name}"
+        return f"{self.album_obj}: {self.rel_path}"
 
     def _get_default_custom_fields(self) -> dict[str, Any]:
         """Returns the default custom extra fields."""
