@@ -14,7 +14,6 @@ import importlib.util
 import logging
 import os
 import re
-from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple, Optional, Union, cast
@@ -36,7 +35,7 @@ __all__ = ["CONFIG", "Config", "ConfigValidationError", "ExtraPlugin"]
 
 log = logging.getLogger("moe.config")
 
-DEFAULT_PLUGINS = (
+DEFAULT_PLUGINS = {
     "add",
     "cli",
     "duplicate",
@@ -48,7 +47,7 @@ DEFAULT_PLUGINS = (
     "musicbrainz",
     "remove",
     "write",
-)
+}
 CORE_PLUGINS = {
     "config": "moe.config",
     "album": "moe.library.album",
@@ -181,7 +180,8 @@ class Hooks:
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     validators = [
-        dynaconf.Validator("DEFAULT_PLUGINS", default=list(DEFAULT_PLUGINS)),
+        dynaconf.Validator("DEFAULT_PLUGINS", default=DEFAULT_PLUGINS),
+        dynaconf.Validator("DISABLE_PLUGINS", default=set()),
         dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
     ]
     settings.validators.register(*validators)
@@ -359,12 +359,14 @@ class Config:
         self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
-        config_plugins = self.settings.default_plugins
+        config_plugins = set(self.settings.default_plugins) - set(
+            self.settings.disable_plugins
+        )
 
         # the 'import' plugin maps to the 'moe_import' package
-        with suppress(ValueError):
-            import_index = config_plugins.index("import")
-            config_plugins[import_index] = "moe_import"
+        if "import" in config_plugins:
+            config_plugins.remove("import")
+            config_plugins.add("moe_import")
 
         if "cli" in config_plugins:
             self.pm.register(importlib.import_module("moe.cli"), name="cli")
