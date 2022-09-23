@@ -37,7 +37,7 @@ class Hooks:
             Dict of the field names to their default values or ``None`` for no default.
 
         Example:
-            Inside your hook implementation::
+            .. code:: python
 
                 return {"my_new_field": "default value", "other_field": None}
 

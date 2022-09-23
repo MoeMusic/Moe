@@ -39,7 +39,7 @@ class Hooks:
                 append it to this list.
 
         Example:
-            Inside your hook implementation::
+            .. code:: python
 
                 prompt_choices.append(
                     PromptChoice(
