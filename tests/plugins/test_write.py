@@ -8,7 +8,7 @@ import pytest
 
 import moe
 from moe import config
-from moe.library.track import Track
+from moe.library import Track
 from moe.plugins import write as moe_write
 from tests.conftest import album_factory, extra_factory, track_factory
 

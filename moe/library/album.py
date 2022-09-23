@@ -14,14 +14,13 @@ from sqlalchemy.orm import relationship
 
 import moe
 from moe import config
-from moe.library import SABase
-from moe.library.lib_item import LibItem, LibraryError, PathType
+from moe.library.lib_item import LibItem, LibraryError, PathType, SABase
 
 if TYPE_CHECKING:
     from moe.library.extra import Extra
     from moe.library.track import Track
 
-__all__ = ["Album"]
+__all__ = ["Album", "AlbumError"]
 
 log = logging.getLogger("moe.album")
 
@@ -86,12 +85,10 @@ class Album(LibItem, SABase):
 
     Attributes:
         artist (str): AKA albumartist.
-        custom_fields set[str]: All custom fields. To add to this set, you should
-            implement the ``create_custom_album_fields`` hook.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
-        path (Path): Filesystem path of the album directory.
+        path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
         year (int): Album release year. Note, this field is read-only. Set ``date``

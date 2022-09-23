@@ -7,9 +7,7 @@ import sqlalchemy.exc
 from sqlalchemy.orm.session import Session
 
 from moe.config import MoeSession
-from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Extra, LibItem, Track
 
 __all__ = ["remove_item"]
 

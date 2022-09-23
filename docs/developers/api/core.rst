@@ -24,44 +24,9 @@ Library
 
 ``library`` subpackage.
 
-General
--------
-
-``lib_item`` submodule.
-
-.. automodule:: moe.library.lib_item
+.. automodule:: moe.library
    :members:
-   :exclude-members: cache_ok
-
-
-Album
------
-
-``album`` submodule.
-
-.. automodule:: moe.library.album
-   :members:
-   :exclude-members: year, path
-   :show-inheritance:
-
-Track
------
-
-``track`` submodule.
-
-.. automodule:: moe.library.track
-   :members:
-   :exclude-members: genre, path
-   :show-inheritance:
-
-Extra
------
-
-``extra`` submodule.
-
-.. automodule:: moe.library.extra
-   :members:
-   :exclude-members: path
+   :exclude-members: cache_ok, path, year, genre
    :show-inheritance:
 
 

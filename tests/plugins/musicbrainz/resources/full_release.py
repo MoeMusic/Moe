@@ -4,8 +4,7 @@
 import datetime
 from unittest.mock import MagicMock
 
-from moe.library.album import Album
-from moe.library.track import Track
+from moe.library import Album, Track
 
 # as returned by `musicbrainzngs.search_releases()`
 search = {

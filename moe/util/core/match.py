@@ -4,8 +4,7 @@ import difflib
 import logging
 from typing import Optional
 
-from moe.library.album import Album
-from moe.library.track import Track
+from moe.library import Album, Track
 
 log = logging.getLogger("moe")
 

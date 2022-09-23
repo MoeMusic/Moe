@@ -8,6 +8,7 @@ import sqlalchemy
 import sqlalchemy as sa
 import sqlalchemy.event
 import sqlalchemy.orm
+from sqlalchemy.orm import declarative_base
 
 import moe
 from moe import config
@@ -15,6 +16,8 @@ from moe import config
 __all__ = ["LibItem", "LibraryError"]
 
 log = logging.getLogger("moe.lib_item")
+
+SABase = declarative_base()
 
 
 class LibraryError(Exception):
@@ -205,7 +208,7 @@ class LibItem:
     """Abstract base class for library items i.e. Albums, Extras, and Tracks."""
 
     @property
-    def path(self):
+    def path(self) -> Path:
         """A library item's filesystem path."""
         raise NotImplementedError
 

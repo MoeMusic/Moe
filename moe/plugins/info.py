@@ -14,10 +14,7 @@ from typing import Any
 import moe
 import moe.cli
 from moe import config
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Album, Extra, LibItem, Track
 from moe.query import QueryError, query
 
 __all__: list[str] = []

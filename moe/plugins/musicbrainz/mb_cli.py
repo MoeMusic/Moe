@@ -12,7 +12,7 @@ import questionary
 
 import moe
 import moe.cli
-from moe.library.album import Album
+from moe.library import Album
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
 from moe.util.cli import PromptChoice

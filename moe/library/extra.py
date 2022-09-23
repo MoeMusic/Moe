@@ -12,9 +12,8 @@ from sqlalchemy.schema import ForeignKey
 
 import moe
 from moe import config
-from moe.library import SABase
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, PathType
+from moe.library.lib_item import LibItem, PathType, SABase
 
 __all__ = ["Extra"]
 
@@ -71,10 +70,7 @@ class Extra(LibItem, SABase):
 
     Attributes:
         album_obj (Album): Album the extra file belongs to.
-        custom_fields set[str]: All custom fields. To add to this set, you should
-            implement the ``create_custom_extra_fields`` hook.
-        fields set[str]: All accessible extra fields.
-        path (Path): Filesystem path of the extra file.
+        path (pathlib.Path): Filesystem path of the extra file.
     """
 
     __tablename__ = "extra"

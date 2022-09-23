@@ -7,8 +7,7 @@ import pluggy
 
 import moe
 from moe import config
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import LibItem, Track
 
 __all__ = ["write_tags"]
 

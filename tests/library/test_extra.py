@@ -4,7 +4,7 @@ from pathlib import Path
 
 import moe
 from moe.config import ExtraPlugin
-from moe.library.extra import Extra
+from moe.library import Extra
 from tests.conftest import extra_factory
 
 

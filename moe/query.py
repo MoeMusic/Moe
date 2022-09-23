@@ -10,10 +10,7 @@ import sqlalchemy.orm
 import sqlalchemy.sql.elements
 
 from moe.config import MoeSession
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Album, Extra, LibItem, Track
 
 __all__: list[str] = ["QueryError", "query"]
 

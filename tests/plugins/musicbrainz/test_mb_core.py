@@ -8,7 +8,7 @@ import pytest
 import tests.plugins.musicbrainz.resources as mb_rsrc
 from moe import config
 from moe.config import ConfigValidationError
-from moe.library.track import Track
+from moe.library import Track
 from moe.plugins import musicbrainz as moe_mb
 from moe.plugins.musicbrainz.mb_core import MBAuthError
 from tests.conftest import album_factory, track_factory

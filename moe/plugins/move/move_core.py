@@ -12,10 +12,7 @@ from unidecode import unidecode
 
 import moe
 from moe import config
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Album, Extra, LibItem, Track
 
 __all__ = ["copy_item", "fmt_item_path", "move_item"]
 

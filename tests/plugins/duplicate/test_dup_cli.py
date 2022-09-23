@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from moe import config
-from moe.library.track import Track
+from moe.library import Track
 from moe.plugins.duplicate import dup_cli
 from tests.conftest import track_factory
 

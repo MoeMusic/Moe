@@ -6,8 +6,7 @@ from pathlib import Path
 
 import moe
 import moe.cli
-from moe.library.album import Album, AlbumError
-from moe.library.track import Track, TrackError
+from moe.library import Album, AlbumError, Track, TrackError
 from moe.plugins import add as moe_add
 
 log = logging.getLogger("moe.cli.add")
