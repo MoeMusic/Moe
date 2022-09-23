@@ -7,9 +7,7 @@ import sqlalchemy.orm
 
 import moe
 from moe.config import ExtraPlugin, MoeSession
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.track import Track
+from moe.library import Album, Extra, Track
 from moe.plugins import remove as moe_rm
 from tests.conftest import album_factory, extra_factory, track_factory
 

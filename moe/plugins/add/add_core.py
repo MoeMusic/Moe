@@ -9,7 +9,7 @@ import pluggy
 
 import moe
 from moe import config
-from moe.library.lib_item import LibItem
+from moe.library import LibItem
 
 __all__ = ["AddAbortError", "AddError", "add_item"]
 

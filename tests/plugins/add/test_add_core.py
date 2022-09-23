@@ -5,10 +5,7 @@ import pytest
 import moe
 from moe import config
 from moe.config import ExtraPlugin
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Album, Extra, LibItem, Track
 from moe.plugins import add
 from tests.conftest import album_factory, extra_factory, track_factory
 

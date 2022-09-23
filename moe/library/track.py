@@ -15,9 +15,8 @@ from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
 
 import moe
 from moe import config
-from moe.library import SABase
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, LibraryError, PathType
+from moe.library.lib_item import LibItem, LibraryError, PathType, SABase
 
 __all__ = ["Track", "TrackError"]
 
@@ -168,12 +167,9 @@ class Track(LibItem, SABase):
         albumartist (str)
         album_obj (Album): Corresponding Album object.
         artist (str)
-        custom_fields set[str]: All custom fields. To add to this set, you should
-            implement the ``create_custom_track_fields`` hook.
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
-        fields set[str]: All accessible track fields.
         genre (str): String of all genres concatenated with ';'.
         genres (set[str]): Set of all genres.
         path (Path): Filesystem path of the track file.

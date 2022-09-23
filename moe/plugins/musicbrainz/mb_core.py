@@ -26,9 +26,7 @@ import pkg_resources
 
 import moe
 from moe import config
-from moe.library.album import Album
-from moe.library.lib_item import LibItem
-from moe.library.track import Track
+from moe.library import Album, LibItem, Track
 
 __all__ = [
     "MBAuthError",

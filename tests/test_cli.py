@@ -7,7 +7,7 @@ import pytest
 import moe
 import moe.cli
 from moe import config
-from moe.library.track import Track
+from moe.library import Track
 from tests.conftest import track_factory
 
 

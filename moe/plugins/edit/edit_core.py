@@ -3,7 +3,7 @@
 import datetime
 import logging
 
-from moe.library.lib_item import LibItem
+from moe.library import LibItem
 
 __all__ = ["EditError", "edit_item"]
 

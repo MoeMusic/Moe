@@ -7,7 +7,8 @@ import pytest
 import moe
 import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
-from moe.library.track import Track, TrackError, _Genre
+from moe.library import Track, TrackError
+from moe.library.track import _Genre
 from moe.plugins.write import write_tags
 from tests.conftest import album_factory, extra_factory, track_factory
 

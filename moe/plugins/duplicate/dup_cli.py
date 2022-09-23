@@ -4,7 +4,7 @@ import logging
 
 import moe
 import moe.cli
-from moe.library.lib_item import LibItem
+from moe.library import LibItem
 from moe.plugins.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt, fmt_item_changes
 

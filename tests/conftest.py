@@ -15,9 +15,7 @@ import sqlalchemy.orm
 
 from moe import config
 from moe.config import Config, ExtraPlugin, MoeSession, session_factory
-from moe.library.album import Album
-from moe.library.extra import Extra
-from moe.library.track import Track
+from moe.library import Album, Extra, Track
 from moe.plugins import write as moe_write
 
 __all__ = ["album_factory", "extra_factory", "track_factory"]

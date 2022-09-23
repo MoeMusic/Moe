@@ -7,8 +7,7 @@ import sqlalchemy
 
 import moe
 from moe import config
-from moe.library.album import Album
-from moe.library.lib_item import LibItem
+from moe.library import Album, LibItem
 from moe.query import query
 
 __all__ = ["get_duplicates"]

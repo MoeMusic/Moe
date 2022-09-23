@@ -6,8 +6,7 @@ import pytest
 
 import moe
 from moe.config import ExtraPlugin
-from moe.library.album import Album, AlbumError
-from moe.library.extra import Extra
+from moe.library import Album, AlbumError, Extra
 from moe.plugins import write as moe_write
 from tests.conftest import album_factory, track_factory
 

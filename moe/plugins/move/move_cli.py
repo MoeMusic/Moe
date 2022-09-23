@@ -7,7 +7,7 @@ from typing import cast
 import sqlalchemy.orm
 
 import moe
-from moe.library.album import Album
+from moe.library import Album
 from moe.plugins import move as moe_move
 from moe.query import QueryError, query
 

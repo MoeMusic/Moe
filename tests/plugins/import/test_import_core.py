@@ -5,7 +5,7 @@ from unittest.mock import patch
 import moe
 from moe import config
 from moe.config import ExtraPlugin
-from moe.library.album import Album
+from moe.library import Album
 from moe.plugins import moe_import
 from tests.conftest import album_factory, extra_factory, track_factory
 

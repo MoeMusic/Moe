@@ -7,7 +7,7 @@ import pluggy
 import moe
 import moe.cli
 from moe import config
-from moe.library.album import Album
+from moe.library import Album
 from moe.util.cli import PromptChoice, choice_prompt, fmt_item_changes
 from moe.util.core import get_matching_tracks
 
