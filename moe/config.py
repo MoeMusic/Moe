@@ -75,7 +75,7 @@ class Hooks:
             settings: Moe's settings.
 
         Example:
-            Inside your hook implementation::
+            .. code:: python
 
                 settings.validators.register(
                     dynaconf.Validator("MOVE.ASCIIFY_PATHS", must_exist=True)
@@ -94,7 +94,7 @@ class Hooks:
             pm: PluginManager that registers the hookspec.
 
         Example:
-            Inside your hook implementation::
+            .. code:: python
 
                 from moe.plugins.add import Hooks
                 pm.add_hookspecs(Hooks)
@@ -154,7 +154,7 @@ class Hooks:
             This hooks is for Moe internal use only and should not be used by plugins.
 
         Example:
-            In your hook implementation::
+            .. code:: python
 
                 sqlalchemy.event.listen(
                     session,
