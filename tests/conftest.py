@@ -194,8 +194,10 @@ def track_factory(
             setattr(track, field, value)
 
     if dup_track:
-        for field in dup_track.fields():
+        for field in dup_track.fields:
             value = getattr(dup_track, field)
+            if field == "genre":
+                print(value)
             try:
                 setattr(track, field, value)
             except AttributeError:
@@ -242,7 +244,7 @@ def extra_factory(
             setattr(extra, field, value)
 
     if dup_extra:
-        for field in dup_extra.fields():
+        for field in dup_extra.fields:
             value = getattr(dup_extra, field)
             try:
                 setattr(extra, field, value)
@@ -301,7 +303,7 @@ def album_factory(
             setattr(album, field, value)
 
     if dup_album:
-        for field in dup_album.fields():
+        for field in dup_album.fields:
             if field not in ["tracks", "extras"]:
                 value = getattr(dup_album, field)
                 try:

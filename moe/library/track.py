@@ -173,8 +173,9 @@ class Track(LibItem, SABase):
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
+        fields set[str]: All accessible track fields.
         genre (str): String of all genres concatenated with ';'.
-        genres (set[str]): List of all genres.
+        genres (set[str]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -349,9 +350,10 @@ class Track(LibItem, SABase):
         """
         self.genres = {genre.strip() for genre in genre_str.split(";")}
 
-    def fields(self) -> tuple[str, ...]:
+    @property
+    def fields(self) -> set[str]:
         """Returns the public fields, or non-method attributes, of a Track."""
-        return (
+        return {
             "album",
             "albumartist",
             "album_obj",
@@ -359,13 +361,12 @@ class Track(LibItem, SABase):
             "date",
             "disc",
             "disc_total",
-            "genre",
             "genres",
             "path",
             "title",
             "track_num",
             "year",
-        ) + tuple(self._custom_fields)
+        }.union(set(self._custom_fields))
 
     def is_unique(self, other: "Track") -> bool:
         """Returns whether a track is unique in the library from ``other``."""
@@ -397,12 +398,12 @@ class Track(LibItem, SABase):
             f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
         )
 
-        for field in self.fields():
-            if field not in {"album_obj", "year"}:
-                other_value = getattr(other, field)
-                self_value = getattr(self, field)
-                if other_value and (overwrite or (not overwrite and not self_value)):
-                    setattr(self, field, other_value)
+        omit_fields = {"album_obj", "year"}
+        for field in self.fields - omit_fields:
+            other_value = getattr(other, field)
+            self_value = getattr(self, field)
+            if other_value and (overwrite or (not overwrite and not self_value)):
+                setattr(self, field, other_value)
 
         log.debug(
             f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
@@ -413,10 +414,13 @@ class Track(LibItem, SABase):
         if not isinstance(other, Track):
             return False
 
-        for field in self.fields():
+        for field in self.fields:
             if not hasattr(other, field) or (
                 getattr(self, field) != getattr(other, field)
             ):
+                print(
+                    f"{field=!r} {getattr(self, field)}, other: {getattr(other, field)}"
+                )
                 return False
 
         return True
