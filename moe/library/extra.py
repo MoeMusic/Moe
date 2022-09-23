@@ -73,6 +73,7 @@ class Extra(LibItem, SABase):
         album_obj (Album): Album the extra file belongs to.
         custom_fields set[str]: All custom fields. To add to this set, you should
             implement the ``create_custom_extra_fields`` hook.
+        fields set[str]: All accessible extra fields.
         path (Path): Filesystem path of the extra file.
     """
 
@@ -113,9 +114,10 @@ class Extra(LibItem, SABase):
 
         log.debug(f"Extra created. [extra={self!r}]")
 
-    def fields(self) -> tuple[str, ...]:
+    @property
+    def fields(self) -> set[str]:
         """Returns the public fields, or non-method attributes, of an Extra."""
-        return ("album_obj", "path") + tuple(self._custom_fields)
+        return {"album_obj", "path"}.union(self._custom_fields)
 
     def is_unique(self, other: "Extra") -> bool:
         """Returns whether an extra is unique in the library from ``other``."""
@@ -141,12 +143,12 @@ class Extra(LibItem, SABase):
             f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
         )
 
-        for field in self.fields():
-            if field not in {"album_obj"}:
-                other_value = getattr(other, field)
-                self_value = getattr(self, field)
-                if other_value and (overwrite or (not overwrite and not self_value)):
-                    setattr(self, field, other_value)
+        omit_fields = {"album_obj"}
+        for field in self.fields - omit_fields:
+            other_value = getattr(other, field)
+            self_value = getattr(self, field)
+            if other_value and (overwrite or (not overwrite and not self_value)):
+                setattr(self, field, other_value)
 
         log.debug(
             f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
@@ -157,7 +159,7 @@ class Extra(LibItem, SABase):
         if not isinstance(other, Extra):
             return False
 
-        for field in self.fields():
+        for field in self.fields:
             if not hasattr(other, field) or (
                 getattr(self, field) != getattr(other, field)
             ):

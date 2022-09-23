@@ -9,7 +9,7 @@ Note:
 import argparse
 import logging
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 
 import moe
 import moe.cli
@@ -124,7 +124,6 @@ def _fmt_track_info(track: Track) -> str:
     """Formats a track's information for display."""
     base_dict = OrderedDict(sorted(_get_base_dict(track).items()))
     base_dict.pop("album_obj", None)
-    base_dict.pop("genres", None)
 
     return "\n".join(
         f"{field}: {value}"
@@ -132,7 +131,7 @@ def _fmt_track_info(track: Track) -> str:
     )
 
 
-def _get_base_dict(item: LibItem) -> Dict[str, Any]:
+def _get_base_dict(item: LibItem) -> dict[str, Any]:
     """Represents an item as a dictionary.
 
     Only public attributes that are not empty will be included. Also, any attributes
@@ -146,7 +145,7 @@ def _get_base_dict(item: LibItem) -> Dict[str, Any]:
         Returns a dict representation of an Item in the form { attribute: value }.
     """
     item_dict = {}
-    for attr in item.fields():
+    for attr in sorted(item.fields):
         value = getattr(item, attr)
         if value:
             item_dict[attr] = value

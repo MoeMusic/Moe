@@ -204,9 +204,10 @@ class Album(LibItem, SABase):
         log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
         return album
 
-    def fields(self) -> tuple[str, ...]:
+    @property
+    def fields(self) -> set[str]:
         """Returns the public fields, or non-method attributes, of an Album."""
-        return (
+        return {
             "artist",
             "date",
             "disc_total",
@@ -215,7 +216,7 @@ class Album(LibItem, SABase):
             "title",
             "tracks",
             "year",
-        ) + tuple(self._custom_fields)
+        }.union(self._custom_fields)
 
     def get_extra(self, path: Path) -> Optional["Extra"]:
         """Gets an Extra by its path."""
@@ -274,12 +275,12 @@ class Album(LibItem, SABase):
                 new_extras.append(other_extra)
         self.extras.extend(new_extras)
 
-        for field in self.fields():
-            if field not in {"year", "tracks", "extras"}:
-                other_value = getattr(other, field)
-                self_value = getattr(self, field)
-                if other_value and (overwrite or (not overwrite and not self_value)):
-                    setattr(self, field, other_value)
+        omit_fields = {"year", "extras", "tracks"}
+        for field in self.fields - omit_fields:
+            other_value = getattr(other, field)
+            self_value = getattr(self, field)
+            if other_value and (overwrite or (not overwrite and not self_value)):
+                setattr(self, field, other_value)
 
         log.debug(
             f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
@@ -300,10 +301,8 @@ class Album(LibItem, SABase):
         if not isinstance(other, Album):
             return False
 
-        eq_fields = (
-            field for field in self.fields() if field not in ["extras", "tracks"]
-        )  # don't compare extras or tracks to prevent recursion
-        for field in eq_fields:
+        omit_fields = {"extras", "tracks"}
+        for field in self.fields - omit_fields:
             if not hasattr(other, field) or (
                 getattr(self, field) != getattr(other, field)
             ):

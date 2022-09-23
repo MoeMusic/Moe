@@ -209,7 +209,8 @@ class LibItem:
         """A library item's filesystem path."""
         raise NotImplementedError
 
-    def fields(self) -> tuple[str, ...]:
+    @property
+    def fields(self) -> set[str]:
         """Returns the public attributes of an item."""
         raise NotImplementedError
 

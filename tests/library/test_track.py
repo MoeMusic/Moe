@@ -177,7 +177,7 @@ class TestEquality:
 
     def test_equals(self):
         """Tracks with the same metadata are equal."""
-        track1 = track_factory(custom="custom")
+        track1 = track_factory()
         track2 = track_factory(dup_track=track1)
 
         assert track1 == track2
