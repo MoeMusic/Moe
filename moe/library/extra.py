@@ -81,7 +81,6 @@ class Extra(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields: set[str] = set()
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
     album_obj: Album = relationship("Album", back_populates="extras")
@@ -94,13 +93,8 @@ class Extra(LibItem, SABase):
             path: Filesystem path of the extra file.
             **kwargs: Any other fields to assign to the extra.
         """
-        self._custom_fields = {}
-        self.custom_fields = set()
-        custom_fields = config.CONFIG.pm.hook.create_custom_extra_fields()
-        for plugin_fields in custom_fields:
-            for plugin_field, default_val in plugin_fields.items():
-                self._custom_fields[plugin_field] = default_val
-                self.custom_fields.add(plugin_field)
+        self._custom_fields = self._get_default_custom_fields()
+        self._custom_fields_set = set(self._custom_fields)
 
         album.extras.append(self)
         self.path = path
@@ -193,3 +187,11 @@ class Extra(LibItem, SABase):
     def __str__(self):
         """String representation of an Extra."""
         return f"{self.album_obj}: {self.path.name}"
+
+    def _get_default_custom_fields(self) -> dict[str, Any]:
+        """Returns the default custom extra fields."""
+        return {
+            field: default_val
+            for plugin_fields in config.CONFIG.pm.hook.create_custom_extra_fields()
+            for field, default_val in plugin_fields.items()
+        }
