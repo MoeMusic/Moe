@@ -107,7 +107,6 @@ class Album(LibItem, SABase):
         dict[str, Any],
         Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
     )
-    custom_fields: set[str] = set()
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -141,13 +140,8 @@ class Album(LibItem, SABase):
             disc_total: Number of discs in the album.
             **kwargs: Any other fields to assign to the album.
         """
-        self._custom_fields = {}
-        self.custom_fields = set()
-        custom_fields = config.CONFIG.pm.hook.create_custom_album_fields()
-        for plugin_fields in custom_fields:
-            for plugin_field, default_val in plugin_fields.items():
-                self._custom_fields[plugin_field] = default_val
-                self.custom_fields.add(plugin_field)
+        self._custom_fields = self._get_default_custom_fields()
+        self._custom_fields_set = set(self._custom_fields)
 
         self.path = path
         self.artist = artist
@@ -353,3 +347,11 @@ class Album(LibItem, SABase):
     def __str__(self):
         """String representation of an Album."""
         return f"{self.artist} - {self.title} ({self.year})"
+
+    def _get_default_custom_fields(self) -> dict[str, Any]:
+        """Returns the default custom album fields."""
+        return {
+            field: default_val
+            for plugin_fields in config.CONFIG.pm.hook.create_custom_album_fields()
+            for field, default_val in plugin_fields.items()
+        }

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import pluggy
 import sqlalchemy
@@ -205,11 +206,28 @@ def _process_after_flush(
 
 
 class LibItem:
-    """Abstract base class for library items i.e. Albums, Extras, and Tracks."""
+    """Base class for library items i.e. Albums, Extras, and Tracks."""
+
+    _custom_fields_set = None
 
     @property
     def path(self) -> Path:
         """A library item's filesystem path."""
+        raise NotImplementedError
+
+    @property
+    def custom_fields(self) -> set[str]:
+        """Returns the custom fields of an item."""
+        if self._custom_fields_set is None:
+            object.__setattr__(
+                self, "_custom_fields_set", set(self._get_default_custom_fields())
+            )
+
+        assert self._custom_fields_set is not None
+        return self._custom_fields_set
+
+    def _get_default_custom_fields(self) -> dict[str, Any]:
+        """Returns the default custom fields of an item."""
         raise NotImplementedError
 
     @property
