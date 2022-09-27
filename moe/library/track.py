@@ -342,20 +342,15 @@ class Track(LibItem, SABase):
 
     @property
     def fields(self) -> set[str]:
-        """Returns the public fields, or non-method attributes, of a Track."""
+        """Returns any editable, track-specific fields."""
         return {
-            "album",
-            "albumartist",
             "album_obj",
             "artist",
-            "date",
             "disc",
-            "disc_total",
             "genres",
             "path",
             "title",
             "track_num",
-            "year",
         }.union(set(self._custom_fields))
 
     def is_unique(self, other: "Track") -> bool:
@@ -424,20 +419,12 @@ class Track(LibItem, SABase):
 
     def __repr__(self):
         """Represents a Track using track-specific and relevant album fields."""
-        repr_fields = [
-            "track_num",
-            "disc",
-            "title",
-            "artist",
-            "genre",
-            "album",
-            "path",
-        ]
         field_reprs = []
-        for field in repr_fields:
+        omit_fields = {"album_obj"}
+        for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = "Track(" + ", ".join(field_reprs)
+        repr_str = "Track(" + ", ".join(field_reprs) + f", album='{self.album_obj}'"
 
         custom_field_reprs = []
         for custom_field, value in self._custom_fields.items():

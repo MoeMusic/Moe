@@ -106,7 +106,7 @@ class Extra(LibItem, SABase):
 
     @property
     def fields(self) -> set[str]:
-        """Returns the public fields, or non-method attributes, of an Extra."""
+        """Returns any editable, extra fields."""
         return {"album_obj", "path"}.union(self._custom_fields)
 
     def is_unique(self, other: "Extra") -> bool:
@@ -166,12 +166,12 @@ class Extra(LibItem, SABase):
 
     def __repr__(self):
         """Represents an Extra using its path and album."""
-        repr_fields = ["path"]
         field_reprs = []
-        for field in repr_fields:
+        omit_fields = {"album_obj"}
+        for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = "Extra(" + ", ".join(field_reprs) + f", album={self.album_obj.title}"
+        repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album_obj}'"
 
         custom_field_reprs = []
         for custom_field, value in self._custom_fields.items():
@@ -181,8 +181,6 @@ class Extra(LibItem, SABase):
 
         repr_str += ")"
         return repr_str
-
-        return f"Extra(path={self.path}, album={self.album_obj.title})"
 
     def __str__(self):
         """String representation of an Extra."""
