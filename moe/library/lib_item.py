@@ -232,7 +232,7 @@ class LibItem:
 
     @property
     def fields(self) -> set[str]:
-        """Returns the public attributes of an item."""
+        """Returns the editable fields of an item."""
         raise NotImplementedError
 
     def is_unique(self, other: "LibItem") -> bool:

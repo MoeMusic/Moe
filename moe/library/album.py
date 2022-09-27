@@ -197,7 +197,7 @@ class Album(LibItem, SABase):
 
     @property
     def fields(self) -> set[str]:
-        """Returns the public fields, or non-method attributes, of an Album."""
+        """Returns any editable album fields."""
         return {
             "artist",
             "date",
@@ -206,7 +206,6 @@ class Album(LibItem, SABase):
             "path",
             "title",
             "tracks",
-            "year",
         }.union(self._custom_fields)
 
     def get_extra(self, path: Path) -> Optional["Extra"]:
@@ -313,14 +312,9 @@ class Album(LibItem, SABase):
 
     def __repr__(self):
         """Represents an Album using its fields."""
-        repr_fields = [
-            "artist",
-            "title",
-            "date",
-            "path",
-        ]
         field_reprs = []
-        for field in repr_fields:
+        omit_fields = {"tracks", "extras"}
+        for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
         repr_str = "Album(" + ", ".join(field_reprs)
