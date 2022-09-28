@@ -8,7 +8,6 @@ import moe
 import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
 from moe.library import Track, TrackError
-from moe.library.track import _Genre
 from moe.plugins.write import write_tags
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -282,6 +281,4 @@ class TestListDuplicates:
 
         tracks = tmp_session.query(Track).all()
         for track in tracks:
-            track.genre = "new genre"
-
-        assert tmp_session.query(_Genre).one()
+            assert track.genre == "pop"
