@@ -224,9 +224,9 @@ class TestQueries:
 
         assert len(query("*", "album")) == 1
 
-    def test_missing_extras(self, tmp_session):
-        """Ensure albums without extras are still returned by a valid query."""
-        album = album_factory(num_extras=0)
+    def test_missing_extras_tracks(self, tmp_session):
+        """Ensure albums without extras or tracks."""
+        album = album_factory(num_extras=0, num_tracks=0)
 
         tmp_session.add(album)
         tmp_session.flush()
