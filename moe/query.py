@@ -88,7 +88,9 @@ def query(query_str: str, query_type: str) -> list[LibItem]:
         raise QueryError(f"No query given.\n{HELP_STR}")
 
     if query_type == "album":
-        library_query = session.query(Album).join(Track)
+        library_query = session.query(Album)
+        if session.query(Track).first():
+            library_query = library_query.join(Track)
     elif query_type == "extra":
         library_query = session.query(Extra).join(Album).join(Track)
     else:
