@@ -11,7 +11,7 @@ from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKey, Table, UniqueConstraint
+from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 import moe
 from moe import config
@@ -135,24 +135,11 @@ class _Genre(SABase):
     __tablename__ = "genre"
 
     _id: int = cast(int, Column(Integer, primary_key=True))
-    name: str = cast(
-        str,
-        Column(
-            String, nullable=False, unique=True, sqlite_on_conflict_unique="REPLACE"
-        ),
-    )
+    _track_id: int = cast(int, Column(Integer, ForeignKey("track._id")))
+    name: str = cast(str, Column(String, nullable=False))
 
     def __init__(self, name: str):
         self.name = name
-
-
-track_genre = Table(
-    "track_genre",
-    SABase.metadata,
-    Column("genre", String, ForeignKey("genre._id")),
-    Column("track", Integer, ForeignKey("track._id")),
-)
-__table_args__ = ()
 
 
 # Track generic, used for typing classmethod
@@ -204,10 +191,7 @@ class Track(LibItem, SABase):
     year: int = association_proxy("album_obj", "year")
 
     _genres: set[_Genre] = relationship(
-        "_Genre",
-        secondary=track_genre,
-        collection_class=set,
-        cascade="save-update, merge, expunge",
+        "_Genre", collection_class=set, cascade="save-update, merge, expunge"
     )
     genres: set[str] = association_proxy("_genres", "name")
 
