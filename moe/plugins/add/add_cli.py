@@ -1,4 +1,4 @@
-"""Adds the ``add`` command provides duplicate resolution when adding an item."""
+"""Adds the ``add`` command to add music to the library."""
 
 import argparse
 import logging
