@@ -12,7 +12,7 @@ from tests.conftest import album_factory, extra_factory, track_factory
 
 @pytest.fixture
 def mock_add() -> Iterator[FunctionType]:
-    """Mock the `edit_item()` api call."""
+    """Mock the `add_item()` api call."""
     with patch("moe.plugins.add.add_item", autospec=True) as mock_add:
         yield mock_add
 
