@@ -33,6 +33,7 @@ __all__ = [
     "add_releases_to_collection",
     "get_album_by_id",
     "get_matching_album",
+    "get_track_by_id",
     "rm_releases_from_collection",
     "set_collection",
     "update_album",
@@ -171,6 +172,18 @@ def read_custom_tags(
 
     album_fields["mb_album_id"] = audio_file.mb_albumid
     track_fields["mb_track_id"] = audio_file.mb_releasetrackid
+
+
+@moe.hookimpl
+def sync_metadata(item: LibItem):
+    """Sync musibrainz metadata for associated items."""
+    if isinstance(item, Album) and hasattr(item, "mb_album_id"):
+        item.merge(get_album_by_id(item.mb_album_id), overwrite=True)
+    elif isinstance(item, Track) and hasattr(item, "mb_track_id"):
+        item.merge(
+            get_track_by_id(item.mb_track_id, item.album_obj.mb_album_id),
+            overwrite=True,
+        )
 
 
 @moe.hookimpl
@@ -327,8 +340,7 @@ def get_matching_album(album: Album) -> Album:
         album: Album used to search for the release.
 
     Returns:
-        Dictionary of release information. See the ``tests/musicbrainz/resources``
-        directory for an idea of what this contains.
+        An Album containing all musicbrainz metadata.
     """
     if album.mb_album_id:
         return get_album_by_id(album.mb_album_id)
@@ -357,10 +369,7 @@ def get_album_by_id(release_id: str) -> Album:
         release_id: Musicbrainz release ID to search.
 
     Returns:
-        Dictionary of release information. See ``tests/resources/musicbrainz`` for
-        an idea of what this contains. Note this is a different dictionary that what
-        is returned from searching by fields for a release. Notably, searching by an id
-        results in more information including track information.
+        An album containing all metadata from the given ``release_id``.
     """
     log.debug(f"Fetching release from musicbrainz. [release={release_id!r}]")
 
@@ -420,6 +429,32 @@ def _flatten_artist_credit(artist_credit: list[dict]) -> str:
             full_artist += artist["artist"]["name"]
 
     return full_artist
+
+
+def get_track_by_id(track_id: str, album_id: str) -> Track:
+    """Gets a musicbrainz track from a given track and release id.
+
+    Args:
+        track_id: Musicbrainz track ID to match.
+        album_id: Release album ID the track belongs to.
+
+    Returns:
+        A track containing all metadata associated with the given IDs.
+
+    Raises:
+        ValueError: Couldn't find track based on given ``track_id`` and ``album_id``.
+    """
+    log.debug(f"Fetching track from musicbrainz. [{track_id=!r}, {album_id=!r}]")
+
+    album = get_album_by_id(album_id)
+    for track in album.tracks:
+        if track.mb_track_id == track_id:
+            log.info(f"Fetched track from musicbrainz. [{track=!r}]")
+            return track
+
+    raise ValueError(
+        f"Given track or album id could not be found. [{track_id=!r}, {album_id=!r}]"
+    )
 
 
 def update_album(album: Album):

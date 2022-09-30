@@ -261,6 +261,38 @@ class TestCollectionsAutoAdd:
         assert any(record.levelname == "ERROR" for record in caplog.records)
 
 
+class TestSyncMetadata:
+    """Test the `sync_metadata` hook implementation."""
+
+    def test_sync_album(self, mb_config):
+        """Albums are synced with musicbrainz when called."""
+        old_album = album_factory(title="unsynced", mb_album_id="1")
+        new_album = album_factory(title="synced")
+
+        with patch.object(
+            moe_mb.mb_core, "get_album_by_id", return_value=new_album
+        ) as mock_id:
+            config.CONFIG.pm.hook.sync_metadata(item=old_album)
+
+        mock_id.assert_called_once_with(old_album.mb_album_id)
+        assert old_album.title == "synced"
+
+    def test_sync_track(self, mb_config):
+        """Tracks are synced with musicbrainz when called."""
+        old_track = track_factory(title="unsynced", mb_track_id="1")
+        new_track = track_factory(title="synced")
+
+        with patch.object(
+            moe_mb.mb_core, "get_track_by_id", return_value=new_track
+        ) as mock_id:
+            config.CONFIG.pm.hook.sync_metadata(item=old_track)
+
+        mock_id.assert_called_once_with(
+            old_track.mb_track_id, old_track.album_obj.mb_album_id
+        )
+        assert old_track.title == "synced"
+
+
 class TestGetMatchingAlbum:
     """Test `get_matching_album()`."""
 
@@ -376,6 +408,30 @@ class TestGetAlbumById:
         assert mb_album.disc_total == 2
         assert any(track.disc == 1 for track in mb_album.tracks)
         assert any(track.disc == 2 for track in mb_album.tracks)
+
+
+class TestGetTrackByID:
+    """Test `get_track_by_id`."""
+
+    def test_track_search(self, mock_mb_by_id):
+        """We can't search for tracks so we search for albums and match tracks."""
+        mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        mb_track_id = "219e6b01-c962-355c-8a87-5d4ab3fc13bc"
+        mock_mb_by_id.return_value = mb_rsrc.full_release.release
+
+        mb_track = moe_mb.get_track_by_id(mb_track_id, mb_album_id)
+
+        assert mb_track.title == "Dark Fantasy"
+        mock_mb_by_id.assert_called_once_with(
+            mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
+        )
+
+    def test_track_not_found(self, mock_mb_by_id):
+        """Raise ValueError if track or album cannot be found."""
+        mock_mb_by_id.return_value = mb_rsrc.full_release.release
+
+        with pytest.raises(ValueError, match="track_id"):
+            moe_mb.get_track_by_id("track id", "album id")
 
 
 class TestCustomFields:

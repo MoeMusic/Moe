@@ -19,4 +19,5 @@ These are all the plugins that are enabled by default.
    move
    musicbrainz
    remove
+   sync
    write
