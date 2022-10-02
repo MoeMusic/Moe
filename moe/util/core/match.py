@@ -17,13 +17,13 @@ TrackCoord = tuple[
 
 MATCH_FIELD_WEIGHTS = {
     "disc": 0.3,
-    "title": 0.9,
+    "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
 
 
 def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
-    album_a: Album, album_b: Album, match_threshold: float = 0.8
+    album_a: Album, album_b: Album, match_threshold: float = 0.7
 ) -> list[TrackMatch]:
     """Returns a list of tuples of track match pairs.
 
