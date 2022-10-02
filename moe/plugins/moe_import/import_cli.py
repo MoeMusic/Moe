@@ -23,7 +23,7 @@ log = logging.getLogger("moe.cli.import")
 __all__ = ["AbortImport", "import_prompt"]
 
 
-class AbortImport(Exception):  # noqa: N818
+class AbortImport(Exception):
     """Used to abort the import process."""
 
 
