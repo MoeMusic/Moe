@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.12.2 (2022-10-02)
+====================
+
+Bug Fixes
+---------
+* Relative path error if album and file use non-relative hardlinks (`8574e38 <https://github.com/MoeMusic/Moe/commit/8574e382a54e77b3c221f851c3fa910b3a45afbf>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.12.1...v0.12.2>`__
+
 v0.12.1 (2022-10-02)
 ====================
 
