@@ -36,7 +36,7 @@ def _enter_id(
     mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
 
     log.debug(
-        "Re-running import prompt for different musicbrainz release. [{mb_id=!r}]"
+        f"Re-running import prompt for different musicbrainz release. [{mb_id=!r}]"
     )
 
     album = moe_mb.get_album_by_id(mb_id)
