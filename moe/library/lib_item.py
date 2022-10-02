@@ -253,6 +253,10 @@ class LibItem:
         else:
             super().__setattr__(name, value)
 
+    def __lt__(self, other):
+        """Library items implement the `lt` magic method to allow sorting."""
+        raise NotImplementedError
+
 
 class PathType(sa.types.TypeDecorator):
     """A custom type for paths for database storage.

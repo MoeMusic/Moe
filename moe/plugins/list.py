@@ -63,7 +63,7 @@ def _parse_args(args: argparse.Namespace):
         log.error("No items found to list.")
         raise SystemExit(1)
 
-    for item in items:
+    for item in sorted(items):
         if args.paths:
             print(item.path)
         else:
