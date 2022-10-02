@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.14.0 (2022-10-02)
+====================
+
+New Features
+------------
+* Add: New import option to skip a single item (`3d3027c <https://github.com/MoeMusic/Moe/commit/3d3027c5ab37d78a24bffbf014cce4dc19d4c435>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.13.0...v0.14.0>`__
+
 v0.13.0 (2022-10-02)
 ====================
 
