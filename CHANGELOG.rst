@@ -4,6 +4,28 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.12.0 (2022-10-02)
+====================
+
+New Features
+------------
+* New sync plugin to sync music metadata (`6ad78f2 <https://github.com/MoeMusic/Moe/commit/6ad78f2cd97bcd61647905bdd39d5eaf62b69ff6>`_)
+* Duplicate prompt ui improvements (`fd24944 <https://github.com/MoeMusic/Moe/commit/fd24944ace7ea8cbf4d0bef3ced869634108ead1>`_)
+* Import prompt ui improvements (`2bbff8c <https://github.com/MoeMusic/Moe/commit/2bbff8ca05856565bd231ca5a0976ed0ccd54f19>`_)
+* New global config option to explicitly disable plugins (`88d6bab <https://github.com/MoeMusic/Moe/commit/88d6babe6c0d1a23c460723f412062b59e3fc6e2>`_)
+
+Bug Fixes
+---------
+* Albums were not querying properly if they didn't contain tracks (`094257d <https://github.com/MoeMusic/Moe/commit/094257d35e1e6a938495e6288cb01e969ad7868b>`_)
+* Duplicate genres now persist in the database (`6a655b0 <https://github.com/MoeMusic/Moe/commit/6a655b00f73bf392ef843ac0068fb77c013668ef>`_)
+* Custom fields now populate when loaded from the database (`911d0f7 <https://github.com/MoeMusic/Moe/commit/911d0f726c355d6d7ddbfbd812db8dce5b931afd>`_)
+
+Build Changes
+-------------
+* Add rich as a dependency (`626b20c <https://github.com/MoeMusic/Moe/commit/626b20cda8ae798329fcb083b634b952a903e479>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.11.0...v0.12.0>`__
+
 v0.11.0 (2022-09-19)
 ====================
 
