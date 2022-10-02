@@ -197,9 +197,8 @@ def _copy_album(album: Album):
 
     log.debug(f"Copying album. [{dest=}, {album=!r}]")
 
-    if album.path != dest:
-        dest.mkdir(parents=True, exist_ok=True)
-        album.path = dest
+    dest.mkdir(parents=True, exist_ok=True)
+    album.path = dest
 
     for track in album.tracks:
         _copy_file_item(track)
@@ -213,10 +212,10 @@ def _copy_album(album: Album):
 def _copy_file_item(item: Union[Extra, Track]):
     """Copies an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
-    log.debug(f"Copying item. [{dest=}, {item=!r}]")
-
-    if dest == item.path:
+    if dest.exists() and dest.samefile(item.path):
         return
+
+    log.debug(f"Copying item. [{dest=}, {item=!r}]")
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(item.path, dest)
@@ -252,9 +251,8 @@ def _move_album(album: Album):
 
     log.debug(f"Moving album. [{dest=}, {album=!r}]")
 
-    if album.path != dest:
-        dest.mkdir(parents=True, exist_ok=True)
-        album.path = dest
+    dest.mkdir(parents=True, exist_ok=True)
+    album.path = dest
 
     for track in album.tracks:
         _move_file_item(track)
@@ -278,7 +276,7 @@ def _move_album(album: Album):
 def _move_file_item(item: Union[Extra, Track]):
     """Moves an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
-    if dest == item.path:
+    if dest.exists() and dest.samefile(item.path):
         return
 
     log.debug(f"Moving item. [{dest=}, {item=!r}]")
