@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.13.0 (2022-10-02)
+====================
+
+New Features
+------------
+* Adjusted track match values to be more lenient (`9b90803 <https://github.com/MoeMusic/Moe/commit/9b90803b50acd09ede30d3318967bc686bffed4b>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.12.2...v0.13.0>`__
+
 v0.12.2 (2022-10-02)
 ====================
 
