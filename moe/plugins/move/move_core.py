@@ -213,6 +213,7 @@ def _copy_file_item(item: Union[Extra, Track]):
     """Copies an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
     if dest.exists() and dest.samefile(item.path):
+        item.path = dest
         return
 
     log.debug(f"Copying item. [{dest=}, {item=!r}]")
@@ -277,6 +278,7 @@ def _move_file_item(item: Union[Extra, Track]):
     """Moves an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
     if dest.exists() and dest.samefile(item.path):
+        item.path = dest
         return
 
     log.debug(f"Moving item. [{dest=}, {item=!r}]")
