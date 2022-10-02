@@ -4,6 +4,16 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.12.1 (2022-10-02)
+====================
+
+Bug Fixes
+---------
+* Moving items that point to the same path (`4d79cd9 <https://github.com/MoeMusic/Moe/commit/4d79cd946f100d280475976a19aa0b950b29642c>`_)
+* Import debug statements (`a907dd4 <https://github.com/MoeMusic/Moe/commit/a907dd42ef01d8ab23b47ff0c5462973297c0d26>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.12.0...v0.12.1>`__
+
 v0.12.0 (2022-10-02)
 ====================
 
