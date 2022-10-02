@@ -22,7 +22,7 @@ log = logging.getLogger("moe.cli.mb")
 
 @moe.hookimpl
 def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
-    """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
+    """Adds a choice to the import prompt to allow specifying a mb id."""
     prompt_choices.append(
         PromptChoice(title="Enter Musicbrainz ID", shortcut_key="m", func=_enter_id)
     )
