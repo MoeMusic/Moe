@@ -18,7 +18,7 @@ import moe
 from moe import config
 from moe.config import Config, ConfigValidationError, MoeSession
 
-__all__ = ["console", "query_parser"]
+__all__ = ["console"]
 
 log = logging.getLogger("moe.cli")
 
@@ -72,32 +72,6 @@ class Hooks:
               <https://docs.python.org/3/library/argparse.html#sub-commands>`_
             * The :meth:`~moe.query.query` function.
         """
-
-
-# Argument parser for a query. This should be passed as a parent parser for a command.
-query_parser = argparse.ArgumentParser(
-    add_help=False, formatter_class=argparse.RawTextHelpFormatter
-)
-query_parser.add_argument("query", help="query the library for matching tracks")
-
-query_type_group = query_parser.add_mutually_exclusive_group()
-query_type_group.add_argument(
-    "-a",
-    "--album",
-    action="store_const",
-    const="album",
-    dest="query_type",
-    help="query for matching albums",
-)
-query_type_group.add_argument(
-    "-e",
-    "--extra",
-    action="store_const",
-    const="extra",
-    dest="query_type",
-    help="query for matching extras",
-)
-query_parser.set_defaults(query_type="track")
 
 
 @moe.hookimpl

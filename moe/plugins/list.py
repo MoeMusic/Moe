@@ -10,7 +10,7 @@ import logging
 import moe
 import moe.cli
 from moe import config
-from moe.query import QueryError, query
+from moe.util.cli import cli_query, query_parser
 
 __all__: list[str] = []
 
@@ -33,7 +33,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         aliases=["ls"],
         description="Lists music in the library.",
         help="list music in the library",
-        parents=[moe.cli.query_parser],
+        parents=[query_parser],
     )
     ls_parser.add_argument(
         "-p",
@@ -53,15 +53,7 @@ def _parse_args(args: argparse.Namespace):
     Raises:
         SystemExit: Invalid query or no items found.
     """
-    try:
-        items = query(args.query, query_type=args.query_type)
-    except QueryError as err:
-        log.error(err)
-        raise SystemExit(1) from err
-
-    if not items:
-        log.error("No items found to list.")
-        raise SystemExit(1)
+    items = cli_query(args.query, query_type=args.query_type)
 
     for item in sorted(items):
         if args.paths:

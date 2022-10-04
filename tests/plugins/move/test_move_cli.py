@@ -8,7 +8,6 @@ import pytest
 
 import moe.cli
 from moe import config
-from moe.query import QueryError
 from tests.conftest import album_factory
 
 
@@ -28,7 +27,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.move.move_cli.query", autospec=True) as mock_query:
+    with patch("moe.plugins.move.move_cli.cli_query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -51,6 +50,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         mock_move.assert_not_called()
+        mock_query.assert_called_once_with("*", "album")
 
     def test_move(self, mock_query, mock_move):
         """Test all items in the library are moved when the command is invoked."""
@@ -63,26 +63,7 @@ class TestCommand:
         for album in albums:
             mock_move.assert_any_call(album)
         assert mock_move.call_count == len(albums)
-
-    def test_no_items(self, capsys, mock_query):
-        """If no items found to move, exit with non-zero code."""
-        cli_args = ["move"]
-        mock_query.return_value = []
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
-
-    def test_bad_query(self, mock_query):
-        """Raise SystemExit if given a bad query."""
-        cli_args = ["move"]
-        mock_query.side_effect = QueryError
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
+        mock_query.assert_called_once_with("*", "album")
 
 
 class TestPluginRegistration:

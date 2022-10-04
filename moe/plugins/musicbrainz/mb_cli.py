@@ -18,8 +18,7 @@ import moe.cli
 from moe.library import Album, Extra, Track
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
-from moe.query import QueryError, query
-from moe.util.cli import PromptChoice
+from moe.util.cli import PromptChoice, cli_query, query_parser
 
 __all__: list[str] = []
 
@@ -33,7 +32,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         "mbcol",
         description="Set a musicbrainz collection to a query.",
         help="sync a musicbrainz collection",
-        parents=[moe.cli.query_parser],
+        parents=[query_parser],
     )
     col_option_group = mbcol_parser.add_mutually_exclusive_group()
     col_option_group.add_argument(
@@ -49,7 +48,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     mbcol_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(args: argparse.Namespace):  # noqa: C901
+def _parse_args(args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
@@ -58,18 +57,9 @@ def _parse_args(args: argparse.Namespace):  # noqa: C901
     Raises:
         SystemExit: Invalid query given, or no items to remove.
     """
-    try:
-        items = query(args.query, query_type=args.query_type)
-    except QueryError as err:
-        log.error(err)
-        raise SystemExit(1) from err
-
-    if not items:
-        log.error("Given query returned no items.")
-        raise SystemExit(1)
+    items = cli_query(args.query, query_type=args.query_type)
 
     releases = set()
-
     for item in items:
         release_id: Optional[str] = None
         if isinstance(item, (Extra, Track)):

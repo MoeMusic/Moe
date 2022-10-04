@@ -9,7 +9,7 @@ import sqlalchemy.orm
 import moe
 from moe.library import Album
 from moe.plugins import move as moe_move
-from moe.query import QueryError, query
+from moe.util.cli import cli_query
 
 log = logging.getLogger("moe.cli.move")
 
@@ -43,15 +43,7 @@ def _parse_args(args: argparse.Namespace):
     Raises:
         SystemExit: Invalid query or no items found to move.
     """
-    try:
-        albums = cast(list[Album], query("*", query_type="album"))
-    except QueryError as err:
-        log.error(err)
-        raise SystemExit(1) from err
-
-    if not albums:
-        log.error("No items found to move.")
-        raise SystemExit(1)
+    albums = cast(list[Album], cli_query("*", query_type="album"))
 
     if args.dry_run:
         dry_run_str = _dry_run(albums)

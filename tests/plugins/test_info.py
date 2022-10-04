@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
-from moe.query import QueryError
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -20,7 +19,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.info.query", autospec=True) as mock_query:
+    with patch("moe.plugins.info.cli_query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -79,26 +78,6 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         assert capsys.readouterr().out
-
-    def test_no_items(self, mock_query):
-        """If no item infos are printed, we should return a non-zero exit code."""
-        cli_args = ["info", "*"]
-        mock_query.return_value = []
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
-
-    def test_bad_query(self, mock_query):
-        """Raise SystemExit if given a bad query."""
-        cli_args = ["info", "*"]
-        mock_query.side_effect = QueryError
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
 
 
 class TestPluginRegistration:

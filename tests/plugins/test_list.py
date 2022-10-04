@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 import moe.cli
-from moe.query import QueryError
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -20,7 +19,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.list.query", autospec=True) as mock_query:
+    with patch("moe.plugins.list.cli_query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -78,16 +77,6 @@ class TestParseArgs:
         out_str = "\n".join(str(track) for track in tracks)
         assert capsys.readouterr().out.strip("\n") == out_str
 
-    def test_no_items(self, capsys, mock_query):
-        """If no tracks are printed, we should return a non-zero exit code."""
-        cli_args = ["list", "*"]
-        mock_query.return_value = []
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
-
     def test_paths(self, capsys, mock_query):
         """Tracks are printed to stdout with valid query."""
         track = track_factory()
@@ -98,16 +87,6 @@ class TestParseArgs:
 
         mock_query.assert_called_once_with("*", query_type="track")
         assert capsys.readouterr().out.strip("\n") == str(track.path)
-
-    def test_bad_query(self, mock_query):
-        """Raise SystemExit if given a bad query."""
-        cli_args = ["list", "*"]
-        mock_query.side_effect = QueryError
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
 
 
 class TestPluginRegistration:
