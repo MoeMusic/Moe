@@ -15,7 +15,7 @@ import moe
 import moe.cli
 from moe import config
 from moe.library import Album, Extra, LibItem, Track
-from moe.query import QueryError, query
+from moe.util.cli import cli_query, query_parser
 
 __all__: list[str] = []
 
@@ -37,7 +37,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         "info",
         description="Prints information about music in the library.",
         help="print info for music in the library",
-        parents=[moe.cli.query_parser],
+        parents=[query_parser],
     )
     info_parser.set_defaults(func=_parse_args)
 
@@ -51,15 +51,7 @@ def _parse_args(args: argparse.Namespace):
     Raises:
         SystemExit: Invalid query given, or no items found.
     """
-    try:
-        items = query(args.query, query_type=args.query_type)
-    except QueryError as err:
-        log.error(err)
-        raise SystemExit(1) from err
-
-    if not items:
-        log.error("No items found.")
-        raise SystemExit(1)
+    items = cli_query(args.query, query_type=args.query_type)
 
     print(_fmt_infos(items), end="")
 

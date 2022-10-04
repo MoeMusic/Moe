@@ -6,7 +6,6 @@ import pytest
 
 import moe
 import moe.cli
-from moe.query import QueryError
 from tests.conftest import track_factory
 
 
@@ -28,7 +27,7 @@ def mock_query():
     Yields:
         Mock query
     """
-    with patch("moe.plugins.sync.sync_cli.query", autospec=True) as mock_query:
+    with patch("moe.plugins.sync.sync_cli.cli_query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -53,24 +52,3 @@ class TestCommand:
 
         mock_query.assert_called_once_with("*", query_type="track")
         mock_sync.assert_has_calls([call(track1), call(track2)])
-
-    def test_exit_code(self, mock_query, mock_sync):
-        """Return a non-zero exit code if no items are returned from the query."""
-        cli_args = ["sync", "*"]
-        mock_query.return_value = []
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
-        mock_sync.assert_not_called()
-
-    def test_bad_query(self, mock_query):
-        """Raise SystemExit if given a bad query."""
-        cli_args = ["sync", "*"]
-        mock_query.side_effect = QueryError
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0

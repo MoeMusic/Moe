@@ -9,7 +9,6 @@ import pytest
 import moe
 import moe.cli
 from moe import config
-from moe.query import QueryError
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -22,7 +21,7 @@ def mock_query() -> Iterator[FunctionType]:
     Yields:
         Mock query
     """
-    with patch("moe.plugins.musicbrainz.mb_cli.query", autospec=True) as mock_query:
+    with patch("moe.plugins.musicbrainz.mb_cli.cli_query", autospec=True) as mock_query:
         yield mock_query
 
 
@@ -49,10 +48,11 @@ class TestCollectionCommand:
             moe.cli.main(cli_args)
 
         mock_set.assert_called_once_with({"123"})
+        mock_query.assert_called_once_with("*", "track")
 
     def test_extra(self, mock_query):
         """Extras associated album's are used."""
-        cli_args = ["mbcol", "*"]
+        cli_args = ["mbcol", "-e", "*"]
         extra = extra_factory()
         extra.album_obj.mb_album_id = "123"
         mock_query.return_value = [extra]
@@ -63,10 +63,11 @@ class TestCollectionCommand:
             moe.cli.main(cli_args)
 
         mock_set.assert_called_once_with({"123"})
+        mock_query.assert_called_once_with("*", "extra")
 
     def test_album(self, mock_query):
         """Albums associated releases are used."""
-        cli_args = ["mbcol", "*"]
+        cli_args = ["mbcol", "-a", "*"]
         album = album_factory(custom_fields={"mb_album_id": "123"})
         mock_query.return_value = [album]
 
@@ -76,6 +77,7 @@ class TestCollectionCommand:
             moe.cli.main(cli_args)
 
         mock_set.assert_called_once_with({"123"})
+        mock_query.assert_called_once_with("*", "album")
 
     def test_remove(self, mock_query):
         """Releases are removed from a collection if `--remove` option used."""
@@ -106,26 +108,6 @@ class TestCollectionCommand:
             moe.cli.main(cli_args)
 
         mock_add.assert_called_once_with({"123"})
-
-    def test_exit_code(self, mock_query):
-        """Return a non-zero exit code if no items are returned from the query."""
-        cli_args = ["mbcol", "*"]
-        mock_query.return_value = []
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
-
-    def test_bad_query(self, mock_query):
-        """Return a non-zero exit code if a bad query is given."""
-        cli_args = ["mbcol", "*"]
-        mock_query.side_effect = QueryError
-
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(cli_args)
-
-        assert error.value.code != 0
 
     def test_no_releases_found(self, mock_query):
         """Return a non-zero exit code if no releases found in the queried items."""

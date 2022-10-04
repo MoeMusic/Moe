@@ -6,7 +6,7 @@ import logging
 import moe
 import moe.cli
 from moe.plugins import edit
-from moe.query import QueryError, query
+from moe.util.cli import cli_query, query_parser
 
 log = logging.getLogger("moe.cli.edit")
 
@@ -28,7 +28,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         "edit",
         description="Edits music in the library.",
         help="edit music in the library",
-        parents=[moe.cli.query_parser],
+        parents=[query_parser],
         epilog=epilog_help,
     )
     edit_parser.add_argument(
@@ -47,15 +47,7 @@ def _parse_args(args: argparse.Namespace):  # noqa: C901
         SystemExit: Invalid query, no items found to edit, or invalid field or
             field_value term format.
     """
-    try:
-        items = query(args.query, query_type=args.query_type)
-    except QueryError as err:
-        log.error(err)
-        raise SystemExit(1) from err
-
-    if not items:
-        log.error("No items found to edit.")
-        raise SystemExit(1)
+    items = cli_query(args.query, args.query_type)
 
     error_count = 0
     for term in args.fv_terms:
