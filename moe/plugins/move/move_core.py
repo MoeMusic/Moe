@@ -5,9 +5,10 @@ import re
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Union
+from typing import Callable, Union
 
 import dynaconf
+import pluggy
 from unidecode import unidecode
 
 import moe
@@ -17,6 +18,31 @@ from moe.library import Album, Extra, LibItem, Track
 __all__ = ["copy_item", "fmt_item_path", "move_item"]
 
 log = logging.getLogger("moe.move")
+
+
+class Hooks:
+    """Move plugin hook specifications."""
+
+    @staticmethod
+    @moe.hookspec
+    def create_path_template_func() -> list[Callable]:  # type: ignore
+        """Create a custom path template function.
+
+        Any functions returned by this hook will be available to be called from within
+        the path templates defined by the move plugin.
+
+        Returns:
+            A list of all custom path functions your plugin creates. The list should
+            contain the callable functions themselves.
+        """  # noqa: DAR202
+
+
+@moe.hookimpl
+def add_hooks(pm: pluggy.manager.PluginManager):
+    """Registers `add` hookspecs to Moe."""
+    from moe.plugins.move.move_core import Hooks
+
+    pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
@@ -146,6 +172,11 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
         extra = lib_item  # noqa: F841
     else:
         raise NotImplementedError
+
+    plugin_funcs = config.CONFIG.pm.hook.create_path_template_func()
+    for funcs in plugin_funcs:
+        for func in funcs:
+            globals()[func.__name__] = func
 
     return eval(f'f"""{template}"""')
 

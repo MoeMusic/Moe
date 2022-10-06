@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+import moe
 from moe import config
 from moe.plugins import move as moe_move
 from tests.conftest import album_factory, extra_factory, track_factory
@@ -20,6 +21,39 @@ def mock_copy():
     """Mock the `move_item()` api call."""
     with patch("moe.plugins.move.move_core.copy_item", autospec=True) as mock_copy:
         yield mock_copy
+
+
+class MovePlugin:
+    """Test plugin that implements the move hookspecs."""
+
+    @staticmethod
+    @moe.hookimpl
+    def create_path_template_func():
+        """Capitalize a string."""
+        return [upper]
+
+
+def upper(text):
+    """Test function for MovePlugin."""
+    return text.capitalize()
+
+
+class TestCreatePathTemplateFuncHook:
+    """Test the create_path_template_func hook."""
+
+    def test_hook(self, tmp_config):
+        """Replace all the defined illegal characters from any paths."""
+        tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            track_path = "{upper(track.title)}"
+            """,
+            extra_plugins=[config.ExtraPlugin(MovePlugin, "move_plugin")],
+        )
+        track = track_factory(title="lower")
+
+        assert moe_move.fmt_item_path(track).name == "Lower"
 
 
 ########################################################################################
