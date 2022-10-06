@@ -4,6 +4,7 @@ Core
 
 Util
 ====
+``moe.util.core``
 
 .. automodule:: moe.util.core
    :members:
@@ -12,6 +13,7 @@ Util
 
 Config
 ======
+``moe.config``
 
 .. automodule:: moe.config
    :members:
@@ -21,8 +23,7 @@ Config
 
 Library
 =======
-
-``library`` subpackage.
+``moe.library``
 
 .. automodule:: moe.library
    :members:
@@ -32,8 +33,7 @@ Library
 
 Query
 =====
-
-``query`` submodule.
+``moe.query``
 
 .. automodule:: moe.query
    :members:
@@ -42,43 +42,53 @@ Query
 
 Plugins
 =======
-
+``moe.plugins``
 
 Add
 ---
+``moe.plugins.add``
+
 .. automodule:: moe.plugins.add
    :members:
 
 Edit
 ----
+``moe.plugins.edit``
+
 .. automodule:: moe.plugins.edit
    :members:
 
 Import
 ------
+``moe.plugins.moe_import``
+
 .. automodule:: moe.plugins.moe_import
    :members:
 
 Move
 ----
+``moe.plugins.move``
 
 .. automodule:: moe.plugins.move
    :members:
 
 Musicbrainz
 -----------
+``moe.plugins.musicbrainz``
 
 .. automodule:: moe.plugins.musicbrainz
    :members:
 
 Remove
 ------
+``moe.plugins.remove``
 
 .. automodule:: moe.plugins.remove
    :members:
 
 Write
 -----
+``moe.plugins.write``
 
 .. automodule:: moe.plugins.write
    :members:

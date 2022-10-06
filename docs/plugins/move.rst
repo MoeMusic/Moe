@@ -40,7 +40,7 @@ Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/
 
 Custom Path Template Functions
 ------------------------------
-Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique`` is an example of a custom path template function. The following custom template functions are included in the move plugin:
+Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
 
 .. autofunction:: moe.plugins.move.move_core.e_unique
 
