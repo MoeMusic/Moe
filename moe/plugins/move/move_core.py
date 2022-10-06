@@ -49,7 +49,7 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 def add_config_validator(settings: dynaconf.base.LazySettings):
     """Validate move plugin configuration settings."""
     default_album_path = "{album.artist}/{album.title} ({album.year})"
-    default_extra_path = "{extra.path.name}"
+    default_extra_path = "{e_unique(extra)}"
     default_track_path = (
         "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/"
         "{track.track_num:02} - {track.title}{track.path.suffix}"
@@ -69,6 +69,22 @@ def edit_new_items(items: list[LibItem]):
     """Copies and formats the path of an item after it has been added to the library."""
     for item in items:
         copy_item(item)
+
+
+@moe.hookimpl
+def create_path_template_func() -> list[Callable]:
+    """Adds custom functions for the path template."""
+    return [e_unique]
+
+
+def e_unique(extra: Extra) -> str:
+    """Returns a unique filename within an album for an Extra."""
+    extra_names = [album_extra.path.name for album_extra in extra.album_obj.extras]
+
+    if (name_count := extra_names.count(extra.path.name)) > 1:
+        return extra.path.stem + f" ({name_count - 1})" + extra.path.suffix
+
+    return extra.path.name
 
 
 ########################################################################################
