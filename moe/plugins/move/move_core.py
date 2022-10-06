@@ -73,12 +73,12 @@ def edit_new_items(items: list[LibItem]):
 
 @moe.hookimpl
 def create_path_template_func() -> list[Callable]:
-    """Adds custom functions for the path template."""
+    """Adds custom functions for the path templates."""
     return [e_unique]
 
 
 def e_unique(extra: Extra) -> str:
-    """Returns a unique filename within an album for an Extra."""
+    """Returns a unique filename for an extra within its album."""
     extra_names = [album_extra.path.name for album_extra in extra.album_obj.extras]
 
     if (name_count := extra_names.count(extra.path.name)) > 1:

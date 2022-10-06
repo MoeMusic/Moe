@@ -1,6 +1,7 @@
 ###
 CLI
 ###
+``moe.cli``
 
 .. automodule:: moe.cli
    :members:
@@ -8,6 +9,7 @@ CLI
 
 Util
 ====
+``moe.util.cli``
 
 .. automodule:: moe.util.cli
    :members:

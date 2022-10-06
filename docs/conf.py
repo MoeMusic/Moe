@@ -48,6 +48,9 @@ rst_prolog = open("global.rst", "r").read()
 # include type hints in function description
 # autodoc_typehints = "description"
 
+# don't include module names in autodoc functions
+add_module_names = False
+
 # -- Extension configuration ---------------------------------------------------
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 2
