@@ -30,13 +30,19 @@ Path Configuration Options
         - The ``if`` statement inside the path simply means that if there is more than one disc in the album, the tracks will be put into separate directories for their respective disc.
         - Include ``track.path.suffix`` at the end if you wish to retain the file extension of the track file.
 
-``extra_path = "{extra.path.name}"``
+``extra_path = "{e_unique(extra)}"``
     Extra filesystem path format relative to ``album_path``.
 
 Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals>`_ which, as demonstrated by the default track path, allow all the advanced formatting and expression evaluation that come with them. You can access any of the :ref:`respective item's fields <fields:Fields>` in these strings using ``{[album/track/extra].field}`` notation as shown.
 
 .. important::
     Windows users should use a forward slash ``/`` when delineating sub-directories in path formats as the back slash ``\`` is used as an escape character.
+
+Custom Path Template Functions
+------------------------------
+Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique`` is an example of a custom path template function. The following custom template functions are included in the move plugin:
+
+.. autofunction:: moe.plugins.move.move_core.e_unique
 
 .. tip::
     - For any path formatting changes, run ``moe move -n`` for a dry-run to avoid any unexpected results.

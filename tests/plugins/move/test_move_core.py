@@ -56,6 +56,29 @@ class TestCreatePathTemplateFuncHook:
         assert moe_move.fmt_item_path(track).name == "Lower"
 
 
+class TestCustomPathTemplateFuncs:
+    """Test any custom path template functions."""
+
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_e_unique(self):
+        """Deconflict any duplicate custom paths."""
+        album = album_factory(num_tracks=0, num_extras=0)
+        extra1 = extra_factory(album=album, path=album.path / "cover.jpg")
+        extra2 = extra_factory(album=album, path=album.path / "cover.jpg")
+        extra3 = extra_factory(album=album, path=album.path / "cover.jpg")
+        assert extra1.path == extra2.path
+        assert extra1.path == extra3.path
+        assert len(album.extras) == 3
+
+        extra1.path = moe_move.fmt_item_path(extra1)
+        extra2.path = moe_move.fmt_item_path(extra2)
+        extra3.path = moe_move.fmt_item_path(extra3)
+
+        assert extra1.path != extra2.path
+        assert extra1.path != extra3.path
+        assert extra2.path != extra3.path
+
+
 ########################################################################################
 # Test format paths
 ########################################################################################
