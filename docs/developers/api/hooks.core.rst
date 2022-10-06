@@ -50,6 +50,11 @@ Import
 .. autoclass:: moe.plugins.moe_import.import_core.Hooks
    :members:
 
+Move
+----
+.. autoclass:: moe.plugins.move.move_core.Hooks
+   :members:
+
 Write
 -----
 .. autoclass:: moe.plugins.write.Hooks
