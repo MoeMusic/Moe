@@ -111,22 +111,36 @@ def read_custom_tags(
     """Read and set internally tracked fields."""
     audio_file = mediafile.MediaFile(track_path)
 
-    album_fields["path"] = track_path.parent
     album_fields["artist"] = audio_file.albumartist or audio_file.artist
-    album_fields["title"] = audio_file.album
     album_fields["date"] = audio_file.date
     album_fields["disc_total"] = audio_file.disctotal
+    album_fields["path"] = track_path.parent
+    album_fields["title"] = audio_file.album
 
+    track_fields["artist"] = audio_file.artist
+    track_fields["artists"] = set(audio_file.artists)
+    track_fields["disc"] = audio_file.disc
+    track_fields["genres"] = set(audio_file.genres)
     track_fields["path"] = track_path
     track_fields["title"] = audio_file.title
     track_fields["track_num"] = audio_file.track
-    track_fields["artist"] = audio_file.artist
-    track_fields["disc"] = audio_file.disc
-    track_fields["genres"] = set(audio_file.genres)
 
 
 class TrackError(LibraryError):
     """Error performing some operation on a Track."""
+
+
+class _Artist(SABase):
+    """A track can have multiple artists."""
+
+    __tablename__ = "artist"
+
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    _track_id: int = cast(int, Column(Integer, ForeignKey("track._id")))
+    name: str = cast(str, Column(String, nullable=False))
+
+    def __init__(self, name: str):
+        self.name = name
 
 
 class _Genre(SABase):
@@ -154,6 +168,7 @@ class Track(LibItem, SABase):
         albumartist (str)
         album_obj (Album): Corresponding Album object.
         artist (str)
+        artists (set[str]): Set of all artists.
         date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
         disc_total (int): Number of discs in the album.
@@ -179,7 +194,11 @@ class Track(LibItem, SABase):
     track_num: int = cast(int, Column(Integer, nullable=False))
     _custom_fields: dict[str, Any] = cast(
         dict[str, Any],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
+        Column(
+            MutableDict.as_mutable(JSON(none_as_null=True)),
+            default="{}",
+            nullable=False,
+        ),
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
@@ -190,6 +209,10 @@ class Track(LibItem, SABase):
     disc_total: int = association_proxy("album_obj", "disc_total")
     year: int = association_proxy("album_obj", "year")
 
+    _artists: set[_Artist] = relationship(
+        "_Artist", collection_class=set, cascade="save-update, merge, expunge"
+    )
+    artists: set[str] = association_proxy("_artists", "name")
     _genres: set[_Genre] = relationship(
         "_Genre", collection_class=set, cascade="save-update, merge, expunge"
     )
@@ -330,6 +353,7 @@ class Track(LibItem, SABase):
         return {
             "album_obj",
             "artist",
+            "artists",
             "disc",
             "genres",
             "path",

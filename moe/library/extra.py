@@ -79,7 +79,11 @@ class Extra(LibItem, SABase):
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     _custom_fields: dict[str, Any] = cast(
         dict[str, Any],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
+        Column(
+            MutableDict.as_mutable(JSON(none_as_null=True)),
+            default="{}",
+            nullable=False,
+        ),
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
