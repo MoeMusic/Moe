@@ -1680,6 +1680,7 @@ def album() -> Album:
     return Album(
         artist="Kanye West",
         title="My Beautiful Dark Twisted Fantasy",
+        country="US",
         date=datetime.date(2010, 11, 22),
         media="CD",
         path=None,  # type: ignore

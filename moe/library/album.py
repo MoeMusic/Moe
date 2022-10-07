@@ -85,6 +85,7 @@ class Album(LibItem, SABase):
 
     Attributes:
         artist (str): AKA albumartist.
+        country (str): Country the album was released in (two character identifier).
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
@@ -100,6 +101,7 @@ class Album(LibItem, SABase):
 
     _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
+    country: str = cast(str, Column(String, nullable=True))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
     media: str = cast(str, Column(String, nullable=True))
@@ -206,6 +208,7 @@ class Album(LibItem, SABase):
         """Returns any editable album fields."""
         return {
             "artist",
+            "country",
             "date",
             "disc_total",
             "extras",
