@@ -65,6 +65,7 @@ class TestWriteTags:
         album = "Bigger, Better, Faster, More!"
         albumartist = "4 Non Blondes"
         artist = "4 Non Blondes"
+        artists = {"4 Non Blondes", "Me"}
         date = datetime.date(1996, 10, 13)
         disc = 2
         disc_total = 2
@@ -75,6 +76,7 @@ class TestWriteTags:
         track.album = album
         track.albumartist = albumartist
         track.artist = artist
+        track.artists = artists
         track.date = date
         track.disc = disc
         track.disc_total = disc_total
@@ -88,6 +90,7 @@ class TestWriteTags:
         assert new_track.album == album
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist
+        assert new_track.artists == artists
         assert new_track.date == date
         assert new_track.disc == disc
         assert new_track.disc_total == disc_total

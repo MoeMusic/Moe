@@ -3,6 +3,8 @@
 import datetime
 import logging
 
+import sqlalchemy.ext.associationproxy
+
 from moe.library import LibItem
 
 __all__ = ["EditError", "edit_item"]
@@ -40,6 +42,10 @@ def edit_item(item: LibItem, field: str, value: str):
         setattr(item, field, value)
     elif isinstance(attr, int):
         setattr(item, field, int(value))
+    elif isinstance(attr, set) or isinstance(
+        attr, sqlalchemy.ext.associationproxy._AssociationSet
+    ):
+        setattr(item, field, {value.strip() for value in value.split(";")})
     elif isinstance(attr, datetime.date):
         try:
             setattr(item, field, datetime.date.fromisoformat(value))

@@ -44,12 +44,12 @@ class TestEditItem:
         with pytest.raises(edit.EditError):
             edit.edit_item(track_factory(), "date", "2020")
 
-    def test_list_field(self):
-        """We can edit list fields."""
+    def test_set_field(self):
+        """We can edit set fields."""
         track = track_factory()
-        edit.edit_item(track, "genre", "a; b")
+        edit.edit_item(track, "artists", "a; b")
 
-        assert set(track.genres) == {"a", "b"}
+        assert track.artists == {"a", "b"}
 
     def test_non_editable_fields(self):
         """Editing paths is not currently supported."""

@@ -76,6 +76,7 @@ def write_custom_tags(track: Track):
     audio_file.album = track.album
     audio_file.albumartist = track.albumartist
     audio_file.artist = track.artist
+    audio_file.artists = track.artists
     audio_file.date = track.date
     audio_file.disc = track.disc
     audio_file.disctotal = track.disc_total

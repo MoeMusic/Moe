@@ -118,6 +118,7 @@ class TestFromFile:
         track.album = "The Lost Album"
         track.albumartist = "Wu-Tang Clan"
         track.artist = "Wu-Tang Clan"
+        track.artists = {"Wu-Tang Clan", "Me"}
         track.date = datetime.date(2020, 1, 12)
         track.disc = 1
         track.disc_total = 2
@@ -131,6 +132,7 @@ class TestFromFile:
         assert new_track.album == track.album
         assert new_track.albumartist == track.albumartist
         assert new_track.artist == track.artist
+        assert new_track.artists == track.artists
         assert new_track.date == track.date
         assert new_track.disc == track.disc
         assert new_track.disc_total == track.disc_total
