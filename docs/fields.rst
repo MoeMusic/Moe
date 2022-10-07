@@ -19,14 +19,11 @@ Track Fields
     "albumartist", "Album artist", ""
     "artist", "Track artist", ""
     "artists", "Set of track artists.", "Supports multiple values"
-    "date", "Album release date", "YYYY-MM-DD format"
     "disc", "Disc number", ""
-    "disc_total", "Number of discs in the album", ""
     "genre", "Genre", "Supports multiple values"
     "path", "Filesystem path of the track", ""
     "title", "Track title", ""
     "track_num", "Track number", ""
-    "year", "Album release year", ""
 
 ************
 Album Fields
