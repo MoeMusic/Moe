@@ -128,6 +128,7 @@ class TestFromFile:
 
         album.date = datetime.date(2020, 1, 12)
         album.disc_total = 2
+        album.media = "CD"
         write_tags(track)
 
         new_track = Track.from_file(track.path)
@@ -144,6 +145,7 @@ class TestFromFile:
 
         assert new_album.disc_total == album.disc_total
         assert new_album.date == album.date
+        assert new_album.media == album.media
 
     def test_non_track_file(self):
         """Raise `TrackError` if the given path does not correspond to a track file."""

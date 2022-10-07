@@ -400,6 +400,7 @@ def _create_album(release: dict) -> Album:
         date=datetime.date(year, month, day),
         disc_total=int(release["medium-count"]),
         mb_album_id=release["id"],
+        media=release["medium-list"][0]["format"],
         title=release["title"],
         path=None,  # type: ignore # this will get set in `add_prompt`
     )
