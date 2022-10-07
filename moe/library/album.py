@@ -105,7 +105,11 @@ class Album(LibItem, SABase):
     title: str = cast(str, Column(String, nullable=False))
     _custom_fields: dict[str, Any] = cast(
         dict[str, Any],
-        Column(MutableDict.as_mutable(JSON(none_as_null=True)), default="{}"),
+        Column(
+            MutableDict.as_mutable(JSON(none_as_null=True)),
+            default="{}",
+            nullable=False,
+        ),
     )
 
     tracks: list["Track"] = relationship(
