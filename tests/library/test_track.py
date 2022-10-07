@@ -129,6 +129,7 @@ class TestFromFile:
         album.country = "US"
         album.date = datetime.date(2020, 1, 12)
         album.disc_total = 2
+        album.label = "RCA"
         album.media = "CD"
         write_tags(track)
 
@@ -147,6 +148,7 @@ class TestFromFile:
         assert new_album.country == album.country
         assert new_album.disc_total == album.disc_total
         assert new_album.date == album.date
+        assert new_album.label == album.label
         assert new_album.media == album.media
 
     def test_non_track_file(self):

@@ -115,6 +115,7 @@ def read_custom_tags(
     album_fields["country"] = audio_file.country
     album_fields["date"] = audio_file.date
     album_fields["disc_total"] = audio_file.disctotal
+    album_fields["label"] = audio_file.label
     album_fields["media"] = audio_file.media
     album_fields["path"] = track_path.parent
     album_fields["title"] = audio_file.album

@@ -37,6 +37,7 @@ Album Fields
     "country", "Country the album was released in (two character identifier).", ""
     "date", "Album release date", "YYYY-MM-DD format"
     "disc_total", "Number of discs in the album", ""
+    "label", "Album release label.", ""
     "media", "Album release format (e.g. CD, Digital, etc.)", ""
     "path", "Filesystem path of the album", ""
     "title", "Album title", ""

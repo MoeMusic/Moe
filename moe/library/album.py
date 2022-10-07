@@ -89,6 +89,7 @@ class Album(LibItem, SABase):
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
+        label (str): Album release label.
         media (str): Album release format (e.g. CD, Digital, etc.)
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
@@ -104,6 +105,7 @@ class Album(LibItem, SABase):
     country: str = cast(str, Column(String, nullable=True))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
+    label: str = cast(str, Column(String, nullable=True))
     media: str = cast(str, Column(String, nullable=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
