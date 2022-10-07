@@ -34,10 +34,10 @@ class TestEditItem:
 
     def test_date_field(self):
         """We can edit the date."""
-        track = track_factory()
-        edit.edit_item(track, "date", "2020-11-01")
+        album = album_factory()
+        edit.edit_item(album, "date", "2020-11-01")
 
-        assert track.date == datetime.date(2020, 11, 1)
+        assert album.date == datetime.date(2020, 11, 1)
 
     def test_invalid_date_field(self):
         """Invalid dates should raise an EditError."""

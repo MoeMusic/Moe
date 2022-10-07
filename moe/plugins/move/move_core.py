@@ -51,7 +51,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     default_album_path = "{album.artist}/{album.title} ({album.year})"
     default_extra_path = "{e_unique(extra)}"
     default_track_path = (
-        "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/"
+        "{f'Disc {track.disc:02}' if album.disc_total > 1 else ''}/"
         "{track.track_num:02} - {track.title}{track.path.suffix}"
     )
 
@@ -184,8 +184,10 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
         album = lib_item  # noqa: F841
     elif isinstance(lib_item, Track):
         track = lib_item  # noqa: F841
+        album = track.album_obj
     elif isinstance(lib_item, Extra):
         extra = lib_item  # noqa: F841
+        album = extra.album_obj  # noqa: F841
     else:
         raise NotImplementedError
 

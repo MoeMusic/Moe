@@ -1,6 +1,5 @@
 """A Track in the database and any related logic."""
 
-import datetime
 import logging
 from pathlib import Path
 from typing import Any, Optional, TypeVar, cast
@@ -169,15 +168,12 @@ class Track(LibItem, SABase):
         album_obj (Album): Corresponding Album object.
         artist (str)
         artists (set[str]): Set of all artists.
-        date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
-        disc_total (int): Number of discs in the album.
         genre (str): String of all genres concatenated with ';'.
         genres (set[str]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
-        year (int): Album release year.
 
     Note:
         Altering any album-related property attributes, will result in changing the
@@ -205,9 +201,6 @@ class Track(LibItem, SABase):
     album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
     albumartist: str = association_proxy("album_obj", "artist")
-    date: datetime.date = association_proxy("album_obj", "date")
-    disc_total: int = association_proxy("album_obj", "disc_total")
-    year: int = association_proxy("album_obj", "year")
 
     _artists: set[_Artist] = relationship(
         "_Artist", collection_class=set, cascade="save-update, merge, expunge"

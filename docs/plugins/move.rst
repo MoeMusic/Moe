@@ -23,7 +23,7 @@ Path Configuration Options
 ``album_path = "{album.artist}/{album.title} ({album.year})"``
     Album filesystem path format relative to the global configuration option, :ref:`library_path <library_path config option>`.
 
-``track_path = "{f'Disc {track.disc:02}' if track.disc_total > 1 else ''}/{track.track_num:02} - {track.title}{track.path.suffix}"``
+``track_path = "{f'Disc {track.disc:02}' if album.disc_total > 1 else ''}/{track.track_num:02} - {track.title}{track.path.suffix}"``
     Track filesystem path format relative to ``album_path``.
 
     .. note::
