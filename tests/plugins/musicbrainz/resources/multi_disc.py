@@ -42,6 +42,17 @@ release = {
             "front": "true",
             "back": "false",
         },
+        "label-info-list": [
+            {
+                "catalog-number": "B0014695-02",
+                "label": {
+                    "id": "4cccc72a-0bd0-433a-905e-dad87871397d",
+                    "type": "Original Production",
+                    "name": "Roc‐A‐Fella Records",
+                    "sort-name": "Roc‐A‐Fella Records",
+                },
+            }
+        ],
         "medium-list": [
             {
                 "position": "1",
