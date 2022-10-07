@@ -397,6 +397,7 @@ def _create_album(release: dict) -> Album:
 
     album = Album(
         artist=_flatten_artist_credit(release["artist-credit"]),
+        country=release["country"],
         date=datetime.date(year, month, day),
         disc_total=int(release["medium-count"]),
         mb_album_id=release["id"],
