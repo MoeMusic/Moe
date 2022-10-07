@@ -71,6 +71,7 @@ class TestWriteTags:
         disc = 2
         disc_total = 2
         genres = {"alternative", "rock"}
+        label = "Interscope Records"
         media = "CD"
         title = "What's Up"
         track_num = 3
@@ -84,6 +85,7 @@ class TestWriteTags:
         track.disc = disc
         track.album_obj.disc_total = disc_total
         track.genres = genres
+        track.album_obj.label = label
         track.album_obj.media = media
         track.title = title
         track.track_num = track_num
@@ -105,6 +107,7 @@ class TestWriteTags:
         assert new_album.country == country
         assert new_album.date == date
         assert new_album.disc_total == disc_total
+        assert new_album.label == label
         assert new_album.media == media
 
 

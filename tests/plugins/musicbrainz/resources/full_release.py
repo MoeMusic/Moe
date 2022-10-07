@@ -1682,6 +1682,7 @@ def album() -> Album:
         title="My Beautiful Dark Twisted Fantasy",
         country="US",
         date=datetime.date(2010, 11, 22),
+        label="Roc‐A‐Fella Records",
         media="CD",
         path=None,  # type: ignore
         mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",

@@ -33,6 +33,17 @@ partial_date_year = {
                 },
             }
         ],
+        "label-info-list": [
+            {
+                "catalog-number": "B0014695-02",
+                "label": {
+                    "id": "4cccc72a-0bd0-433a-905e-dad87871397d",
+                    "type": "Original Production",
+                    "name": "Roc‐A‐Fella Records",
+                    "sort-name": "Roc‐A‐Fella Records",
+                },
+            }
+        ],
         "release-event-count": 1,
         "barcode": "049925061116",
         "asin": "B000003AEP",
@@ -76,6 +87,18 @@ partial_date_year_mon = {
         ],
         "date": "1992-12",
         "country": "US",
+        "label-info-list": [
+            {
+                "catalog-number": "B0014695-02",
+                "label": {
+                    "id": "4cccc72a-0bd0-433a-905e-dad87871397d",
+                    "type": "Original Production",
+                    "name": "Roc‐A‐Fella Records",
+                    "sort-name": "Roc‐A‐Fella Records",
+                },
+            }
+        ],
+        "label-info-count": 1,
         "release-event-list": [
             {
                 "date": "1992-12-15",

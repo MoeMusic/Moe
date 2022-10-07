@@ -400,6 +400,7 @@ def _create_album(release: dict) -> Album:
         country=release["country"],
         date=datetime.date(year, month, day),
         disc_total=int(release["medium-count"]),
+        label=release["label-info-list"][0]["label"]["name"],
         mb_album_id=release["id"],
         media=release["medium-list"][0]["format"],
         title=release["title"],
