@@ -77,9 +77,9 @@ class TestWriteTags:
         track.albumartist = albumartist
         track.artist = artist
         track.artists = artists
-        track.date = date
+        track.album_obj.date = date
         track.disc = disc
-        track.disc_total = disc_total
+        track.album_obj.disc_total = disc_total
         track.genres = genres
         track.title = title
         track.track_num = track_num
@@ -87,16 +87,19 @@ class TestWriteTags:
         moe_write.write_tags(track)
 
         new_track = Track.from_file(track.path)
+        new_album = new_track.album_obj
+
         assert new_track.album == album
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist
         assert new_track.artists == artists
-        assert new_track.date == date
         assert new_track.disc == disc
-        assert new_track.disc_total == disc_total
         assert new_track.genres == genres
         assert new_track.title == title
         assert new_track.track_num == track_num
+
+        assert new_album.date == date
+        assert new_album.disc_total == disc_total
 
 
 @pytest.mark.usefixtures("_tmp_write_config")

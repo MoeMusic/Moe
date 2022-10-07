@@ -169,15 +169,12 @@ class Track(LibItem, SABase):
         album_obj (Album): Corresponding Album object.
         artist (str)
         artists (set[str]): Set of all artists.
-        date (datetime.date): Album release date.
         disc (int): Disc number the track is on.
-        disc_total (int): Number of discs in the album.
         genre (str): String of all genres concatenated with ';'.
         genres (set[str]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
-        year (int): Album release year.
 
     Note:
         Altering any album-related property attributes, will result in changing the

@@ -115,30 +115,35 @@ class TestFromFile:
         """We can initialize a track with tags from a file if present."""
         tmp_config()
         track = track_factory(exists=True)
+        album = track.album_obj
+
         track.album = "The Lost Album"
         track.albumartist = "Wu-Tang Clan"
         track.artist = "Wu-Tang Clan"
         track.artists = {"Wu-Tang Clan", "Me"}
-        track.date = datetime.date(2020, 1, 12)
         track.disc = 1
-        track.disc_total = 2
         track.genres = {"hip hop", "rock"}
         track.title = "Full"
         track.track_num = 1
+
+        album.date = datetime.date(2020, 1, 12)
+        album.disc_total = 2
         write_tags(track)
 
         new_track = Track.from_file(track.path)
+        new_album = new_track.album_obj
 
         assert new_track.album == track.album
         assert new_track.albumartist == track.albumartist
         assert new_track.artist == track.artist
         assert new_track.artists == track.artists
-        assert new_track.date == track.date
         assert new_track.disc == track.disc
-        assert new_track.disc_total == track.disc_total
         assert new_track.genres == track.genres
         assert new_track.title == track.title
         assert new_track.track_num == track.track_num
+
+        assert new_album.disc_total == album.disc_total
+        assert new_album.date == album.date
 
     def test_non_track_file(self):
         """Raise `TrackError` if the given path does not correspond to a track file."""
