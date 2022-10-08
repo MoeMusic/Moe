@@ -1,10 +1,12 @@
 """Tests an Album object."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
 
 import moe
+from moe import config
 from moe.config import ExtraPlugin
 from moe.library import Album, AlbumError, Extra
 from moe.plugins import write as moe_write

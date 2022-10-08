@@ -76,6 +76,12 @@ Most configuration options reside in their relevant plugin, however there are th
     .. note::
        If you change ``library_path``, Moe will attempt to search for your music in the new location.
 
+``original_date = false``
+    Whether or not to always set an album's ``date`` to its ``original_date`` if present.
+
+    .. note::
+       This change will also propagate onto the respective ``year`` fields.
+
 Plugin Options
 ==============
 For plugin specific configuration, see the respective plugin's page. Each plugin option should be specified under that plugin's section in the config.
