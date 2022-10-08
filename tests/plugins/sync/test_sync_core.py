@@ -35,12 +35,12 @@ class TestHooks:
 
 
 class TestSyncItems:
-    """Test ``sync_items()``."""
+    """Test ``sync_item()``."""
 
-    def test_sync_items(self):
+    def test_sync_item(self):
         """Call the `sync_metadata` hook when syncing items."""
         track = track_factory()
 
         moe_sync.sync_item(track)
 
-        config.CONFIG.pm.hook.sync_metadata.assert_called_once_with(track)
+        config.CONFIG.pm.hook.sync_metadata.assert_called_once_with(item=track)
