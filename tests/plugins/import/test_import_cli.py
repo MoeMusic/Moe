@@ -308,6 +308,9 @@ class TestImportCLIOutput:
             date=datetime.date(1999, 12, 31),
             num_tracks=6,
             num_discs=2,
+            country="US",
+            media="CD",
+            label="me",
         )
         old_album.tracks[0].title = "really really long old title"
 

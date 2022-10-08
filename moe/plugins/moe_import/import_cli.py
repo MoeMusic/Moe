@@ -1,7 +1,7 @@
 """Import prompt."""
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 import pluggy
 from rich import box
@@ -162,16 +162,28 @@ def _fmt_import_updates(old_album: Album, new_album: Album) -> Panel:
 
 def _fmt_album(old_album: Album, new_album: Album) -> Text:
     """Formats the header for the album changes panel."""
-    header_fields = ("title", "artist", "date")
     header_text = Text(justify="center", style="bold")
-    for header_field in header_fields:
+
+    for header_field in ("title", "artist"):
         field_changes = _fmt_field_changes(old_album, new_album, header_field)
         if not field_changes:
             field_changes = Text(getattr(old_album, header_field))
 
         header_text.append_text(field_changes).append("\n")
 
-    return header_text
+    sub_header_text = Text()
+    for sub_header in ("media", "year", "country", "label"):
+        field_changes = _fmt_field_changes(old_album, new_album, sub_header)
+        if not field_changes:
+            if getattr(old_album, sub_header):
+                field_changes = Text(getattr(old_album, sub_header))
+
+        if sub_header_text and field_changes:
+            sub_header_text.append(" | ")
+        if field_changes:
+            sub_header_text.append_text(field_changes)
+
+    return header_text.append_text(sub_header_text).append("\n")
 
 
 def _fmt_tracks(old_album: Album, new_album: Album) -> Table:
@@ -230,7 +242,7 @@ def _fmt_tracks(old_album: Album, new_album: Album) -> Table:
 
 def _fmt_field_changes(
     old_item: Union[Album, Track], new_item: Union[Album, Track], field: str
-) -> Text:
+) -> Optional[Text]:
     """Formats changes of a single field.
 
     Args:
@@ -247,8 +259,9 @@ def _fmt_field_changes(
         `old_item.field`  will be striketroughed and in red
         3. `old_item.field` differs from `new_item.field`:
             "{old_item.field} -> {new_item.field}" and the arrow is yellow
-        3. `old_item.field` is equal to `new_item.field`:
+        4. `old_item.field` is equal to `new_item.field`:
            `old_item.field` returned
+        5. None if `old_item.field` and `new_item.field` DNE
     """
     old_field = getattr(old_item, field)
     new_field = getattr(new_item, field)
@@ -264,4 +277,7 @@ def _fmt_field_changes(
             .append(Text(str(new_field)))
         )
 
-    return Text(str(old_field))
+    if old_field:
+        return Text(str(old_field))
+    else:
+        return None
