@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.15.3 (2022-10-08)
+====================
+
+Bug Fixes
+---------
+* Musicbrainz error if a release has no label (`6991a41 <https://github.com/MoeMusic/Moe/commit/6991a41b6f0e6192be4c4a042613d0f4eaf8c3f3>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.15.2...v0.15.3>`__
+
 v0.15.2 (2022-10-08)
 ====================
 
