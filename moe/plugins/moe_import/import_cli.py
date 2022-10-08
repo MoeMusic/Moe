@@ -1,5 +1,6 @@
 """Import prompt."""
 
+import functools
 import logging
 from typing import Optional, Union
 
@@ -15,12 +16,13 @@ import moe.cli
 from moe import config
 from moe.cli import console
 from moe.library import Album, Track
+from moe.plugins.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
 
 log = logging.getLogger("moe.cli.import")
 
-__all__ = ["AbortImport", "import_prompt"]
+__all__ = ["candidate_prompt", "import_prompt"]
 
 
 class AbortImport(Exception):
@@ -32,14 +34,37 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
+    def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
+        """Add a user input choice to the candidate prompt.
+
+        ``func`` will be supplied the following keyword arguments:
+
+            * ``new_album``: Album being added to the library.
+            * ``candidates``: Candidate albums with all the import changes.
+
+        Args:
+            prompt_choices: List of prompt choices. To add a prompt choice, simply
+                append it to this list.
+
+        Example:
+            .. code:: python
+
+                prompt_choices.append(
+                    PromptChoice(
+                        title="Abort", shortcut_key="x", func=_abort_changes
+                    )
+                )
+        """
+
+    @staticmethod
+    @moe.hookspec
     def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
         """Add a user input choice to the import prompt.
 
-        ``func`` should return the album to be added to the library (or ``None`` if no
-        album should be added) and will be supplied the following keyword arguments:
+        ``func`` will be supplied the following keyword arguments:
 
-            * ``old_album``: Old album with no changes applied.
-            * ``new_album``: New album consisting of all the new changes.
+            * ``new_album``: Album being added to the library.
+            * ``candidate``: Candidate album with all the import changes.
 
         Args:
             prompt_choices: List of prompt choices. To add a prompt choice, simply
@@ -65,19 +90,11 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def process_candidates(old_album: Album, candidates):
-    """Use the import prompt to select and process the imported candidate albums."""
-    if candidates:
-        chosen_candidate = candidates[0]
-        log.debug(
-            "Candidate album chosen for import prompt. "
-            f"[candidate={chosen_candidate!r}]"
-        )
-        try:
-            import_prompt(old_album, chosen_candidate)
-        except AbortImport as err:
-            log.debug(err)
-            raise SystemExit(0) from err
+def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
+    """Adds the ``abort`` prompt choice to the user prompt."""
+    prompt_choices.append(
+        PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
+    )
 
 
 @moe.hookimpl
@@ -91,67 +108,135 @@ def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
     )
 
 
-def import_prompt(
-    old_album: Album,
-    new_album: Album,
-):
-    """Runs the interactive prompt for the given album changes.
+@moe.hookimpl
+def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
+    """Use the import prompt to select and process the imported candidate albums."""
+    if candidates:
+        try:
+            candidate_prompt(new_album, candidates[:5])
+        except AbortImport as err:
+            log.debug(err)
+            raise SystemExit(0) from err
+
+
+def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]):
+    """Runs the interactive prompt for a user to select a candidate to import.
 
     Args:
-        old_album: Album to be added. Any changes will be applied to this album.
-        new_album: New album with all metadata changes. Will be compared against
-            ``old_album``.
+        new_album: Album being added to the library.
+        candidates: List of candidates to choose from.
 
     Raises:
         AbortImport: Import prompt was aborted by the user.
     """
-    log.debug(f"Running import prompt. [{old_album=!r}, {new_album=!r}]")
+    prompt_choices: list[PromptChoice] = []
 
-    console.print(_fmt_import_updates(old_album, new_album))
+    for num, candidate in enumerate(candidates, start=1):
+        prompt_choices.append(
+            PromptChoice(
+                _fmt_candidate_info(candidate),
+                str(num),
+                functools.partial(_select_candidate, candidate_num=num - 1),
+            )
+        )
+    config.CONFIG.pm.hook.add_candidate_prompt_choice(prompt_choices=prompt_choices)
+
+    prompt_choice = choice_prompt(
+        prompt_choices, question="Which album would you like to import?"
+    )
+    prompt_choice.func(new_album, candidates)
+
+
+def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
+    """Formats a candidates info for the candidate prompt."""
+    sub_header_values = []
+    for str_field in ["media", "country", "label"]:
+        if value := getattr(candidate.album, str_field):
+            sub_header_values.append(value)
+    sub_header_values.extend(candidate.sub_header_info)
+    sub_header = " | ".join(sub_header_values)
+
+    return (
+        str(candidate)
+        + "\n"
+        + " " * (9 + len(candidate.match_value_pct))
+        + sub_header
+        + "\n"
+        + " " * (9 + len(candidate.match_value_pct))
+        + candidate.source_str
+        + "\n"
+    )
+
+
+def _select_candidate(
+    new_album: Album, candidates: list[CandidateAlbum], candidate_num: int
+):
+    """Runs the import prompt for a selected candidate."""
+    import_prompt(new_album, candidates[candidate_num])
+
+
+def import_prompt(
+    new_album: Album,
+    candidate: CandidateAlbum,
+):
+    """Runs the interactive prompt for the given album changes.
+
+    Args:
+        new_album: Album being added to the library. Any changes will be applied to
+            this album.
+        candidate: New candidate album with all metadata changes. Will be compared
+            against ``old_album``.
+
+    Raises:
+        AbortImport: Import prompt was aborted by the user.
+    """
+    log.debug(f"Running import prompt. [{new_album=!r}, {candidate=!r}]")
+
+    console.print(_fmt_import_updates(new_album, candidate))
 
     prompt_choices: list[PromptChoice] = []
     config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
     prompt_choice = choice_prompt(prompt_choices)
-    prompt_choice.func(old_album, new_album)
+    prompt_choice.func(new_album, candidate)
 
 
 def _apply_changes(
-    old_album: Album,
     new_album: Album,
+    candidate: CandidateAlbum,
 ):
     """Applies the album changes."""
     log.debug("Applying changes from import prompt.")
 
-    for old_track, new_track in get_matching_tracks(old_album, new_album):
+    for old_track, new_track in get_matching_tracks(new_album, candidate.album):
         if not old_track and new_track:
-            new_album.tracks.remove(new_track)  # missing track
+            candidate.album.tracks.remove(new_track)  # missing track
         elif old_track and not new_track:
-            old_album.tracks.remove(old_track)  # unmatched track
+            new_album.tracks.remove(old_track)  # unmatched track
         elif (
             old_track
             and new_track
-            and old_album.get_track(new_track.track_num, new_track.disc) != old_track
+            and new_album.get_track(new_track.track_num, new_track.disc) != old_track
         ):
             # matchup track and disc numbers of matches to ensure they merge properly
             old_track.track_num = new_track.track_num
             old_track.disc = new_track.disc
 
-    old_album.merge(new_album, overwrite=True)
+    new_album.merge(candidate.album, overwrite=True)
 
 
 def _abort_changes(
-    old_album: Album,
     new_album: Album,
+    candidate: CandidateAlbum,
 ):
     """Aborts the album changes."""
     raise AbortImport("Import prompt aborted; no changes made.")
 
 
-def _fmt_import_updates(old_album: Album, new_album: Album) -> Panel:
-    """Formats import updates from `old_album` to `new_album`."""
-    album_text = _fmt_album(old_album, new_album)
-    track_text = _fmt_tracks(old_album, new_album)
+def _fmt_import_updates(new_album: Album, candidate: CandidateAlbum) -> Panel:
+    """Formats import updates between `new_album` and the `candidate`."""
+    album_text = _fmt_album(new_album, candidate)
+    track_text = _fmt_tracks(new_album, candidate)
 
     return Panel(
         Group(album_text, track_text),
@@ -160,34 +245,39 @@ def _fmt_import_updates(old_album: Album, new_album: Album) -> Panel:
     )
 
 
-def _fmt_album(old_album: Album, new_album: Album) -> Text:
-    """Formats the header for the album changes panel."""
+def _fmt_album(new_album: Album, candidate: CandidateAlbum) -> Text:
+    """Formats the header for the import panel."""
     header_text = Text(justify="center", style="bold")
 
     for header_field in ("title", "artist"):
-        field_changes = _fmt_field_changes(old_album, new_album, header_field)
+        field_changes = _fmt_field_changes(new_album, candidate.album, header_field)
         if not field_changes:
-            field_changes = Text(getattr(old_album, header_field))
+            field_changes = Text(getattr(new_album, header_field))
 
         header_text.append_text(field_changes).append("\n")
 
     sub_header_text = Text()
-    for sub_header in ("media", "year", "country", "label"):
-        field_changes = _fmt_field_changes(old_album, new_album, sub_header)
+    for sub_header in ("media", "country", "label"):
+        field_changes = _fmt_field_changes(new_album, candidate.album, sub_header)
         if not field_changes:
-            if getattr(old_album, sub_header):
-                field_changes = Text(getattr(old_album, sub_header))
+            if getattr(new_album, sub_header):
+                field_changes = Text(getattr(new_album, sub_header))
 
         if sub_header_text and field_changes:
             sub_header_text.append(" | ")
         if field_changes:
             sub_header_text.append_text(field_changes)
 
-    return header_text.append_text(sub_header_text).append("\n")
+    return (
+        header_text.append_text(sub_header_text)
+        .append("\n")
+        .append(candidate.source_str)
+        .append("\n")
+    )
 
 
-def _fmt_tracks(old_album: Album, new_album: Album) -> Table:
-    """Formats the tracklist differences between two albums."""
+def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
+    """Formats the tracklist for the import panel."""
     track_table = Table(box=box.SIMPLE)
     track_table.add_column("status")
     track_table.add_column("disc")
@@ -195,7 +285,7 @@ def _fmt_tracks(old_album: Album, new_album: Album) -> Table:
     track_table.add_column("Artist")
     track_table.add_column("Title")
 
-    matches = get_matching_tracks(old_album, new_album)
+    matches = get_matching_tracks(new_album, candidate.album)
     matches.sort(
         key=lambda match: (
             getattr(match[1], "disc", 0),

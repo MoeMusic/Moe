@@ -64,6 +64,7 @@ Import
 
 .. automodule:: moe.plugins.moe_import
    :members:
+   :exclude-members: match_value_pct
 
 Move
 ----

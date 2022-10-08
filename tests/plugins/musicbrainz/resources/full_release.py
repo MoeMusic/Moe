@@ -81,6 +81,7 @@ release = {
         "title": "My Beautiful Dark Twisted Fantasy",
         "status": "Official",
         "quality": "high",
+        "disambiguation": "explicit",
         "packaging": "Jewel Case",
         "text-representation": {"language": "eng", "script": "Latn"},
         "artist-credit": [

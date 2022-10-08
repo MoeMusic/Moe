@@ -27,16 +27,17 @@ import pkg_resources
 import moe
 from moe import config
 from moe.library import Album, LibItem, Track
+from moe.plugins.moe_import.import_core import CandidateAlbum
+from moe.util.core import match
 
 __all__ = [
     "MBAuthError",
     "add_releases_to_collection",
     "get_album_by_id",
-    "get_matching_album",
+    "get_candidate_by_id",
     "get_track_by_id",
     "rm_releases_from_collection",
     "set_collection",
-    "update_album",
 ]
 
 log = logging.getLogger("moe.mb")
@@ -59,6 +60,7 @@ musicbrainzngs.set_useragent(
 # information to include in the release api query
 RELEASE_INCLUDES = [
     "aliases",
+    "annotation",
     "artists",
     "artist-credits",
     "artist-rels",
@@ -114,7 +116,7 @@ def create_custom_track_fields() -> dict[str, Any]:  # type: ignore
 
 
 @moe.hookimpl
-def import_candidates(album: Album) -> Album:
+def get_candidates(album: Album) -> list[CandidateAlbum]:
     """Applies musicbrainz metadata changes to a given album.
 
     Args:
@@ -124,7 +126,25 @@ def import_candidates(album: Album) -> Album:
         A new album containing all the corrected metadata from musicbrainz. Note, this
         album is not complete, as it will not contain any references to the filesystem.
     """
-    return get_matching_album(album)
+    log.debug(f"Getting candidate albums from musicbrainz. [{album=!r}")
+
+    search_criteria: dict = {}
+    search_criteria["artist"] = album.artist
+    search_criteria["release"] = album.title
+    search_criteria["date"] = album.date.isoformat()
+
+    releases = musicbrainzngs.search_releases(limit=5, **search_criteria)
+
+    candidates = []
+    for release in releases["release-list"]:
+        candidates.append(get_candidate_by_id(album, release["id"]))
+
+    if not candidates:
+        log.warning("No candidate albums found.")
+    else:
+        log.info(f"Found candidate albums. [{candidates=!r}]")
+
+    return candidates
 
 
 @moe.hookimpl
@@ -333,44 +353,8 @@ def set_collection(releases: set[str], collection: Optional[str] = None) -> None
     add_releases_to_collection(new_releases, collection)
 
 
-def get_matching_album(album: Album) -> Album:
-    """Gets a matching musicbrainz album for a given album.
-
-    Args:
-        album: Album used to search for the release.
-
-    Returns:
-        An Album containing all musicbrainz metadata.
-    """
-    if album.mb_album_id:
-        return get_album_by_id(album.mb_album_id)
-
-    log.debug(f"Determing matching releases from musicbrainz. [{album=!r}]")
-
-    search_criteria: dict = {}
-    search_criteria["artist"] = album.artist
-    search_criteria["release"] = album.title
-    search_criteria["date"] = album.date.isoformat()
-
-    releases = musicbrainzngs.search_releases(limit=1, **search_criteria)
-
-    release = releases["release-list"][0]
-    release_id = release["id"]
-
-    log.info(f"Determined matching release from musicbrainz. [match={release_id!r}]")
-
-    return get_album_by_id(release_id)  # searching by id provides more info
-
-
 def get_album_by_id(release_id: str) -> Album:
-    """Gets a musicbrainz album from a release ID.
-
-    Args:
-        release_id: Musicbrainz release ID to search.
-
-    Returns:
-        An album containing all metadata from the given ``release_id``.
-    """
+    """Returns an album from musicbrainz with the given release ID."""
     log.debug(f"Fetching release from musicbrainz. [release={release_id!r}]")
 
     release = musicbrainzngs.get_release_by_id(release_id, includes=RELEASE_INCLUDES)
@@ -378,6 +362,28 @@ def get_album_by_id(release_id: str) -> Album:
     log.info(f"Fetched release from musicbrainz. [release={release_id!r}]")
 
     return _create_album(release["release"])
+
+
+def get_candidate_by_id(album: Album, release_id: str) -> CandidateAlbum:
+    """Returns a candidate for ``album`` from the given ``release_id``."""
+    log.debug(f"Fetching release from musicbrainz. [release={release_id!r}]")
+    release = musicbrainzngs.get_release_by_id(release_id, includes=RELEASE_INCLUDES)[
+        "release"
+    ]
+    log.info(f"Fetched release from musicbrainz. [release={release_id!r}]")
+
+    candidate_album = _create_album(release)
+
+    sub_header_info = [str(_parse_date(release["date"]).year)]
+    if disambiguation := release.get("disambiguation"):
+        sub_header_info.append(disambiguation)
+
+    return CandidateAlbum(
+        album=candidate_album,
+        match_value=match.get_match_value(album, candidate_album),
+        source_str=f"Musicbrainz: {release_id}",
+        sub_header_info=sub_header_info,
+    )
 
 
 def _create_album(release: dict) -> Album:
@@ -470,22 +476,3 @@ def get_track_by_id(track_id: str, album_id: str) -> Track:
     raise ValueError(
         f"Given track or album id could not be found. [{track_id=!r}, {album_id=!r}]"
     )
-
-
-def update_album(album: Album):
-    """Updates an album with metadata from musicbrainz.
-
-    Args:
-        album: Album to update.
-
-    Raises:
-        ValueError: ``album`` has no ``mb_album_id``.
-    """
-    log.debug(f"Updating album with musicbrainz metadata. [{album=!r}]")
-
-    if not album.mb_album_id:
-        raise ValueError(
-            "Unable to update album, no musicbrainz id found. [{album=!r}]"
-        )
-
-    album.merge(get_album_by_id(album.mb_album_id), overwrite=True)

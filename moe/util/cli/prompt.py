@@ -24,6 +24,10 @@ class PromptChoice:
                 Ensure each shortcut key is not in use by another PromptChoice.
         func: The function that should get called if a choice is selected.
             The definition for how to call ``func`` should be specified by the plugin.
+
+    See Also:
+        `Questionary Choice docs
+        <https://questionary.readthedocs.io/en/stable/pages/api_reference.html#api-reference>`_
     """
 
     title: str

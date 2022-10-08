@@ -11,6 +11,7 @@ import moe.cli
 from moe import config
 from moe.library import Album, Track
 from moe.plugins.add import add_cli
+from moe.plugins.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -33,9 +34,9 @@ class AddCLIPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def import_candidates(album: Album) -> Album:
+    def get_candidates(album: Album) -> list[CandidateAlbum]:
         """Return a fake candidate for testing."""
-        return album
+        return [CandidateAlbum(album=album, match_value=1, source_str="add plugin")]
 
 
 @pytest.mark.usefixtures("_tmp_add_config")
