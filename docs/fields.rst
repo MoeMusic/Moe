@@ -12,15 +12,15 @@ Track Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 4, 10, 6
+    :widths: 4, 10, 1
     :width: 100%
 
     "album", "Album title", ""
     "albumartist", "Album artist", ""
     "artist", "Track artist", ""
-    "artists", "Set of track artists.", "Supports multiple values"
+    "artists", "Set of track artists.", "1"
     "disc", "Disc number", ""
-    "genre", "Genre", "Supports multiple values"
+    "genre", "Genre", "1"
     "path", "Filesystem path of the track", ""
     "title", "Track title", ""
     "track_num", "Track number", ""
@@ -30,12 +30,12 @@ Album Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 4, 10, 6
+    :widths: 4, 10, 1
     :width: 100%
 
     "artist", "Album artist", ""
     "country", "Country the album was released in (two character identifier).", ""
-    "date", "Album release date", "YYYY-MM-DD format"
+    "date", "Album release date", "2"
     "disc_total", "Number of discs in the album", ""
     "label", "Album release label.", ""
     "media", "Album release format (e.g. CD, Digital, etc.)", ""
@@ -50,10 +50,16 @@ Extra Fields
 ************
 .. csv-table::
     :header: "Field", "Description", "Notes"
-    :widths: 4, 10, 6
+    :widths: 4, 10, 1
     :width: 100%
 
     "path", "Filesystem path of the extra", ""
+
+*****
+Notes
+*****
+1. Supports multiple values.
+2. Edit and query using YYYY-MM-DD format.
 
 *************
 Custom Fields
