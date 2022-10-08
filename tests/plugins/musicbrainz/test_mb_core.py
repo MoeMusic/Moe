@@ -414,6 +414,15 @@ class TestGetAlbumById:
         assert any(track.disc == 1 for track in mb_album.tracks)
         assert any(track.disc == 2 for track in mb_album.tracks)
 
+    def test_no_country(self, mock_mb_by_id, mb_config):
+        """Don't error if no country key in the release."""
+        mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        release = copy.deepcopy(mb_rsrc.full_release.release)
+        release["release"].pop("country")
+        mock_mb_by_id.return_value = release
+
+        moe_mb.get_album_by_id(mb_album_id)
+
 
 class TestGetTrackByID:
     """Test `get_track_by_id`."""
