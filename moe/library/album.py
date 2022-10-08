@@ -91,6 +91,7 @@ class Album(LibItem, SABase):
         extras (list[Extra]): Extra non-track files associated with the album.
         label (str): Album release label.
         media (str): Album release format (e.g. CD, Digital, etc.)
+        original_date (datetime.date): Date of the original release of the album.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
@@ -107,6 +108,7 @@ class Album(LibItem, SABase):
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
     label: str = cast(str, Column(String, nullable=True))
     media: str = cast(str, Column(String, nullable=True))
+    original_date: datetime.date = cast(datetime.date, Column(Date, nullable=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
     _custom_fields: dict[str, Any] = cast(
@@ -216,6 +218,7 @@ class Album(LibItem, SABase):
             "extras",
             "label",
             "media",
+            "original_date",
             "path",
             "title",
             "tracks",
@@ -278,7 +281,7 @@ class Album(LibItem, SABase):
                 new_extras.append(other_extra)
         self.extras.extend(new_extras)
 
-        omit_fields = {"year", "extras", "tracks"}
+        omit_fields = {"extras", "tracks"}
         for field in self.fields - omit_fields:
             other_value = getattr(other, field)
             self_value = getattr(self, field)
@@ -288,6 +291,16 @@ class Album(LibItem, SABase):
         log.debug(
             f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
         )
+
+    @hybrid_property
+    def original_year(self) -> int:  # type: ignore
+        """Gets an Album's year."""
+        return self.original_date.year
+
+    @original_year.expression  # type: ignore
+    def original_year(cls):  # noqa: B902
+        """Returns a year at the sql level."""
+        return sa.extract("year", cls.original_date)
 
     @hybrid_property
     def year(self) -> int:  # type: ignore

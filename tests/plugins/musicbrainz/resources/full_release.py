@@ -124,7 +124,7 @@ release = {
             "id": "5d6e21e1-deb5-428e-bb42-c2a567f3619b",
             "type": "Album",
             "title": "My Beautiful Dark Twisted Fantasy",
-            "first-release-date": "2010-11-22",
+            "first-release-date": "2010-1-22",
             "primary-type": "Album",
             "artist-credit": [
                 {
@@ -1684,6 +1684,7 @@ def album() -> Album:
         date=datetime.date(2010, 11, 22),
         label="Roc‐A‐Fella Records",
         media="CD",
+        original_date=datetime.date(2010, 1, 22),
         path=None,  # type: ignore
         mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
     )

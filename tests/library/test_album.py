@@ -48,6 +48,56 @@ class TestHooks:
         assert not album.is_unique(dup_album)
 
 
+class TestInit:
+    """Test initialization of an album."""
+
+    def test_original_date_false(self, tmp_config):
+        """Original date and date should differ if ``original_date`` is False."""
+        tmp_config()
+        config.CONFIG.settings.original_date = False
+        album = album_factory(date=date(2000, 1, 1), original_date=date(1999, 1, 1))
+
+        assert album.date != album.original_date
+
+    def test_original_date_true(self, tmp_config):
+        """Original date and date should be the same if ``original_date`` is True."""
+        tmp_config()
+        config.CONFIG.settings.original_date = True
+        og_date = date(1999, 1, 1)
+        album = album_factory(date=date(2000, 1, 1), original_date=og_date)
+
+        assert album.date == album.original_date
+        assert album.date == og_date
+
+    def test_original_date_true_but_none(self, tmp_config):
+        """Don't change `date` if `original_date` is None."""
+        tmp_config()
+        config.CONFIG.settings.original_date = True
+        og_date = None
+        album = album_factory(date=date(2000, 1, 1), original_date=og_date)
+
+        assert album.date
+        assert album.date != album.original_date
+
+
+class TestProperties:
+    """Test various properties return what we expect."""
+
+    def test_year(self):
+        """A year is generated from the date."""
+        year = 1996
+        album = album_factory(date=date(year, 1, 1))
+
+        assert album.year == year
+
+    def test_original_year(self):
+        """A original_year is generated from the date."""
+        original_year = 1996
+        album = album_factory(original_date=date(original_year, 1, 1))
+
+        assert album.original_year == original_year
+
+
 class TestFromDir:
     """Test a creating an album from a directory."""
 

@@ -84,6 +84,7 @@ def write_custom_tags(track: Track):
     audio_file.genres = track.genres
     audio_file.label = track.album_obj.label
     audio_file.media = track.album_obj.media
+    audio_file.original_date = track.album_obj.original_date
     audio_file.title = track.title
     audio_file.track = track.track_num
 

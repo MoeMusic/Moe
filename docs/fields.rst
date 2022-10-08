@@ -39,6 +39,8 @@ Album Fields
     "disc_total", "Number of discs in the album", ""
     "label", "Album release label.", ""
     "media", "Album release format (e.g. CD, Digital, etc.)", ""
+    "original_date", "Date of the original release of the album.", "2"
+    "original_year", "Year of the original release of the album.", ""
     "path", "Filesystem path of the album", ""
     "title", "Album title", ""
     "year", "Album release year", ""

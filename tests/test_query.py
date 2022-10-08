@@ -1,6 +1,8 @@
 """Tests the core query module."""
 
 
+from datetime import date
+
 import pytest
 
 import moe.query
@@ -119,6 +121,15 @@ class TestQueries:
         assert tracks
         for track in tracks:
             assert isinstance(track, Track)
+
+    def test_years(self, tmp_session):
+        """We can query an album's year and original year directly."""
+        album = album_factory(date=date(1999, 1, 2), original_date=date(1998, 1, 1))
+        tmp_session.add(album)
+        tmp_session.flush()
+
+        assert query(f"a:year:{album.year}", "album")
+        assert query(f"a:original_year:{album.original_year}", "album")
 
     def test_multiple_terms(self, tmp_session):
         """We should be able to query for multiple terms at once."""
