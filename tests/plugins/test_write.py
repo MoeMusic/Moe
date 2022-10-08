@@ -73,6 +73,7 @@ class TestWriteTags:
         genres = {"alternative", "rock"}
         label = "Interscope Records"
         media = "CD"
+        original_date = datetime.date(1996, 1, 13)
         title = "What's Up"
         track_num = 3
 
@@ -82,6 +83,7 @@ class TestWriteTags:
         track.artists = artists
         track.album_obj.country = country
         track.album_obj.date = date
+        track.album_obj.original_date = original_date
         track.disc = disc
         track.album_obj.disc_total = disc_total
         track.genres = genres
@@ -109,6 +111,7 @@ class TestWriteTags:
         assert new_album.disc_total == disc_total
         assert new_album.label == label
         assert new_album.media == media
+        assert new_album.original_date == original_date
 
 
 @pytest.mark.usefixtures("_tmp_write_config")

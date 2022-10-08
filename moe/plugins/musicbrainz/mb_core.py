@@ -384,25 +384,15 @@ def _create_album(release: dict) -> Album:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
-    date = release["date"].split("-")
-    year = int(date[0])
-    try:
-        month = int(date[1])
-    except IndexError:
-        month = 1
-    try:
-        day = int(date[2])
-    except IndexError:
-        day = 1
-
     album = Album(
         artist=_flatten_artist_credit(release["artist-credit"]),
         country=release["country"],
-        date=datetime.date(year, month, day),
+        date=_parse_date(release["date"]),
         disc_total=int(release["medium-count"]),
         label=release["label-info-list"][0]["label"]["name"],
         mb_album_id=release["id"],
         media=release["medium-list"][0]["format"],
+        original_date=_parse_date(release["release-group"]["first-release-date"]),
         title=release["title"],
         path=None,  # type: ignore # this will get set in `add_prompt`
     )
@@ -432,6 +422,23 @@ def _flatten_artist_credit(artist_credit: list[dict]) -> str:
             full_artist += artist["artist"]["name"]
 
     return full_artist
+
+
+def _parse_date(date: str) -> datetime.date:
+    """Parses a date from a musicbrainz release."""
+    date_parts = date.split("-")
+
+    year = int(date_parts[0])
+    try:
+        month = int(date_parts[1])
+    except IndexError:
+        month = 1
+    try:
+        day = int(date_parts[2])
+    except IndexError:
+        day = 1
+
+    return datetime.date(year, month, day)
 
 
 def get_track_by_id(track_id: str, album_id: str) -> Track:
