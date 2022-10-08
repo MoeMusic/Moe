@@ -128,7 +128,7 @@ class TestAddImportPromptChoice:
         """The "m" key to add a musicbrainz id is added."""
         prompt_choices = []
 
-        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        config.CONFIG.pm.hook.add_candidate_prompt_choice(prompt_choices=prompt_choices)
 
         assert any(choice.shortcut_key == "m" for choice in prompt_choices)
 
@@ -137,7 +137,7 @@ class TestAddImportPromptChoice:
         old_album = album_factory()
         new_album = album_factory()
         prompt_choices = []
-        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        config.CONFIG.pm.hook.add_candidate_prompt_choice(prompt_choices=prompt_choices)
 
         mock_album = Mock()
         with patch(
@@ -145,17 +145,17 @@ class TestAddImportPromptChoice:
             **{"return_value.ask.return_value": "new id"}
         ):
             with patch(
-                "moe.plugins.musicbrainz.mb_cli.moe_mb.get_album_by_id",
+                "moe.plugins.musicbrainz.mb_cli.moe_mb.get_candidate_by_id",
                 return_value=mock_album,
                 autospec=True,
-            ) as mock_get_album:
+            ) as mock_get_candidate:
                 with patch(
                     "moe.plugins.musicbrainz.mb_cli.moe_import.import_prompt",
                     autospec=True,
                 ) as mock_prompt:
                     prompt_choices[0].func(old_album, new_album)
 
-        mock_get_album.assert_called_once_with("new id")
+        mock_get_candidate.assert_called_once_with(old_album, "new id")
         mock_prompt.assert_called_once_with(old_album, mock_album)
 
 

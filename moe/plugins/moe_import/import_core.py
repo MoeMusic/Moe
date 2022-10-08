@@ -1,16 +1,51 @@
 """Core api for importing albums."""
 
+import itertools
 import logging
+import operator
 
 import pluggy
+from attr import dataclass
 
 import moe
 from moe import config
 from moe.library import Album, Extra, LibItem, Track
 
-__all__ = ["import_album"]
+__all__ = ["CandidateAlbum", "import_album"]
 
 log = logging.getLogger("moe.import")
+
+
+@dataclass
+class CandidateAlbum:
+    """A single candidate for the import process.
+
+    Attributes:
+        album (Album): The candidate album.
+        match_value (float): 0 to 1 scale of how well the candidate album matches with
+            the album being imported.
+        source_str (str): A string identifying the release and it's source
+            e.g. 'Musicbrainz: 1234'. This will be displayed as the last line in the
+            candidate prompt.
+        sub_header_info (list[str]): List of any additional info to include in the
+            candidate sub-header. The following fields are already included:
+            ['media', 'country', 'label']
+        match_value_pct (str): ``match_value`` as a percentage.
+    """
+
+    album: Album
+    match_value: float
+    source_str: str
+    sub_header_info: list[str] = []
+
+    @property
+    def match_value_pct(self) -> str:
+        """Formats `match_value` as a percentage."""
+        return f"{round(self.match_value * 100, 1)}%"
+
+    def __str__(self):
+        """String representation of a CandidateAlbum."""
+        return f"[{self.match_value_pct}] {self.album.artist} - {self.album.title}"
 
 
 class Hooks:
@@ -18,11 +53,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def import_candidates(album: Album) -> Album:  # type: ignore
-        """Imports candidate albums from implemented sources based on the given album.
+    def get_candidates(album: Album) -> list[CandidateAlbum]:  # type: ignore
+        """Return candidate albums from implemented sources based on the given album.
 
         This hook should be used to import metadata from an external source and return
-        a new album with the new metadata. The candidate albums will then be processed
+        any candidate albums to import from. The candidate albums will then be processed
         in the :meth:`process_candidates` hook.
 
         Note:
@@ -32,23 +67,24 @@ class Hooks:
             album: Album being added to the library.
 
         Returns:
-            A new album with imported metadata.
+            New candidate album.
         """  # noqa: DAR202
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(old_album: Album, candidates: list[Album]):
+    def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied
-        onto the original album, ``old_album``.
+        onto the original album, ``new_album``.
 
         Ensure any potential conflicts with existing albums in the database are
         resolved.
 
         Args:
-            old_album: Album being added to the library.
-            candidates: New candidate albums with imported metadata.
+            new_album: Album being added to the library.
+            candidates: New candidate albums with imported metadata sorted by how well
+                 they match ``new_album``.
         """
 
 
@@ -77,9 +113,12 @@ def import_album(album: Album):
     """Imports album metadata for an album."""
     log.debug(f"Importing album metadata. [{album=!r}]")
 
-    candidates = config.CONFIG.pm.hook.import_candidates(album=album)
+    candidates = config.CONFIG.pm.hook.get_candidates(album=album)
+    candidates = list(itertools.chain.from_iterable(candidates))
+    candidates.sort(key=operator.attrgetter("match_value"), reverse=True)
+
     config.CONFIG.pm.hook.process_candidates(
-        old_album=album,
+        new_album=album,
         candidates=candidates,
     )
 

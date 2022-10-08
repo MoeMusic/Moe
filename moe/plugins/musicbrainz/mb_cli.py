@@ -18,6 +18,7 @@ import moe.cli
 from moe.library import Album, Extra, Track
 from moe.plugins import moe_import
 from moe.plugins import musicbrainz as moe_mb
+from moe.plugins.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice, cli_query, query_parser
 
 __all__: list[str] = []
@@ -83,24 +84,18 @@ def _parse_args(args: argparse.Namespace):
 
 
 @moe.hookimpl
-def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
+def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
     """Adds a choice to the import prompt to allow specifying a mb id."""
     prompt_choices.append(
         PromptChoice(title="Enter Musicbrainz ID", shortcut_key="m", func=_enter_id)
     )
 
 
-def _enter_id(
-    old_album: Album,
-    new_album: Album,
-):
+def _enter_id(new_album: Album, candidate: CandidateAlbum):
     """Re-run the add prompt with the inputted Musibrainz release."""
     mb_id = questionary.text("Enter Musicbrainz ID: ").ask()
 
-    log.debug(
-        f"Re-running import prompt for different musicbrainz release. [{mb_id=!r}]"
-    )
+    log.debug(f"Running import prompt for a selected musicbrainz release. [{mb_id=!r}]")
 
-    album = moe_mb.get_album_by_id(mb_id)
-
-    moe_import.import_prompt(old_album, album)
+    candidate = moe_mb.get_candidate_by_id(new_album, mb_id)
+    moe_import.import_prompt(new_album, candidate)

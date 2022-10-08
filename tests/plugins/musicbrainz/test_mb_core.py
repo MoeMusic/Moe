@@ -119,22 +119,29 @@ class TestConfiguration:
             )
 
 
-class TestImportCandidates:
-    """Test the ``import_candidtates`` hook implementation."""
+class TestGetCandidates:
+    """Test the ``get_candidates`` hook implementation."""
 
-    def test_get_matching_albums(self, tmp_config):
-        """Get matching albums when searching for candidates to import."""
-        album = album_factory()
-        config = tmp_config("default_plugins = ['import', 'musicbrainz']")
+    @pytest.mark.network
+    def test_network(self, mb_config):
+        """Make sure we can actually hit the real API.
 
-        with patch.object(
-            moe_mb.mb_core, "get_matching_album", autospec=True
-        ) as mock_gma:
-            mock_gma.return_value = album
-            candidates = config.pm.hook.import_candidates(album=album)
+        Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
+        network test for both.
+        """
+        album = album_factory(
+            config=mb_config,
+            artist="Kanye West",
+            title="My Beautiful Dark Twisted Fantasy",
+        )
 
-        mock_gma.assert_called_once_with(album)
-        assert candidates == [album]
+        candidates = config.CONFIG.pm.hook.get_candidates(album=album)
+        mb_album = candidates[0][0].album
+
+        # don't test every field since we can't actually guarantee the accuracy of
+        # musicbrainz's search results every time
+        assert mb_album.artist == album.artist
+        assert mb_album.title == album.title
 
 
 class TestCollectionsAutoRemove:
@@ -294,74 +301,13 @@ class TestSyncMetadata:
         assert old_track.title == "synced"
 
 
-class TestGetMatchingAlbum:
-    """Test `get_matching_album()`."""
-
-    @pytest.mark.network
-    def test_network(self, mb_config):
-        """Make sure we can actually hit the real API.
-
-        Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
-        network test for both.
-        """
-        album = album_factory(
-            config=mb_config,
-            artist="Kanye West",
-            title="My Beautiful Dark Twisted Fantasy",
-        )
-
-        mb_album = moe_mb.get_matching_album(album)
-
-        # don't test every field since we can't actually guarantee the accuracy of
-        # musicbrainz's search results every time
-        assert mb_album.artist == album.artist
-        assert mb_album.title == album.title
-
-    def test_album_search(self, mock_mb_by_id, mb_config):
-        """Searching for a release uses the expected parameters."""
-        album = album_factory(
-            config=mb_config,
-            artist="Kanye West",
-            title="My Beautiful Dark Twisted Fantasy",
-            date=datetime.date(2010, 11, 22),
-        )
-        search_criteria = {
-            "artist": "Kanye West",
-            "release": "My Beautiful Dark Twisted Fantasy",
-            "date": "2010-11-22",
-        }
-        mock_mb_by_id.return_value = mb_rsrc.full_release.release
-
-        with patch.object(
-            moe_mb.mb_core.musicbrainzngs,
-            "search_releases",
-            return_value=mb_rsrc.full_release.search,
-            autospec=True,
-        ) as mock_mb_search:
-            mb_album = moe_mb.get_matching_album(album)
-
-        mock_mb_search.assert_called_once_with(limit=1, **search_criteria)
-        assert mb_album == mb_rsrc.full_release.album()
-
-    def test_dont_search_if_mbid(self):
-        """Use ``mb_album_id`` to search by id if it exists."""
-        album = album_factory(mb_album_id="1")
-
-        with patch.object(
-            moe_mb.mb_core, "get_album_by_id", autospec=True
-        ) as mock_mb_by_id:
-            moe_mb.get_matching_album(album)
-
-        mock_mb_by_id.assert_called_once_with(album.mb_album_id)
-
-
 class TestGetAlbumById:
     """Test `get_album_by_id()`.
 
     You can use the following code to print the result of a musicbrainz api query.
 
         def test_print_result(self):
-            id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
+            album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
             includes = ["artist-credits", "recordings"]
             print(musicbrainzngs.get_release_by_id(id, includes))
             assert 0
@@ -431,6 +377,22 @@ class TestGetAlbumById:
         mock_mb_by_id.return_value = release
 
         moe_mb.get_album_by_id(mb_album_id)
+
+
+class TestGetCandidateByID:
+    """Test `get_candidate_by_id()`."""
+
+    def test_album_search(self, mock_mb_by_id, mb_config):
+        """Searching for a release returns the expected album."""
+        mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
+        mock_mb_by_id.return_value = mb_rsrc.full_release.release
+
+        candidate = moe_mb.get_candidate_by_id(album_factory(), mb_album_id)
+
+        mock_mb_by_id.assert_called_once_with(
+            mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
+        )
+        assert candidate.album == mb_rsrc.full_release.album()
 
 
 class TestGetTrackByID:
@@ -741,31 +703,6 @@ class TestSetCollection:
 
         with pytest.raises(moe_mb.MBAuthError):
             moe_mb.set_collection(releases, collection)
-
-
-class TestUpdateAlbum:
-    """Test ``update_album``."""
-
-    def test_update_album(self, mb_config):
-        """We can update a given album."""
-        old_album = album_factory(title="old", mb_album_id="1", config=mb_config)
-        new_album = album_factory(title="new", config=mb_config)
-
-        with patch.object(
-            moe_mb.mb_core, "get_album_by_id", autospec=True, return_value=new_album
-        ) as album_by_id:
-            moe_mb.update_album(old_album)
-
-        assert old_album.title == new_album.title
-        album_by_id.assert_called_once_with(old_album.mb_album_id)
-
-    def test_no_id(self, mb_config):
-        """Raise ValueError if not mb album id present."""
-        album = album_factory()
-
-        with patch.object(moe_mb.mb_core, "get_album_by_id", autospec=True):
-            with pytest.raises(ValueError, match=r"album="):
-                moe_mb.update_album(album)
 
 
 class TestPluginRegistration:

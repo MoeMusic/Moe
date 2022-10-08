@@ -95,7 +95,7 @@ class TestGetMatchingTracks:
         assert track2.title == track1.title
         assert track2.title == track4.title
 
-        def mock_get_value(track_a, track_b, match_field_weights):
+        def mock_get_value(track_a, track_b):
             if track_a.title == track_b.title:
                 return 1
             return 0
@@ -112,24 +112,38 @@ class TestGetMatchingTracks:
         assert album2_tracks.count(track4) == 1
 
 
-class TestGetMatchValue:
+class TestMatchValue:
     """Test ``get_match_value()``."""
 
-    TEST_FIELD_WEIGHTS = {
-        "disc": 0.3,
-        "title": 0.9,
-        "track_num": 0.9,
-    }  # how much to weigh matches of various fields
+    def test_different_type(self):
+        """Tracks cannot match with albums."""
+        assert get_match_value(album_factory(), track_factory()) == 0
+
+    def test_same_album(self):
+        """Albums with the same values for all used fields should be a perfect match."""
+        album1 = album_factory()
+        album2 = album_factory(dup_album=album1)
+
+        assert get_match_value(album1, album2) > 0.9
+
+    def test_diff_album(self):
+        """Albums with different values for each field should not match."""
+        album1 = album_factory()
+        album2 = album_factory()
+        album1.title = "a"
+        album2.title = "b"
+        album1.disc_total = 2
+        assert album1.title != album2.title
+        assert album1.disc_total != album2.disc_total
+
+        assert get_match_value(album1, album2) < 1
 
     def test_same_track(self):
         """Tracks with the same values for all used fields should be a perfect match."""
         track1 = track_factory()
-        track2 = track_factory()
-        track1.title = track2.title
-        track1.track_num = track2.track_num
-        track1.disc = track2.disc
+        track2 = track_factory(dup_track=track1)
 
-        assert get_match_value(track1, track2, self.TEST_FIELD_WEIGHTS) == 1
+        assert get_match_value(track1, track2) > 0.9
 
     def test_diff_track(self):
         """Tracks with different values for each field should not match."""
@@ -142,4 +156,4 @@ class TestGetMatchValue:
         assert track1.disc != track2.disc
         assert track1.track_num != track2.track_num
 
-        assert get_match_value(track1, track2, self.TEST_FIELD_WEIGHTS) == 0
+        assert get_match_value(track1, track2) < 1

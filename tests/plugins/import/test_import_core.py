@@ -1,5 +1,6 @@
 """Tests the import core plugin."""
 
+import itertools
 from unittest.mock import patch
 
 import moe
@@ -7,6 +8,7 @@ from moe import config
 from moe.config import ExtraPlugin
 from moe.library import Album
 from moe.plugins import moe_import
+from moe.plugins.moe_import import CandidateAlbum
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -15,23 +17,23 @@ class ImportPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def import_candidates(album: Album) -> Album:
+    def get_candidates(album: Album):
         """Changes the album title."""
         album.title = "candidate title"
 
-        return album
+        return [CandidateAlbum(album=album, match_value=1, source_str="hook")]
 
     @staticmethod
     @moe.hookimpl
-    def process_candidates(old_album: Album, candidates: list[Album]):
+    def process_candidates(new_album, candidates):
         """Apply the new title onto the old album."""
-        old_album.title = candidates[0].title
+        new_album.title = candidates[0].album.title
 
 
 class TestHookSpecs:
     """Test the various plugin hook specifications."""
 
-    def test_import_candidates(self, tmp_config):
+    def test_get_candidates(self, tmp_config):
         """Plugins can import candidate albums."""
         album = album_factory()
         tmp_config(
@@ -39,10 +41,11 @@ class TestHookSpecs:
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
 
-        candidates = config.CONFIG.pm.hook.import_candidates(album=album)
+        candidates = config.CONFIG.pm.hook.get_candidates(album=album)
+        candidates = list(itertools.chain.from_iterable(candidates))
 
         assert candidates
-        assert candidates[0].title == "candidate title"
+        assert candidates[0].album.title == "candidate title"
 
     def test_process_candidates(self, tmp_config):
         """Plugins can process candidate albums."""
@@ -55,7 +58,10 @@ class TestHookSpecs:
         )
 
         config.CONFIG.pm.hook.process_candidates(
-            old_album=album, candidates=[new_album]
+            new_album=album,
+            candidates=[
+                CandidateAlbum(album=new_album, match_value=1, source_str="tests")
+            ],
         )
 
         assert album.title == "new title"
@@ -105,7 +111,7 @@ class TestImportAlbum:
     """Test ``import_album``."""
 
     def test_hooks(self, tmp_config):
-        """Importing consists of calling import and process candidates hooks."""
+        """Importing consists of calling get and process candidates hooks."""
         album = album_factory()
         tmp_config(
             "default_plugins = ['import']",
