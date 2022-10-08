@@ -184,6 +184,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
         dynaconf.Validator("DEFAULT_PLUGINS", default=DEFAULT_PLUGINS),
         dynaconf.Validator("DISABLE_PLUGINS", default=set()),
         dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
+        dynaconf.Validator("ORIGINAL_DATE", default=False),
     ]
     settings.validators.register(*validators)
 

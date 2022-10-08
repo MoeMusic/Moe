@@ -1,5 +1,6 @@
 """Tests the musicbrainz plugin."""
 
+import copy
 import datetime
 from unittest.mock import call, patch
 
@@ -368,7 +369,7 @@ class TestGetAlbumById:
     Make sure to add any ``includes`` for whatever is needed for the test.
     """
 
-    def test_album_search(self, mock_mb_by_id):
+    def test_album_search(self, mock_mb_by_id, mb_config):
         """Searching for a release returns the expected album."""
         mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
         mock_mb_by_id.return_value = mb_rsrc.full_release.release
@@ -380,10 +381,10 @@ class TestGetAlbumById:
         )
         assert mb_album == mb_rsrc.full_release.album()
 
-    def test_partial_date_year_mon(self, mock_mb_by_id):
+    def test_partial_date_year_mon(self, mock_mb_by_id, mb_config):
         """If given date is missing the day, default to 1."""
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        release = mb_rsrc.full_release.release
+        release = copy.deepcopy(mb_rsrc.full_release.release)
         release["release"]["date"] = "1992-12"
         mock_mb_by_id.return_value = release
 
@@ -391,10 +392,10 @@ class TestGetAlbumById:
 
         assert mb_album.date == datetime.date(1992, 12, 1)
 
-    def test_partial_date_year(self, mock_mb_by_id):
+    def test_partial_date_year(self, mock_mb_by_id, mb_config):
         """If given date is missing the day and month, default to 1 for each."""
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        release = mb_rsrc.full_release.release
+        release = copy.deepcopy(mb_rsrc.full_release.release)
         release["release"]["date"] = "1992"
         mock_mb_by_id.return_value = release
 
@@ -402,7 +403,7 @@ class TestGetAlbumById:
 
         assert mb_album.date == datetime.date(1992, 1, 1)
 
-    def test_multi_disc_release(self, mock_mb_by_id):
+    def test_multi_disc_release(self, mock_mb_by_id, mb_config):
         """We can add a release with multiple discs."""
         mb_album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
         mock_mb_by_id.return_value = mb_rsrc.multi_disc.release

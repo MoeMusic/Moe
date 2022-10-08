@@ -164,6 +164,9 @@ class Album(LibItem, SABase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        if config.CONFIG.settings.original_date and self.original_date:
+            self.date = self.original_date
+
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
