@@ -384,12 +384,17 @@ def _create_album(release: dict) -> Album:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
+    if release["label-info-list"]:
+        label = release["label-info-list"][0]["label"]["name"]
+    else:
+        label = None
+
     album = Album(
         artist=_flatten_artist_credit(release["artist-credit"]),
         country=release.get("country"),
         date=_parse_date(release["date"]),
         disc_total=int(release["medium-count"]),
-        label=release["label-info-list"][0]["label"]["name"],
+        label=label,
         mb_album_id=release["id"],
         media=release["medium-list"][0]["format"],
         original_date=_parse_date(release["release-group"]["first-release-date"]),

@@ -423,6 +423,15 @@ class TestGetAlbumById:
 
         moe_mb.get_album_by_id(mb_album_id)
 
+    def test_no_label(self, mock_mb_by_id, mb_config):
+        """Don't error if no label in the release."""
+        mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
+        release = copy.deepcopy(mb_rsrc.full_release.release)
+        release["release"]["label-info-list"].clear()
+        mock_mb_by_id.return_value = release
+
+        moe_mb.get_album_by_id(mb_album_id)
+
 
 class TestGetTrackByID:
     """Test `get_track_by_id`."""
