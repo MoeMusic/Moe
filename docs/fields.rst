@@ -21,7 +21,7 @@ Track Fields
     "artists", "Set of track artists.", "1"
     "disc", "Disc number", ""
     "genre", "Genre", "1"
-    "path", "Filesystem path of the track", ""
+    "path", "Filesystem path of the track", "3"
     "title", "Track title", ""
     "track_num", "Track number", ""
 
@@ -40,10 +40,10 @@ Album Fields
     "label", "Album release label.", ""
     "media", "Album release format (e.g. CD, Digital, etc.)", ""
     "original_date", "Date of the original release of the album.", "2"
-    "original_year", "Year of the original release of the album.", ""
+    "original_year", "Year of the original release of the album.", "3"
     "path", "Filesystem path of the album", ""
     "title", "Album title", ""
-    "year", "Album release year", ""
+    "year", "Album release year", "3"
 
 ************
 Extra Fields
@@ -53,13 +53,14 @@ Extra Fields
     :widths: 4, 10, 1
     :width: 100%
 
-    "path", "Filesystem path of the extra", ""
+    "path", "Filesystem path of the extra", "3"
 
 *****
 Notes
 *****
 1. Supports multiple values.
 2. Edit and query using YYYY-MM-DD format.
+3. Read-only (cannot be edited).
 
 *************
 Custom Fields
