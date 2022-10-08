@@ -4,6 +4,25 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.15.0 (2022-10-08)
+====================
+
+New Features
+------------
+* New config option ``original_date`` (`3894fa7 <https://github.com/MoeMusic/Moe/commit/3894fa716e45150531c4dfe7473aa7f701ec542c>`_)
+* New field - original_date (`416d202 <https://github.com/MoeMusic/Moe/commit/416d20282debdfd2cc1bc2f2fb97246522724b41>`_)
+* Add media, label, country, and year to import header (`ce9cc9a <https://github.com/MoeMusic/Moe/commit/ce9cc9a42efdbae7b55bcb12c5328c7b373f68cb>`_)
+* New album field - label (`80e8348 <https://github.com/MoeMusic/Moe/commit/80e8348972591b337d9c67cb1fc0d432a44eb949>`_)
+* New album field - country (`5a51d71 <https://github.com/MoeMusic/Moe/commit/5a51d716ba731f03a4d07d8f70707bebd8cd3ea9>`_)
+* New album field - media (`256a3a6 <https://github.com/MoeMusic/Moe/commit/256a3a673182b917c3a2c09773b205ee6204c42a>`_)
+* New track field - artists (`7701d9e <https://github.com/MoeMusic/Moe/commit/7701d9e8ec18e9dd26c788ce5570b5a8d62d4218>`_)
+* New path template function to get a unique extra filename (`8a0c3a3 <https://github.com/MoeMusic/Moe/commit/8a0c3a3fd615b5defde64ecb348e914ff2c29306>`_)
+* Allow plugins to create custom path template functions (`195ea9c <https://github.com/MoeMusic/Moe/commit/195ea9c4f32950dd81ce8ec2704421e3bb03a949>`_)
+* Add `mbcol` cli argument to sync music to a musicbrainz collection (`4f00136 <https://github.com/MoeMusic/Moe/commit/4f001362487795ed76efaf5e27065ec16a9f918f>`_)
+* List cli output is now sorted (`fbb11d0 <https://github.com/MoeMusic/Moe/commit/fbb11d0826b265e871f6676690ddf053760fba76>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.14.0...v0.15.0>`__
+
 v0.14.0 (2022-10-02)
 ====================
 
