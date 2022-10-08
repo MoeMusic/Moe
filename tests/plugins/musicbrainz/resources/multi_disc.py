@@ -53,6 +53,32 @@ release = {
                 },
             }
         ],
+        "release-group": {
+            "id": "5d6e21e1-deb5-428e-bb42-c2a567f3619b",
+            "type": "Album",
+            "title": "My Beautiful Dark Twisted Fantasy",
+            "first-release-date": "2010-1-22",
+            "primary-type": "Album",
+            "artist-credit": [
+                {
+                    "artist": {
+                        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+                        "type": "Person",
+                        "name": "Kanye West",
+                        "sort-name": "West, Kanye",
+                        "alias-list": [
+                            {
+                                "sort-name": "K. West",
+                                "type": "Search hint",
+                                "alias": "K. West",
+                            },
+                        ],
+                        "alias-count": 6,
+                    }
+                }
+            ],
+            "artist-credit-phrase": "Kanye West",
+        },
         "medium-list": [
             {
                 "position": "1",

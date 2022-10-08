@@ -383,7 +383,9 @@ class TestGetAlbumById:
     def test_partial_date_year_mon(self, mock_mb_by_id):
         """If given date is missing the day, default to 1."""
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year_mon
+        release = mb_rsrc.full_release.release
+        release["release"]["date"] = "1992-12"
+        mock_mb_by_id.return_value = release
 
         mb_album = moe_mb.get_album_by_id(mb_album_id)
 
@@ -392,7 +394,9 @@ class TestGetAlbumById:
     def test_partial_date_year(self, mock_mb_by_id):
         """If given date is missing the day and month, default to 1 for each."""
         mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        mock_mb_by_id.return_value = mb_rsrc.partial_date.partial_date_year
+        release = mb_rsrc.full_release.release
+        release["release"]["date"] = "1992"
+        mock_mb_by_id.return_value = release
 
         mb_album = moe_mb.get_album_by_id(mb_album_id)
 
