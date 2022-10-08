@@ -27,7 +27,7 @@ Installation
 Required Reading
 ****************
 Before using Moe, you should understand that Moe mostly consists of *plugins* or self-contained features, that each provide a different way of interacting with music in your library.
-For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins comes with it's own commands and configuration options that let you define how Moe manages your music. Each configuration option has sensible defaults which means you *could* just run Moe out of the box, but I'd recommend taking a look at the following.
+For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins come with their own set of commands and configuration options. Each configuration option has sensible defaults which means you *could* just run Moe out of the box, but I'd recommend getting familiar with the various plugins in use.
 
 *************
 Configuration
