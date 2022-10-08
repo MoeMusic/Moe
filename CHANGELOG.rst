@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.15.2 (2022-10-08)
+====================
+
+Bug Fixes
+---------
+* Musicbrainz error if release does not have a country specified (`1c0f844 <https://github.com/MoeMusic/Moe/commit/1c0f844ddb595ba04ac0a947a7e02d33d48f1121>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.15.1...v0.15.2>`__
+
 v0.15.1 (2022-10-08)
 ====================
 
