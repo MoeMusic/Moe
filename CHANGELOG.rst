@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.15.1 (2022-10-08)
+====================
+
+Bug Fixes
+---------
+* Sync_item not called with keyword arguments (`7c4b65a <https://github.com/MoeMusic/Moe/commit/7c4b65a854abe62aab3f1c13f0829dd6d01f9f95>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.15.0...v0.15.1>`__
+
 v0.15.0 (2022-10-08)
 ====================
 
