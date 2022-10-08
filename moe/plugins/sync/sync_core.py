@@ -24,6 +24,6 @@ def sync_item(item: LibItem):
     """Syncs metadata from external sources and merges changes into ``item``."""
     log.debug(f"Syncing metadata. [{item=!r}]")
 
-    config.CONFIG.pm.hook.sync_metadata(item)
+    config.CONFIG.pm.hook.sync_metadata(item=item)
 
     log.debug(f"Synced metadata. [{item=!r}]")
