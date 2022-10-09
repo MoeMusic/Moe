@@ -19,7 +19,7 @@ The ``move`` plugin is enabled by default and provides the following configurati
     If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
 
 Path Configuration Options
---------------------------
+==========================
 ``album_path = "{album.artist}/{album.title} ({album.year})"``
     Album filesystem path format relative to the global configuration option, :ref:`library_path <library_path config option>`.
 
@@ -39,7 +39,7 @@ Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/
     Windows users should use a forward slash ``/`` when delineating sub-directories in path formats as the back slash ``\`` is used as an escape character.
 
 Custom Path Template Functions
-------------------------------
+==============================
 Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
 
 .. autofunction:: moe.plugins.move.move_core.e_unique
@@ -57,8 +57,8 @@ The ``move`` command will move all items in the library according to your config
 
     moe move [-h] [-n]
 
-Options
--------
+Optional Arguments
+==================
 ``-h, --help``
     Display the help message.
 

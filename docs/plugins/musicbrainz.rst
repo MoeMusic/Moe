@@ -53,8 +53,8 @@ The musicbrainz plugin adds a single command, ``mbcol``, used to sync a musicbra
 
 By default, the musicbrainz collection will be set to the releases found in the queried items. If tracks or extras are queried, their associated album releases will be synced with the collection.
 
-Options
-=======
+Optional Arguments
+==================
 ``-h, --help``
     Display the help message.
 ``-a, --album``
