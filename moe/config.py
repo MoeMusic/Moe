@@ -10,6 +10,7 @@ config can be accessed through import and should be treated as a constant::
 """
 
 import importlib
+import importlib.metadata
 import importlib.util
 import logging
 import os
@@ -382,6 +383,14 @@ class Config:
         if Path(self.config_dir / "plugins").exists():
             sys.path.append(str(self.config_dir / "plugins"))
             self._register_local_plugins(config_plugins, self.config_dir / "plugins")
+
+        # register all third-party installed plugins
+        plugins = importlib.metadata.entry_points().get("moe.plugins")
+        if plugins:
+            for plugin in plugins:
+                if plugin.name in config_plugins:
+                    plugin.load()
+                    self.pm.register(plugin.load(), plugin.name)
 
         # register plugin hookimpls for all extra plugins
         for extra_plugin in self._extra_plugins:
