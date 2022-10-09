@@ -1,5 +1,6 @@
 """Tests configuration."""
 
+import shutil
 from pathlib import Path
 from unittest.mock import patch
 
@@ -71,11 +72,33 @@ class TestPlugins:
         for plugin in plugins:
             assert config.CONFIG.pm.has_plugin(plugin)
 
+    def test_enable_plugins(self, tmp_config):
+        """We can explictly enable plugins."""
+        tmp_config(
+            settings="""default_plugins = ["cli"]
+        enable_plugins = ["list"]"""
+        )
+
+        assert config.CONFIG.pm.has_plugin("list")
+
     def test_extra_plugins(self, tmp_config):
         """Any given additional plugins are also registered."""
         tmp_config(extra_plugins=[ExtraPlugin(TestPlugins, "config_plugin")])
 
         assert config.CONFIG.pm.has_plugin("config_plugin")
+
+    def test_register_local_user_plugins(self, tmp_config, tmp_path_factory):
+        """We can register plugins in the user plugin directory."""
+        config_dir = tmp_path_factory.mktemp("config")
+        plugin_dir = config_dir / "plugins"
+        plugin_dir.mkdir()
+
+        list_path = Path(__file__).resolve().parent.parent / "moe/plugins/list.py"
+        shutil.copyfile(list_path, plugin_dir / "my_list.py")
+
+        tmp_config(settings="enable_plugins = ['my_list']", config_dir=config_dir)
+
+        assert config.CONFIG.pm.has_plugin("my_list")
 
 
 class ConfigPlugin:

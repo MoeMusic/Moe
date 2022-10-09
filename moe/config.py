@@ -14,6 +14,7 @@ import importlib.util
 import logging
 import os
 import re
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple, Optional, Union, cast
@@ -182,6 +183,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
     validators = [
         dynaconf.Validator("DEFAULT_PLUGINS", default=DEFAULT_PLUGINS),
         dynaconf.Validator("DISABLE_PLUGINS", default=set()),
+        dynaconf.Validator("ENABLE_PLUGINS", default=set()),
         dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
         dynaconf.Validator("ORIGINAL_DATE", default=False),
     ]
@@ -360,9 +362,9 @@ class Config:
         self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
-        config_plugins = set(self.settings.default_plugins) - set(
-            self.settings.disable_plugins
-        )
+        config_plugins = (
+            set(self.settings.default_plugins) | set(self.settings.enable_plugins)
+        ) - set(self.settings.disable_plugins)
 
         # the 'import' plugin maps to the 'moe_import' package
         if "import" in config_plugins:
@@ -373,7 +375,13 @@ class Config:
             self.pm.register(importlib.import_module("moe.cli"), name="cli")
 
         # register plugin hookimpls for all enabled plugins
-        self._register_internal_plugins(config_plugins)
+        internal_plugin_dir = Path(__file__).resolve().parent / "plugins"
+        self._register_local_plugins(
+            config_plugins, internal_plugin_dir, "moe.plugins."
+        )
+        if Path(self.config_dir / "plugins").exists():
+            sys.path.append(str(self.config_dir / "plugins"))
+            self._register_local_plugins(config_plugins, self.config_dir / "plugins")
 
         # register plugin hookimpls for all extra plugins
         for extra_plugin in self._extra_plugins:
@@ -387,13 +395,20 @@ class Config:
 
         log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
 
-    def _register_internal_plugins(self, enabled_plugins):
-        """Registers all internal plugins in `enabled_plugins`."""
-        plugin_dir = Path(__file__).resolve().parent / "plugins"
+    def _register_local_plugins(
+        self, enabled_plugins: set[str], plugin_dir: Path, pkg_name: str = ""
+    ):
+        """Registers all internal plugins in `enabled_plugins`.
 
+        Args:
+            enabled_plugins: All enabled plugins as specified by the config.
+            plugin_dir: Directory of plugins to register.
+            pkg_name: Optional common package name the plugins belong to.
+                Include the trailing '.'.
+        """
         for plugin_path in plugin_dir.iterdir():
             plugin_name = plugin_path.stem
 
             if plugin_path.stem in enabled_plugins:
-                plugin = importlib.import_module("moe.plugins." + plugin_name)
+                plugin = importlib.import_module(pkg_name + plugin_name)
                 self.pm.register(plugin, plugin_name)
