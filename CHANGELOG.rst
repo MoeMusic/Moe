@@ -4,6 +4,18 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.16.0 (2022-10-09)
+====================
+
+New Features
+------------
+* Support for external third-party plugins (`b0c736c <https://github.com/MoeMusic/Moe/commit/b0c736cb93077848a9208e70d869e10e1775d0d3>`_)
+* Users can now create custom plugins in their configuration dir (`84347f6 <https://github.com/MoeMusic/Moe/commit/84347f61bb6ac95bd8671ec94c0b4e27550cfb5d>`_)
+* Add command can now handle adding extras (`ab83e63 <https://github.com/MoeMusic/Moe/commit/ab83e633ef439bb8d5ea316f4bb18ed5e31426b8>`_)
+* Candidate prompt to select an album to import (`c5ff9a5 <https://github.com/MoeMusic/Moe/commit/c5ff9a5d330adef1ae0450d8b2a6f7e22a5b65d5>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.15.3...v0.16.0>`__
+
 v0.15.3 (2022-10-08)
 ====================
 
