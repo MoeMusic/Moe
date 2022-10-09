@@ -16,17 +16,8 @@ Commandline
 
     moe edit [-h] [-a | -e] query FIELD=VALUE [FIELD=VALUE ...]
 
-Options
-=======
-``-h, --help``
-    Display the help message.
-``-a, --album``
-    Query for matching albums instead of tracks.
-``-e, --extra``
-    Query for matching extras instead of tracks.
-
-Arguments
-=========
+Positional Arguments
+====================
 ``query``
     Query your library for items to edit. See the :doc:`query docs <../query>` for more info.
 
@@ -46,3 +37,12 @@ Arguments
 
             moe edit [query] albumartist=2Pac
             moe edit -a [query] artist=2Pac
+
+Optional Arguments
+==================
+``-h, --help``
+    Display the help message.
+``-a, --album``
+    Query for matching albums instead of tracks.
+``-e, --extra``
+    Query for matching extras instead of tracks.
