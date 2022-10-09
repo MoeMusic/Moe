@@ -3,9 +3,9 @@
 import itertools
 import logging
 import operator
+from dataclasses import dataclass, field
 
 import pluggy
-from attr import dataclass
 
 import moe
 from moe import config
@@ -36,7 +36,7 @@ class CandidateAlbum:
     album: Album
     match_value: float
     source_str: str
-    sub_header_info: list[str] = []
+    sub_header_info: list[str] = field(default_factory=list)
 
     @property
     def match_value_pct(self) -> str:
