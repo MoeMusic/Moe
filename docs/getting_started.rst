@@ -5,7 +5,7 @@ Getting Started
 ************
 Installation
 ************
-1a. The latest *release* of Moe is available on `PyPI <https://pypi.org/project/moe>`_
+1a. The latest release of Moe is available on `PyPI <https://pypi.org/project/moe>`_
 
 .. code-block:: bash
 
@@ -23,11 +23,10 @@ Installation
 
     $ moe --version
 
-****************
-Required Reading
-****************
-Before using Moe, you should understand that Moe mostly consists of *plugins* or self-contained features, that each provide a different way of interacting with music in your library.
-For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins come with their own set of commands and configuration options. Each configuration option has sensible defaults which means you *could* just run Moe out of the box, but I'd recommend getting familiar with the various plugins in use.
+*********************
+Understanding Plugins
+*********************
+Before using Moe, you should understand that most of Moe's features are provided by various *plugins*, that each contribute a different way of interacting with the music in your library. For example, the ``edit`` plugin lets you edit your music, while the ``add`` plugin lets you add music to your library. Each of these plugins come with their own set of commands and configuration options.
 
 *************
 Configuration
@@ -37,11 +36,9 @@ Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config
 .. note::
     The configuration directory can be overwritten by setting the environment variable ``MOE_config.CONFIG_DIR``.
 
-Throughout this documentation, all configuration options will be displayed in the following format
+Throughout this documentation, all configuration options will be displayed in the following format:
 
-.. code-block:: toml
-
-    option = default_value
+``option = default_value``
 
 Overriding Config Values
 ========================

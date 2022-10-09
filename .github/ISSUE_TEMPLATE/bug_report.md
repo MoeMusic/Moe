@@ -25,13 +25,11 @@ Include any steps needed to reproduce the problem (not including the final comma
 2. ...
 
 <!--
-Include the command you ran that lead to the problem.
-Make sure to use verbose mode `(-vv)` and include the full output.
+Run moe in verbose mode and output all logging and errors to a `log.txt` file by running `moe -vv <args> 2> log.txt`.
+Paste the command you ran and any output to your terminal below. Be sure to also attach/upload the `log.txt` file to the github issue.
 -->
 
-<details open>
-<summary>Moe output</summary>
-
+Then run:
 ```sh
 (paste here)
 ```
@@ -58,7 +56,8 @@ Make sure to use verbose mode `(-vv)` and include the full output.
 
 <!--
 Add your configuration file below.
-Please try stripping down your configuration file to the bare minimum needed to reproduce the problem.
+Please try stripping down your configuration file to the bare minimum needed to reproduce the problem (disabling plugins, etc.).
+Ensure you have also removed any sensitive information e.g. passwords.
 -->
 <details open>
 <summary>Configuration file</summary>
