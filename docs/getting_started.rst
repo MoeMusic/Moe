@@ -64,7 +64,10 @@ Most configuration options reside in their relevant plugin, however there are th
     Overrides the list of default plugins.
 
 ``disable_plugins = []``
-    List of any plugins to explicitly disable.
+    List of any plugins to explicitly disable. This takes priority over ``enable_plugins``.
+
+``enable_plugins = []``
+    List of any plugins to explicitly enable.
 
 .. _library_path config option:
 

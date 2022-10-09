@@ -76,6 +76,7 @@ def tmp_config(
         tmp_db: Whether or not to use a temporary (in-memory) database. If ``True``,
             the database will be initialized regardless of ``init_db``.
         extra_plugins: Any additional plugins to enable.
+        config_dir: Optionally specifiy a config directory to use.
 
     Yields:
         The configuration instance.
@@ -86,8 +87,11 @@ def tmp_config(
         init_db: bool = False,
         tmp_db: bool = False,
         extra_plugins: Optional[list[ExtraPlugin]] = None,
+        config_dir: Optional[Path] = None,
     ) -> Config:
-        config_dir = tmp_path_factory.mktemp("config")
+        config_dir = config_dir or tmp_path_factory.mktemp("config")
+        assert config_dir
+
         if "library_path" not in settings:
             settings += f"\nlibrary_path = '{LIBRARY_PATH.resolve()}'"
 
