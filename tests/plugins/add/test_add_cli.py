@@ -24,6 +24,19 @@ def mock_add() -> Iterator[FunctionType]:
 
 
 @pytest.fixture
+def mock_query() -> Iterator[FunctionType]:
+    """Mock a database query call.
+
+    Use ``mock_query.return_value` to set the return value of a query.
+
+    Yields:
+        Mock query
+    """
+    with patch("moe.plugins.add.add_cli.cli_query", autospec=True) as mock_query:
+        yield mock_query
+
+
+@pytest.fixture
 def _tmp_add_config(tmp_config):
     """A temporary config for the add plugin with the cli."""
     tmp_config('default_plugins = ["cli", "add", "write"]')
@@ -129,6 +142,39 @@ class TestCommand:
 
         assert error.value.code != 0
         mock_add.assert_called_once_with(track)
+
+    def test_extra_file(self, mock_add, mock_query):
+        """Extra files are added as tracks."""
+        extra = extra_factory(exists=True)
+        cli_args = ["add", "-a", "*", str(extra.path)]
+        mock_query.return_value = [extra.album_obj]
+
+        moe.cli.main(cli_args)
+
+        mock_add.assert_called_once_with(extra)
+
+    def test_extra_no_album(self, mock_add):
+        """Raise SystemExit if trying to add an extra but no query was given."""
+        extra = extra_factory(exists=True)
+        cli_args = ["add", str(extra.path)]
+
+        with pytest.raises(SystemExit) as err:
+            moe.cli.main(cli_args)
+
+        assert err.value.code != 0
+        mock_add.assert_not_called()
+
+    def test_query_multiple_albums(self, mock_add, mock_query):
+        """Raise SystemExit the given query returns multiple albums."""
+        extra = extra_factory(exists=True)
+        cli_args = ["add", "-a", "*", str(extra.path)]
+        mock_query.return_value = [album_factory(), album_factory()]
+
+        with pytest.raises(SystemExit) as err:
+            moe.cli.main(cli_args)
+
+        assert err.value.code != 0
+        mock_add.assert_not_called()
 
 
 class TestPluginRegistration:

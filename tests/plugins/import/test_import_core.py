@@ -95,7 +95,7 @@ class TestPreAdd:
         mock_import.assert_called_once_with(track.album_obj)
 
     def test_pre_add_extra(self, tmp_config):
-        """An extra's album is imported in the `pre_add` hook."""
+        """Don't try to import an Extra."""
         extra = extra_factory()
         tmp_config("default_plugins = ['add', 'import']")
 
@@ -104,7 +104,7 @@ class TestPreAdd:
         ) as mock_import:
             config.CONFIG.pm.hook.pre_add(item=extra)
 
-        mock_import.assert_called_once_with(extra.album_obj)
+        mock_import.assert_not_called()
 
 
 class TestImportAlbum:

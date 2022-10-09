@@ -9,7 +9,7 @@ from attr import dataclass
 
 import moe
 from moe import config
-from moe.library import Album, Extra, LibItem, Track
+from moe.library import Album, LibItem, Track
 
 __all__ = ["CandidateAlbum", "import_album"]
 
@@ -101,10 +101,10 @@ def pre_add(item: LibItem):
     """Fixes album metadata via external sources prior to it being added to the lib."""
     if isinstance(item, Album):
         album = item
-    elif isinstance(item, (Extra, Track)):
+    elif isinstance(item, Track):
         album = item.album_obj
     else:
-        raise NotImplementedError
+        return
 
     import_album(album)
 
