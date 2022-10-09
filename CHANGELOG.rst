@@ -4,6 +4,20 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v0.16.1 (2022-10-09)
+====================
+
+Breaking Changes
+----------------
+* Added docs for stable release (`4fd0bdb <https://github.com/MoeMusic/Moe/commit/4fd0bdbb32f1de3ed04a284c8625d047a92b50a4>`_)
+* Added docs for stable release (`6eb10e6 <https://github.com/MoeMusic/Moe/commit/6eb10e697046f3889342c2211bed627130c1553c>`_)
+
+Bug Fixes
+---------
+* Import wrong dataclass (`ee6959a <https://github.com/MoeMusic/Moe/commit/ee6959a905496a15b70561ddcebbf413a53257e1>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v0.16.0...v0.16.1>`__
+
 v0.16.0 (2022-10-09)
 ====================
 
