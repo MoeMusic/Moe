@@ -7,4 +7,5 @@ Developers
    :caption: Contents:
 
    contributing
+   writing_plugins
    api/api
