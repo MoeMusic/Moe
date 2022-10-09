@@ -82,23 +82,6 @@ def add_hooks(pm: pluggy.manager.PluginManager):
     pm.add_hookspecs(Hooks)
 
 
-def main(args: list[str] = sys.argv[1:]):
-    """Runs the CLI."""
-    log.debug(f"Commandline arguments received. [{args=!r}]")
-
-    if not config.CONFIG:
-        try:
-            Config()
-        except ConfigValidationError as err:
-            log.error(err)
-            raise SystemExit(1) from err
-    _parse_args(args)
-
-
-if __name__ == "__main__":
-    main()
-
-
 def _parse_args(args: list[str]):
     """Parses the commandline arguments.
 
@@ -170,3 +153,20 @@ def _set_log_lvl(args):
         moe_log.setLevel(logging.ERROR)
     elif args.quiet == 2:
         moe_log.setLevel(logging.CRITICAL)
+
+
+def main(args: list[str] = sys.argv[1:]):
+    """Runs the CLI."""
+    log.debug(f"Commandline arguments received. [{args=!r}]")
+
+    if not config.CONFIG:
+        try:
+            Config()
+        except ConfigValidationError as err:
+            log.error(err)
+            raise SystemExit(1) from err
+    _parse_args(args)
+
+
+if __name__ == "__main__":
+    main()
