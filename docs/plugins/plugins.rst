@@ -14,7 +14,6 @@ These are all the plugins that are enabled by default.
    duplicate
    edit
    import
-   info
    list
    move
    musicbrainz

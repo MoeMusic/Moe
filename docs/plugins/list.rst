@@ -28,5 +28,7 @@ Optional Arguments
     Query for matching albums instead of tracks.
 ``-e, --extra``
     Query for matching extras instead of tracks.
+``-i, --info``
+    Output full information on each item.
 ``-p, --paths``
     List item paths.

@@ -88,6 +88,27 @@ class TestParseArgs:
         mock_query.assert_called_once_with("*", query_type="track")
         assert capsys.readouterr().out.strip("\n") == str(track.path)
 
+    def test_info_album(self, mock_query):
+        """Print full info if the `--info` argument is given."""
+        cli_args = ["list", "--info", "*"]
+        mock_query.return_value = [album_factory(), album_factory()]
+
+        moe.cli.main(cli_args)
+
+    def test_info_extra(self, mock_query):
+        """Print full info if the `--info` argument is given."""
+        cli_args = ["list", "--info", "*"]
+        mock_query.return_value = [extra_factory(), extra_factory()]
+
+        moe.cli.main(cli_args)
+
+    def test_info_track(self, mock_query):
+        """Print full info if the `--info` argument is given."""
+        cli_args = ["list", "--info", "*"]
+        mock_query.return_value = [track_factory(), track_factory()]
+
+        moe.cli.main(cli_args)
+
 
 class TestPluginRegistration:
     """Test the `plugin_registration` hook implementation."""
