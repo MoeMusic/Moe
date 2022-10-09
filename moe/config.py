@@ -41,7 +41,6 @@ DEFAULT_PLUGINS = {
     "duplicate",
     "edit",
     "import",
-    "info",
     "list",
     "move",
     "musicbrainz",
