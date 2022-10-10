@@ -51,7 +51,7 @@ For example, to override the ``asciify_paths`` variable, you can run Moe with:
     $ MOE_MOVE.ASCIIFY_PATHS="true" moe
 
 .. note::
-   Notice since the ``asciify_paths`` option is specific to the ``move`` plugin, we use ``move.library_path`` to access it.
+   Notice since the ``asciify_paths`` option is specific to the ``move`` plugin, we use ``move.asciify_paths`` to access it.
 
 Global Options
 ==============
