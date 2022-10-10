@@ -49,25 +49,15 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 .. note::
     When using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
 
-.. tip::
-    Fields of different types can be mixed and matched in a query string. For example, the query ``--extras 'a:album:The College Dropout' e:path:%jpg$`` will return any extras with the 'jpg' file extension belonging to the album titled 'The College Dropout'.
-
-.. tip::
-    Normal queries may be faster when compared to regular expression queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the LIKE wildcard characters.
-
-
-****************
-Supported Fields
-****************
-
-In addition to the :ref:`track fields <fields:Track Fields>`, the following fields are also available to query:
-
-* ``album_path`` Path of an album directory.
-* ``extra_path`` Path of an extra.
-
 .. note::
    When querying for a field that supports multiple values, query for one term per value. For example, to query for tracks with the genres 'hip hop' and 'pop', use:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    '"genre:hip hop" genre:pop'
+       '"genre:hip hop" genre:pop'
+
+.. tip::
+    Fields of different types can be mixed and matched in a query string. For example, the query ``--extras 'album:The College Dropout' e:path:%jpg$`` will return any extras with the 'jpg' file extension belonging to the album titled 'The College Dropout'.
+
+.. tip::
+    Normal queries may be faster when compared to regular expression queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the ``%`` and ``_`` wildcard characters.
