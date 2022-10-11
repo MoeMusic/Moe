@@ -46,6 +46,7 @@ DEFAULT_PLUGINS = {
     "list",
     "move",
     "musicbrainz",
+    "read",
     "sync",
     "remove",
     "write",
