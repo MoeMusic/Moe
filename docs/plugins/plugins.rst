@@ -17,6 +17,7 @@ These are all the plugins that are enabled by default.
    list
    move
    musicbrainz
+   read
    remove
    sync
    write

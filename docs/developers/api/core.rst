@@ -80,6 +80,13 @@ Musicbrainz
 .. automodule:: moe.plugins.musicbrainz
    :members:
 
+Read
+----
+``moe.plugins.read``
+
+.. automodule:: moe.plugins.read
+   :members:
+
 Remove
 ------
 ``moe.plugins.remove``
