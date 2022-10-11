@@ -111,6 +111,7 @@ def read_custom_tags(
     audio_file = mediafile.MediaFile(track_path)
 
     album_fields["artist"] = audio_file.albumartist or audio_file.artist
+    album_fields["barcode"] = audio_file.barcode
     album_fields["country"] = audio_file.country
     album_fields["date"] = audio_file.date
     album_fields["disc_total"] = audio_file.disctotal

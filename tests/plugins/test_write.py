@@ -66,6 +66,7 @@ class TestWriteTags:
         albumartist = "4 Non Blondes"
         artist = "4 Non Blondes"
         artists = {"4 Non Blondes", "Me"}
+        barcode = "1234"
         country = "US"
         date = datetime.date(1996, 10, 13)
         disc = 2
@@ -81,6 +82,7 @@ class TestWriteTags:
         track.albumartist = albumartist
         track.artist = artist
         track.artists = artists
+        track.album_obj.barcode = barcode
         track.album_obj.country = country
         track.album_obj.date = date
         track.album_obj.original_date = original_date
@@ -106,6 +108,7 @@ class TestWriteTags:
         assert new_track.title == title
         assert new_track.track_num == track_num
 
+        assert new_album.barcode == barcode
         assert new_album.country == country
         assert new_album.date == date
         assert new_album.disc_total == disc_total
