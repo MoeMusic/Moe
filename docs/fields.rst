@@ -34,6 +34,7 @@ Album Fields
     :width: 100%
 
     "artist", "Album artist", ""
+    "barcode", "UPC barcode", ""
     "country", "Country the album was released in (two character identifier)", ""
     "date", "Album release date", "2"
     "disc_total", "Number of discs in the album", ""

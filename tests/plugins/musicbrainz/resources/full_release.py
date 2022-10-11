@@ -1681,6 +1681,7 @@ def album() -> Album:
     return Album(
         artist="Kanye West",
         title="My Beautiful Dark Twisted Fantasy",
+        barcode="602527474465",
         country="US",
         date=datetime.date(2010, 11, 22),
         label="Roc‐A‐Fella Records",
