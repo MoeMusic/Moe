@@ -33,7 +33,7 @@ MATCH_TRACK_FIELD_WEIGHTS = {
 
 
 def get_match_value(item_a: Union[Album, Track], item_b: Union[Album, Track]) -> float:
-    """Returns a similarity "match value" between two albums on a scale of 0 to 1.
+    """Returns a similarity value between two albums or tracks on a scale of 0 to 1.
 
     Args:
         item_a: First item to compare.
