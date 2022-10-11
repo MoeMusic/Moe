@@ -126,7 +126,7 @@ def get_candidates(album: Album) -> list[CandidateAlbum]:
         A new album containing all the corrected metadata from musicbrainz. Note, this
         album is not complete, as it will not contain any references to the filesystem.
     """
-    log.debug(f"Getting candidate albums from musicbrainz. [{album=!r}")
+    log.debug(f"Getting candidate albums from musicbrainz. [{album=!r}]")
 
     search_criteria: dict = {}
     search_criteria["artist"] = album.artist
