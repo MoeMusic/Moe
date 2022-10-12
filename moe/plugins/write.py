@@ -7,7 +7,7 @@ import pluggy
 
 import moe
 from moe import config
-from moe.library import LibItem, Track
+from moe.library import Album, LibItem, Track
 
 __all__ = ["write_tags"]
 
@@ -62,10 +62,13 @@ def process_new_items(items: list[LibItem]):
 
 @moe.hookimpl
 def process_changed_items(items: list[LibItem]):
-    """Writes tags to any altered tracks in the library."""
+    """Writes tags to any altered tracks or albums in the library."""
     for item in items:
-        if isinstance(item, Track):
+        if isinstance(item, Track) and item.album_obj not in items:
             write_tags(item)
+        elif isinstance(item, Album):
+            for track in item.tracks:
+                write_tags(track)
 
 
 @moe.hookimpl(tryfirst=True)
