@@ -50,7 +50,7 @@ Then run:
 
 ### Additional context
 
-<!-- Add any other context about the problem here. -->
+<!-- Add any other context about the problem here, including linking to any relevant issues or discussion. -->
 
 (write here)
 

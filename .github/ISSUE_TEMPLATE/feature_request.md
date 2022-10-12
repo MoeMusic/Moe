@@ -40,7 +40,7 @@ Let us know about other solutions you've tried or researched.
 
 <!--
 Is there anything else you can add about the proposal?
-Link to related issues here, if you haven't already.
+Link to any related issues or discussions here.
 -->
 
 (write here)
