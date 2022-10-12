@@ -236,7 +236,7 @@ def extra_factory(
         Created extra.
     """
     album = album or album_factory(num_tracks=0, num_extras=0, exists=exists)
-    path = path or album.path / f"{random.randint(1,1000)}.txt"
+    path = path or album.path / f"{random.randint(1,10000)}.txt"
 
     extra = Extra(album=album, path=path, **kwargs)
 
