@@ -169,10 +169,12 @@ class TestProcessChangedItems:
         mock_write.assert_not_called()
 
     def test_process_album(self, mock_write):
-        """Any altered albums are ignored."""
-        config.CONFIG.pm.hook.process_changed_items(items=[album_factory()])
+        """Any altered albums should have their tracks written."""
+        album = album_factory()
+        config.CONFIG.pm.hook.process_changed_items(items=[album])
 
-        mock_write.assert_not_called()
+        for track in album.tracks:
+            mock_write.assert_any_call(track)
 
     def test_process_multiple_tracks(self, mock_write):
         """All altered tracks are written."""
@@ -183,3 +185,11 @@ class TestProcessChangedItems:
         for track in tracks:
             mock_write.assert_any_call(track)
         assert mock_write.call_count == 2
+
+    def test_dont_write_tracks_twice(self, mock_write):
+        """Don't write a track twice if it's album is also in `items`."""
+        track = track_factory()
+
+        config.CONFIG.pm.hook.process_changed_items(items=[track, track.album_obj])
+
+        mock_write.assert_called_once_with(track)
