@@ -129,11 +129,7 @@ class TestGetCandidates:
         Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
         network test for both.
         """
-        album = album_factory(
-            config=mb_config,
-            artist="Kanye West",
-            title="My Beautiful Dark Twisted Fantasy",
-        )
+        album = mb_rsrc.album()
 
         candidates = config.CONFIG.pm.hook.get_candidates(album=album)
         mb_album = candidates[0][0].album

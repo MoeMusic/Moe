@@ -132,6 +132,15 @@ def get_candidates(album: Album) -> list[CandidateAlbum]:
     search_criteria["artist"] = album.artist
     search_criteria["release"] = album.title
     search_criteria["date"] = album.date.isoformat()
+    search_criteria["mediums"] = album.disc_total
+    if album.barcode:
+        search_criteria["barcode"] = album.barcode
+    if album.label:
+        search_criteria["label"] = album.label
+    if album.mb_album_id:
+        search_criteria["reid"] = album.mb_album_id
+    if album.media:
+        search_criteria["format"] = album.media
 
     releases = musicbrainzngs.search_releases(limit=5, **search_criteria)
 
