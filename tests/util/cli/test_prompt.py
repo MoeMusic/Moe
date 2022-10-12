@@ -20,7 +20,7 @@ class TestChoicePrompt:
         assert track.title != "a"
 
         with patch(
-            "moe.util.cli.prompt.questionary.rawselect",
+            "moe.util.cli.prompt.questionary.select",
             **{"return_value.ask.return_value": "a"}
         ):
             prompt_choice = choice_prompt([mock_choice1, mock_choice2])
@@ -33,7 +33,7 @@ class TestChoicePrompt:
         mock_choice = PromptChoice("title b", "b", lambda b: None)
 
         with patch(
-            "moe.util.cli.prompt.questionary.rawselect",
+            "moe.util.cli.prompt.questionary.select",
             **{"return_value.ask.return_value": "a"}
         ):
             with pytest.raises(SystemExit) as error:
