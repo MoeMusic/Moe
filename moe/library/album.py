@@ -93,6 +93,8 @@ class Album(LibItem, SABase):
         label (str): Album release label.
         media (str): Album release format (e.g. CD, Digital, etc.)
         original_date (datetime.date): Date of the original release of the album.
+        original_year (int): Album original release year. Note, this field is read-only.
+            Set ``original_date`` instead.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         tracks (list[Track]): Album's corresponding tracks.
