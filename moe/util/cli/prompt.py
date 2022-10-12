@@ -62,7 +62,9 @@ def choice_prompt(
             )
         )
 
-    user_input = questionary.rawselect(question, choices=questionary_choices).ask()
+    user_input = questionary.select(
+        question, choices=questionary_choices, use_shortcuts=True, use_arrow_keys=True
+    ).ask()
 
     for prompt_choice in prompt_choices:
         if prompt_choice.shortcut_key == user_input:
