@@ -10,7 +10,7 @@ from moe import config
 from moe.library import Album, Extra, LibItem, Track
 from moe.query import query
 
-__all__ = ["get_duplicates"]
+__all__ = ["DuplicateError", "get_duplicates", "resolve_duplicates"]
 
 log = logging.getLogger("moe.dup")
 
