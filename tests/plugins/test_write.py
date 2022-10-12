@@ -77,6 +77,7 @@ class TestWriteTags:
         original_date = datetime.date(1996, 1, 13)
         title = "What's Up"
         track_num = 3
+        track_total = 10
 
         track.album = album
         track.albumartist = albumartist
@@ -93,6 +94,7 @@ class TestWriteTags:
         track.album_obj.media = media
         track.title = title
         track.track_num = track_num
+        track.album_obj.track_total = track_total
 
         moe_write.write_tags(track)
 
@@ -115,6 +117,7 @@ class TestWriteTags:
         assert new_album.label == label
         assert new_album.media == media
         assert new_album.original_date == original_date
+        assert new_album.track_total == track_total
 
 
 @pytest.mark.usefixtures("_tmp_write_config")

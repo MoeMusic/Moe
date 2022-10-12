@@ -97,6 +97,8 @@ class Album(LibItem, SABase):
             Set ``original_date`` instead.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
+        track_total (int): Number of tracks that *should* be in the album. If an album
+            is missing tracks, then ``len(tracks) < track_total``.
         tracks (list[Track]): Album's corresponding tracks.
         year (int): Album release year. Note, this field is read-only. Set ``date``
             instead.
@@ -115,6 +117,7 @@ class Album(LibItem, SABase):
     original_date: datetime.date = cast(datetime.date, Column(Date, nullable=True))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
+    track_total: int = cast(int, Column(Integer, nullable=True))
     _custom_fields: dict[str, Any] = cast(
         dict[str, Any],
         Column(
@@ -229,6 +232,7 @@ class Album(LibItem, SABase):
             "original_date",
             "path",
             "title",
+            "track_total",
             "tracks",
         }.union(self._custom_fields)
 

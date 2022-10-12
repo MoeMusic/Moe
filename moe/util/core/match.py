@@ -24,6 +24,7 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
     "label": 0.1,
     "media": 0.4,
     "title": 0.9,
+    "track_total": 1.0,
 }  # how much to weigh matches of various fields
 
 MATCH_TRACK_FIELD_WEIGHTS = {
