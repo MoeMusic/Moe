@@ -4,6 +4,21 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.2.0 (2022-10-12)
+===================
+
+New Features
+------------
+* CLI prompts now allow arrow keys to navigate choices (`78344f9 <https://github.com/MoeMusic/Moe/commit/78344f900a68926e91fc676aa18b034cbd1b5b51>`_)
+* New album field - track_total (`eb947b9 <https://github.com/MoeMusic/Moe/commit/eb947b9fb94d26c12e579deb8e802f41233a9474>`_)
+* Improve musicbrainz search accuracy (`891b995 <https://github.com/MoeMusic/Moe/commit/891b995e78f6701db411f28d32dd023002b31e49>`_)
+
+Bug Fixes
+---------
+* Tags now written to tracks if album fields changed (`48f7076 <https://github.com/MoeMusic/Moe/commit/48f707608e5320e6d860641bf3553134d7380bde>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.1.0...v1.2.0>`__
+
 v1.1.0 (2022-10-12)
 ===================
 
