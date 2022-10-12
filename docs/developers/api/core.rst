@@ -51,6 +51,13 @@ Add
 .. automodule:: moe.plugins.add
    :members:
 
+Duplicate
+---------
+``moe.plugins.duplicate``
+
+.. automodule:: moe.plugins.duplicate
+   :members:
+
 Edit
 ----
 ``moe.plugins.edit``
@@ -92,6 +99,13 @@ Remove
 ``moe.plugins.remove``
 
 .. automodule:: moe.plugins.remove
+   :members:
+
+Sync
+----
+``moe.plugins.sync``
+
+.. automodule:: moe.plugins.sync
    :members:
 
 Write
