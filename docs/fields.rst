@@ -44,6 +44,7 @@ Album Fields
     "original_year", "Year of the original release of the album", "3"
     "path", "Filesystem path of the album", ""
     "title", "Album title", ""
+    "track_total", "Number of tracks an album *should* have, not necessarily the number of tracks an album has in Moe.", ""
     "year", "Album release year", "3"
 
 ************

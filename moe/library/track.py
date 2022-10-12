@@ -120,6 +120,7 @@ def read_custom_tags(
     album_fields["original_date"] = audio_file.original_date
     album_fields["path"] = track_path.parent
     album_fields["title"] = audio_file.album
+    album_fields["track_total"] = audio_file.tracktotal
 
     track_fields["artist"] = audio_file.artist
     track_fields["artists"] = set(audio_file.artists)

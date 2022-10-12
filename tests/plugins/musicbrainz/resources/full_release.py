@@ -1689,6 +1689,7 @@ def album() -> Album:
         original_date=datetime.date(2010, 1, 22),
         path=None,  # type: ignore
         mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
+        track_total=2,
     )
 
 

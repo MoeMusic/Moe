@@ -141,6 +141,8 @@ def get_candidates(album: Album) -> list[CandidateAlbum]:
         search_criteria["reid"] = album.mb_album_id
     if album.media:
         search_criteria["format"] = album.media
+    if album.track_total:
+        search_criteria["tracks"] = album.track_total
 
     releases = musicbrainzngs.search_releases(limit=5, **search_criteria)
 
@@ -428,6 +430,7 @@ def _create_album(release: dict) -> Album:
                 mb_track_id=track["id"],
                 title=track["recording"]["title"],
             )
+    album.track_total = len(album.tracks)
 
     log.debug(f"Created album from musicbrainz release. [{album=!r}]")
     return album

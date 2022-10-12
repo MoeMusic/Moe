@@ -297,6 +297,7 @@ def album_factory(
         title=title,
         date=date,
         disc_total=num_discs,
+        track_total=num_tracks,
         **kwargs,
     )
     if custom_fields:

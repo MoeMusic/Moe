@@ -91,6 +91,7 @@ def write_custom_tags(track: Track):
     audio_file.original_date = track.album_obj.original_date
     audio_file.title = track.title
     audio_file.track = track.track_num
+    audio_file.tracktotal = track.album_obj.track_total
 
     audio_file.save()
 
