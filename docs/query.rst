@@ -14,6 +14,17 @@ term in quotes.
 
     'title:Hip Hop Hooray'
 
+.. important::
+
+   If specifying a query with spaces on the command-line, you'll need two sets of quotes since the first set simply delineates the argument from others and doesn't retain the spaces in the term. For example, if executing the above query using the ``ls`` command, you should write the following:
+
+   .. code-block:: bash
+
+       moe ls "'title:Hip Hop Hooray'"
+
+   For powershell users, it's necessary to use ``"`` as the outer quotes.
+
+
 `SQL LIKE <https://www.w3schools.com/sql/sql_like.asp>`_ query syntax is used for normal queries, which means
 the ``_``  and ``%`` characters have special meaning:
 
@@ -44,7 +55,7 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 
 .. code-block:: bash
 
-    '"artist:wu-tang clan" title:a%'
+    "'artist:wu-tang clan' title:a%"
 
 .. note::
     When using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
@@ -54,7 +65,7 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 
    .. code-block:: bash
 
-       '"genre:hip hop" genre:pop'
+       "'genre:hip hop' genre:pop"
 
 .. tip::
     Fields of different types can be mixed and matched in a query string. For example, the query ``--extras 'album:The College Dropout' e:path:%jpg$`` will return any extras with the 'jpg' file extension belonging to the album titled 'The College Dropout'.

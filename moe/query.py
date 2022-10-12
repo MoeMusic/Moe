@@ -32,7 +32,7 @@ by using the ``-a, --album`` option, or you can return extras using the ``-e, --
 option.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
-term in quotes.
+term in quotes. Note, powershell users must use " as the outer quotes in this case.
 
 SQL LIKE query syntax is used for normal queries, which means
 the '_'  and '%' characters have special meaning:
@@ -48,7 +48,7 @@ As a shortcut to matching all entries, use '*' as the term.
 
 Finally, you can also specify any number of terms.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
-'"artist:wu-tang clan" title:a%'
+"'artist:wu-tang clan' title:a%"
 
 Note that when using multiple terms, they are joined together using AND logic, meaning
 all terms must be true to return a match.
