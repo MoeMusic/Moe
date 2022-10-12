@@ -4,6 +4,16 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.1.0 (2022-10-12)
+===================
+
+New Features
+------------
+* New read plugin for updating items in moe with any file changes (`adbbdd4 <https://github.com/MoeMusic/Moe/commit/adbbdd49c015953edee7d8225bf3de852748cef8>`_)
+* New album field - barcode (`72d07d3 <https://github.com/MoeMusic/Moe/commit/72d07d354cc636d215ae970f9d708d2e3617cdfc>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.0.0...v1.1.0>`__
+
 v1.0.0 (2022-10-09)
 ===================
 First stable release! From this point on, the API is considered stable and breaking changes will result in a new major version per semantic versioning.
