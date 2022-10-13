@@ -77,18 +77,8 @@ Custom Fields
 
 Track Fields
 ============
-.. csv-table::
-    :header: "Field", "Description", "Notes"
-    :widths: 4, 10, 6
-    :width: 100%
-
-    "mb_track_id", "Musicbrainz track id", ""
+* ``mb_track_id`` - musicbrainz track id
 
 Album Fields
 ============
-.. csv-table::
-    :header: "Field", "Description", "Notes"
-    :widths: 4, 10, 6
-    :width: 100%
-
-    "mb_album_id", "Musicbrainz album aka release id", ""
+* ``mb_album_id`` - musicbrainz album aka release id
