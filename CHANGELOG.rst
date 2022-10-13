@@ -4,6 +4,16 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.3.0 (2022-10-13)
+===================
+
+New Features
+------------
+* New track field - audio_format (`07fce9f <https://github.com/MoeMusic/Moe/commit/07fce9f7dd28a2b6674f63fe2180490ffa83d236>`_)
+* New album field - catalog_nums (`01c7170 <https://github.com/MoeMusic/Moe/commit/01c71707eb80f249c9709b820b40b2f6938b8c34>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.2.0...v1.3.0>`__
+
 v1.2.0 (2022-10-12)
 ===================
 
