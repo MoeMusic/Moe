@@ -208,6 +208,7 @@ def _process_after_flush(
 class LibItem:
     """Base class for library items i.e. Albums, Extras, and Tracks."""
 
+    _custom_fields = {}
     _custom_fields_set = None
 
     @property

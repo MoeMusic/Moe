@@ -205,9 +205,18 @@ release = {
                     "name": "Roc‐A‐Fella Records",
                     "sort-name": "Roc‐A‐Fella Records",
                 },
-            }
+            },
+            {
+                "catalog-number": "B0014695-01",
+                "label": {
+                    "id": "4cccc72a-0bd0-433a-905e-dad87871397d",
+                    "type": "Original Production",
+                    "name": "Roc‐A‐Fella Records",
+                    "sort-name": "Roc‐A‐Fella Records",
+                },
+            },
         ],
-        "label-info-count": 1,
+        "label-info-count": 2,
         "medium-list": [
             {
                 "position": "1",
@@ -1682,6 +1691,7 @@ def album() -> Album:
         artist="Kanye West",
         title="My Beautiful Dark Twisted Fantasy",
         barcode="602527474465",
+        catalog_nums={"B0014695-02", "B0014695-01"},
         country="US",
         date=datetime.date(2010, 11, 22),
         label="Roc‐A‐Fella Records",

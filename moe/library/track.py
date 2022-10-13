@@ -112,6 +112,7 @@ def read_custom_tags(
 
     album_fields["artist"] = audio_file.albumartist or audio_file.artist
     album_fields["barcode"] = audio_file.barcode
+    album_fields["catalog_nums"] = set(audio_file.catalognums)
     album_fields["country"] = audio_file.country
     album_fields["date"] = audio_file.date
     album_fields["disc_total"] = audio_file.disctotal

@@ -8,9 +8,11 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 import pluggy
 import sqlalchemy as sa
 from sqlalchemy import JSON, Column, Date, Integer, String
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
+from sqlalchemy.schema import ForeignKey
 
 import moe
 from moe import config
@@ -74,6 +76,19 @@ class AlbumError(LibraryError):
     """Error performing some operation on an Album."""
 
 
+class _CatalogNums(SABase):
+    """An album can have multiple catalog numbers."""
+
+    __tablename__ = "catalog_num"
+
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
+    catalog_num: str = cast(str, Column(String, nullable=False))
+
+    def __init__(self, catalog_num: str):
+        self.catalog_num = catalog_num
+
+
 # Album generic, used for typing classmethod
 A = TypeVar("A", bound="Album")
 
@@ -86,6 +101,7 @@ class Album(LibItem, SABase):
     Attributes:
         artist (str): AKA albumartist.
         barcode (str): UPC barcode.
+        catalog_nums (set[str]): Set of all catalog numbers.
         country (str): Country the album was released in (two character identifier).
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
@@ -126,6 +142,11 @@ class Album(LibItem, SABase):
             nullable=False,
         ),
     )
+
+    _catalog_nums: set[_CatalogNums] = relationship(
+        "_CatalogNums", collection_class=set, cascade="save-update, merge, expunge"
+    )
+    catalog_nums: set[str] = association_proxy("_catalog_nums", "catalog_num")
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -223,6 +244,7 @@ class Album(LibItem, SABase):
         return {
             "artist",
             "barcode",
+            "catalog_nums",
             "country",
             "date",
             "disc_total",
@@ -235,6 +257,22 @@ class Album(LibItem, SABase):
             "track_total",
             "tracks",
         }.union(self._custom_fields)
+
+    @property
+    def catalog_num(self) -> str:
+        """Returns a string of all catalog numbers concatenated with ';'."""
+        return ";".join(self.catalog_nums)
+
+    @catalog_num.setter
+    def catalog_num(self, catalog_num: str):
+        """Sets an album's catalog_nums from a string.
+
+        Args:
+            catalog_num: For more than one catalog_num, they should be split with ';'.
+        """
+        self.catalog_nums = {
+            catalog_num.strip() for catalog_num in catalog_num.split(";")
+        }
 
     def get_extra(self, rel_path: PurePath) -> Optional["Extra"]:
         """Gets an Extra by its path."""

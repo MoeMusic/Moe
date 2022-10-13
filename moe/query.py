@@ -4,6 +4,7 @@ import logging
 import re
 import shlex
 from pathlib import Path
+from typing import Type
 
 import sqlalchemy as sa
 import sqlalchemy.orm
@@ -212,33 +213,27 @@ def _create_filter_expression(field_type: str, field: str, separator: str, value
 
 def _get_field_attr(field: str, field_type: str):
     """Gets the corresponding attribute for the given field to use in a query filter."""
-    if field == "genre":
+    # convert singular multi-value fields to their plural equivalents
+    if field == "catalog_num" and field_type == "album":
+        field = "catalog_nums"
+    elif field == "genre" and field_type == "track":
         field = "genres"
 
     if field_type == "album":
-        try:
-            return getattr(Album, field)
-        except AttributeError:
-            # assume custom field
-            custom_func = sa.func.json_each(
-                Album._custom_fields, f"$.{field}"
-            ).table_valued("value", joins_implicitly=True)
-            return custom_func.c.value
+        return _getattr(Album, field)
     elif field_type == "extra":
-        try:
-            return getattr(Extra, field)
-        except AttributeError:
-            # assume custom field
-            custom_func = sa.func.json_each(
-                Extra._custom_fields, f"$.{field}"
-            ).table_valued("value", joins_implicitly=True)
-            return custom_func.c.value
+        return _getattr(Extra, field)
     else:
-        try:
-            return getattr(Track, field)
-        except AttributeError:
-            # assume custom field
-            custom_func = sa.func.json_each(
-                Track._custom_fields, f"$.{field}"
-            ).table_valued("value", joins_implicitly=True)
-            return custom_func.c.value
+        return _getattr(Track, field)
+
+
+def _getattr(item_class: Type[LibItem], field: str):
+    """Get an attribute for the given class type."""
+    try:
+        return getattr(item_class, field)
+    except AttributeError:
+        # assume custom field
+        custom_func = sa.func.json_each(
+            item_class._custom_fields, f"$.{field}"
+        ).table_valued("value", joins_implicitly=True)
+        return custom_func.c.value

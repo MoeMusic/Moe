@@ -303,9 +303,10 @@ class TestGetAlbumById:
     You can use the following code to print the result of a musicbrainz api query.
 
         def test_print_result(self):
+            import musicbrainzngs
             album_id = "3af9a6ca-c38a-41a7-a53c-32a97e869e8e"
             includes = ["artist-credits", "recordings"]
-            print(musicbrainzngs.get_release_by_id(id, includes))
+            print(musicbrainzngs.get_release_by_id(album_id, includes))
             assert 0
 
     Make sure to add any ``includes`` for whatever is needed for the test.

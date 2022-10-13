@@ -127,6 +127,7 @@ class TestFromFile:
         track.track_num = 1
 
         album.barcode = "1234"
+        album.catalog_nums = {"1", "2"}
         album.country = "US"
         album.date = datetime.date(2020, 1, 12)
         album.disc_total = 2
@@ -149,6 +150,7 @@ class TestFromFile:
         assert new_track.track_num == track.track_num
 
         assert new_album.barcode == album.barcode
+        assert new_album.catalog_nums == album.catalog_nums
         assert new_album.country == album.country
         assert new_album.disc_total == album.disc_total
         assert new_album.date == album.date
