@@ -135,6 +135,8 @@ def get_candidates(album: Album) -> list[CandidateAlbum]:
     search_criteria["mediums"] = album.disc_total
     if album.barcode:
         search_criteria["barcode"] = album.barcode
+    if album.catalog_nums:
+        search_criteria["catno"] = next(iter(album.catalog_nums))  # get any cat_num
     if album.label:
         search_criteria["label"] = album.label
     if album.mb_album_id:
@@ -401,14 +403,19 @@ def _create_album(release: dict) -> Album:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
+    catalog_nums = set()
     if release["label-info-list"]:
         label = release["label-info-list"][0]["label"]["name"]
+        for label_info in release["label-info-list"]:
+            if label_info.get("catalog-number"):
+                catalog_nums.add(label_info["catalog-number"])
     else:
         label = None
 
     album = Album(
         artist=_flatten_artist_credit(release["artist-credit"]),
         barcode=release.get("barcode"),
+        catalog_nums=catalog_nums,
         country=release.get("country"),
         date=_parse_date(release["date"]),
         disc_total=int(release["medium-count"]),

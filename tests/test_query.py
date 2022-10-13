@@ -217,16 +217,20 @@ class TestQueries:
 
         assert len(query("a:title:/_", "album")) == 1
 
-    def test_multi_value_query(self, tmp_session):
-        """We should be able to query multi-value fields transparently.
-
-        ``genre`` is a list of genres for a Track.
-        """
+    def test_track_genre_query(self, tmp_session):
+        """Querying 'genre' should use the 'genres' field."""
         tmp_session.add(track_factory(genres={"hip hop", "rock"}))
         tmp_session.flush()
 
         assert query("'genre::.*'", "track")
         assert query("'genre:hip hop'", "track")
+
+    def test_album_catalog_num_query(self, tmp_session):
+        """Querying 'catalog_num' should use the 'catalog_nums' field."""
+        tmp_session.add(album_factory(catalog_nums={"1", "2"}))
+        tmp_session.flush()
+
+        assert query("a:catalog_num:1 a:catalog_num:2", "album")
 
     def test_wildcard_query(self, tmp_session):
         """'*' as a query should return all items."""

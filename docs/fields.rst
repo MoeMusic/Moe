@@ -35,6 +35,7 @@ Album Fields
 
     "artist", "Album artist", ""
     "barcode", "UPC barcode", ""
+    "catalog_num", "Catalog numbers of the album.", "1"
     "country", "Country the album was released in (two character identifier)", ""
     "date", "Album release date", "2"
     "disc_total", "Number of discs in the album", ""
