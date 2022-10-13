@@ -125,6 +125,7 @@ def read_custom_tags(
 
     track_fields["artist"] = audio_file.artist
     track_fields["artists"] = set(audio_file.artists)
+    track_fields["audio_format"] = audio_file.type
     track_fields["disc"] = audio_file.disc
     track_fields["genres"] = set(audio_file.genres)
     track_fields["path"] = track_path
@@ -175,6 +176,8 @@ class Track(LibItem, SABase):
         album_obj (Album): Corresponding Album object.
         artist (str)
         artists (set[str]): Set of all artists.
+        audio_format (str): File audio format. One of ['aac', 'aiff', 'alac', 'ape',
+            'asf', 'dsf', 'flac', 'ogg', 'opus', 'mp3', 'mpc', 'wav', 'wv']
         disc (int): Disc number the track is on.
         genre (str): String of all genres concatenated with ';'.
         genres (set[str]): Set of all genres.
@@ -191,6 +194,7 @@ class Track(LibItem, SABase):
 
     _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
+    audio_format: str = cast(str, Column(String, nullable=True))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
@@ -354,6 +358,7 @@ class Track(LibItem, SABase):
             "album_obj",
             "artist",
             "artists",
+            "audio_format",
             "disc",
             "genres",
             "path",

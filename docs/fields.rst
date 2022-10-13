@@ -19,6 +19,8 @@ Track Fields
     "albumartist", "Album artist", ""
     "artist", "Track artist", ""
     "artists", "Set of track artists", "1"
+    "audio_format", "File audio_format. One of ['aac', 'aiff', 'alac', 'ape',
+            'asf', 'dsf', 'flac', 'ogg', 'opus', 'mp3', 'mpc', 'wav', 'wv']", ""
     "disc", "Disc number", ""
     "genre", "Genre", "1"
     "path", "Filesystem path of the track", "3"

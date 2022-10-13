@@ -1,14 +1,11 @@
 """Tests a Track object."""
 
-import datetime
-
 import pytest
 
 import moe
 import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
 from moe.library import Track, TrackError
-from moe.plugins.write import write_tags
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -110,54 +107,6 @@ class TestAlbumSet:
 
 class TestFromFile:
     """Test initialization from given file path."""
-
-    def test_read_tags(self, tmp_config):
-        """We can initialize a track with tags from a file if present."""
-        tmp_config()
-        track = track_factory(exists=True)
-        album = track.album_obj
-
-        track.album = "The Lost Album"
-        track.albumartist = "Wu-Tang Clan"
-        track.artist = "Wu-Tang Clan"
-        track.artists = {"Wu-Tang Clan", "Me"}
-        track.disc = 1
-        track.genres = {"hip hop", "rock"}
-        track.title = "Full"
-        track.track_num = 1
-
-        album.barcode = "1234"
-        album.catalog_nums = {"1", "2"}
-        album.country = "US"
-        album.date = datetime.date(2020, 1, 12)
-        album.disc_total = 2
-        album.label = "RCA"
-        album.media = "CD"
-        album.original_date = datetime.date(2020, 1, 1)
-        album.track_total = 10
-        write_tags(track)
-
-        new_track = Track.from_file(track.path)
-        new_album = new_track.album_obj
-
-        assert new_track.album == track.album
-        assert new_track.albumartist == track.albumartist
-        assert new_track.artist == track.artist
-        assert new_track.artists == track.artists
-        assert new_track.disc == track.disc
-        assert new_track.genres == track.genres
-        assert new_track.title == track.title
-        assert new_track.track_num == track.track_num
-
-        assert new_album.barcode == album.barcode
-        assert new_album.catalog_nums == album.catalog_nums
-        assert new_album.country == album.country
-        assert new_album.disc_total == album.disc_total
-        assert new_album.date == album.date
-        assert new_album.label == album.label
-        assert new_album.media == album.media
-        assert new_album.original_date == album.original_date
-        assert new_album.track_total == album.track_total
 
     def test_non_track_file(self):
         """Raise `TrackError` if the given path does not correspond to a track file."""

@@ -107,6 +107,7 @@ class TestWriteTags:
         assert new_track.albumartist == albumartist
         assert new_track.artist == artist
         assert new_track.artists == artists
+        assert new_track.audio_format == "mp3"
         assert new_track.disc == disc
         assert new_track.genres == genres
         assert new_track.title == title
