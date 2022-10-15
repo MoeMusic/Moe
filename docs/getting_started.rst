@@ -5,6 +5,8 @@ Getting Started
 ************
 Installation
 ************
+Moe requires python 3.9 or greater.
+
 #. The latest release of Moe is available on `PyPI <https://pypi.org/project/moe>`_
 
    .. code-block:: bash
