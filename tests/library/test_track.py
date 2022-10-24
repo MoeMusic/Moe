@@ -206,7 +206,7 @@ class TestMerge:
     def test_merge_non_conflict(self):
         """Apply any non-conflicting fields."""
         track = track_factory()
-        other_track = track_factory(title="keep", genres=["keep"])
+        other_track = track_factory(title="keep", genres={"keep"})
         track.title = ""
         track.genres = set()
 
@@ -235,6 +235,26 @@ class TestMerge:
         track.merge(other_track)
 
         assert tmp_session.query(Track).one()
+
+
+class TestProperties:
+    """Test various track properties."""
+
+    def test_genre(self):
+        """Genre should concat genres."""
+        track = track_factory(genres={"1", "2"})
+
+        assert track.genre == "1;2" or track.genre == "2;1"
+
+    def test_set_genre(self):
+        """Setting genre should split into strings."""
+        track = track_factory(genre=None)
+
+        assert track.genre is None
+        assert track.genres is None
+
+        track.genre = "1; 2"
+        assert track.genres == {"1", "2"}
 
 
 class TestListDuplicates:

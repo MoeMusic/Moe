@@ -100,12 +100,20 @@ class TestProperties:
         assert album.original_year == original_year
 
     def test_catalog_num(self):
-        """We can set and read the str conversion of `catalog_nums`."""
+        """Catalog_Num should concat catalog_nums."""
         album = album_factory(catalog_nums={"1", "2"})
+
         assert album.catalog_num == "1;2" or album.catalog_num == "2;1"
 
-        album.catalog_num = "1;3"
-        assert album.catalog_nums == {"1", "3"}
+    def test_set_catalog_num(self):
+        """Setting catalog_num should split into strings."""
+        album = album_factory(catalog_num=None)
+
+        assert album.catalog_num is None
+        assert album.catalog_nums is None
+
+        album.catalog_num = "1; 2"
+        assert album.catalog_nums == {"1", "2"}
 
 
 class TestFromDir:
