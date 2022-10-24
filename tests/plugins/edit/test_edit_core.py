@@ -42,7 +42,7 @@ class TestEditItem:
     def test_invalid_date_field(self):
         """Invalid dates should raise an EditError."""
         with pytest.raises(edit.EditError):
-            edit.edit_item(track_factory(), "date", "2020")
+            edit.edit_item(album_factory(), "date", "2020")
 
     def test_set_field(self):
         """We can edit set fields."""
@@ -50,6 +50,13 @@ class TestEditItem:
         edit.edit_item(track, "artists", "a; b")
 
         assert track.artists == {"a", "b"}
+
+    def test_single_value_property(self):
+        """We can edit the single-value property of a multi-value field."""
+        track = track_factory()
+        edit.edit_item(track, "genre", "a; b")
+
+        assert track.genres == {"a", "b"}
 
     def test_non_editable_fields(self):
         """Editing paths is not currently supported."""

@@ -8,14 +8,14 @@ import mediafile
 import pluggy
 from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableSet
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 import moe
 from moe import config
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, LibraryError, PathType, SABase
+from moe.library.lib_item import LibItem, LibraryError, PathType, SABase, SetType
 
 __all__ = ["Track", "TrackError"]
 
@@ -112,7 +112,8 @@ def read_custom_tags(
 
     album_fields["artist"] = audio_file.albumartist or audio_file.artist
     album_fields["barcode"] = audio_file.barcode
-    album_fields["catalog_nums"] = set(audio_file.catalognums)
+    if audio_file.catalognums is not None:
+        album_fields["catalog_nums"] = set(audio_file.catalognums)
     album_fields["country"] = audio_file.country
     album_fields["date"] = audio_file.date
     album_fields["disc_total"] = audio_file.disctotal
@@ -124,10 +125,12 @@ def read_custom_tags(
     album_fields["track_total"] = audio_file.tracktotal
 
     track_fields["artist"] = audio_file.artist
-    track_fields["artists"] = set(audio_file.artists)
+    if audio_file.artists is not None:
+        track_fields["artists"] = set(audio_file.artists)
     track_fields["audio_format"] = audio_file.type
     track_fields["disc"] = audio_file.disc
-    track_fields["genres"] = set(audio_file.genres)
+    if audio_file.genres is not None:
+        track_fields["genres"] = set(audio_file.genres)
     track_fields["path"] = track_path
     track_fields["title"] = audio_file.title
     track_fields["track_num"] = audio_file.track
@@ -135,32 +138,6 @@ def read_custom_tags(
 
 class TrackError(LibraryError):
     """Error performing some operation on a Track."""
-
-
-class _Artist(SABase):
-    """A track can have multiple artists."""
-
-    __tablename__ = "artist"
-
-    _id: int = cast(int, Column(Integer, primary_key=True))
-    _track_id: int = cast(int, Column(Integer, ForeignKey("track._id")))
-    name: str = cast(str, Column(String, nullable=False))
-
-    def __init__(self, name: str):
-        self.name = name
-
-
-class _Genre(SABase):
-    """A track can have multiple genres."""
-
-    __tablename__ = "genre"
-
-    _id: int = cast(int, Column(Integer, primary_key=True))
-    _track_id: int = cast(int, Column(Integer, ForeignKey("track._id")))
-    name: str = cast(str, Column(String, nullable=False))
-
-    def __init__(self, name: str):
-        self.name = name
 
 
 # Track generic, used for typing classmethod
@@ -194,8 +171,14 @@ class Track(LibItem, SABase):
 
     _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
+    artists: Optional[set[str]] = cast(
+        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    )
     audio_format: str = cast(str, Column(String, nullable=True))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
+    genres: Optional[set[str]] = cast(
+        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    )
     path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
@@ -212,15 +195,6 @@ class Track(LibItem, SABase):
     album_obj: Album = relationship("Album", back_populates="tracks")
     album: str = association_proxy("album_obj", "title")
     albumartist: str = association_proxy("album_obj", "artist")
-
-    _artists: set[_Artist] = relationship(
-        "_Artist", collection_class=set, cascade="save-update, merge, expunge"
-    )
-    artists: set[str] = association_proxy("_artists", "name")
-    _genres: set[_Genre] = relationship(
-        "_Genre", collection_class=set, cascade="save-update, merge, expunge"
-    )
-    genres: set[str] = association_proxy("_genres", "name")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -338,18 +312,24 @@ class Track(LibItem, SABase):
         )
 
     @property
-    def genre(self) -> str:
+    def genre(self) -> Optional[str]:
         """Returns a string of all genres concatenated with ';'."""
+        if self.genres is None:
+            return None
+
         return ";".join(self.genres)
 
     @genre.setter
-    def genre(self, genre_str: str):
+    def genre(self, genre_str: Optional[str]):
         """Sets a track's genre from a string.
 
         Args:
             genre_str: For more than one genre, they should be split with ';'.
         """
-        self.genres = {genre.strip() for genre in genre_str.split(";")}
+        if genre_str is None:
+            self.genres = None
+        else:
+            self.genres = {genre.strip() for genre in genre_str.split(";")}
 
     @property
     def fields(self) -> set[str]:

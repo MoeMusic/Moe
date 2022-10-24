@@ -3,9 +3,10 @@
 import datetime
 import logging
 
-import sqlalchemy.ext.associationproxy
+from sqlalchemy import Date, Integer
 
 from moe.library import LibItem
+from moe.library.lib_item import SetType
 
 __all__ = ["EditError", "edit_item"]
 
@@ -16,7 +17,7 @@ class EditError(Exception):
     """Error editing an item in the library."""
 
 
-def edit_item(item: LibItem, field: str, value: str):
+def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:
@@ -29,29 +30,35 @@ def edit_item(item: LibItem, field: str, value: str):
     """
     log.debug(f"Editing item. [{item=!r}, {field=!r}, {value=!r}]")
 
-    try:
-        attr = getattr(item, field)
-    except AttributeError as a_err:
-        raise EditError(f"Invalid field given. [{field=!r}]") from a_err
-
-    non_editable_fields = ["path"]
-    if field in non_editable_fields:
+    if field == "path":
         raise EditError(f"Non-editable field given. [{field=!r}]")
 
-    if isinstance(attr, str):
+    try:
+        attr = getattr(item.__class__, field)
+    except AttributeError as a_err:
+        if field in item._custom_fields:
+            setattr(item, field, value)
+            return
+
+        raise EditError(f"Invalid field given. [{field=!r}]") from a_err
+
+    try:
+        column_type = attr.property.columns[0].type
+    except AttributeError:
+        # hybrid_property
         setattr(item, field, value)
-    elif isinstance(attr, int):
+        return
+
+    if isinstance(column_type, Integer):
         setattr(item, field, int(value))
-    elif isinstance(attr, set) or isinstance(
-        attr, sqlalchemy.ext.associationproxy._AssociationSet
-    ):
+    elif isinstance(column_type, SetType):
         setattr(item, field, {value.strip() for value in value.split(";")})
-    elif isinstance(attr, datetime.date):
+    elif isinstance(column_type, Date):
         try:
             setattr(item, field, datetime.date.fromisoformat(value))
         except ValueError as v_err:
             raise EditError("Date must be in format YYYY-MM-DD") from v_err
     else:
-        raise EditError(f"Editing field not supported. [{field=!r}]")
+        setattr(item, field, value)
 
     log.info(f"Item edited. [{item=!r}, {field=!r}, {value=!r}]")

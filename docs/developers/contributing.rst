@@ -134,7 +134,7 @@ If adding a new field to Moe, the following checklist can help ensure you cover 
 
 #. Add the database column to the appropriate library class (``Album``, ``Extra``, or ``Track``).
 
-   * If a multi-value field, you'll need to create a new table and add a reference attribute to the appropriate library class. Reference a current multi-value field (e.g. ``track.artists``) to see what this should look like.
+   * If a multi-value field, add the non-plural equivalent property. See ``Track.genres`` and the accompanying single-value field, ``Track.genre`` for an example.
    * Include documentation for the new field in the class docstring.
 
 #. Add to the item's ``fields`` method as necessary.

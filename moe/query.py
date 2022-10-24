@@ -12,6 +12,7 @@ import sqlalchemy.sql.elements
 
 from moe.config import MoeSession
 from moe.library import Album, Extra, LibItem, Track
+from moe.library.lib_item import SetType
 
 __all__: list[str] = ["QueryError", "query"]
 
@@ -230,10 +231,25 @@ def _get_field_attr(field: str, field_type: str):
 def _getattr(item_class: Type[LibItem], field: str):
     """Get an attribute for the given class type."""
     try:
-        return getattr(item_class, field)
+        attr = getattr(item_class, field)
     except AttributeError:
         # assume custom field
         custom_func = sa.func.json_each(
             item_class._custom_fields, f"$.{field}"
         ).table_valued("value", joins_implicitly=True)
+
         return custom_func.c.value
+
+    try:
+        column_type = attr.property.columns[0].type
+    except AttributeError:
+        # hybrid_property
+        pass
+    else:
+        if isinstance(column_type, SetType):
+            multi_func = sa.func.json_each(
+                getattr(item_class, field), "$"
+            ).table_valued("value", joins_implicitly=True)
+            return multi_func.c.value
+
+    return attr

@@ -294,3 +294,22 @@ class PathType(sa.types.TypeDecorator):
             return None
 
         return Path(self.library_path / path_str)
+
+
+class SetType(sa.types.TypeDecorator):
+    """A custom type for storing sets as json in a database."""
+
+    impl = sa.types.JSON  # sql type
+    cache_ok = True  # expected to produce same bind/result behavior and sql generation
+
+    def process_bind_param(self, json_set, dialect):
+        """Convert the set to a list so it's valid json."""
+        if json_set is not None:
+            return list(json_set)
+        return None
+
+    def process_result_value(self, json_list, dialect):
+        """Convert the list in the db back to a set."""
+        if json_list is not None:
+            return set(json_list)
+        return None

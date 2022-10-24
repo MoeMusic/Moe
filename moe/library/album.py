@@ -8,15 +8,13 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 import pluggy
 import sqlalchemy as sa
 from sqlalchemy import JSON, Column, Date, Integer, String
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableSet
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKey
 
 import moe
 from moe import config
-from moe.library.lib_item import LibItem, LibraryError, PathType, SABase
+from moe.library.lib_item import LibItem, LibraryError, PathType, SABase, SetType
 
 if TYPE_CHECKING:
     from moe.library.extra import Extra
@@ -76,19 +74,6 @@ class AlbumError(LibraryError):
     """Error performing some operation on an Album."""
 
 
-class _CatalogNums(SABase):
-    """An album can have multiple catalog numbers."""
-
-    __tablename__ = "catalog_num"
-
-    _id: int = cast(int, Column(Integer, primary_key=True))
-    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
-    catalog_num: str = cast(str, Column(String, nullable=False))
-
-    def __init__(self, catalog_num: str):
-        self.catalog_num = catalog_num
-
-
 # Album generic, used for typing classmethod
 A = TypeVar("A", bound="Album")
 
@@ -125,6 +110,9 @@ class Album(LibItem, SABase):
     _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
     barcode: str = cast(str, Column(String, nullable=True))
+    catalog_nums: Optional[set[str]] = cast(
+        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    )
     country: str = cast(str, Column(String, nullable=True))
     date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
     disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
@@ -142,11 +130,6 @@ class Album(LibItem, SABase):
             nullable=False,
         ),
     )
-
-    _catalog_nums: set[_CatalogNums] = relationship(
-        "_CatalogNums", collection_class=set, cascade="save-update, merge, expunge"
-    )
-    catalog_nums: set[str] = association_proxy("_catalog_nums", "catalog_num")
 
     tracks: list["Track"] = relationship(
         "Track",
@@ -259,20 +242,27 @@ class Album(LibItem, SABase):
         }.union(self._custom_fields)
 
     @property
-    def catalog_num(self) -> str:
-        """Returns a string of all catalog numbers concatenated with ';'."""
+    def catalog_num(self) -> Optional[str]:
+        """Returns a string of all catalog_nums concatenated with ';'."""
+        if self.catalog_nums is None:
+            return None
+
         return ";".join(self.catalog_nums)
 
     @catalog_num.setter
-    def catalog_num(self, catalog_num: str):
-        """Sets an album's catalog_nums from a string.
+    def catalog_num(self, catalog_num_str: Optional[str]):
+        """Sets a track's catalog_num from a string.
 
         Args:
-            catalog_num: For more than one catalog_num, they should be split with ';'.
+            catalog_num_str: For more than one catalog_num, they should be split with
+                ';'.
         """
-        self.catalog_nums = {
-            catalog_num.strip() for catalog_num in catalog_num.split(";")
-        }
+        if catalog_num_str is None:
+            self.catalog_nums = None
+        else:
+            self.catalog_nums = {
+                catalog_num.strip() for catalog_num in catalog_num_str.split(";")
+            }
 
     def get_extra(self, rel_path: PurePath) -> Optional["Extra"]:
         """Gets an Extra by its path."""
