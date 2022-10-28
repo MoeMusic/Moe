@@ -13,7 +13,7 @@ from sqlalchemy.schema import ForeignKey
 import moe
 from moe import config
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, PathType, SABase
+from moe.library.lib_item import LibItem, SABase
 
 __all__ = ["Extra"]
 
@@ -75,8 +75,6 @@ class Extra(LibItem, SABase):
 
     __tablename__ = "extra"
 
-    _id: int = cast(int, Column(Integer, primary_key=True))
-    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     _custom_fields: dict[str, Any] = cast(
         dict[str, Any],
         Column(

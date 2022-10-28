@@ -115,10 +115,6 @@ class TestGetMatchingTracks:
 class TestMatchValue:
     """Test ``get_match_value()``."""
 
-    def test_different_type(self):
-        """Tracks cannot match with albums."""
-        assert get_match_value(album_factory(), track_factory()) == 0
-
     def test_same_album(self):
         """Albums with the same values for all used fields should be a perfect match."""
         album1 = album_factory()

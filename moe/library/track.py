@@ -14,10 +14,10 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 import moe
 from moe import config
-from moe.library.album import Album
-from moe.library.lib_item import LibItem, LibraryError, PathType, SABase, SetType
+from moe.library.album import Album, MetaAlbum
+from moe.library.lib_item import LibItem, LibraryError, MetaLibItem, SABase, SetType
 
-__all__ = ["Track", "TrackError"]
+__all__ = ["MetaTrack", "Track", "TrackError"]
 
 log = logging.getLogger("moe.track")
 
@@ -144,20 +144,185 @@ class TrackError(LibraryError):
 T = TypeVar("T", bound="Track")
 
 
-class Track(LibItem, SABase):
-    """A single track.
+class MetaTrack(MetaLibItem):
+    """A track containing only metadata.
+
+    It does not exist on the filesystem nor in the library. It can be used
+    to represent information about a track to later be merged into a full ``Track``
+    instance.
+
+    Attributes:
+        album_obj (Optional[Album]): Corresponding Album object.
+        artist (Optional[str])
+        artists (Optional[set[str]]): Set of all artists.
+        disc (Optional[int]): Disc number the track is on.
+        genre (Optional[str]): String of all genres concatenated with ';'.
+        genres (Optional[set[str]]): Set of all genres.
+        title (Optional[str])
+        track_num (Optional[int])
+    """
+
+    def __init__(
+        self,
+        album: MetaAlbum,
+        track_num: int,
+        artist: Optional[str] = None,
+        artists: Optional[set[str]] = None,
+        disc: int = 1,
+        genres: Optional[set[str]] = None,
+        title: Optional[str] = None,
+        **kwargs,
+    ):
+        """Creates a MetaTrack object with any additional custom fields as kwargs."""
+        self._custom_fields = self._get_default_custom_fields()
+        self._custom_fields_set = set(self._custom_fields)
+
+        self.album_obj = album
+        album.tracks.append(self)
+
+        self.track_num = track_num
+        self.artist = artist
+        self.artists = artists
+        self.disc = disc
+        self.genres = genres
+        self.title = title
+
+        # set default values
+        self.artist = self.album_obj.artist
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+        log.debug(f"MetaTrack created. [track={self!r}]")
+
+    @property
+    def genre(self) -> Optional[str]:
+        """Returns a string of all genres concatenated with ';'."""
+        if self.genres is None:
+            return None
+
+        return ";".join(self.genres)
+
+    @genre.setter
+    def genre(self, genre_str: Optional[str]):
+        """Sets a track's genre from a string.
+
+        Args:
+            genre_str: For more than one genre, they should be split with ';'.
+        """
+        if genre_str is None:
+            self.genres = None
+        else:
+            self.genres = {genre.strip() for genre in genre_str.split(";")}
+
+    @property
+    def fields(self) -> set[str]:
+        """Returns any editable, track-specific fields."""
+        return {
+            "album_obj",
+            "artist",
+            "artists",
+            "disc",
+            "genres",
+            "title",
+            "track_num",
+        }.union(set(self._custom_fields))
+
+    def merge(self, other: "MetaTrack", overwrite: bool = False):
+        """Merges another track into this one.
+
+        Args:
+            other: Other track to be merged with the current track.
+            overwrite: Whether or not to overwrite self if a conflict exists.
+        """
+        log.debug(
+            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
+        )
+
+        omit_fields = {"album_obj"}
+        for field in self.fields - omit_fields:
+            other_value = getattr(other, field, None)
+            self_value = getattr(self, field, None)
+            if other_value and (overwrite or (not overwrite and not self_value)):
+                setattr(self, field, other_value)
+
+        log.debug(
+            f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
+        )
+
+    def __eq__(self, other) -> bool:
+        """Compares Tracks by their fields."""
+        if type(self) != type(other):
+            return False
+
+        for field in self.fields:
+            if not hasattr(other, field) or (
+                getattr(self, field) != getattr(other, field)
+            ):
+                return False
+
+        return True
+
+    def __lt__(self, other) -> bool:
+        """Sort based on album, then disc, then track number."""
+        if self.album_obj == other.album_obj:
+            if self.disc == other.disc:
+                return self.track_num < other.track_num
+
+            return self.disc < other.disc
+
+        return self.album_obj < other.album_obj
+
+    def __repr__(self):
+        """Represents a Track using track-specific and relevant album fields."""
+        field_reprs = []
+        omit_fields = {"album_obj"}
+        for field in self.fields - omit_fields:
+            if hasattr(self, field):
+                field_reprs.append(f"{field}={getattr(self, field)!r}")
+        repr_str = (
+            f"{__class__.__name__}("
+            + ", ".join(field_reprs)
+            + f", album='{self.album_obj}'"
+        )
+
+        custom_field_reprs = []
+        for custom_field, value in self._custom_fields.items():
+            custom_field_reprs.append(f"{custom_field}={value}")
+        if custom_field_reprs:
+            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
+
+        repr_str += ")"
+        return repr_str
+
+    def __str__(self):
+        """String representation of a track."""
+        return f"{self.artist} - {self.title}"
+
+    def _get_default_custom_fields(self) -> dict[str, Any]:
+        """Returns the default custom track fields."""
+        return {
+            field: default_val
+            for plugin_fields in config.CONFIG.pm.hook.create_custom_track_fields()
+            for field, default_val in plugin_fields.items()
+        }
+
+
+class Track(LibItem, SABase, MetaTrack):
+    """A single track in the library.
 
     Attributes:
         album (str)
         albumartist (str)
         album_obj (Album): Corresponding Album object.
         artist (str)
-        artists (set[str]): Set of all artists.
-        audio_format (str): File audio format. One of ['aac', 'aiff', 'alac', 'ape',
-            'asf', 'dsf', 'flac', 'ogg', 'opus', 'mp3', 'mpc', 'wav', 'wv']
+        artists (Optional[set[str]]): Set of all artists.
+        audio_format (Optional[str]): File audio format.
+            One of ['aac', 'aiff', 'alac', 'ape', 'asf', 'dsf', 'flac', 'ogg', 'opus',
+            'mp3', 'mpc', 'wav', 'wv']
         disc (int): Disc number the track is on.
         genre (str): String of all genres concatenated with ';'.
-        genres (set[str]): Set of all genres.
+        genres (Optional[set[str]]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -169,17 +334,15 @@ class Track(LibItem, SABase):
 
     __tablename__ = "track"
 
-    _id: int = cast(int, Column(Integer, primary_key=True))
     artist: str = cast(str, Column(String, nullable=False))
     artists: Optional[set[str]] = cast(
-        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=False))
     )
-    audio_format: str = cast(str, Column(String, nullable=True))
+    audio_format: Optional[str] = cast(str, Column(String, nullable=True))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
     genres: Optional[set[str]] = cast(
         Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
     )
-    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
     title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
     _custom_fields: dict[str, Any] = cast(
@@ -223,7 +386,9 @@ class Track(LibItem, SABase):
         self.title = title
         self.track_num = track_num
 
-        self.artist = self.albumartist  # default value
+        # set default values
+        self.artist = self.albumartist
+        self.audio_format = self.path.suffix
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -312,39 +477,9 @@ class Track(LibItem, SABase):
         )
 
     @property
-    def genre(self) -> Optional[str]:
-        """Returns a string of all genres concatenated with ';'."""
-        if self.genres is None:
-            return None
-
-        return ";".join(self.genres)
-
-    @genre.setter
-    def genre(self, genre_str: Optional[str]):
-        """Sets a track's genre from a string.
-
-        Args:
-            genre_str: For more than one genre, they should be split with ';'.
-        """
-        if genre_str is None:
-            self.genres = None
-        else:
-            self.genres = {genre.strip() for genre in genre_str.split(";")}
-
-    @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
-        return {
-            "album_obj",
-            "artist",
-            "artists",
-            "audio_format",
-            "disc",
-            "genres",
-            "path",
-            "title",
-            "track_num",
-        }.union(set(self._custom_fields))
+        return super().fields.union({"audio_format", "path"})
 
     def is_unique(self, other: "Track") -> bool:
         """Returns whether a track is unique in the library from ``other``."""
@@ -364,78 +499,3 @@ class Track(LibItem, SABase):
             return False
 
         return True
-
-    def merge(self, other: "Track", overwrite: bool = False):
-        """Merges another track into this one.
-
-        Args:
-            other: Other track to be merged with the current track.
-            overwrite: Whether or not to overwrite self if a conflict exists.
-        """
-        log.debug(
-            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
-        )
-
-        omit_fields = {"album_obj", "year"}
-        for field in self.fields - omit_fields:
-            other_value = getattr(other, field)
-            self_value = getattr(self, field)
-            if other_value and (overwrite or (not overwrite and not self_value)):
-                setattr(self, field, other_value)
-
-        log.debug(
-            f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
-        )
-
-    def __eq__(self, other) -> bool:
-        """Compares Tracks by their fields."""
-        if not isinstance(other, Track):
-            return False
-
-        for field in self.fields:
-            if not hasattr(other, field) or (
-                getattr(self, field) != getattr(other, field)
-            ):
-                return False
-
-        return True
-
-    def __lt__(self, other) -> bool:
-        """Sort based on album, then disc, then track number."""
-        if self.album_obj == other.album_obj:
-            if self.disc == other.disc:
-                return self.track_num < other.track_num
-
-            return self.disc < other.disc
-
-        return self.album_obj < other.album_obj
-
-    def __repr__(self):
-        """Represents a Track using track-specific and relevant album fields."""
-        field_reprs = []
-        omit_fields = {"album_obj"}
-        for field in self.fields - omit_fields:
-            if hasattr(self, field):
-                field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = "Track(" + ", ".join(field_reprs) + f", album='{self.album_obj}'"
-
-        custom_field_reprs = []
-        for custom_field, value in self._custom_fields.items():
-            custom_field_reprs.append(f"{custom_field}={value}")
-        if custom_field_reprs:
-            repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
-
-        repr_str += ")"
-        return repr_str
-
-    def __str__(self):
-        """String representation of a track."""
-        return f"{self.artist} - {self.title}"
-
-    def _get_default_custom_fields(self) -> dict[str, Any]:
-        """Returns the default custom track fields."""
-        return {
-            field: default_val
-            for plugin_fields in config.CONFIG.pm.hook.create_custom_track_fields()
-            for field, default_val in plugin_fields.items()
-        }

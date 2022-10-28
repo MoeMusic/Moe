@@ -2,19 +2,20 @@
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pluggy
 import sqlalchemy
 import sqlalchemy as sa
 import sqlalchemy.event
 import sqlalchemy.orm
+from sqlalchemy import Column, Integer
 from sqlalchemy.orm import declarative_base
 
 import moe
 from moe import config
 
-__all__ = ["LibItem", "LibraryError"]
+__all__ = ["LibItem", "LibraryError", "MetaLibItem"]
 
 log = logging.getLogger("moe.lib_item")
 
@@ -205,60 +206,6 @@ def _process_after_flush(
         log.debug(f"Processed removed items. [{removed_items=!r}]")
 
 
-class LibItem:
-    """Base class for library items i.e. Albums, Extras, and Tracks."""
-
-    _custom_fields = {}
-    _custom_fields_set = None
-
-    @property
-    def path(self) -> Path:
-        """A library item's filesystem path."""
-        raise NotImplementedError
-
-    @property
-    def custom_fields(self) -> set[str]:
-        """Returns the custom fields of an item."""
-        if self._custom_fields_set is None:
-            object.__setattr__(
-                self, "_custom_fields_set", set(self._get_default_custom_fields())
-            )
-
-        assert self._custom_fields_set is not None
-        return self._custom_fields_set
-
-    def _get_default_custom_fields(self) -> dict[str, Any]:
-        """Returns the default custom fields of an item."""
-        raise NotImplementedError
-
-    @property
-    def fields(self) -> set[str]:
-        """Returns the editable fields of an item."""
-        raise NotImplementedError
-
-    def is_unique(self, other: "LibItem") -> bool:
-        """Returns whether an item is unique in the library from ``other``."""
-        raise NotImplementedError
-
-    def __getattr__(self, name: str):
-        """See if ``name`` is a custom field."""
-        if name in self.custom_fields:
-            return self._custom_fields[name]
-        else:
-            raise AttributeError from None
-
-    def __setattr__(self, name, value):
-        """Set custom custom_fields if a valid key."""
-        if name in self.custom_fields:
-            self._custom_fields[name] = value
-        else:
-            super().__setattr__(name, value)
-
-    def __lt__(self, other):
-        """Library items implement the `lt` magic method to allow sorting."""
-        raise NotImplementedError
-
-
 class PathType(sa.types.TypeDecorator):
     """A custom type for paths for database storage.
 
@@ -313,3 +260,62 @@ class SetType(sa.types.TypeDecorator):
         if json_list is not None:
             return set(json_list)
         return None
+
+
+class MetaLibItem:
+    """Base class for MetaTrack and MetaAlbum objects representing metadata-only.
+
+    These objects do not exist on the filesystem nor in the library.
+    """
+
+    _custom_fields = {}
+    _custom_fields_set = None
+
+    @property
+    def custom_fields(self) -> set[str]:
+        """Returns the custom fields of an item."""
+        if self._custom_fields_set is None:
+            object.__setattr__(
+                self, "_custom_fields_set", set(self._get_default_custom_fields())
+            )
+
+        assert self._custom_fields_set is not None
+        return self._custom_fields_set
+
+    def _get_default_custom_fields(self) -> dict[str, Any]:
+        """Returns the default custom fields of an item."""
+        raise NotImplementedError
+
+    @property
+    def fields(self) -> set[str]:
+        """Returns the editable fields of an item."""
+        raise NotImplementedError
+
+    def __getattr__(self, name: str):
+        """See if ``name`` is a custom field."""
+        if name in self.custom_fields:
+            return self._custom_fields[name]
+        else:
+            raise AttributeError from None
+
+    def __setattr__(self, name, value):
+        """Set custom custom_fields if a valid key."""
+        if name in self.custom_fields:
+            self._custom_fields[name] = value
+        else:
+            super().__setattr__(name, value)
+
+    def __lt__(self, other):
+        """Library items implement the `lt` magic method to allow sorting."""
+        raise NotImplementedError
+
+
+class LibItem(MetaLibItem):
+    """Base class for library items i.e. Albums, Extras, and Tracks."""
+
+    _id: int = cast(int, Column(Integer, primary_key=True))
+    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
+
+    def is_unique(self, other: "LibItem") -> bool:
+        """Returns whether an item is unique in the library from ``other``."""
+        raise NotImplementedError

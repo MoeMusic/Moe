@@ -1,5 +1,6 @@
 """Tests an Album object."""
 
+import datetime
 from datetime import date
 from pathlib import Path
 
@@ -8,7 +9,7 @@ import pytest
 import moe
 from moe import config
 from moe.config import ExtraPlugin
-from moe.library import Album, AlbumError, Extra
+from moe.library import Album, AlbumError, Extra, MetaAlbum, MetaTrack, Track
 from moe.plugins import write as moe_write
 from tests.conftest import album_factory, track_factory
 
@@ -99,6 +100,12 @@ class TestProperties:
 
         assert album.original_year == original_year
 
+    def test_null_original_year(self):
+        """Original date and therefore year can be null.."""
+        album = album_factory(original_date=None)
+
+        assert album.original_year is None
+
     def test_catalog_num(self):
         """Catalog_Num should concat catalog_nums."""
         album = album_factory(catalog_nums={"1", "2"})
@@ -116,79 +123,112 @@ class TestProperties:
         assert album.catalog_nums == {"1", "2"}
 
 
-class TestFromDir:
-    """Test a creating an album from a directory."""
+class TestGetTrack:
+    """Test `get_track`."""
 
-    def test_dir_album(self, tmp_config):
-        """If a directory given, add to library as an album."""
-        tmp_config()
-        album = album_factory(exists=True)
-        assert Album.from_dir(album.path) == album
+    def test_meta_return(self):
+        """Meta Albums return MetaTracks."""
+        album = MetaAlbum()
+        track = MetaTrack(album, track_num=1, disc=1)
+        album.tracks.append(track)
 
-    def test_extras(self, tmp_config):
-        """Add any extras that are within the album directory."""
-        tmp_config()
-        album = album_factory(exists=True)
-        new_album = Album.from_dir(album.path)
+        assert album.get_track(1, 1) is track
 
-        for extra in album.extras:
-            assert extra in new_album.extras
-
-    def test_no_valid_tracks(self, tmp_path):
-        """Error if given directory does not contain any valid tracks."""
-        empty_path = tmp_path / "empty"
-        empty_path.mkdir()
-
-        with pytest.raises(AlbumError):
-            Album.from_dir(empty_path)
-
-    def test_add_multi_disc(self, tmp_config):
-        """We can add a multi-disc album."""
-        tmp_config()
-        album = album_factory(exists=True)
-        track1 = album.tracks[0]
-        track2 = album.tracks[1]
-        track1.disc = 1
-        track2.disc = 2
-        album.disc_total = 2
-        moe_write.write_tags(track1)
-        moe_write.write_tags(track2)
-
-        track1_path = Path(album.path / "disc 01" / track1.path.name)
-        track2_path = Path(album.path / "disc 02" / track2.path.name)
-        track1_path.parent.mkdir()
-        track2_path.parent.mkdir()
-        track1.path.rename(track1_path)
-        track2.path.rename(track2_path)
-        track1.path = track1_path
-        track2.path = track2_path
-
-        album = Album.from_dir(album.path)
-
-        assert album.get_track(track1.track_num, track1.disc)
-        assert album.get_track(track2.track_num, track2.disc)
-
-
-class TestIsUnique:
-    """Test `is_unique()`."""
-
-    def test_same_path(self):
-        """Albums with the same path are not unique."""
+    def test_album_return(self):
+        """Albums return Tracks."""
         album = album_factory()
-        dup_album = album_factory(path=album.path)
+        assert isinstance(album.tracks[0], Track)
+        album.tracks[0].track_num = 1
+        album.tracks[0].disc = 1
 
-        assert not album.is_unique(dup_album)
-
-    def test_default(self):
-        """Albums with no matching parameters are unique."""
-        album1 = album_factory()
-        album2 = album_factory()
-
-        assert album1.is_unique(album2)
+        assert album.tracks[0] is album.get_track(1, 1)
 
 
-class TestMerge:
-    """Test merging two albums together."""
+class TestGetExtra:
+    """Test `get_extra`."""
+
+    def test_get_extra(self):
+        """We get extras by their relative paths."""
+        album = album_factory(exists=True)
+
+        extra = album.extras[0]
+        assert extra.path.is_relative_to(album.path)
+
+        assert album.get_extra(extra.path.relative_to(album.path)) is extra
+
+
+class TestMetaAlbumMerge:
+    """Test merging two MetaAlbums together."""
+
+    def test_conflict_persists(self):
+        """Don't overwrite any conflicts."""
+        album = MetaAlbum(title="123")
+        other_album = MetaAlbum(title="456")
+        keep_title = album.title
+
+        album.merge(other_album)
+
+        assert album.title == keep_title
+
+    def test_merge_non_conflict(self):
+        """Apply any non-conflicting fields."""
+        album = MetaAlbum(title="")
+        other_album = MetaAlbum(title="new")
+
+        album.merge(other_album)
+
+        assert album.title == "new"
+
+    def test_none_merge(self):
+        """Don't merge in any null values."""
+        album = MetaAlbum(title="123")
+        other_album = MetaAlbum(title="")
+
+        album.merge(other_album)
+
+        assert album.title == "123"
+
+    def test_overwrite_field(self):
+        """Overwrite fields if the option is given."""
+        album = MetaAlbum(title="123")
+        other_album = MetaAlbum(title="456")
+        keep_title = other_album.title
+
+        album.merge(other_album, overwrite=True)
+
+        assert album.title == keep_title
+
+    def test_merge_tracks(self):
+        """Tracks should merge with the same behavior as fields."""
+        album1 = MetaAlbum()
+        album2 = MetaAlbum()
+
+        new_track = MetaTrack(album2, 2)
+        conflict_track = MetaTrack(album2, 1)
+        keep_track = MetaTrack(album1, 1, title="keep")
+        assert conflict_track.title != keep_track.title
+        assert album1.tracks != album2.tracks
+
+        album1.merge(album2)
+
+        assert new_track in album1.tracks
+        assert keep_track.title == "keep"
+
+    def test_overwrite_tracks(self):
+        """Tracks should overwrite the same as fields if option given."""
+        album1 = MetaAlbum()
+        album2 = MetaAlbum()
+
+        MetaTrack(album2, 1, title="conflict")
+        overwrite_track = MetaTrack(album1, 1)
+
+        album1.merge(album2, overwrite=True)
+
+        assert overwrite_track.title == "conflict"
+
+
+class TestAlbumMerge:
+    """Test merging two Albums together."""
 
     def test_conflict_persists(self):
         """Don't overwrite any conflicts."""
@@ -294,6 +334,77 @@ class TestMerge:
         assert overwrite_track.title == "conflict"
 
 
+class TestFromDir:
+    """Test a creating an album from a directory."""
+
+    def test_dir_album(self, tmp_config):
+        """If a directory given, add to library as an album."""
+        tmp_config()
+        album = album_factory(exists=True)
+        assert Album.from_dir(album.path) == album
+
+    def test_extras(self, tmp_config):
+        """Add any extras that are within the album directory."""
+        tmp_config()
+        album = album_factory(exists=True)
+        new_album = Album.from_dir(album.path)
+
+        for extra in album.extras:
+            assert extra in new_album.extras
+
+    def test_no_valid_tracks(self, tmp_path):
+        """Error if given directory does not contain any valid tracks."""
+        empty_path = tmp_path / "empty"
+        empty_path.mkdir()
+
+        with pytest.raises(AlbumError):
+            Album.from_dir(empty_path)
+
+    def test_add_multi_disc(self, tmp_config):
+        """We can add a multi-disc album."""
+        tmp_config()
+        album = album_factory(exists=True)
+        track1 = album.tracks[0]
+        track2 = album.tracks[1]
+        track1.disc = 1
+        track2.disc = 2
+        album.disc_total = 2
+        moe_write.write_tags(track1)
+        moe_write.write_tags(track2)
+
+        track1_path = Path(album.path / "disc 01" / track1.path.name)
+        track2_path = Path(album.path / "disc 02" / track2.path.name)
+        track1_path.parent.mkdir()
+        track2_path.parent.mkdir()
+        track1.path.rename(track1_path)
+        track2.path.rename(track2_path)
+        track1.path = track1_path
+        track2.path = track2_path
+
+        album = Album.from_dir(album.path)
+
+        assert album.get_track(track1.track_num, track1.disc)
+        assert album.get_track(track2.track_num, track2.disc)
+
+
+class TestIsUnique:
+    """Test `is_unique()`."""
+
+    def test_same_path(self):
+        """Albums with the same path are not unique."""
+        album = album_factory()
+        dup_album = album_factory(path=album.path)
+
+        assert not album.is_unique(dup_album)
+
+    def test_default(self):
+        """Albums with no matching parameters are unique."""
+        album1 = album_factory()
+        album2 = album_factory()
+
+        assert album1.is_unique(album2)
+
+
 class TestEquality:
     """Test equality of albums."""
 
@@ -314,3 +425,34 @@ class TestEquality:
     def test_not_equals_not_album(self):
         """Not equal if not comparing two albums."""
         assert album_factory() != "test"
+
+
+class TestLessThan:
+    """Test ``__lt__``."""
+
+    def test_title_sort(self):
+        """Sorting by title first."""
+        album1 = MetaAlbum(title="a", artist="a", date=datetime.date(2000, 1, 1))
+        album2 = MetaAlbum(title="b", artist="a", date=datetime.date(2000, 1, 1))
+        album3 = MetaAlbum(artist="a", date=datetime.date(2000, 1, 1))
+
+        assert album1 < album2
+        assert album2 < album3
+
+    def test_artist_sort(self):
+        """If the title is the same, sort by artist."""
+        album1 = MetaAlbum(title="a", artist="a", date=datetime.date(2000, 1, 1))
+        album2 = MetaAlbum(title="a", artist="b", date=datetime.date(2000, 1, 1))
+        album3 = MetaAlbum(title="a", date=datetime.date(2000, 1, 1))
+
+        assert album1 < album2
+        assert album2 < album3
+
+    def test_date_sort(self):
+        """If the title and artist are the same, sort by date."""
+        album1 = MetaAlbum(title="a", artist="a", date=datetime.date(1999, 1, 1))
+        album2 = MetaAlbum(title="a", artist="a", date=datetime.date(2000, 1, 1))
+        album3 = MetaAlbum(title="a", artist="a")
+
+        assert album1 < album2
+        assert album2 < album3
