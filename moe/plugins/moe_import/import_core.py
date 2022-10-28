@@ -9,7 +9,7 @@ import pluggy
 
 import moe
 from moe import config
-from moe.library import Album, LibItem, Track
+from moe.library import Album, LibItem, MetaAlbum, Track
 
 __all__ = ["CandidateAlbum", "import_album"]
 
@@ -33,7 +33,7 @@ class CandidateAlbum:
         match_value_pct (str): ``match_value`` as a percentage.
     """
 
-    album: Album
+    album: MetaAlbum
     match_value: float
     source_str: str
     sub_header_info: list[str] = field(default_factory=list)

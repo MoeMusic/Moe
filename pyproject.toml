@@ -84,7 +84,7 @@ markers = [
 
 [tool.pyright]
 exclude = [
-    "alembic",
+    "alembic", "tests"
 ]
 pythonPlatform = "All"
 

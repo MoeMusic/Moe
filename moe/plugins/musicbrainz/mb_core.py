@@ -17,7 +17,7 @@ See Also:
 import datetime
 import logging
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 import dynaconf
 import mediafile
@@ -26,7 +26,7 @@ import pkg_resources
 
 import moe
 from moe import config
-from moe.library import Album, LibItem, Track
+from moe.library import Album, LibItem, MetaAlbum, MetaTrack, Track
 from moe.plugins.moe_import.import_core import CandidateAlbum
 from moe.util.core import match
 
@@ -213,6 +213,7 @@ def sync_metadata(item: LibItem):
     if isinstance(item, Album) and hasattr(item, "mb_album_id"):
         item.merge(get_album_by_id(item.mb_album_id), overwrite=True)
     elif isinstance(item, Track) and hasattr(item, "mb_track_id"):
+        item = cast(Track, item)
         item.merge(
             get_track_by_id(item.mb_track_id, item.album_obj.mb_album_id),
             overwrite=True,
@@ -366,7 +367,7 @@ def set_collection(releases: set[str], collection: Optional[str] = None) -> None
     add_releases_to_collection(new_releases, collection)
 
 
-def get_album_by_id(release_id: str) -> Album:
+def get_album_by_id(release_id: str) -> MetaAlbum:
     """Returns an album from musicbrainz with the given release ID."""
     log.debug(f"Fetching release from musicbrainz. [release={release_id!r}]")
 
@@ -399,7 +400,7 @@ def get_candidate_by_id(album: Album, release_id: str) -> CandidateAlbum:
     )
 
 
-def _create_album(release: dict) -> Album:
+def _create_album(release: dict) -> MetaAlbum:
     """Creates an album from a given musicbrainz release."""
     log.debug(f"Creating album from musicbrainz release. [release={release['id']!r}]")
 
@@ -412,7 +413,7 @@ def _create_album(release: dict) -> Album:
     else:
         label = None
 
-    album = Album(
+    album = MetaAlbum(
         artist=_flatten_artist_credit(release["artist-credit"]),
         barcode=release.get("barcode"),
         catalog_nums=catalog_nums,
@@ -424,14 +425,12 @@ def _create_album(release: dict) -> Album:
         media=release["medium-list"][0]["format"],
         original_date=_parse_date(release["release-group"]["first-release-date"]),
         title=release["title"],
-        path=None,  # type: ignore # this will get set in `add_prompt`
     )
     for medium in release["medium-list"]:
         for track in medium["track-list"]:
-            Track(
+            MetaTrack(
                 album=album,
                 track_num=int(track["position"]),
-                path=None,  # type: ignore # this will get set in `add_prompt`
                 artist=_flatten_artist_credit(track["recording"]["artist-credit"]),
                 disc=int(medium["position"]),
                 mb_track_id=track["id"],
@@ -472,7 +471,7 @@ def _parse_date(date: str) -> datetime.date:
     return datetime.date(year, month, day)
 
 
-def get_track_by_id(track_id: str, album_id: str) -> Track:
+def get_track_by_id(track_id: str, album_id: str) -> MetaTrack:
     """Gets a musicbrainz track from a given track and release id.
 
     Args:

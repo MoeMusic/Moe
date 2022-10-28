@@ -4,13 +4,13 @@ import difflib
 import logging
 from typing import Optional, Union
 
-from moe.library import Album, Track
+from moe.library import MetaAlbum, MetaTrack
 
 log = logging.getLogger("moe")
 
 __all__ = ["get_match_value", "get_matching_tracks"]
 
-TrackMatch = tuple[Optional[Track], Optional[Track]]
+TrackMatch = tuple[Optional[MetaTrack], Optional[MetaTrack]]
 TrackCoord = tuple[
     tuple[int, int], tuple[int, int]
 ]  # ((a.disc, a.track_num), (b.disc, b.track_num))
@@ -35,12 +35,15 @@ MATCH_TRACK_FIELD_WEIGHTS = {
 }  # how much to weigh matches of various fields
 
 
-def get_match_value(item_a: Union[Album, Track], item_b: Union[Album, Track]) -> float:
+def get_match_value(
+    item_a: Union[MetaAlbum, MetaTrack], item_b: Union[MetaAlbum, MetaTrack]
+) -> float:
     """Returns a similarity value between two albums or tracks on a scale of 0 to 1.
 
     Args:
         item_a: First item to compare.
-        item_b: Second item to compare.
+        item_b: Second item to compare. Should be the same type as ``item_a``
+            or a subclass i.e. ``MetaAlbums`` and ``Albums`` can be compared.
 
     Returns:
         The match value is a weighted sum according to the defined weights for each
@@ -48,12 +51,9 @@ def get_match_value(item_a: Union[Album, Track], item_b: Union[Album, Track]) ->
     """
     log.debug(f"Determining match value between items. [{item_a=!r}, {item_b=!r}]")
 
-    if type(item_a) is not type(item_b):
-        return 0
-
-    if isinstance(item_a, Album):
+    if issubclass(type(item_a), MetaAlbum):
         field_weights = MATCH_ALBUM_FIELD_WEIGHTS
-    elif isinstance(item_a, Track):
+    else:
         field_weights = MATCH_TRACK_FIELD_WEIGHTS
 
     penalties = []
@@ -83,7 +83,7 @@ def get_match_value(item_a: Union[Album, Track], item_b: Union[Album, Track]) ->
 
 
 def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
-    album_a: Album, album_b: Album, match_threshold: float = 0.7
+    album_a: MetaAlbum, album_b: MetaAlbum, match_threshold: float = 0.7
 ) -> list[TrackMatch]:
     """Returns a list of tuples of track match pairs.
 

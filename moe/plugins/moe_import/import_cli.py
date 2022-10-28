@@ -15,7 +15,7 @@ import moe
 import moe.cli
 from moe import config
 from moe.cli import console
-from moe.library import Album, Track
+from moe.library import Album, MetaAlbum, MetaTrack
 from moe.plugins.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
@@ -212,7 +212,9 @@ def _apply_changes(
         if not old_track and new_track:
             candidate.album.tracks.remove(new_track)  # missing track
         elif old_track and not new_track:
-            new_album.tracks.remove(old_track)  # unmatched track
+            new_album.tracks.remove(
+                new_album.get_track(old_track.track_num, old_track.disc)
+            )  # unmatched track
         elif (
             old_track
             and new_track
@@ -293,8 +295,8 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
         )
     )  # sort by new track's disc then track number
 
-    unmatched_tracks: list[Track] = []
-    missing_tracks: list[Track] = []
+    unmatched_tracks: list[MetaTrack] = []
+    missing_tracks: list[MetaTrack] = []
     for old_track, new_track in matches:
         if old_track and new_track:
             track_table.add_row(
@@ -308,7 +310,8 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
             unmatched_tracks.append(old_track)
         elif not old_track and new_track:
             missing_tracks.append(new_track)
-    track_table.rows[-1].end_section = True
+    if track_table.rows:
+        track_table.rows[-1].end_section = True
 
     for missing_track in sorted(missing_tracks):
         track_table.add_row(
@@ -331,7 +334,9 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
 
 
 def _fmt_field_changes(
-    old_item: Union[Album, Track], new_item: Union[Album, Track], field: str
+    old_item: Union[MetaAlbum, MetaTrack],
+    new_item: Union[MetaAlbum, MetaTrack],
+    field: str,
 ) -> Optional[Text]:
     """Formats changes of a single field.
 

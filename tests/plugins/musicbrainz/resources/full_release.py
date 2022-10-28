@@ -4,7 +4,7 @@
 import datetime
 from unittest.mock import MagicMock
 
-from moe.library import Album, Track
+from moe.library import MetaAlbum, MetaTrack
 
 # as returned by `musicbrainzngs.search_releases()`
 search = {
@@ -1685,9 +1685,9 @@ release = {
 }
 
 
-def album() -> Album:
+def album() -> MetaAlbum:
     """Creates an album with the above release information."""
-    return Album(
+    album = MetaAlbum(
         artist="Kanye West",
         title="My Beautiful Dark Twisted Fantasy",
         barcode="602527474465",
@@ -1697,20 +1697,26 @@ def album() -> Album:
         label="Roc‐A‐Fella Records",
         media="CD",
         original_date=datetime.date(2010, 1, 22),
-        path=None,  # type: ignore
         mb_album_id="2fcfcaaa-6594-4291-b79f-2d354139e108",
         track_total=2,
+        disc_total=1,
     )
 
-
-def track() -> Track:
-    """Creates a track from the above release."""
-    return Track(
-        album=album(),
+    MetaTrack(
+        album=album,
         track_num=1,
-        path=None,  # type: ignore
         artist="Kanye West",
         title="Dark Fantasy",
-        mb_track_id="219e6b01-c962-355c-8a87-5d4ab3fc13bc",
         disc=1,
+        mb_track_id="219e6b01-c962-355c-8a87-5d4ab3fc13bc",
     )
+    MetaTrack(
+        album=album,
+        track_num=2,
+        artist="Kanye West",
+        title="Gorgeous",
+        disc=1,
+        mb_track_id="b3c6aa0a-6960-4db6-bf27-ed50de88309c",
+    )
+
+    return album

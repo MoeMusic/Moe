@@ -5,7 +5,8 @@ import pytest
 import moe
 import moe.plugins.write as moe_write
 from moe.config import ExtraPlugin
-from moe.library import Track, TrackError
+from moe.library import MetaTrack, Track, TrackError
+from moe.library.album import MetaAlbum
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -236,6 +237,15 @@ class TestMerge:
 
         assert tmp_session.query(Track).one()
 
+    def test_overwrite(self):
+        """Fields are overwritten if the option is given."""
+        track = track_factory(audio_format="1")
+        other_track = track_factory(audio_format="2")
+
+        track.merge(other_track, overwrite=True)
+
+        assert track.audio_format == "2"
+
 
 class TestProperties:
     """Test various track properties."""
@@ -272,3 +282,28 @@ class TestListDuplicates:
         tracks = tmp_session.query(Track).all()
         for track in tracks:
             assert track.genre == "pop"
+
+
+class TestLessThan:
+    """Test ``__lt__``."""
+
+    def test_album_sort(self):
+        """Sorting by album_obj first."""
+        track1 = MetaTrack(album=MetaAlbum(title="a"), track_num=2)
+        track2 = MetaTrack(album=MetaAlbum(title="b"), track_num=1)
+
+        assert track1 < track2
+
+    def test_track_num_sort(self):
+        """Sorting by track_number if the albums are the same."""
+        track1 = MetaTrack(album=MetaAlbum(title="a"), track_num=1)
+        track2 = MetaTrack(album=MetaAlbum(title="a"), track_num=2)
+
+        assert track1 < track2
+
+    def test_disc_sort(self):
+        """Sorting by disc if the track numbers and albums are the same."""
+        track1 = MetaTrack(album=MetaAlbum(title="a"), track_num=1, disc=1)
+        track2 = MetaTrack(album=MetaAlbum(title="a"), track_num=1, disc=2)
+
+        assert track1 < track2

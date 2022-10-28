@@ -133,9 +133,9 @@ New Field Checklist
 If adding a new field to Moe, the following checklist can help ensure you cover all your bases:
 
 #. Add the database column to the appropriate library class (``Album``, ``Extra``, or ``Track``).
-
+   * If the field represents metadata and does not deal with the filesystem, also add to the appropriate ``Meta`` class (``MetaAlbum`` or ``MetaTrack``).
    * If a multi-value field, add the non-plural equivalent property. See ``Track.genres`` and the accompanying single-value field, ``Track.genre`` for an example.
-   * Include documentation for the new field in the class docstring.
+   * Include documentation for the new field in the class docstring(s).
 
 #. Add to the item's ``fields`` method as necessary.
 #. Add code for reading the tag from a track file under ``Track.read_custom_tags``.
