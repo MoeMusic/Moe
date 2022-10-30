@@ -336,7 +336,7 @@ class Track(LibItem, SABase, MetaTrack):
 
     artist: str = cast(str, Column(String, nullable=False))
     artists: Optional[set[str]] = cast(
-        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=False))
+        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
     )
     audio_format: Optional[str] = cast(str, Column(String, nullable=True))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
