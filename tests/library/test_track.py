@@ -239,12 +239,12 @@ class TestMerge:
 
     def test_overwrite(self):
         """Fields are overwritten if the option is given."""
-        track = track_factory(audio_format="1")
-        other_track = track_factory(audio_format="2")
+        track = track_factory(title="1")
+        other_track = track_factory(title="2")
 
         track.merge(other_track, overwrite=True)
 
-        assert track.audio_format == "2"
+        assert track.title == "2"
 
 
 class TestProperties:
@@ -265,6 +265,12 @@ class TestProperties:
 
         track.genre = "1; 2"
         assert track.genres == {"1", "2"}
+
+    def test_audio_format(self):
+        """We can get the audio format of a track."""
+        track = track_factory(exists=True)
+
+        assert track.audio_format == "mp3"
 
 
 class TestListDuplicates:

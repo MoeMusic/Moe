@@ -127,7 +127,6 @@ def read_custom_tags(
     track_fields["artist"] = audio_file.artist
     if audio_file.artists is not None:
         track_fields["artists"] = set(audio_file.artists)
-    track_fields["audio_format"] = audio_file.type
     track_fields["disc"] = audio_file.disc
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
@@ -338,7 +337,6 @@ class Track(LibItem, SABase, MetaTrack):
     artists: Optional[set[str]] = cast(
         Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
     )
-    audio_format: str = cast(str, Column(String, nullable=False))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
     genres: Optional[set[str]] = cast(
         Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
@@ -388,7 +386,6 @@ class Track(LibItem, SABase, MetaTrack):
 
         # set default values
         self.artist = self.albumartist
-        self.audio_format = self.path.suffix
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -477,9 +474,18 @@ class Track(LibItem, SABase, MetaTrack):
         )
 
     @property
+    def audio_format(self) -> str:
+        """Returns the audio format of the track.
+
+        One of ['aac', 'aiff', 'alac', 'ape', 'asf', 'dsf', 'flac', 'ogg', 'opus',
+            'mp3', 'mpc', 'wav', 'wv'].
+        """
+        return mediafile.MediaFile(self.path).type
+
+    @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
-        return super().fields.union({"audio_format", "path"})
+        return super().fields.union({"path"})
 
     def is_unique(self, other: "Track") -> bool:
         """Returns whether a track is unique in the library from ``other``."""

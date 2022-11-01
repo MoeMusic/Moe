@@ -187,7 +187,6 @@ def track_factory(
         title=title,
         track_num=track_num,
         disc=disc,
-        audio_format=kwargs.pop("audio_format", "mp3"),
         **kwargs,
     )
 
