@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.3.2 (2022-11-01)
+===================
+
+Bug Fixes
+---------
+* Track `audio_format` is now a property and not a field (`c2aeda7 <https://github.com/MoeMusic/Moe/commit/c2aeda7fee2639576b79a83614e062dae018fc2a>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.3.1...v1.3.2>`__
+
 v1.3.1 (2022-11-01)
 ===================
 
