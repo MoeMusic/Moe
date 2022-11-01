@@ -317,7 +317,7 @@ class Track(LibItem, SABase, MetaTrack):
         album_obj (Album): Corresponding Album object.
         artist (str)
         artists (Optional[set[str]]): Set of all artists.
-        audio_format (Optional[str]): File audio format.
+        audio_format (str): File audio format.
             One of ['aac', 'aiff', 'alac', 'ape', 'asf', 'dsf', 'flac', 'ogg', 'opus',
             'mp3', 'mpc', 'wav', 'wv']
         disc (int): Disc number the track is on.
@@ -338,7 +338,7 @@ class Track(LibItem, SABase, MetaTrack):
     artists: Optional[set[str]] = cast(
         Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
     )
-    audio_format: Optional[str] = cast(str, Column(String, nullable=True))
+    audio_format: str = cast(str, Column(String, nullable=False))
     disc: int = cast(int, Column(Integer, nullable=False, default=1))
     genres: Optional[set[str]] = cast(
         Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
