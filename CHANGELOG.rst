@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.3.1 (2022-11-01)
+===================
+
+Bug Fixes
+---------
+* Use fork of mediafile (`53d8333 <https://github.com/MoeMusic/Moe/commit/53d8333907a2095957202d456df6ccf8cf342b76>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.3.0...v1.3.1>`__
+
 v1.3.0 (2022-11-01)
 ===================
 
