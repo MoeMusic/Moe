@@ -14,7 +14,6 @@ Track Fields
 * ``albumartist`` - album artist
 * ``artist`` - track artist
 * ``artists`` - track artists [#f1]_
-* ``audio_format`` - aac, aiff, alac, ape, asf, dsf, flac, ogg, opus, mp3, mpc, wav, or wv
 * ``disc`` - disc number
 * ``genre`` - genre [#f1]_
 * ``path`` - filesystem path of the track [#f3]_
