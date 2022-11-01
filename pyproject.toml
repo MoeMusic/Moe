@@ -21,7 +21,7 @@ moe = 'moe.cli:main'
 python = ">=3.9, <3.11"
 alembic = "^1.4.2"
 dynaconf = "^3.1.4"
-mediafile = {git = "https://github.com/jtpavlock/mediafile.git"}
+moe_mediafile = "^0.10.1"
 musicbrainzngs = "^0.7.1"
 pluggy = "^0.13.1"
 pyyaml = "^5.3.1"
