@@ -150,7 +150,7 @@ def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]):
 def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
     """Formats a candidates info for the candidate prompt."""
     sub_header_values = []
-    for str_field in ["media", "country", "label"]:
+    for str_field in ["media", "country", "label", "catalog_num"]:
         if value := getattr(candidate.album, str_field):
             sub_header_values.append(value)
     sub_header_values.extend(candidate.sub_header_info)
@@ -259,7 +259,7 @@ def _fmt_album(new_album: Album, candidate: CandidateAlbum) -> Text:
         header_text.append_text(field_changes).append("\n")
 
     sub_header_text = Text()
-    for sub_header in ("media", "country", "label"):
+    for sub_header in ("media", "country", "label", "catalog_num"):
         field_changes = _fmt_field_changes(new_album, candidate.album, sub_header)
         if not field_changes:
             if getattr(new_album, sub_header):
