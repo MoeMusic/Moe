@@ -129,7 +129,7 @@ class TestGetCandidates:
         Since `get_matching_album` also calls `get_album_by_id`, this test serves as a
         network test for both.
         """
-        album = mb_rsrc.album()
+        album = mb_rsrc.full_album()
 
         candidates = config.CONFIG.pm.hook.get_candidates(album=album)
         mb_album = candidates[0][0].album
@@ -322,7 +322,7 @@ class TestGetAlbumById:
         mock_mb_by_id.assert_called_once_with(
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
         )
-        assert mb_album == mb_rsrc.full_release.album()
+        assert mb_album == mb_rsrc.full_album()
 
     def test_partial_date_year_mon(self, mock_mb_by_id, mb_config):
         """If given date is missing the day, default to 1."""
@@ -357,23 +357,17 @@ class TestGetAlbumById:
         assert any(track.disc == 1 for track in mb_album.tracks)
         assert any(track.disc == 2 for track in mb_album.tracks)
 
-    def test_no_country(self, mock_mb_by_id, mb_config):
-        """Don't error if no country key in the release."""
-        mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        release = copy.deepcopy(mb_rsrc.full_release.release)
-        release["release"].pop("country")
-        mock_mb_by_id.return_value = release
+    def test_minimal_release(self, mock_mb_by_id, mb_config):
+        """We can properly handle a release with minimal information."""
+        mb_album_id = "c6bf7925-2f27-430c-a86d-d4d50e940631"
+        mock_mb_by_id.return_value = mb_rsrc.min_release.release
 
-        moe_mb.get_album_by_id(mb_album_id)
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
 
-    def test_no_label(self, mock_mb_by_id, mb_config):
-        """Don't error if no label in the release."""
-        mb_album_id = "112dec42-65f2-3bde-8d7d-26deddde10b2"
-        release = copy.deepcopy(mb_rsrc.full_release.release)
-        release["release"]["label-info-list"].clear()
-        mock_mb_by_id.return_value = release
-
-        moe_mb.get_album_by_id(mb_album_id)
+        mock_mb_by_id.assert_called_once_with(
+            mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
+        )
+        assert mb_album == mb_rsrc.min_album()
 
 
 class TestGetCandidateByID:
@@ -389,7 +383,19 @@ class TestGetCandidateByID:
         mock_mb_by_id.assert_called_once_with(
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
         )
-        assert candidate.album == mb_rsrc.full_release.album()
+        assert candidate.album == mb_rsrc.full_album()
+
+    def test_minimal_release(self, mock_mb_by_id, mb_config):
+        """We can properly handle a release with minimal information."""
+        mb_album_id = "c6bf7925-2f27-430c-a86d-d4d50e940631"
+        mock_mb_by_id.return_value = mb_rsrc.min_release.release
+
+        candidate = moe_mb.get_candidate_by_id(album_factory(), mb_album_id)
+
+        mock_mb_by_id.assert_called_once_with(
+            mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
+        )
+        assert candidate.album == mb_rsrc.min_album()
 
 
 class TestGetTrackByID:
