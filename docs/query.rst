@@ -5,6 +5,10 @@ Many plugins use a "query" to search for music in your library.
 
 The query must be in the format ``field:value`` where ``field`` is, by default, a :ref:`track's field <fields:Track Fields>` to match and ``value`` is the field's value (case-insensitive). To match an :ref:`album's field <fields:Album Fields>` or an :ref:`extra's field <fields:Extra Fields>`, prepend the field with ``a:`` or ``e:`` respectively. Internally, this ``field:value`` pair is referred to as a single "term".
 
+.. note::
+
+    Some fields such as a track's ``audio_format`` cannot be queried and are noted as such in :ref:`the field docs <fields:Fields>`.
+
 By default, tracks will be returned by the query, but you can choose to return albums by using the ``-a, --album`` option, or you can return extras using the ``-e, --extra`` option.
 
 If you would like to specify a value with whitespace or multiple words, enclose the
