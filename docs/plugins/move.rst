@@ -46,7 +46,7 @@ Moe allows plugins to create custom path template functions that can be called w
 
 .. tip::
     - For any path formatting changes, run ``moe move -n`` for a dry-run to avoid any unexpected results.
-    - For a more detailed look at all the field options and types, you take a look at the :ref:`library api <Library API>`. ``album``, ``track``, and ``extra`` in the path formats are ``Album``, ``Track``, and ``Extra`` objects respectively and thus you can reference any of their available attributes.
+    - For a more detailed look at all the field options and types, take a look at the :ref:`library api <Library API>`. ``album``, ``track``, and ``extra`` in the path formats are ``Album``, ``Track``, and ``Extra`` objects respectively and thus you can reference any of their available attributes.
 
 ***********
 Commandline
