@@ -42,7 +42,7 @@ Album Fields
 ************
 Extra Fields
 ************
-* ``filesystem`` - path of the extra [#f3]_
+* ``path`` - filesystem path of the extra [#f3]_
 
 .. rubric:: Footnotes
 
