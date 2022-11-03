@@ -18,7 +18,7 @@ license = "MIT"
 moe = 'moe.cli:main'
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.11"
+python = ">=3.9, <3.12"
 alembic = "^1.4.2"
 dynaconf = "^3.1.4"
 moe_mediafile = "^0.10.1"
