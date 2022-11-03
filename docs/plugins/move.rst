@@ -38,6 +38,9 @@ Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/
 .. important::
     Windows users should use a forward slash ``/`` when delineating sub-directories in path formats as the back slash ``\`` is used as an escape character.
 
+.. note::
+    Forward slashes ``/`` cannot be used inside a nested f-string variable e.g. ``{f'Disc {track.disc}/{track.disc}}`` is not allowed. You may instead be able to achieve the behavior you're after by implementing a custom path template function as described below.
+
 Custom Path Template Functions
 ==============================
 Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
