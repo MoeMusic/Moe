@@ -29,6 +29,9 @@ Local Plugins
 =============
 You can create a local plugin by adding a module ``<plugin_name>.py`` or package ``<plugin_name>/my_module.py`` in a ``plugins`` directory next to your configuration e.g. ``<configuration directory>/plugins/<my_plugin>``.
 
+.. important::
+    The name of your local plugin cannot conflict with any other modules in the current namespace. For example, you can't name your plugin ``random`` because it conflicts with the ``random`` module in the standard library. It may be useful to preface any local plugins with ``moe_`` or any other prefix of your choice if you think there may be a potential conflict.
+
 Published Plugins
 =================
 If you'd like to make your plugin available on pip, there are a few required steps:
