@@ -388,7 +388,9 @@ def get_candidate_by_id(album: Album, release_id: str) -> CandidateAlbum:
 
     candidate_album = _create_album(release)
 
-    sub_header_info = [str(_parse_date(release["date"]).year)]
+    sub_header_info = []
+    if date := _get_release_date(release):
+        sub_header_info.append(str(date.year))
     if disambiguation := release.get("disambiguation"):
         sub_header_info.append(disambiguation)
 
@@ -412,18 +414,20 @@ def _create_album(release: dict) -> MetaAlbum:
                 catalog_nums.add(label_info["catalog-number"])
     else:
         label = None
+    if not catalog_nums:
+        catalog_nums = None
 
     album = MetaAlbum(
         artist=_flatten_artist_credit(release["artist-credit"]),
         barcode=release.get("barcode"),
         catalog_nums=catalog_nums,
         country=release.get("country"),
-        date=_parse_date(release["date"]),
+        date=_get_release_date(release),
         disc_total=int(release["medium-count"]),
         label=label,
         mb_album_id=release["id"],
-        media=release["medium-list"][0]["format"],
-        original_date=_parse_date(release["release-group"]["first-release-date"]),
+        media=release["medium-list"][0].get("format"),
+        original_date=_get_original_date(release),
         title=release["title"],
     )
     for medium in release["medium-list"]:
@@ -454,8 +458,25 @@ def _flatten_artist_credit(artist_credit: list[dict]) -> str:
     return full_artist
 
 
-def _parse_date(date: str) -> datetime.date:
+def _get_release_date(release: dict) -> Optional[datetime.date]:
+    """Gets the release date from a given musicbrainz release."""
+    date = release.get("date")
+    if date:
+        return _parse_date(date)
+
+    return _get_original_date(release)
+
+
+def _get_original_date(release: dict) -> Optional[datetime.date]:
+    """Gets the original release date from a given musicbrainz release."""
+    return _parse_date(release["release-group"]["first-release-date"])
+
+
+def _parse_date(date: Optional[str]) -> Optional[datetime.date]:
     """Parses a date from a musicbrainz release."""
+    if not date:
+        return None
+
     date_parts = date.split("-")
 
     year = int(date_parts[0])

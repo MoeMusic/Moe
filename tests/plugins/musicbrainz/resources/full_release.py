@@ -1685,7 +1685,7 @@ release = {
 }
 
 
-def album() -> MetaAlbum:
+def full_album() -> MetaAlbum:
     """Creates an album with the above release information."""
     album = MetaAlbum(
         artist="Kanye West",
