@@ -4,6 +4,19 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.4.0 (2022-11-03)
+===================
+
+New Features
+------------
+* Show catalog number after label during import (`84f8067 <https://github.com/MoeMusic/Moe/commit/84f8067bfde837657a1d120853841e77b6cd5845>`_)
+
+Bug Fixes
+---------
+* Musicbrainz error if release does not have a date or format (`d0fe109 <https://github.com/MoeMusic/Moe/commit/d0fe1096c6a5d522b44e19821defa33302baab01>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.3.2...v1.4.0>`__
+
 v1.3.2 (2022-11-01)
 ===================
 
