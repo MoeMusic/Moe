@@ -87,7 +87,6 @@ class MetaAlbum(MetaLibItem):
     Attributes:
         artist (Optional[str]): AKA albumartist.
         barcode (Optional[str]): UPC barcode.
-        catalog_num (Optional[str]): String of catalog numbers concatenated with ';'.
         catalog_nums (Optional[set[str]]): Set of all catalog numbers.
         country (Optional[str]): Country the album was released in
             (two character identifier).
@@ -324,15 +323,11 @@ class Album(LibItem, SABase, MetaAlbum):
         media (Optional[str]): Album release format (e.g. CD, Digital, etc.)
         original_date (Optional[datetime.date]): Date of the original release of the
             album.
-        original_year (Optional[int]): Album original release year. Note, this field is
-            read-only, set ``original_date`` instead.
         path (pathlib.Path): Filesystem path of the album directory.
         title (str)
         track_total (Optional[int]): Number of tracks that *should* be in the album.
             If an album is missing tracks, then ``len(tracks) < track_total``.
         tracks (list[Track]): Album's corresponding tracks.
-        year (int): Album release year. Note, this field is read-only, set ``date``
-            instead.
     """
 
     __tablename__ = "album"

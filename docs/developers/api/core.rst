@@ -27,7 +27,7 @@ Library
 
 .. automodule:: moe.library
    :members:
-   :exclude-members: cache_ok, path, year, catalog_num, genre, original_year, audio_format
+   :exclude-members: cache_ok, path
    :show-inheritance:
 
 

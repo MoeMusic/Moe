@@ -155,7 +155,6 @@ class MetaTrack(MetaLibItem):
         artist (Optional[str])
         artists (Optional[set[str]]): Set of all artists.
         disc (Optional[int]): Disc number the track is on.
-        genre (Optional[str]): String of all genres concatenated with ';'.
         genres (Optional[set[str]]): Set of all genres.
         title (Optional[str])
         track_num (Optional[int])
@@ -316,11 +315,7 @@ class Track(LibItem, SABase, MetaTrack):
         album_obj (Album): Corresponding Album object.
         artist (str)
         artists (Optional[set[str]]): Set of all artists.
-        audio_format (str): File audio format.
-            One of ['aac', 'aiff', 'alac', 'ape', 'asf', 'dsf', 'flac', 'ogg', 'opus',
-            'mp3', 'mpc', 'wav', 'wv']
         disc (int): Disc number the track is on.
-        genre (str): String of all genres concatenated with ';'.
         genres (Optional[set[str]]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
@@ -483,14 +478,6 @@ class Track(LibItem, SABase, MetaTrack):
         return mediafile.MediaFile(self.path).type
 
     @property
-    def sample_rate(self) -> int:
-        """Returns the sampling rate of the track.
-
-        The sampling rate is in Hertz (Hz) as an integer and zero when unavailable.
-        """
-        return mediafile.MediaFile(self.path).samplerate
-
-    @property
     def bit_depth(self) -> int:
         """Returns the number of bits per sample in the audio encoding.
 
@@ -503,6 +490,14 @@ class Track(LibItem, SABase, MetaTrack):
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
         return super().fields.union({"path"})
+
+    @property
+    def sample_rate(self) -> int:
+        """Returns the sampling rate of the track.
+
+        The sampling rate is in Hertz (Hz) as an integer and zero when unavailable.
+        """
+        return mediafile.MediaFile(self.path).samplerate
 
     def is_unique(self, other: "Track") -> bool:
         """Returns whether a track is unique in the library from ``other``."""
