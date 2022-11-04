@@ -272,6 +272,19 @@ class TestProperties:
 
         assert track.audio_format == "mp3"
 
+    def test_bit_depth(self):
+        """We can get the bit depth of a track."""
+        track = track_factory(exists=True)
+
+        # Bit depth is unavailable for MP3.
+        assert track.bit_depth == 0
+
+    def test_sample_rate(self):
+        """We can get the sample rate of a track."""
+        track = track_factory(exists=True)
+
+        assert track.sample_rate == 44100
+
 
 class TestListDuplicates:
     """List fields should not cause duplicate errors (just merge silently)."""

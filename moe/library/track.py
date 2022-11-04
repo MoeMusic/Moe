@@ -483,6 +483,23 @@ class Track(LibItem, SABase, MetaTrack):
         return mediafile.MediaFile(self.path).type
 
     @property
+    def sample_rate(self) -> int:
+        """Returns the sampling rate of the track.
+
+        The sampling rate is in Hertz (Hz) as an integer and zero when unavailable.
+        """
+        return mediafile.MediaFile(self.path).samplerate
+
+    @property
+    def bit_depth(self) -> int:
+        """Returns the number of bits per sample in the audio encoding.
+
+        The bit depth is an integer and zero when unavailable or when the file format
+        does not support bit depth.
+        """
+        return mediafile.MediaFile(self.path).bitdepth
+
+    @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
         return super().fields.union({"path"})
