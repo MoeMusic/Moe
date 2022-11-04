@@ -237,7 +237,7 @@ def min_album() -> MetaAlbum:
     MetaTrack(
         album=album,
         track_num=1,
-        artist="Tyler, the Creator",
+        artist="Tyler, the Creator & A$AP Rocky",
         title="POTATO SALAD",
         disc=1,
         mb_track_id="0cb6936a-19df-4067-b7ba-28d6c866d23f",

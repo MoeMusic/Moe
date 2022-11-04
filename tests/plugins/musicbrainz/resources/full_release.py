@@ -1713,10 +1713,10 @@ def full_album() -> MetaAlbum:
     MetaTrack(
         album=album,
         track_num=2,
-        artist="Kanye West",
+        artist="Kanye West feat. Kid Cudi & Raekwon",
         title="Gorgeous",
         disc=1,
-        mb_track_id="b3c6aa0a-6960-4db6-bf27-ed50de88309c",
+        mb_track_id="d4cbaf03-b40a-352d-9461-eadbc5986fc0",
     )
 
     return album

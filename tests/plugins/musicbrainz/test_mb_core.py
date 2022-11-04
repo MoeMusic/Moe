@@ -323,6 +323,9 @@ class TestGetAlbumById:
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
         )
         assert mb_album == mb_rsrc.full_album()
+        for track in mb_album.tracks:
+            assert track in mb_rsrc.full_album().tracks
+        assert len(mb_album.tracks) == len(mb_rsrc.full_album().tracks)
 
     def test_partial_date_year_mon(self, mock_mb_by_id, mb_config):
         """If given date is missing the day, default to 1."""
@@ -368,6 +371,9 @@ class TestGetAlbumById:
             mb_album_id, includes=moe_mb.mb_core.RELEASE_INCLUDES
         )
         assert mb_album == mb_rsrc.min_album()
+        for track in mb_album.tracks:
+            assert track in mb_rsrc.min_album().tracks
+        assert len(mb_album.tracks) == len(mb_rsrc.min_album().tracks)
 
 
 class TestGetCandidateByID:
