@@ -14,12 +14,12 @@ Track Fields
 * ``albumartist`` - album artist
 * ``artist`` - track artist
 * ``artists`` - track artists [#f1]_
-* ``audio_format`` - aac, aiff, alac, ape, asf, dsf, flac, ogg, opus, mp3, mpc, wav, or wv [#f4]_
-* ``bit_depth`` - number of bits per sample in the audio encoding [#f4]_
+* ``audio_format`` - aac, aiff, alac, ape, asf, dsf, flac, ogg, opus, mp3, mpc, wav, or wv [#f3]_ [#f4]_
+* ``bit_depth`` - number of bits per sample in the audio encoding [#f3]_ [#f4]_
 * ``disc`` - disc number
 * ``genre`` - genre [#f1]_
 * ``path`` - filesystem path of the track [#f3]_
-* ``sample_rate`` - sample rate of the track in Hz [#f4]_
+* ``sample_rate`` - sample rate of the track in Hz [#f3]_ [#f4]_
 * ``title`` - track title
 * ``track_num`` - track number
 
