@@ -91,6 +91,38 @@ class TestInit:
 
         assert new_track.disc == 1
 
+    def test_default_artist(self):
+        """Use the album artist if an artist is not given."""
+        album = album_factory(artist="use me")
+        track = track_factory(album=album, artist=None)
+
+        assert track.artist == "use me"
+
+    def test_use_given_artist(self):
+        """Don't use the album artist if an artist is given."""
+        album = album_factory(artist="dont use me")
+        track = track_factory(album=album, artist="use me")
+
+        assert track.artist == "use me"
+
+
+class TestMetaInit:
+    """Test MetaTrack initialization."""
+
+    def test_default_artist(self):
+        """Use the album artist if an artist is not given."""
+        album = MetaAlbum(artist="use me")
+        track = MetaTrack(album, 1, artist=None)
+
+        assert track.artist == "use me"
+
+    def test_use_given_artist(self):
+        """Don't use the album artist if an artist is given."""
+        album = MetaAlbum(artist="dont use me")
+        track = MetaTrack(album, 1, artist="use me")
+
+        assert track.artist == "use me"
+
 
 class TestAlbumSet:
     """Changing an album attribute will change the value for the current Album.

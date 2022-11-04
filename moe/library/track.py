@@ -179,14 +179,11 @@ class MetaTrack(MetaLibItem):
         album.tracks.append(self)
 
         self.track_num = track_num
-        self.artist = artist
+        self.artist = artist or self.album_obj.artist
         self.artists = artists
         self.disc = disc
         self.genres = genres
         self.title = title
-
-        # set default values
-        self.artist = self.album_obj.artist
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -379,11 +376,11 @@ class Track(LibItem, SABase, MetaTrack):
         self.title = title
         self.track_num = track_num
 
-        # set default values
-        self.artist = self.albumartist
-
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        if self.artist is None:
+            self.artist = self.albumartist
 
         if not self.disc:
             self.disc = self._guess_disc()
