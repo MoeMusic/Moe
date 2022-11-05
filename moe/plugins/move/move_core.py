@@ -5,7 +5,7 @@ import re
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 import dynaconf
 import pluggy
@@ -90,18 +90,29 @@ def e_unique(extra: Extra) -> str:
 ########################################################################################
 # Format paths
 ########################################################################################
-def fmt_item_path(item: LibItem) -> Path:
-    """Returns a formatted item path according to the user configuration."""
+def fmt_item_path(item: LibItem, lib_path: Optional[Path] = None) -> Path:
+    """Returns a formatted item path according to the user configuration.
+
+    Args:
+        item: Item whose path will be formatted.
+        lib_path: Optional library path the outputted path will be relative to. By
+            default, this will be the ``library_path`` setting in the config.
+
+    Returns:
+        A formatted path as defined by the ``{album/extra/track}_path`` config template
+            settings relative to ``lib_path``.
+    """
     log.debug(f"Formatting item path. [path={item.path}]")
 
+    lib_path = lib_path or Path(config.CONFIG.settings.library_path).expanduser()
+
     if isinstance(item, Album):
-        new_path = _fmt_album_path(item)
+        new_path = _fmt_album_path(item, lib_path)
     elif isinstance(item, Extra):
-        new_path = _fmt_extra_path(item)
-    elif isinstance(item, Track):
-        new_path = _fmt_track_path(item)
+        new_path = _fmt_extra_path(item, lib_path)
     else:
-        raise NotImplementedError
+        assert isinstance(item, Track)
+        new_path = _fmt_track_path(item, lib_path)
 
     if config.CONFIG.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))
@@ -110,25 +121,24 @@ def fmt_item_path(item: LibItem) -> Path:
     return new_path
 
 
-def _fmt_album_path(album: Album) -> Path:
+def _fmt_album_path(album: Album, lib_path: Path) -> Path:
     """Returns a formatted album directory according to the user configuration."""
-    library_path = Path(config.CONFIG.settings.library_path).expanduser()
     album_path = _eval_path_template(config.CONFIG.settings.move.album_path, album)
 
-    return library_path / album_path
+    return lib_path / album_path
 
 
-def _fmt_extra_path(extra: Extra) -> Path:
+def _fmt_extra_path(extra: Extra, lib_path: Path) -> Path:
     """Returns a formatted extra path according to the user configuration."""
-    album_path = _fmt_album_path(extra.album_obj)
+    album_path = _fmt_album_path(extra.album_obj, lib_path)
     extra_path = _eval_path_template(config.CONFIG.settings.move.extra_path, extra)
 
     return album_path / extra_path
 
 
-def _fmt_track_path(track: Track) -> Path:
+def _fmt_track_path(track: Track, lib_path: Path) -> Path:
     """Returns a formatted track path according to the user configuration."""
-    album_path = _fmt_album_path(track.album_obj)
+    album_path = _fmt_album_path(track.album_obj, lib_path)
     track_path = _eval_path_template(config.CONFIG.settings.move.track_path, track)
 
     return album_path / track_path
