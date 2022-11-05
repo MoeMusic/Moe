@@ -416,6 +416,8 @@ def _create_album(release: dict) -> MetaAlbum:
         label = None
     if not catalog_nums:
         catalog_nums = None
+    elif catalog_nums == {"[none]"}:
+        catalog_nums = set()
 
     album = MetaAlbum(
         artist=_flatten_artist_credit(release["artist-credit"]),
