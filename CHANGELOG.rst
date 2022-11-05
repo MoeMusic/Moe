@@ -4,6 +4,25 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.5.0 (2022-11-05)
+===================
+
+New Features
+------------
+* Add new `lib_path` argument to `fmt_item_path` (`5ed5dc4 <https://github.com/MoeMusic/Moe/commit/5ed5dc458860d24a7e8a13d9876b02515394aecf>`_)
+* Add sample rate and bit depth as track properties (`f9c3384 <https://github.com/MoeMusic/Moe/commit/f9c3384fb7cf20f0dad221ae1f5a38210660d547>`_)
+
+Bug Fixes
+---------
+* [none] catalog number from musicbrainz now properly set (`25d73e1 <https://github.com/MoeMusic/Moe/commit/25d73e1cf5a6d8ce38e8769631ed4b2089f83182>`_)
+* Albumartist overwriting track artist (`6bbf445 <https://github.com/MoeMusic/Moe/commit/6bbf4454b1df1f2d40279980a7dcc348c767684c>`_)
+
+Build Changes
+-------------
+* Support python 3.11 (`de6ebd2 <https://github.com/MoeMusic/Moe/commit/de6ebd27f8211ec90d16940609776698ae66ea85>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.4.0...v1.5.0>`__
+
 v1.4.0 (2022-11-03)
 ===================
 
