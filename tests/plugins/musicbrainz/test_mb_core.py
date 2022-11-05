@@ -375,6 +375,20 @@ class TestGetAlbumById:
             assert track in mb_rsrc.min_album().tracks
         assert len(mb_album.tracks) == len(mb_rsrc.min_album().tracks)
 
+    def test_none_catalog_num(self, mock_mb_by_id, mb_config):
+        """Set `catalog_nums` to an empty set if listed as [none] in musicbrainz."""
+        mb_album_id = "2fcfcaaa-6594-4291-b79f-2d354139e108"
+        release = copy.deepcopy(mb_rsrc.full_release.release)
+        release["release"]["label-info-list"][0]["catalog-number"] = "[none]"
+        release["release"]["label-info-list"] = release["release"]["label-info-list"][
+            :1
+        ]
+        mock_mb_by_id.return_value = release
+
+        mb_album = moe_mb.get_album_by_id(mb_album_id)
+
+        assert mb_album.catalog_nums == set()
+
 
 class TestGetCandidateByID:
     """Test `get_candidate_by_id()`."""
