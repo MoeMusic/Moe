@@ -82,8 +82,8 @@ class TestCustomPathTemplateFuncs:
 ########################################################################################
 # Test format paths
 ########################################################################################
-class TestReplaceChars:
-    """Test replacing of illegal or unwanted characters in paths."""
+class TestFmtItemPath:
+    """Test `fmt_item_path()`."""
 
     def test_replace_chars(self, tmp_config):
         """Replace all the defined illegal characters from any paths."""
@@ -112,12 +112,8 @@ class TestReplaceChars:
         for path in formatted_paths:
             assert any(replacement == path.name for replacement in replacements)
 
-
-class TestFmtAlbumPath:
-    """Tests `fmt_item_path(album)`."""
-
     @pytest.mark.usefixtures("_tmp_move_config")
-    def test_relative_to_lib_path(self):
+    def test_album_relative_to_lib_path(self):
         """The album path should be relative to the library path configuration."""
         album = album_factory()
         lib_path = Path(config.CONFIG.settings.library_path)
@@ -126,7 +122,23 @@ class TestFmtAlbumPath:
 
         assert album_path.is_relative_to(lib_path)
 
-    def test_album_asciify_paths(self, tmp_config):
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_extra_relative_to_album(self):
+        """The extra path should be relative to its album path."""
+        extra = extra_factory()
+        extra_path = moe_move.fmt_item_path(extra)
+
+        assert extra_path.is_relative_to(moe_move.fmt_item_path(extra.album_obj))
+
+    @pytest.mark.usefixtures("_tmp_move_config")
+    def test_track_relative_to_album(self):
+        """The track path should be relative to its album path."""
+        track = track_factory()
+        track_path = moe_move.fmt_item_path(track)
+
+        assert track_path.is_relative_to(track.album_obj.path)
+
+    def test_asciify_paths(self, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""
         album = album_factory(title="café")
         tmp_config(
@@ -140,58 +152,13 @@ class TestFmtAlbumPath:
         # assumes that an album's title will be part of the new path
         assert str(moe_move.fmt_item_path(album)).isascii()
 
-
-class TestFmtExtraPath:
-    """Tests `fmt_item_path(extra)`."""
-
     @pytest.mark.usefixtures("_tmp_move_config")
-    def test_relative_to_album(self):
-        """The extra path should be relative to its album path."""
-        extra = extra_factory()
-        extra_path = moe_move.fmt_item_path(extra)
-
-        assert extra_path.is_relative_to(moe_move.fmt_item_path(extra.album_obj))
-
-    def test_extra_asciify_paths(self, tmp_config):
-        """Paths should not contain unicode characters if `asciify_paths` is true."""
-        tmp_config(
-            settings="""
-        default_plugins = ["move"]
-        [move]
-        asciify_paths = true
-        """
-        )
-        extra = extra_factory()
-
-        # test assumes that an extra's path name will be part of the new path
-        extra.path = extra.path.with_name("café")
-        assert str(moe_move.fmt_item_path(extra)).isascii()
-
-
-class TestFmtTrackPath:
-    """Tests `fmt_item_path(extra)`."""
-
-    @pytest.mark.usefixtures("_tmp_move_config")
-    def test_relative_to_album(self):
-        """The track path should be relative to its album path."""
+    def test_given_lib_path(self, tmp_path):
+        """If provided, paths should be relative to ``lib_path``."""
         track = track_factory()
-        track_path = moe_move.fmt_item_path(track)
+        track_path = moe_move.fmt_item_path(track, tmp_path)
 
-        assert track_path.is_relative_to(track.album_obj.path)
-
-    def test_extra_asciify_paths(self, tmp_config):
-        """Paths should not contain unicode characters if `asciify_paths` is true."""
-        tmp_config(
-            settings="""
-        default_plugins = ["move"]
-        [move]
-        asciify_paths = true
-        """
-        )
-        track = track_factory(title="café")
-
-        # assumes that a track's title will be part of the new path
-        assert str(moe_move.fmt_item_path(track)).isascii()
+        assert track_path.is_relative_to(tmp_path)
 
 
 ########################################################################################
