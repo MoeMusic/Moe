@@ -120,7 +120,6 @@ def read_custom_tags(
     album_fields["label"] = audio_file.label
     album_fields["media"] = audio_file.media
     album_fields["original_date"] = audio_file.original_date
-    album_fields["path"] = track_path.parent
     album_fields["title"] = audio_file.album
     album_fields["track_total"] = audio_file.tracktotal
 
@@ -130,7 +129,6 @@ def read_custom_tags(
     track_fields["disc"] = audio_file.disc
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
-    track_fields["path"] = track_path
     track_fields["title"] = audio_file.title
     track_fields["track_num"] = audio_file.track
 
@@ -431,6 +429,7 @@ class Track(LibItem, SABase, MetaTrack):
 
         Raises:
             TrackError: Given ``path`` does not correspond to a track file.
+            ValueError: Track is missing required fields.
         """
         log.debug(f"Creating track from path. [path={track_path}, {album=}]")
 
@@ -447,21 +446,46 @@ class Track(LibItem, SABase, MetaTrack):
         config.CONFIG.pm.hook.read_custom_tags(
             track_path=track_path, album_fields=album_fields, track_fields=track_fields
         )
+
+        title = track_fields.pop("title")
+        track_num = track_fields.pop("track_num")
+
+        album_artist = album_fields.pop("artist")
+        album_title = album_fields.pop("title")
+        date = album_fields.pop("date")
+        disc_total = album_fields.pop("disc_total") or 1
+
+        missing_reqd_fields = []
+        if not title:
+            missing_reqd_fields.append("title")
+        if not track_num:
+            missing_reqd_fields.append("track_num")
+        if not album_artist and not album:
+            missing_reqd_fields.append("album_artist")
+        if not album_title and not album:
+            missing_reqd_fields.append("album_title")
+        if not date and not album:
+            missing_reqd_fields.append("date")
+        if missing_reqd_fields:
+            raise ValueError(
+                f"Track is missing required fields. [{missing_reqd_fields=!r}]"
+            )
+
         if not album:
             album = Album(
-                path=album_fields.pop("path"),
-                artist=album_fields.pop("artist"),
-                title=album_fields.pop("title"),
-                date=album_fields.pop("date"),
-                disc_total=album_fields.pop("disc_total"),
+                path=track_path.parent,
+                artist=album_artist,
+                title=album_title,
+                date=date,
+                disc_total=disc_total,
                 **album_fields,
             )
 
         return cls(
             album=album,
-            path=track_fields.pop("path"),
-            title=track_fields.pop("title"),
-            track_num=track_fields.pop("track_num"),
+            path=track_path,
+            title=title,
+            track_num=track_num,
             **track_fields,
         )
 

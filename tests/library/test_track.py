@@ -174,6 +174,66 @@ class TestFromFile:
 
         assert new_track.title == "custom track title"
 
+    def test_missing_artist(self, tmp_config):
+        """Raise ValueError if track is missing both an artist and albumartist."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.album_obj.artist = None
+        track.artist = None
+        moe_write.write_tags(track)
+
+        with pytest.raises(ValueError, match="missing"):
+            Track.from_file(track.path)
+
+    def test_missing_album_title(self, tmp_config):
+        """Raise ValueError if track is missing the album title."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.album_obj.title = None
+        moe_write.write_tags(track)
+
+        with pytest.raises(ValueError, match="missing"):
+            Track.from_file(track.path)
+
+    def test_missing_date(self, tmp_config):
+        """Raise ValueError if track is missing the date."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.album_obj.date = None
+        moe_write.write_tags(track)
+
+        with pytest.raises(ValueError, match="missing"):
+            Track.from_file(track.path)
+
+    def test_missing_title(self, tmp_config):
+        """Raise ValueError if track is missing the title."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.title = None
+        moe_write.write_tags(track)
+
+        with pytest.raises(ValueError, match="missing"):
+            Track.from_file(track.path)
+
+    def test_missing_track_num(self, tmp_config):
+        """Raise ValueError if track is missing the track number."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.track_num = None
+        moe_write.write_tags(track)
+
+        with pytest.raises(ValueError, match="missing"):
+            Track.from_file(track.path)
+
+    def test_missing_disc_total(self, tmp_config):
+        """Use the default disc total if missing from tags."""
+        tmp_config()
+        track = track_factory(exists=True)
+        track.album_obj.disc_total = None
+        moe_write.write_tags(track)
+
+        Track.from_file(track.path).album_obj.disc_total = 1
+
 
 class TestEquality:
     """Test equality of tracks."""
