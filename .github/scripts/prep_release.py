@@ -133,9 +133,7 @@ def prepare_release_pr(token: str) -> None:
     release_branch = f"release_{new_version}"
     subprocess.run(["git", "checkout", "-b", f"{release_branch}"], check=True)
 
-    subprocess.run(
-        ["git", "commit", "-a", "-m", f"release: Release {new_version}"], check=True
-    )
+    subprocess.run(["git", "commit", "-a", "-m", f"release: {new_version}"], check=True)
     oauth_url = f"https://{token}:x-oauth-basic@github.com/{SLUG}.git"
     subprocess.run(
         ["git", "push", oauth_url, f"HEAD:{release_branch}", "--force"], check=True
