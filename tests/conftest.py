@@ -198,8 +198,6 @@ def track_factory(
     if dup_track:
         for field in dup_track.fields:
             value = getattr(dup_track, field)
-            if field == "genre":
-                print(value)
             try:
                 setattr(track, field, value)
             except AttributeError:
