@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "Moe"
 include = ["alembic/*", "alembic/versions/*"]
-version = "1.5.0"
+version = "1.5.1"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
 repository = "https://github.com/MoeMusic/Moe"
@@ -60,7 +60,7 @@ Sphinx = "^5.2.3"
 
 [tool.commitizen]
 name = "cz_customize"
-version = "1.5.0"
+version = "1.5.1"
 version_files = [
     "pyproject.toml:^version",
 ]

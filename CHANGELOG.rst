@@ -4,6 +4,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v1.5.1 (2022-11-06)
+===================
+
+Bug Fixes
+---------
+* Ensure tracks created from files contain required tags (`bf215ed <https://github.com/MoeMusic/Moe/commit/bf215ed674bff2d1c7d1024d391dc57995f39055>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.5.0...v1.5.1>`__
+
 v1.5.0 (2022-11-05)
 ===================
 
