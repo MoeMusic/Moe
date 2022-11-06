@@ -11,11 +11,13 @@ jobs:
   github_release:
     if: contains(github.event.head_commit.message, 'release:')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
@@ -41,24 +43,21 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Release to GitHub
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ env.tag }}
-          release_name: Release ${{ env.tag }}
+          name: Release ${{ env.tag }}
+          tag: ${{ env.tag }}
           body: ${{ env.changelog }}
-          draft: false
-          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   pypi_release:
     if: contains(github.event.head_commit.message, 'release:')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
