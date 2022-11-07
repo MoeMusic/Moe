@@ -111,7 +111,6 @@ def main() -> None:
 
     args = parser.parse_args()
     prepare_release_pr(args.token)
-    generate_changelog("v0.10.0", "v0.11.0")
 
 
 def prepare_release_pr(token: str) -> None:
