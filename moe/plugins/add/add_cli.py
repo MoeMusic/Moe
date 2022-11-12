@@ -121,4 +121,4 @@ def _add_path(path: Path, album: Optional[Album]):
     elif path.is_dir():
         moe_add.add_item(Album.from_dir(path))
     else:
-        raise AddError("Path not found. [{path=}]")
+        raise AddError(f"Path not found. [{path=}]")
