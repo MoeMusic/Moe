@@ -274,7 +274,7 @@ class MetaTrack(MetaLibItem):
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
         repr_str = (
-            f"{__class__.__name__}("
+            f"{type(self).__name__}("
             + ", ".join(field_reprs)
             + f", album='{self.album_obj}'"
         )
