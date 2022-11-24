@@ -30,8 +30,8 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
 
     def main():
         try:
-            Config(init_db=False)
-        except ConfigValidationError as err:
+            config.Config(config_dir=Path.home() / ".config" / "my_script", init_db=False)
+        except config.ConfigValidationError as err:
             raise SystemExit(1) from err
 
         parser = argparse.ArgumentParser(
@@ -52,11 +52,6 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
     if __name__ == "__main__":
         main()
 
-.. note::
-
-   Notice the use of ``init_db=False`` when initializing the configuration to tell Moe you don't want to use or create a database file.
-
-
-This is just a small taste of what Moe is capable of and how it can make your life easier when dealing with music in Python. Stop re-inventing the wheel; use Moe.
+This is just a small taste of what Moe is capable of and how it can make your life easier when dealing with music in Python.
 
 If you want to learn more, check out the `Getting Started <https://mrmoe.readthedocs.io/en/latest/getting_started.html>`_ docs.
