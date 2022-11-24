@@ -18,6 +18,7 @@ Config
 .. automodule:: moe.config
    :members:
    :exclude-members: plugin, name
+   :special-members: __init__
 
 .. _Library API:
 
@@ -29,6 +30,7 @@ Library
    :members:
    :exclude-members: cache_ok, path
    :show-inheritance:
+   :special-members: __init__
 
 
 Query
