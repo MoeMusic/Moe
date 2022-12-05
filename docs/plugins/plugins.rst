@@ -29,3 +29,4 @@ Third-Party Plugins
 Below is a list of known third-party plugins for Moe. If you'd like to add your plugin to this list, please submit a PR.
 
 * `random <https://github.com/MoeMusic/moe_random>`_ - outputs a random item from your library
+* `transcode <https://moe-transcode.readthedocs.io/en/latest/>`_ - transcodes music
