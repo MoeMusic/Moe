@@ -52,7 +52,7 @@ class TestGetMatchingTracks:
         assert track1.track_num != track2.track_num
 
         track_matches = get_matching_tracks(
-            track1.album_obj, track2.album_obj, match_threshold=0
+            track1.album, track2.album, match_threshold=0
         )
 
         for track_match in track_matches:
@@ -84,11 +84,11 @@ class TestGetMatchingTracks:
         """Any track should not have more than one match."""
         track1 = track_factory(track_num=1)
         track2 = track_factory(track_num=2)
-        track1.album_obj = track2.album_obj
+        track1.album = track2.album
 
         track3 = track_factory(track_num=3)
         track4 = track_factory(track_num=4)
-        track3.album_obj = track4.album_obj
+        track3.album = track4.album
 
         track3.title = "not a match"
         assert track2.title != track3.title
@@ -101,7 +101,7 @@ class TestGetMatchingTracks:
             return 0
 
         with patch("moe.util.core.match.get_match_value", wraps=mock_get_value):
-            track_matches = get_matching_tracks(track1.album_obj, track3.album_obj)
+            track_matches = get_matching_tracks(track1.album, track3.album)
 
         album1_tracks = [track_match[0] for track_match in track_matches]
         assert album1_tracks.count(track1) == 1

@@ -147,7 +147,7 @@ class TestCommand:
         """Extra files are added as tracks."""
         extra = extra_factory(exists=True)
         cli_args = ["add", "-a", "*", str(extra.path)]
-        mock_query.return_value = [extra.album_obj]
+        mock_query.return_value = [extra.album]
 
         moe.cli.main(cli_args)
 

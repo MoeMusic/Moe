@@ -69,7 +69,7 @@ class Extra(LibItem, SABase):
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:
-        album_obj (Album): Album the extra file belongs to.
+        album (Album): Album the extra file belongs to.
         path (pathlib.Path): Filesystem path of the extra file.
     """
 
@@ -85,7 +85,7 @@ class Extra(LibItem, SABase):
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
-    album_obj: Album = relationship("Album", back_populates="extras")
+    album: Album = relationship("Album", back_populates="extras")
 
     def __init__(self, album: Album, path: Path, **kwargs):
         """Creates an Extra.
@@ -109,12 +109,12 @@ class Extra(LibItem, SABase):
     @property
     def fields(self) -> set[str]:
         """Returns any editable, extra fields."""
-        return {"album_obj", "path"}.union(self._custom_fields)
+        return {"album", "path"}.union(self._custom_fields)
 
     @property
     def rel_path(self) -> PurePath:
         """Returns the extra's path relative to its album's path."""
-        return self.path.relative_to(self.album_obj.path)
+        return self.path.relative_to(self.album.path)
 
     def is_unique(self, other: "Extra") -> bool:
         """Returns whether an extra is unique in the library from ``other``."""
@@ -140,7 +140,7 @@ class Extra(LibItem, SABase):
             f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
         )
 
-        omit_fields = {"album_obj"}
+        omit_fields = {"album"}
         for field in self.fields - omit_fields:
             other_value = getattr(other, field)
             self_value = getattr(self, field)
@@ -166,19 +166,19 @@ class Extra(LibItem, SABase):
 
     def __lt__(self, other: "Extra") -> bool:
         """Sort based on album then path."""
-        if self.album_obj == other.album_obj:
+        if self.album == other.album:
             return self.path < other.path
 
-        return self.album_obj < other.album_obj
+        return self.album < other.album
 
     def __repr__(self):
         """Represents an Extra using its path and album."""
         field_reprs = []
-        omit_fields = {"album_obj"}
+        omit_fields = {"album"}
         for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album_obj}'"
+        repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album}'"
 
         custom_field_reprs = []
         for custom_field, value in self._custom_fields.items():
@@ -191,7 +191,7 @@ class Extra(LibItem, SABase):
 
     def __str__(self):
         """String representation of an Extra."""
-        return f"{self.album_obj}: {self.rel_path}"
+        return f"{self.album}: {self.rel_path}"
 
     def _get_default_custom_fields(self) -> dict[str, Any]:
         """Returns the default custom extra fields."""

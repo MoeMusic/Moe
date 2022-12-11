@@ -102,7 +102,7 @@ def pre_add(item: LibItem):
     if isinstance(item, Album):
         album = item
     elif isinstance(item, Track):
-        album = item.album_obj
+        album = item.album
     else:
         return
 

@@ -79,7 +79,7 @@ def create_path_template_func() -> list[Callable]:
 
 def e_unique(extra: Extra) -> str:
     """Returns a unique filename for an extra within its album."""
-    extra_names = [album_extra.path.name for album_extra in extra.album_obj.extras]
+    extra_names = [album_extra.path.name for album_extra in extra.album.extras]
 
     if (name_count := extra_names.count(extra.path.name)) > 1:
         return extra.path.stem + f" ({name_count - 1})" + extra.path.suffix
@@ -130,7 +130,7 @@ def _fmt_album_path(album: Album, lib_path: Path) -> Path:
 
 def _fmt_extra_path(extra: Extra, lib_path: Path) -> Path:
     """Returns a formatted extra path according to the user configuration."""
-    album_path = _fmt_album_path(extra.album_obj, lib_path)
+    album_path = _fmt_album_path(extra.album, lib_path)
     extra_path = _eval_path_template(config.CONFIG.settings.move.extra_path, extra)
 
     return album_path / extra_path
@@ -138,7 +138,7 @@ def _fmt_extra_path(extra: Extra, lib_path: Path) -> Path:
 
 def _fmt_track_path(track: Track, lib_path: Path) -> Path:
     """Returns a formatted track path according to the user configuration."""
-    album_path = _fmt_album_path(track.album_obj, lib_path)
+    album_path = _fmt_album_path(track.album, lib_path)
     track_path = _eval_path_template(config.CONFIG.settings.move.track_path, track)
 
     return album_path / track_path
@@ -194,10 +194,10 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
         album = lib_item  # noqa: F841
     elif isinstance(lib_item, Track):
         track = lib_item  # noqa: F841
-        album = track.album_obj
+        album = track.album
     elif isinstance(lib_item, Extra):
         extra = lib_item  # noqa: F841
-        album = extra.album_obj  # noqa: F841
+        album = extra.album  # noqa: F841
     else:
         raise NotImplementedError
 

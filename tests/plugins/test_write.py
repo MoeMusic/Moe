@@ -62,8 +62,6 @@ class TestWriteTags:
         """We can write track changes to the file."""
         tmp_config()
         track = track_factory(exists=True)
-        album = "Bigger, Better, Faster, More!"
-        albumartist = "4 Non Blondes"
         artist = "4 Non Blondes"
         artists = {"4 Non Blondes", "Me"}
         barcode = "1234"
@@ -80,31 +78,27 @@ class TestWriteTags:
         track_num = 3
         track_total = 10
 
-        track.album = album
-        track.albumartist = albumartist
         track.artist = artist
         track.artists = artists
-        track.album_obj.barcode = barcode
-        track.album_obj.catalog_nums = catalog_nums
-        track.album_obj.country = country
-        track.album_obj.date = date
-        track.album_obj.original_date = original_date
+        track.album.barcode = barcode
+        track.album.catalog_nums = catalog_nums
+        track.album.country = country
+        track.album.date = date
+        track.album.original_date = original_date
         track.disc = disc
-        track.album_obj.disc_total = disc_total
+        track.album.disc_total = disc_total
         track.genres = genres
-        track.album_obj.label = label
-        track.album_obj.media = media
+        track.album.label = label
+        track.album.media = media
         track.title = title
         track.track_num = track_num
-        track.album_obj.track_total = track_total
+        track.album.track_total = track_total
 
         moe_write.write_tags(track)
 
         new_track = Track.from_file(track.path)
-        new_album = new_track.album_obj
+        new_album = new_track.album
 
-        assert new_track.album == album
-        assert new_track.albumartist == albumartist
         assert new_track.artist == artist
         assert new_track.artists == artists
         assert new_track.disc == disc
@@ -196,6 +190,6 @@ class TestProcessChangedItems:
         """Don't write a track twice if it's album is also in `items`."""
         track = track_factory()
 
-        config.CONFIG.pm.hook.process_changed_items(items=[track, track.album_obj])
+        config.CONFIG.pm.hook.process_changed_items(items=[track, track.album])
 
         mock_write.assert_called_once_with(track)

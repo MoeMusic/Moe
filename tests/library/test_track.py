@@ -59,7 +59,7 @@ class TestInit:
 
     def test_album_init(self):
         """Creating a Track should also create the corresponding Album."""
-        assert track_factory().album_obj
+        assert track_factory().album
 
     def test_guess_disc_multi_disc(self):
         """Guess the disc if not given."""
@@ -80,10 +80,10 @@ class TestInit:
     def test_guess_disc_single_disc(self):
         """Guess the disc if there are no disc sub directories."""
         track = track_factory()
-        assert track.path.parent == track.album_obj.path
+        assert track.path.parent == track.album.path
 
         new_track = Track(
-            track.album_obj,
+            track.album,
             track.path,
             track.title,
             track.track_num,
@@ -124,20 +124,6 @@ class TestMetaInit:
         assert track.artist == "use me"
 
 
-class TestAlbumSet:
-    """Changing an album attribute will change the value for the current Album.
-
-    Thus, all tracks in the album will reflect the new value.
-    """
-
-    def test_album_set(self, tmp_path):
-        """Setting an album attribute maintains the same album object."""
-        track = track_factory()
-        track.album = "TPAB"
-
-        assert track.album_obj.title == track.album
-
-
 class TestFromFile:
     """Test initialization from given file path."""
 
@@ -150,12 +136,12 @@ class TestFromFile:
         """Use artist as a backup for albumartist if missing."""
         tmp_config()
         track = track_factory(exists=True)
-        track.albumartist = ""
+        track.album.artist = ""
         track.artist = "Backup"
         moe_write.write_tags(track)
 
         track = Track.from_file(track.path)
-        assert track.albumartist
+        assert track.album.artist
 
     def test_read_custom_tags(self, tmp_config):
         """Plugins can add additional track and album fields via `read_custom_tags`."""
@@ -163,7 +149,7 @@ class TestFromFile:
         track = track_factory(exists=True)
         new_track = Track.from_file(track.path)
 
-        assert new_track.album == "custom album title"
+        assert new_track.album.title == "custom album title"
         assert new_track.title == "custom track title"
 
     def test_read_track_fields(self, tmp_config):
@@ -178,7 +164,7 @@ class TestFromFile:
         """Raise ValueError if track is missing both an artist and albumartist."""
         tmp_config()
         track = track_factory(exists=True)
-        track.album_obj.artist = None
+        track.album.artist = None
         track.artist = None
         moe_write.write_tags(track)
 
@@ -189,7 +175,7 @@ class TestFromFile:
         """Raise ValueError if track is missing the album title."""
         tmp_config()
         track = track_factory(exists=True)
-        track.album_obj.title = None
+        track.album.title = None
         moe_write.write_tags(track)
 
         with pytest.raises(ValueError, match="missing"):
@@ -199,7 +185,7 @@ class TestFromFile:
         """Raise ValueError if track is missing the date."""
         tmp_config()
         track = track_factory(exists=True)
-        track.album_obj.date = None
+        track.album.date = None
         moe_write.write_tags(track)
 
         with pytest.raises(ValueError, match="missing"):
@@ -229,10 +215,10 @@ class TestFromFile:
         """Use the default disc total if missing from tags."""
         tmp_config()
         track = track_factory(exists=True)
-        track.album_obj.disc_total = None
+        track.album.disc_total = None
         moe_write.write_tags(track)
 
-        Track.from_file(track.path).album_obj.disc_total = 1
+        Track.from_file(track.path).album.disc_total = 1
 
 
 class TestEquality:
@@ -271,7 +257,7 @@ class TestIsUnique:
         """Tracks with the same album, track #, and disc # are not unique."""
         track = track_factory()
         dup_track = track_factory(
-            album=track.album_obj, track_num=track.track_num, disc=track.disc
+            album=track.album, track_num=track.track_num, disc=track.disc
         )
 
         assert not track.is_unique(dup_track)
@@ -399,7 +385,7 @@ class TestLessThan:
     """Test ``__lt__``."""
 
     def test_album_sort(self):
-        """Sorting by album_obj first."""
+        """Sorting by album first."""
         track1 = MetaTrack(album=MetaAlbum(title="a"), track_num=2)
         track2 = MetaTrack(album=MetaAlbum(title="b"), track_num=1)
 

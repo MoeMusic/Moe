@@ -113,14 +113,12 @@ def _fmt_item_text(
         header = Text(f"{item}", justify="center")
         omit_fields = {"extras", "tracks", "year"}
     elif isinstance(item, Extra):
-        header = Text(f"{item.rel_path}\n{item.album_obj}", justify="center")
-        omit_fields = {"album_obj", "rel_path", "path"}
+        header = Text(f"{item.rel_path}\n{item.album}", justify="center")
+        omit_fields = {"album", "rel_path", "path"}
     else:
-        header = Text(f"{item.title}\n{item.album_obj}", justify="center")
+        header = Text(f"{item.title}\n{item.album}", justify="center")
         omit_fields = {
             "album",
-            "albumartist",
-            "album_obj",
             "date",
             "disc_total",
             "genre",
