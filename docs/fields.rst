@@ -4,14 +4,9 @@ Fields
 
 These are the fields Moe keeps track of for tracks, albums, and extras in your library.
 
-.. note::
-    Some track fields are actually on a per-album basis, and are just a mapping to the related album field e.g. ``albumartist`` or ``album``. These fields are exposed as track fields for convenience and due to convention.
-
 ************
 Track Fields
 ************
-* ``album`` - album title
-* ``albumartist`` - album artist
 * ``artist`` - track artist
 * ``artists`` - track artists [#f1]_
 * ``audio_format`` - aac, aiff, alac, ape, asf, dsf, flac, ogg, opus, mp3, mpc, wav, or wv [#f3]_ [#f4]_

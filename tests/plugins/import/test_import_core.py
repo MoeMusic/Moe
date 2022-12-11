@@ -92,7 +92,7 @@ class TestPreAdd:
         ) as mock_import:
             config.CONFIG.pm.hook.pre_add(item=track)
 
-        mock_import.assert_called_once_with(track.album_obj)
+        mock_import.assert_called_once_with(track.album)
 
     def test_pre_add_extra(self, tmp_config):
         """Don't try to import an Extra."""

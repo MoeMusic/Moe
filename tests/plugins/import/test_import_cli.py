@@ -252,7 +252,7 @@ class TestAddImportPromptChoice:
         for new_track in candidate.album.tracks:
             new_track.path = None  # type: ignore
         for new_extra in candidate.album.extras:
-            new_extra.album_obj = None  # type: ignore
+            new_extra.album = None  # type: ignore
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
         with patch(

@@ -25,7 +25,7 @@ def remove_item(item: LibItem):
     elif insp.pending:
         session.expunge(item)
         if isinstance(item, (Track, Extra)):
-            item.album_obj = None  # type: ignore
+            item.album = None  # type: ignore
 
     try:
         session.flush()

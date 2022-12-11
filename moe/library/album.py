@@ -358,13 +358,13 @@ class Album(LibItem, SABase, MetaAlbum):
 
     tracks: list["Track"] = relationship(
         "Track",
-        back_populates="album_obj",
+        back_populates="album",
         cascade="all, delete-orphan",
         collection_class=list,
     )
     extras: list["Extra"] = relationship(
         "Extra",
-        back_populates="album_obj",
+        back_populates="album",
         cascade="all, delete-orphan",
         collection_class=list,
     )
@@ -435,7 +435,7 @@ class Album(LibItem, SABase, MetaAlbum):
                 extra_paths.append(file_path)
             else:
                 if not album:
-                    album = track.album_obj
+                    album = track.album
 
         if not album:
             raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")

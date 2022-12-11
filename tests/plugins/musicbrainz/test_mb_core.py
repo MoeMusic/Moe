@@ -292,7 +292,7 @@ class TestSyncMetadata:
             config.CONFIG.pm.hook.sync_metadata(item=old_track)
 
         mock_id.assert_called_once_with(
-            old_track.mb_track_id, old_track.album_obj.mb_album_id
+            old_track.mb_track_id, old_track.album.mb_album_id
         )
         assert old_track.title == "synced"
 
@@ -453,7 +453,7 @@ class TestCustomFields:
 
         new_track = Track.from_file(track.path)
 
-        assert new_track.album_obj.mb_album_id == "album id"
+        assert new_track.album.mb_album_id == "album id"
         assert new_track.mb_track_id == "track id"
 
 

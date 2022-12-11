@@ -128,7 +128,7 @@ class TestFmtItemPath:
         extra = extra_factory()
         extra_path = moe_move.fmt_item_path(extra)
 
-        assert extra_path.is_relative_to(moe_move.fmt_item_path(extra.album_obj))
+        assert extra_path.is_relative_to(moe_move.fmt_item_path(extra.album))
 
     @pytest.mark.usefixtures("_tmp_move_config")
     def test_track_relative_to_album(self):
@@ -136,7 +136,7 @@ class TestFmtItemPath:
         track = track_factory()
         track_path = moe_move.fmt_item_path(track)
 
-        assert track_path.is_relative_to(track.album_obj.path)
+        assert track_path.is_relative_to(track.album.path)
 
     def test_asciify_paths(self, tmp_config):
         """Paths should not contain unicode characters if `asciify_paths` is true."""

@@ -131,7 +131,7 @@ def _fmt_extra_info(extra: Extra) -> str:
 def _fmt_track_info(track: Track) -> str:
     """Formats a track's information for display."""
     base_dict = OrderedDict(sorted(_get_base_dict(track).items()))
-    base_dict.pop("album_obj", None)
+    base_dict.pop("album", None)
 
     return "\n".join(
         f"{field}: {value}"

@@ -7,7 +7,6 @@ from typing import Any, Optional, TypeVar, cast
 import mediafile
 import pluggy
 from sqlalchemy import JSON, Column, Integer, String
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict, MutableSet
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
@@ -149,7 +148,7 @@ class MetaTrack(MetaLibItem):
     instance.
 
     Attributes:
-        album_obj (Optional[Album]): Corresponding Album object.
+        album (Optional[Album]): Corresponding Album object.
         artist (Optional[str])
         artists (Optional[set[str]]): Set of all artists.
         disc (Optional[int]): Disc number the track is on.
@@ -173,11 +172,11 @@ class MetaTrack(MetaLibItem):
         self._custom_fields = self._get_default_custom_fields()
         self._custom_fields_set = set(self._custom_fields)
 
-        self.album_obj = album
+        self.album = album
         album.tracks.append(self)
 
         self.track_num = track_num
-        self.artist = artist or self.album_obj.artist
+        self.artist = artist or self.album.artist
         self.artists = artists
         self.disc = disc
         self.genres = genres
@@ -212,7 +211,7 @@ class MetaTrack(MetaLibItem):
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
         return {
-            "album_obj",
+            "album",
             "artist",
             "artists",
             "disc",
@@ -232,7 +231,7 @@ class MetaTrack(MetaLibItem):
             f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
         )
 
-        omit_fields = {"album_obj"}
+        omit_fields = {"album"}
         for field in self.fields - omit_fields:
             other_value = getattr(other, field, None)
             self_value = getattr(self, field, None)
@@ -258,25 +257,25 @@ class MetaTrack(MetaLibItem):
 
     def __lt__(self, other) -> bool:
         """Sort based on album, then disc, then track number."""
-        if self.album_obj == other.album_obj:
+        if self.album == other.album:
             if self.disc == other.disc:
                 return self.track_num < other.track_num
 
             return self.disc < other.disc
 
-        return self.album_obj < other.album_obj
+        return self.album < other.album
 
     def __repr__(self):
         """Represents a Track using track-specific and relevant album fields."""
         field_reprs = []
-        omit_fields = {"album_obj"}
+        omit_fields = {"album"}
         for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
         repr_str = (
             f"{type(self).__name__}("
             + ", ".join(field_reprs)
-            + f", album='{self.album_obj}'"
+            + f", album='{self.album}'"
         )
 
         custom_field_reprs = []
@@ -305,9 +304,7 @@ class Track(LibItem, SABase, MetaTrack):
     """A single track in the library.
 
     Attributes:
-        album (str)
-        albumartist (str)
-        album_obj (Album): Corresponding Album object.
+        album (Album): Corresponding Album object.
         artist (str)
         artists (Optional[set[str]]): Set of all artists.
         disc (int): Disc number the track is on.
@@ -343,9 +340,7 @@ class Track(LibItem, SABase, MetaTrack):
     )
 
     _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
-    album_obj: Album = relationship("Album", back_populates="tracks")
-    album: str = association_proxy("album_obj", "title")
-    albumartist: str = association_proxy("album_obj", "artist")
+    album: Album = relationship("Album", back_populates="tracks")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -378,7 +373,7 @@ class Track(LibItem, SABase, MetaTrack):
             setattr(self, key, value)
 
         if self.artist is None:
-            self.artist = self.albumartist
+            self.artist = self.album.artist
 
         if not self.disc:
             self.disc = self._guess_disc()
@@ -389,17 +384,17 @@ class Track(LibItem, SABase, MetaTrack):
         """Attempts to guess the disc of a track based on it's path."""
         log.debug(f"Guessing track disc number. [track={self!r}]")
 
-        if self.path.parent == self.album_obj.path:
+        if self.path.parent == self.album.path:
             return 1
 
         # The track is in a subdirectory of the album - most likely disc directories.
         disc_dirs: list[Path] = []
-        for path in self.album_obj.path.iterdir():
+        for path in self.album.path.iterdir():
             if not path.is_dir():
                 continue
 
             contains_tracks = False
-            for album_track in self.album_obj.tracks:
+            for album_track in self.album.tracks:
                 if album_track.path.is_relative_to(path):
                     contains_tracks = True
 
@@ -527,7 +522,7 @@ class Track(LibItem, SABase, MetaTrack):
         if (
             self.track_num == other.track_num
             and self.disc == other.disc
-            and self.album_obj == other.album_obj
+            and self.album == other.album
         ):
             return False
 

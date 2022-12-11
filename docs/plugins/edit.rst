@@ -30,14 +30,6 @@ Positional Arguments
     .. note::
         If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
 
-    .. note::
-        Editing a track's album-related field is equivalent to editing the field directly through the album. For example, the following commands will both edit an album's artist.
-
-        .. code-block:: bash
-
-            moe edit [query] albumartist=2Pac
-            moe edit -a [query] artist=2Pac
-
 Optional Arguments
 ==================
 ``-h, --help``

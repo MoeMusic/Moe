@@ -64,7 +64,7 @@ def process_new_items(items: list[LibItem]):
 def process_changed_items(items: list[LibItem]):
     """Writes tags to any altered tracks or albums in the library."""
     for item in items:
-        if isinstance(item, Track) and item.album_obj not in items:
+        if isinstance(item, Track) and item.album not in items:
             write_tags(item)
         elif isinstance(item, Album):
             for track in item.tracks:
@@ -76,23 +76,23 @@ def write_custom_tags(track: Track):
     """Writes all internally tracked tags to the track."""
     audio_file = mediafile.MediaFile(track.path)
 
-    audio_file.album = track.album
-    audio_file.albumartist = track.albumartist
+    audio_file.album = track.album.title
+    audio_file.albumartist = track.album.artist
     audio_file.artist = track.artist
     audio_file.artists = track.artists
-    audio_file.barcode = track.album_obj.barcode
-    audio_file.catalognums = track.album_obj.catalog_nums
-    audio_file.country = track.album_obj.country
-    audio_file.date = track.album_obj.date
+    audio_file.barcode = track.album.barcode
+    audio_file.catalognums = track.album.catalog_nums
+    audio_file.country = track.album.country
+    audio_file.date = track.album.date
     audio_file.disc = track.disc
-    audio_file.disctotal = track.album_obj.disc_total
+    audio_file.disctotal = track.album.disc_total
     audio_file.genres = track.genres
-    audio_file.label = track.album_obj.label
-    audio_file.media = track.album_obj.media
-    audio_file.original_date = track.album_obj.original_date
+    audio_file.label = track.album.label
+    audio_file.media = track.album.media
+    audio_file.original_date = track.album.original_date
     audio_file.title = track.title
     audio_file.track = track.track_num
-    audio_file.tracktotal = track.album_obj.track_total
+    audio_file.tracktotal = track.album.track_total
 
     audio_file.save()
 

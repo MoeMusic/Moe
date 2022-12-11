@@ -137,7 +137,7 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query(f"a:year:{album.year} album:{album.title}", "album")
+        assert query(f"a:year:{album.year} a:title:{album.title}", "album")
 
     def test_regex(self, tmp_session):
         """Queries can use regular expression matching."""
@@ -184,18 +184,6 @@ class TestQueries:
         tmp_session.flush()
 
         assert query("a:title::tmp", "album")
-
-    def test_track_album_field(self, tmp_session):
-        """We should be able to query tracks that match album-related fields.
-
-        These fields belong to the Album table and thus aren't normally exposed
-        through a track.
-        """
-        album = album_factory()
-        tmp_session.add(album)
-        tmp_session.flush()
-
-        assert query(f"'album:{album.title}'", "track")
 
     def test_like_query(self, tmp_session):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
