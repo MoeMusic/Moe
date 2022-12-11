@@ -22,7 +22,7 @@ SLUG = "MoeMusic/Moe"
 PR_BODY = """
 This pull request was created automatically by a manual trigger.
 
-Once this pull request is merged into master, it will be released on github and PyPI.
+Once this pull request is merged into main, it will be released on github and PyPI.
 """
 
 # Ordered in order to display
@@ -141,7 +141,7 @@ def prepare_release_pr(token: str) -> None:
     repo = login(token)
     repo.create_pull(
         f"Prepare release {new_version}",
-        base="master",
+        base="main",
         head=f"{release_branch}",
         body=PR_BODY,
     )
