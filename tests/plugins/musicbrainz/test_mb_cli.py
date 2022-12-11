@@ -39,7 +39,7 @@ class TestCollectionCommand:
         """Tracks associated album's are used."""
         cli_args = ["mbcol", "*"]
         track = track_factory()
-        track.album_obj.mb_album_id = "123"
+        track.album.mb_album_id = "123"
         mock_query.return_value = [track]
 
         with patch(
@@ -54,7 +54,7 @@ class TestCollectionCommand:
         """Extras associated album's are used."""
         cli_args = ["mbcol", "-e", "*"]
         extra = extra_factory()
-        extra.album_obj.mb_album_id = "123"
+        extra.album.mb_album_id = "123"
         mock_query.return_value = [extra]
 
         with patch(
@@ -83,7 +83,7 @@ class TestCollectionCommand:
         """Releases are removed from a collection if `--remove` option used."""
         cli_args = ["mbcol", "--remove", "*"]
         track = track_factory()
-        track.album_obj.mb_album_id = "123"
+        track.album.mb_album_id = "123"
         mock_query.return_value = [track]
 
         with patch(
@@ -98,7 +98,7 @@ class TestCollectionCommand:
         """Releases are added to a collection if `--add` option used."""
         cli_args = ["mbcol", "--add", "*"]
         track = track_factory()
-        track.album_obj.mb_album_id = "123"
+        track.album.mb_album_id = "123"
         mock_query.return_value = [track]
 
         with patch(

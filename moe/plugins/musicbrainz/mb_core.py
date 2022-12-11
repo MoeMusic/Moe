@@ -215,7 +215,7 @@ def sync_metadata(item: LibItem):
     elif isinstance(item, Track) and hasattr(item, "mb_track_id"):
         item = cast(Track, item)
         item.merge(
-            get_track_by_id(item.mb_track_id, item.album_obj.mb_album_id),
+            get_track_by_id(item.mb_track_id, item.album.mb_album_id),
             overwrite=True,
         )
 
@@ -225,7 +225,7 @@ def write_custom_tags(track: Track):
     """Write musicbrainz ID fields as tags."""
     audio_file = mediafile.MediaFile(track.path)
 
-    audio_file.mb_albumid = track.album_obj.mb_album_id
+    audio_file.mb_albumid = track.album.mb_album_id
     audio_file.mb_releasetrackid = track.mb_track_id
 
     audio_file.save()
