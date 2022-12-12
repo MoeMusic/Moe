@@ -30,29 +30,6 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_custom_album_fields() -> dict[str, Any]:  # type: ignore
-        """Creates new custom fields for an Album.
-
-        Returns:
-            Dict of the field names to their default values or ``None`` for no default.
-
-        Example:
-            .. code:: python
-
-                return {"my_new_field": "default value", "other_field": None}
-
-            You can then access your new field as if it were a normal field::
-
-                album.my_new_field = "awesome new value"
-
-        Important:
-            Your custom field should follow the same naming rules as any other python
-            variable i.e. no spaces, starts with a letter, and consists solely of
-            alpha-numeric and underscore characters.
-        """  # noqa: DAR202
-
-    @staticmethod
-    @moe.hookspec
     def is_unique_album(album: "Album", other: "Album") -> bool:  # type: ignore
         """Add new conditions to determine whether two albums are unique.
 
@@ -90,6 +67,7 @@ class MetaAlbum(MetaLibItem):
         catalog_nums (Optional[set[str]]): Set of all catalog numbers.
         country (Optional[str]): Country the album was released in
             (two character identifier).
+        custom (dict[str, Any]): Dictionary of custom fields.
         date (Optional[datetime.date]): Album release date.
         disc_total (Optional[int]): Number of discs in the album.
         label (Optional[str]): Album release label.
@@ -119,8 +97,7 @@ class MetaAlbum(MetaLibItem):
         **kwargs,
     ):
         """Creates a MetaAlbum object with any additional custom fields as kwargs."""
-        self._custom_fields = self._get_default_custom_fields()
-        self._custom_fields_set = set(self._custom_fields)
+        self.custom = kwargs
 
         self.artist = artist
         self.barcode = barcode
@@ -136,9 +113,6 @@ class MetaAlbum(MetaLibItem):
 
         if not tracks:
             self.tracks = []
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
         if config.CONFIG.settings.original_date and self.original_date:
             self.date = self.original_date
@@ -183,7 +157,7 @@ class MetaAlbum(MetaLibItem):
             "original_date",
             "title",
             "track_total",
-        }.union(self._custom_fields)
+        }
 
     def get_track(self, track_num: int, disc: int = 1) -> Optional["MetaTrack"]:
         """Gets a MetaTrack by its track number."""
@@ -221,6 +195,13 @@ class MetaAlbum(MetaLibItem):
             self_value = getattr(self, field)
             if other_value and (overwrite or (not overwrite and not self_value)):
                 setattr(self, field, other_value)
+
+        for custom_field in self.custom:
+            other_value = other.custom.get(custom_field)
+            if other_value and (
+                overwrite or (not overwrite and not self.custom[custom_field])
+            ):
+                self.custom[custom_field] = other_value
 
         log.debug(
             f"MetaAlbums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
@@ -279,7 +260,7 @@ class MetaAlbum(MetaLibItem):
         repr_str = "AlbumInfo(" + ", ".join(field_reprs)
 
         custom_field_reprs = []
-        for custom_field, value in self._custom_fields.items():
+        for custom_field, value in self.custom.items():
             custom_field_reprs.append(f"{custom_field}={value}")
         if custom_field_reprs:
             repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
@@ -291,14 +272,6 @@ class MetaAlbum(MetaLibItem):
 
         repr_str += ")"
         return repr_str
-
-    def _get_default_custom_fields(self) -> dict[str, Any]:
-        """Returns the default custom album fields."""
-        return {
-            field: default_val
-            for plugin_fields in config.CONFIG.pm.hook.create_custom_album_fields()
-            for field, default_val in plugin_fields.items()
-        }
 
 
 # Album generic, used for typing classmethod
@@ -316,6 +289,7 @@ class Album(LibItem, SABase, MetaAlbum):
         catalog_nums (Optional[set[str]]): Set of all catalog numbers.
         country (Optional[str]): Country the album was released in
             (two character identifier).
+        custom (dict[str, Any]): Dictionary of custom fields.
         date (datetime.date): Album release date.
         disc_total (int): Number of discs in the album.
         extras (list[Extra]): Extra non-track files associated with the album.
@@ -347,7 +321,7 @@ class Album(LibItem, SABase, MetaAlbum):
     )
     title: str = cast(str, Column(String, nullable=False))
     track_total: Optional[int] = cast(Optional[int], Column(Integer, nullable=True))
-    _custom_fields: dict[str, Any] = cast(
+    custom: dict[str, Any] = cast(
         dict[str, Any],
         Column(
             MutableDict.as_mutable(JSON(none_as_null=True)),
@@ -375,30 +349,31 @@ class Album(LibItem, SABase, MetaAlbum):
         artist: str,
         title: str,
         date: datetime.date,
+        barcode: Optional[str] = None,
+        catalog_nums: Optional[set[str]] = None,
+        country: Optional[str] = None,
         disc_total=1,
+        label: Optional[str] = None,
+        media: Optional[str] = None,
+        original_date: Optional[datetime.date] = None,
+        track_total: Optional[int] = None,
         **kwargs,
     ):
-        """Creates an Album.
-
-        Args:
-            path: Filesystem path of the album directory.
-            artist: Album artist.
-            title: Album title.
-            date: Album release date.
-            disc_total: Number of discs in the album.
-            **kwargs: Any other fields to assign to the album.
-        """
-        self._custom_fields = self._get_default_custom_fields()
-        self._custom_fields_set = set(self._custom_fields)
+        """Creates an Album object with any additional custom fields as kwargs."""
+        self.custom = kwargs
 
         self.path = path
         self.artist = artist
-        self.title = title
+        self.barcode = barcode
+        self.catalog_nums = catalog_nums
+        self.country = country
         self.date = date
         self.disc_total = disc_total
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.label = label
+        self.media = media
+        self.original_date = original_date
+        self.track_total = track_total
+        self.title = title
 
         if config.CONFIG.settings.original_date and self.original_date:
             self.date = self.original_date
@@ -483,6 +458,30 @@ class Album(LibItem, SABase, MetaAlbum):
         """
         log.debug(f"Merging albums. [album_a={self!r}, album_b={other!r}")
 
+        self._merge_tracks(other, overwrite)
+        self._merge_extras(other, overwrite)
+
+        for field in self.fields:
+            other_value = getattr(other, field, None)
+            self_value = getattr(self, field, None)
+            if other_value and (overwrite or (not overwrite and not self_value)):
+                setattr(self, field, other_value)
+
+        for custom_field in self.custom:
+            other_value = other.custom.get(custom_field)
+            if other_value and (
+                overwrite or (not overwrite and not self.custom[custom_field])
+            ):
+                self.custom[custom_field] = other_value
+
+        log.debug(
+            f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
+        )
+
+    def _merge_tracks(
+        self, other: Union["Album", MetaAlbum], overwrite: bool = False
+    ) -> None:
+        """Merges the tracks of another album into this one."""
         new_tracks: list["Track"] = []
         for other_track in other.tracks:
             conflict_track = None
@@ -494,6 +493,10 @@ class Album(LibItem, SABase, MetaAlbum):
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
 
+    def _merge_extras(
+        self, other: Union["Album", MetaAlbum], overwrite: bool = False
+    ) -> None:
+        """Merges the extras of another album into this one."""
         if isinstance(other, Album):
             new_extras: list["Extra"] = []
             for other_extra in other.extras:
@@ -503,16 +506,6 @@ class Album(LibItem, SABase, MetaAlbum):
                 else:
                     new_extras.append(other_extra)
             self.extras.extend(new_extras)
-
-        for field in self.fields:
-            other_value = getattr(other, field, None)
-            self_value = getattr(self, field, None)
-            if other_value and (overwrite or (not overwrite and not self_value)):
-                setattr(self, field, other_value)
-
-        log.debug(
-            f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
-        )
 
     @hybrid_property
     def original_year(self) -> Optional[int]:  # type: ignore
@@ -546,7 +539,7 @@ class Album(LibItem, SABase, MetaAlbum):
         repr_str = "Album(" + ", ".join(field_reprs)
 
         custom_field_reprs = []
-        for custom_field, value in self._custom_fields.items():
+        for custom_field, value in self.custom.items():
             custom_field_reprs.append(f"{custom_field}={value}")
         if custom_field_reprs:
             repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"

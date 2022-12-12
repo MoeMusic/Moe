@@ -85,8 +85,8 @@ class TestAddItem:
     @pytest.mark.usefixtures("_tmp_add_config")
     def test_duplicate_list_field_tracks(self, tmp_session):
         """Duplicate list fields don't error when adding multiple tracks."""
-        track1 = track_factory(genre="pop")
-        track2 = track_factory(genre="pop")
+        track1 = track_factory(genres={"pop"})
+        track2 = track_factory(genres={"pop"})
 
         add.add_item(track1)
         add.add_item(track2)

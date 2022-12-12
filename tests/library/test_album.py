@@ -19,12 +19,6 @@ class MyAlbumPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def create_custom_album_fields():
-        """Create a new custom field."""
-        return {"no_default": None, "default": "value"}
-
-    @staticmethod
-    @moe.hookimpl
     def is_unique_album(album, other):
         """Albums with the same title aren't unique."""
         if album.title == other.title:
@@ -33,14 +27,6 @@ class MyAlbumPlugin:
 
 class TestHooks:
     """Test album hooks."""
-
-    def test_create_custom_fields(self, tmp_config):
-        """Plugins can define new custom fields."""
-        tmp_config(extra_plugins=[ExtraPlugin(MyAlbumPlugin, "album_plugin")])
-        album = album_factory()
-
-        assert not album.no_default
-        assert album.default == "value"
 
     def test_is_unique_album(self, tmp_config):
         """Plugins can add additional unique constraints."""
@@ -226,6 +212,15 @@ class TestMetaAlbumMerge:
 
         assert overwrite_track.title == "conflict"
 
+    def test_custom_fields(self):
+        """Merge custom fields too."""
+        album = MetaAlbum(custom=None)
+        other_album = MetaAlbum(custom="new")
+
+        album.merge(other_album)
+
+        assert album.custom["custom"] == "new"
+
 
 class TestAlbumMerge:
     """Test merging two Albums together."""
@@ -332,6 +327,15 @@ class TestAlbumMerge:
         album1.merge(album2, overwrite=True)
 
         assert overwrite_track.title == "conflict"
+
+    def test_custom_fields(self):
+        """Merge custom fields too."""
+        album = album_factory(custom="")
+        other_album = album_factory(custom="new")
+
+        album.merge(other_album)
+
+        assert album.custom["custom"] == "new"
 
 
 class TestFromDir:

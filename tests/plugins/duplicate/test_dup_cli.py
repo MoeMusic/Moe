@@ -109,8 +109,7 @@ class TestUI:
             num_discs=2,
         )
         old_album.tracks[0].title = "really really long old title"
-        old_album.tracks[0].custom_fields.add("new field")
-        old_album.tracks[0].new_field = "whoa a new field"
+        old_album.tracks[0].custom["custom_field"] = "custom field!"
 
         assert old_album is not new_album
 

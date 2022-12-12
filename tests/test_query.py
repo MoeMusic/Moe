@@ -238,35 +238,35 @@ class TestQueries:
 
     def test_custom_fields(self, tmp_session):
         """We can query a custom field."""
-        album = album_factory(custom_fields={"custom": "album"})
-        extra_factory(album=album, custom_fields={"custom": "extra"})
-        track_factory(album=album, custom_fields={"custom": "track"})
+        album = album_factory(blah="album")
+        extra_factory(album=album, blah="extra")
+        track_factory(album=album, blah="track")
 
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:custom:album t:custom:track e:custom:extra", "album")
+        assert query("a:blah:album t:blah:track e:blah:extra", "album")
 
     def test_custom_field_regex(self, tmp_session):
         """We can regex query a custom field."""
-        album = album_factory(custom_fields={"custom": "album"})
-        extra_factory(album=album, custom_fields={"custom": 3})
-        track_factory(album=album, custom_fields={"custom": "track"})
+        album = album_factory(blah="album")
+        extra_factory(album=album, blah=3)
+        track_factory(album=album, blah="track")
 
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:custom::albu. t:custom::trac. e:custom::3", "album")
+        assert query("a:blah::albu. t:blah::trac. e:blah::3", "album")
 
     def test_custom_list_field(self, tmp_session):
         """We can query custom list fields."""
-        album = album_factory(custom_fields={"custom": ["album", 1]})
-        extra_factory(album=album, custom_fields={"custom": ["extra", 2]})
-        track_factory(album=album, custom_fields={"custom": ["track", 3]})
+        album = album_factory(blah=["album", 1])
+        extra_factory(album=album, blah=["extra", 2])
+        track_factory(album=album, blah=["track", 3])
 
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:custom:album t:custom:track e:custom:extra", "album")
-        assert query("a:custom:1 e:custom:2 t:custom:3", "album")
-        assert query("t:custom:3 t:custom:track", "album")
+        assert query("a:blah:album t:blah:track e:blah:extra", "album")
+        assert query("a:blah:1 e:blah:2 t:blah:3", "album")
+        assert query("t:blah:3 t:blah:track", "album")
