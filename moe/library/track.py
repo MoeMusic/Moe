@@ -151,6 +151,7 @@ class MetaTrack(MetaLibItem):
         album (Optional[Album]): Corresponding Album object.
         artist (Optional[str])
         artists (Optional[set[str]]): Set of all artists.
+        custom (dict[str, Any]): Dictionary of custom fields.
         disc (Optional[int]): Disc number the track is on.
         genres (Optional[set[str]]): Set of all genres.
         title (Optional[str])
@@ -169,8 +170,7 @@ class MetaTrack(MetaLibItem):
         **kwargs,
     ):
         """Creates a MetaTrack object with any additional custom fields as kwargs."""
-        self._custom_fields = self._get_default_custom_fields()
-        self._custom_fields_set = set(self._custom_fields)
+        self.custom = kwargs
 
         self.album = album
         album.tracks.append(self)
@@ -181,9 +181,6 @@ class MetaTrack(MetaLibItem):
         self.disc = disc
         self.genres = genres
         self.title = title
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
         log.debug(f"MetaTrack created. [track={self!r}]")
 
@@ -218,7 +215,7 @@ class MetaTrack(MetaLibItem):
             "genres",
             "title",
             "track_num",
-        }.union(set(self._custom_fields))
+        }
 
     def merge(self, other: "MetaTrack", overwrite: bool = False):
         """Merges another track into this one.
@@ -237,6 +234,13 @@ class MetaTrack(MetaLibItem):
             self_value = getattr(self, field, None)
             if other_value and (overwrite or (not overwrite and not self_value)):
                 setattr(self, field, other_value)
+
+        for custom_field in self.custom:
+            other_value = other.custom.get(custom_field)
+            if other_value and (
+                overwrite or (not overwrite and not self.custom[custom_field])
+            ):
+                self.custom[custom_field] = other_value
 
         log.debug(
             f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
@@ -279,7 +283,7 @@ class MetaTrack(MetaLibItem):
         )
 
         custom_field_reprs = []
-        for custom_field, value in self._custom_fields.items():
+        for custom_field, value in self.custom.items():
             custom_field_reprs.append(f"{custom_field}={value}")
         if custom_field_reprs:
             repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
@@ -291,14 +295,6 @@ class MetaTrack(MetaLibItem):
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
 
-    def _get_default_custom_fields(self) -> dict[str, Any]:
-        """Returns the default custom track fields."""
-        return {
-            field: default_val
-            for plugin_fields in config.CONFIG.pm.hook.create_custom_track_fields()
-            for field, default_val in plugin_fields.items()
-        }
-
 
 class Track(LibItem, SABase, MetaTrack):
     """A single track in the library.
@@ -307,6 +303,7 @@ class Track(LibItem, SABase, MetaTrack):
         album (Album): Corresponding Album object.
         artist (str)
         artists (Optional[set[str]]): Set of all artists.
+        custom (dict[str, Any]): Dictionary of custom fields.
         disc (int): Disc number the track is on.
         genres (Optional[set[str]]): Set of all genres.
         path (Path): Filesystem path of the track file.
@@ -330,7 +327,7 @@ class Track(LibItem, SABase, MetaTrack):
     )
     title: str = cast(str, Column(String, nullable=False))
     track_num: int = cast(int, Column(Integer, nullable=False))
-    _custom_fields: dict[str, Any] = cast(
+    custom: dict[str, Any] = cast(
         dict[str, Any],
         Column(
             MutableDict.as_mutable(JSON(none_as_null=True)),
@@ -350,6 +347,10 @@ class Track(LibItem, SABase, MetaTrack):
         path: Path,
         title: str,
         track_num: int,
+        artist: Optional[str] = None,
+        artists: Optional[set[str]] = None,
+        disc: Optional[int] = None,
+        genres: Optional[set[str]] = None,
         **kwargs,
     ):
         """Creates a Track.
@@ -359,24 +360,24 @@ class Track(LibItem, SABase, MetaTrack):
             path: Filesystem path of the track file.
             title: Title of the track.
             track_num: Track number.
-            **kwargs: Any other fields to assign to the track.
+            artist: Track artist. Defaults to the album artist if not given.
+            artists: Set of all artists.
+            disc: Disc the track belongs to. If not given, will try to guess the disc
+                based on the ``path`` of the track.
+            genres (Optional[set[str]]): Set of all genres.
+            **kwargs: Any custom fields to assign to the track.
         """
-        self._custom_fields = self._get_default_custom_fields()
-        self._custom_fields_set = set(self._custom_fields)
+        self.custom = kwargs
 
         album.tracks.append(self)
+
         self.path = path
+        self.artist = artist or self.album.artist
+        self.artists = artists
+        self.disc = disc or self._guess_disc()
+        self.genres = genres
         self.title = title
         self.track_num = track_num
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-        if self.artist is None:
-            self.artist = self.album.artist
-
-        if not self.disc:
-            self.disc = self._guess_disc()
 
         log.debug(f"Track created. [track={self!r}]")
 

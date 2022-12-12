@@ -153,9 +153,13 @@ def _get_base_dict(item: LibItem) -> dict[str, Any]:
         Returns a dict representation of an Item in the form { attribute: value }.
     """
     item_dict = {}
-    for attr in sorted(item.fields):
+    for attr in item.fields:
         value = getattr(item, attr)
         if value:
             item_dict[attr] = value
+
+    for custom_field, value in item.custom.items():
+        if value:
+            item_dict[custom_field] = value
 
     return item_dict

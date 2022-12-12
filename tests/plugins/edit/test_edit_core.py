@@ -75,10 +75,10 @@ class TestEditItem:
 
     def test_custom_field(self):
         """We can edit custom fields."""
-        track = track_factory(custom_fields={"my_title": "test"})
+        track = track_factory(my_title="test")
         edit.edit_item(track, "my_title", "new")
 
-        assert track.my_title == "new"
+        assert track.custom["my_title"] == "new"
 
 
 class TestPluginRegistration:

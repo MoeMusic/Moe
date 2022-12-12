@@ -5,7 +5,7 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Any, Callable, Iterator, Optional
+from typing import Callable, Iterator, Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -151,7 +151,6 @@ def track_factory(
     album: Optional[Album] = None,
     exists: bool = False,
     dup_track: Optional[Track] = None,
-    custom_fields: Optional[dict[str, Any]] = None,
     **kwargs,
 ):
     """Creates a track.
@@ -161,7 +160,6 @@ def track_factory(
         exists: Whether the track should exist on the filesystem. Note, this option
             requires the write plugin.
         dup_track: If given, the new track created will be a duplicate of `dup_track`.
-        custom_fields: Dict of custom_fields to values to assign to the track.
         **kwargs: Any other fields to assign to the Track.
 
     Returns:
@@ -190,11 +188,6 @@ def track_factory(
         **kwargs,
     )
 
-    if custom_fields:
-        for field, value in custom_fields.items():
-            track.custom_fields.add(field)
-            setattr(track, field, value)
-
     if dup_track:
         for field in dup_track.fields:
             value = getattr(dup_track, field)
@@ -217,7 +210,6 @@ def extra_factory(
     path: Optional[Path] = None,
     exists: bool = False,
     dup_extra: Optional[Extra] = None,
-    custom_fields: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> Extra:
     """Creates an extra for testing.
@@ -227,7 +219,6 @@ def extra_factory(
         path: Path to assign to the extra. Will create a random path if not given.
         exists: Whether the extra should actually exist on the filesystem.
         dup_extra: If given, the new extra created will be a duplicate of `dup_extra`.
-        custom_fields: Dict of custom_fields to values to assign to the extra.
         **kwargs: Any other fields to assign to the extra.
 
     Returns:
@@ -237,11 +228,6 @@ def extra_factory(
     path = path or album.path / f"{random.randint(1,10000)}.txt"
 
     extra = Extra(album=album, path=path, **kwargs)
-
-    if custom_fields:
-        for field, value in custom_fields.items():
-            extra.custom_fields.add(field)
-            setattr(extra, field, value)
 
     if dup_extra:
         for field in dup_extra.fields:
@@ -264,7 +250,6 @@ def album_factory(
     num_discs: int = 1,
     exists: bool = False,
     dup_album: Optional[Album] = None,
-    custom_fields: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> Album:
     """Creates an album.
@@ -276,7 +261,6 @@ def album_factory(
         exists: Whether the album should exist on the filesystem. Note, this option
             requires the write plugin.
         dup_album: If given, the new album created will be a duplicate of `dup_album`.
-        custom_fields: Dict of custom_fields to values to assign to the album.
         **kwargs: Any other fields to assign to the album.
 
     Returns:
@@ -298,10 +282,6 @@ def album_factory(
         track_total=num_tracks,
         **kwargs,
     )
-    if custom_fields:
-        for field, value in custom_fields.items():
-            album.custom_fields.add(field)
-            setattr(album, field, value)
 
     if dup_album:
         for field in dup_album.fields:

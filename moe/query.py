@@ -234,9 +234,9 @@ def _getattr(item_class: Type[LibItem], field: str):
         attr = getattr(item_class, field)
     except AttributeError:
         # assume custom field
-        custom_func = sa.func.json_each(
-            item_class._custom_fields, f"$.{field}"
-        ).table_valued("value", joins_implicitly=True)
+        custom_func = sa.func.json_each(item_class.custom, f"$.{field}").table_valued(
+            "value", joins_implicitly=True
+        )
 
         return custom_func.c.value
 

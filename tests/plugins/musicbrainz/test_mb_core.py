@@ -153,7 +153,7 @@ class TestCollectionsAutoRemove:
         ) as mock_rm_releases_call:
             mb_config.pm.hook.process_removed_items(items=[album])
 
-        mock_rm_releases_call.assert_called_once_with({album.mb_album_id})
+        mock_rm_releases_call.assert_called_once_with({album.custom["mb_album_id"]})
 
     def test_all_items(self, mb_config):
         """Remove all items from the collection if `auto_remove` is true."""
@@ -167,7 +167,7 @@ class TestCollectionsAutoRemove:
             mb_config.pm.hook.process_removed_items(items=[album1, album2])
 
         mock_rm_releases_call.assert_called_once_with(
-            {album1.mb_album_id, album2.mb_album_id}
+            {album1.custom["mb_album_id"], album2.custom["mb_album_id"]}
         )
 
     def test_auto_remove_false(self, mb_config):
@@ -223,7 +223,7 @@ class TestCollectionsAutoAdd:
         ) as mock_add_releases_call:
             mb_config.pm.hook.process_new_items(items=[album])
 
-        mock_add_releases_call.assert_called_once_with({album.mb_album_id})
+        mock_add_releases_call.assert_called_once_with({album.custom["mb_album_id"]})
 
     def test_auto_add_false(self, mb_config):
         """Don't add any items if `auto_add` set to false."""
@@ -278,12 +278,13 @@ class TestSyncMetadata:
         ) as mock_id:
             config.CONFIG.pm.hook.sync_metadata(item=old_album)
 
-        mock_id.assert_called_once_with(old_album.mb_album_id)
+        mock_id.assert_called_once_with(old_album.custom["mb_album_id"])
         assert old_album.title == "synced"
 
     def test_sync_track(self, mb_config):
         """Tracks are synced with musicbrainz when called."""
         old_track = track_factory(title="unsynced", mb_track_id="1")
+        old_track.album.custom["mb_album_id"] = "2"
         new_track = track_factory(title="synced")
 
         with patch.object(
@@ -292,7 +293,7 @@ class TestSyncMetadata:
             config.CONFIG.pm.hook.sync_metadata(item=old_track)
 
         mock_id.assert_called_once_with(
-            old_track.mb_track_id, old_track.album.mb_album_id
+            old_track.custom["mb_track_id"], old_track.album.custom["mb_album_id"]
         )
         assert old_track.title == "synced"
 
@@ -453,8 +454,8 @@ class TestCustomFields:
 
         new_track = Track.from_file(track.path)
 
-        assert new_track.album.mb_album_id == "album id"
-        assert new_track.mb_track_id == "track id"
+        assert new_track.album.custom["mb_album_id"] == "album id"
+        assert new_track.custom["mb_track_id"] == "track id"
 
 
 class TestAddReleasesToCollection:

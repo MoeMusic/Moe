@@ -268,19 +268,7 @@ class MetaLibItem:
     These objects do not exist on the filesystem nor in the library.
     """
 
-    _custom_fields = {}
-    _custom_fields_set = None
-
-    @property
-    def custom_fields(self) -> set[str]:
-        """Returns the custom fields of an item."""
-        if self._custom_fields_set is None:
-            object.__setattr__(
-                self, "_custom_fields_set", set(self._get_default_custom_fields())
-            )
-
-        assert self._custom_fields_set is not None
-        return self._custom_fields_set
+    custom = {}
 
     def _get_default_custom_fields(self) -> dict[str, Any]:
         """Returns the default custom fields of an item."""
@@ -291,19 +279,9 @@ class MetaLibItem:
         """Returns the editable fields of an item."""
         raise NotImplementedError
 
-    def __getattr__(self, name: str):
-        """See if ``name`` is a custom field."""
-        if name in self.custom_fields:
-            return self._custom_fields[name]
-        else:
-            raise AttributeError from None
-
-    def __setattr__(self, name, value):
-        """Set custom custom_fields if a valid key."""
-        if name in self.custom_fields:
-            self._custom_fields[name] = value
-        else:
-            super().__setattr__(name, value)
+    def merge(self, other, overwrite: bool = False) -> None:
+        """Merges another item into this one."""
+        raise NotImplementedError
 
     def __lt__(self, other):
         """Library items implement the `lt` magic method to allow sorting."""

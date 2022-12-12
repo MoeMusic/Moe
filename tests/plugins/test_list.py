@@ -109,6 +109,16 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
+    def test_custom_info(self, capsys, mock_query):
+        """Output custom fields as well."""
+        cli_args = ["list", "--info", "*"]
+        mock_query.return_value = [track_factory(custom="show me")]
+
+        moe.cli.main(cli_args)
+
+        output = capsys.readouterr().out.split("\n")
+        assert "custom: show me" in output
+
 
 class TestPluginRegistration:
     """Test the `plugin_registration` hook implementation."""
