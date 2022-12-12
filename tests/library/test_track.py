@@ -15,12 +15,6 @@ class MyTrackPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def create_custom_track_fields():
-        """Create a new custom field."""
-        return {"no_default": None, "default": "value"}
-
-    @staticmethod
-    @moe.hookimpl
     def is_unique_track(track, other):
         """Tracks with the same title aren't unique."""
         if track.title == other.title:
@@ -36,14 +30,6 @@ class MyTrackPlugin:
 
 class TestHooks:
     """Test track hooks."""
-
-    def test_create_custom_fields(self, tmp_config):
-        """Plugins can define new custom fields."""
-        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
-        track = track_factory()
-
-        assert not track.no_default
-        assert track.default == "value"
 
     def test_is_unique_track(self, tmp_config):
         """Plugins can add additional unique constraints."""
@@ -104,6 +90,20 @@ class TestInit:
         track = track_factory(album=album, artist="use me")
 
         assert track.artist == "use me"
+
+    def test_custom_fields(self):
+        """Custom fields can be assigned using kwargs."""
+        track = track_factory()
+
+        new_track = Track(
+            track.album,
+            track.path,
+            track.title,
+            track.track_num,
+            custom="custom",
+        )
+
+        assert new_track.custom["custom"] == "custom"
 
 
 class TestMetaInit:
@@ -324,6 +324,15 @@ class TestMerge:
 
         assert track.title == "2"
 
+    def test_custom_fields(self):
+        """Merge custom fields too."""
+        track = track_factory(custom="")
+        other_track = track_factory(custom="new")
+
+        track.merge(other_track)
+
+        assert track.custom["custom"] == "new"
+
 
 class TestProperties:
     """Test various track properties."""
@@ -369,8 +378,8 @@ class TestListDuplicates:
 
     def test_genre(self, tmp_session):
         """Duplicate genres don't error."""
-        track1 = track_factory(genre="pop")
-        track2 = track_factory(genre="pop")
+        track1 = track_factory(genres={"pop"})
+        track2 = track_factory(genres={"pop"})
 
         tmp_session.add(track1)
         tmp_session.add(track2)

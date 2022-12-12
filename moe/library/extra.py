@@ -70,12 +70,13 @@ class Extra(LibItem, SABase):
 
     Attributes:
         album (Album): Album the extra file belongs to.
+        custom (dict[str, Any]): Dictionary of custom fields.
         path (pathlib.Path): Filesystem path of the extra file.
     """
 
     __tablename__ = "extra"
 
-    _custom_fields: dict[str, Any] = cast(
+    custom: dict[str, Any] = cast(
         dict[str, Any],
         Column(
             MutableDict.as_mutable(JSON(none_as_null=True)),
@@ -93,23 +94,19 @@ class Extra(LibItem, SABase):
         Args:
             album: Album the extra file belongs to.
             path: Filesystem path of the extra file.
-            **kwargs: Any other fields to assign to the extra.
+            **kwargs: Any custom fields to assign to the extra.
         """
-        self._custom_fields = self._get_default_custom_fields()
-        self._custom_fields_set = set(self._custom_fields)
+        self.custom = kwargs
 
         album.extras.append(self)
         self.path = path
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
         log.debug(f"Extra created. [extra={self!r}]")
 
     @property
     def fields(self) -> set[str]:
         """Returns any editable, extra fields."""
-        return {"album", "path"}.union(self._custom_fields)
+        return {"album", "path"}
 
     @property
     def rel_path(self) -> PurePath:
@@ -147,6 +144,13 @@ class Extra(LibItem, SABase):
             if other_value and (overwrite or (not overwrite and not self_value)):
                 setattr(self, field, other_value)
 
+        for custom_field in self.custom:
+            other_value = other.custom.get(custom_field)
+            if other_value and (
+                overwrite or (not overwrite and not self.custom[custom_field])
+            ):
+                self.custom[custom_field] = other_value
+
         log.debug(
             f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
         )
@@ -181,7 +185,7 @@ class Extra(LibItem, SABase):
         repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album}'"
 
         custom_field_reprs = []
-        for custom_field, value in self._custom_fields.items():
+        for custom_field, value in self.custom.items():
             custom_field_reprs.append(f"{custom_field}={value}")
         if custom_field_reprs:
             repr_str += ", custom_fields=[" + ", ".join(custom_field_reprs) + "]"
@@ -192,11 +196,3 @@ class Extra(LibItem, SABase):
     def __str__(self):
         """String representation of an Extra."""
         return f"{self.album}: {self.rel_path}"
-
-    def _get_default_custom_fields(self) -> dict[str, Any]:
-        """Returns the default custom extra fields."""
-        return {
-            field: default_val
-            for plugin_fields in config.CONFIG.pm.hook.create_custom_extra_fields()
-            for field, default_val in plugin_fields.items()
-        }

@@ -104,18 +104,6 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
 
 
 @moe.hookimpl
-def create_custom_album_fields() -> dict[str, Any]:  # type: ignore
-    """Adds relevant musicbrainz fields to an album."""
-    return {"mb_album_id": None}
-
-
-@moe.hookimpl
-def create_custom_track_fields() -> dict[str, Any]:  # type: ignore
-    """Adds relevant musicbrainz fields to a track."""
-    return {"mb_track_id": None}
-
-
-@moe.hookimpl
 def get_candidates(album: Album) -> list[CandidateAlbum]:
     """Applies musicbrainz metadata changes to a given album.
 
@@ -139,8 +127,8 @@ def get_candidates(album: Album) -> list[CandidateAlbum]:
         search_criteria["catno"] = next(iter(album.catalog_nums))  # get any cat_num
     if album.label:
         search_criteria["label"] = album.label
-    if album.mb_album_id:
-        search_criteria["reid"] = album.mb_album_id
+    if album.custom.get("mb_album_id"):
+        search_criteria["reid"] = album.custom["mb_album_id"]
     if album.media:
         search_criteria["format"] = album.media
     if album.track_total:
@@ -168,8 +156,8 @@ def process_removed_items(items: list[LibItem]):
 
     mb_ids = []
     for item in items:
-        if isinstance(item, Album) and item.mb_album_id:
-            mb_ids.append(item.mb_album_id)
+        if isinstance(item, Album) and item.custom.get("mb_album_id"):
+            mb_ids.append(item.custom["mb_album_id"])
 
     if mb_ids:
         try:
@@ -186,8 +174,8 @@ def process_new_items(items: list[LibItem]):
 
     releases = set()
     for item in items:
-        if isinstance(item, Album) and item.mb_album_id:
-            releases.add(item.mb_album_id)
+        if isinstance(item, Album) and item.custom.get("mb_album_id"):
+            releases.add(item.custom["mb_album_id"])
 
     if releases:
         try:
@@ -210,12 +198,14 @@ def read_custom_tags(
 @moe.hookimpl
 def sync_metadata(item: LibItem):
     """Sync musibrainz metadata for associated items."""
-    if isinstance(item, Album) and hasattr(item, "mb_album_id"):
-        item.merge(get_album_by_id(item.mb_album_id), overwrite=True)
-    elif isinstance(item, Track) and hasattr(item, "mb_track_id"):
+    if isinstance(item, Album) and item.custom.get("mb_album_id"):
+        item.merge(get_album_by_id(item.custom["mb_album_id"]), overwrite=True)
+    elif isinstance(item, Track) and item.custom.get("mb_track_id"):
         item = cast(Track, item)
         item.merge(
-            get_track_by_id(item.mb_track_id, item.album.mb_album_id),
+            get_track_by_id(
+                item.custom["mb_track_id"], item.album.custom["mb_album_id"]
+            ),
             overwrite=True,
         )
 
@@ -225,8 +215,8 @@ def write_custom_tags(track: Track):
     """Write musicbrainz ID fields as tags."""
     audio_file = mediafile.MediaFile(track.path)
 
-    audio_file.mb_albumid = track.album.mb_album_id
-    audio_file.mb_releasetrackid = track.mb_track_id
+    audio_file.mb_albumid = track.album.custom.get("mb_album_id")
+    audio_file.mb_releasetrackid = track.custom.get("mb_track_id")
 
     audio_file.save()
 
@@ -511,7 +501,7 @@ def get_track_by_id(track_id: str, album_id: str) -> MetaTrack:
 
     album = get_album_by_id(album_id)
     for track in album.tracks:
-        if track.mb_track_id == track_id:
+        if track.custom.get("mb_track_id") == track_id:
             log.info(f"Fetched track from musicbrainz. [{track=!r}]")
             return track
 

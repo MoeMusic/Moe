@@ -1,7 +1,7 @@
 """Adds a duplicate resolution prompt to the CLI."""
 
 import logging
-from typing import Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from rich.columns import Columns
 from rich.console import Group, RenderableType
@@ -13,7 +13,7 @@ from rich.text import Text
 import moe
 import moe.cli
 from moe.cli import console
-from moe.library import Album, Extra, LibItem
+from moe.library import Album, Extra, LibItem, Track
 from moe.plugins.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt
 
@@ -116,6 +116,7 @@ def _fmt_item_text(
         header = Text(f"{item.rel_path}\n{item.album}", justify="center")
         omit_fields = {"album", "rel_path", "path"}
     else:
+        item = cast(Track, item)
         header = Text(f"{item.title}\n{item.album}", justify="center")
         omit_fields = {
             "album",
@@ -128,10 +129,20 @@ def _fmt_item_text(
     item_diff = Table.grid("field value", padding=(0, 1))
     item_has_diff = False
     for field in sorted(item.fields - omit_fields):
-        field_diff = _fmt_field_vs(item, other, field)
+        field_diff = _fmt_value_vs(
+            getattr(item, field, None), getattr(other, field, None)
+        )
         if field_diff:
             item_has_diff = True
             item_diff.add_row(Text(field, style="italic grey69"), field_diff)
+
+    for custom_field in sorted(set(item.custom).union(set(other.custom))):
+        field_diff = _fmt_value_vs(
+            item.custom.get(custom_field), other.custom.get(custom_field)
+        )
+        if field_diff:
+            item_has_diff = True
+            item_diff.add_row(Text(custom_field, style="italic grey69"), field_diff)
 
     if isinstance(item, Album) and isinstance(other, Album):
         item_diff = Group(item_diff, "", _fmt_album_lists(item, other))
@@ -175,13 +186,12 @@ def _fmt_album_lists(album: Album, other: Album) -> Union[Group, Table]:
     return tracklist
 
 
-def _fmt_field_vs(item: LibItem, other: LibItem, field: str) -> Optional[Text]:
-    """Highlights field differences between two items.
+def _fmt_value_vs(value_a: Any, value_b: Any) -> Optional[Text]:
+    """Highlights differences between two values.
 
     Args:
-        item: Item to base comparisons off of.
-        other: Other item to compare against.
-        field: Field to compare.
+        value_a: Value to base comparisons off of.
+        value_b: Other value to compare against.
 
     Returns:
         A rich 'Text' based on the following cases:
@@ -195,14 +205,11 @@ def _fmt_field_vs(item: LibItem, other: LibItem, field: str) -> Optional[Text]:
         4. `item.field` exists and `other.field` DNE:
            `item.field` will be returned in green
     """
-    item_field = getattr(item, field, None)
-    other_field = getattr(other, field, None)
-
-    if not item_field or (item_field == other_field):
+    if not value_a or (value_a == value_b):
         return None
-    if item_field != other_field:
-        return Text(str(item_field), style="yellow")
-    if item_field and not other_field:
-        return Text(str(item_field), style="green")
+    if value_a != value_b:
+        return Text(str(value_a), style="yellow")
+    if value_a and not value_b:
+        return Text(str(value_a), style="green")
 
     return None

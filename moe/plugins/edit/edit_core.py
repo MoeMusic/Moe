@@ -36,8 +36,8 @@ def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
     try:
         attr = getattr(item.__class__, field)
     except AttributeError as a_err:
-        if field in item._custom_fields:
-            setattr(item, field, value)
+        if field in item.custom:
+            item.custom[field] = value
             return
 
         raise EditError(f"Invalid field given. [{field=!r}]") from a_err

@@ -13,12 +13,6 @@ class MyExtraPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def create_custom_extra_fields():
-        """Create a new custom field."""
-        return {"no_default": None, "default": "value"}
-
-    @staticmethod
-    @moe.hookimpl
     def is_unique_extra(extra, other):
         """Extras with the same title aren't unique."""
         if extra.custom == other.custom:
@@ -27,14 +21,6 @@ class MyExtraPlugin:
 
 class TestHooks:
     """Test extra hooks."""
-
-    def test_create_custom_fields(self, tmp_config):
-        """Plugins can define new custom fields."""
-        tmp_config(extra_plugins=[ExtraPlugin(MyExtraPlugin, "extra_plugin")])
-        extra = extra_factory()
-
-        assert not extra.no_default
-        assert extra.default == "value"
 
     def test_is_unique_extra(self, tmp_config):
         """Plugins can add additional unique constraints."""
@@ -77,21 +63,21 @@ class TestMerge:
 
     def test_merge_non_conflict(self):
         """Apply any non-conflicting fields."""
-        extra = extra_factory(custom_fields={"custom": "keep"})
-        other_extra = extra_factory(custom_fields={"custom": None})
+        extra = extra_factory(custom="keep")
+        other_extra = extra_factory(custom=None)
 
         extra.merge(other_extra)
 
-        assert extra.custom == "keep"
+        assert extra.custom["custom"] == "keep"
 
     def test_none_merge(self):
         """Don't merge in any null values."""
-        extra = extra_factory(custom_fields={"custom": None})
-        other_extra = extra_factory(custom_fields={"custom": "keep"})
+        extra = extra_factory(custom=None)
+        other_extra = extra_factory(custom="keep")
 
         extra.merge(other_extra)
 
-        assert extra.custom == "keep"
+        assert extra.custom["custom"] == "keep"
 
     def test_db_delete(self, tmp_session):
         """Remove the other extra from the db if it exists."""

@@ -28,7 +28,7 @@ Library
 
 .. automodule:: moe.library
    :members:
-   :exclude-members: cache_ok, path
+   :exclude-members: cache_ok, path, custom
    :show-inheritance:
    :special-members: __init__
 

@@ -64,9 +64,9 @@ def _parse_args(args: argparse.Namespace):
     for item in items:
         release_id: Optional[str] = None
         if isinstance(item, (Extra, Track)):
-            release_id = item.album.mb_album_id
+            release_id = item.album.custom.get("mb_album_id")
         elif isinstance(item, Album):
-            release_id = item.mb_album_id
+            release_id = item.custom.get("mb_album_id")
 
         if release_id:
             releases.add(release_id)
