@@ -3,7 +3,7 @@
 import pytest
 
 import moe
-import moe.plugins.write as moe_write
+import moe.write as moe_write
 from moe.config import ExtraPlugin
 from moe.library import MetaTrack, Track, TrackError
 from moe.library.album import MetaAlbum

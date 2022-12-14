@@ -44,75 +44,75 @@ Query
 
 Plugins
 =======
-``moe.plugins``
+``moe``
 
 Add
 ---
-``moe.plugins.add``
+``moe.add``
 
-.. automodule:: moe.plugins.add
+.. automodule:: moe.add
    :members:
 
 Duplicate
 ---------
-``moe.plugins.duplicate``
+``moe.duplicate``
 
-.. automodule:: moe.plugins.duplicate
+.. automodule:: moe.duplicate
    :members:
 
 Edit
 ----
-``moe.plugins.edit``
+``moe.edit``
 
-.. automodule:: moe.plugins.edit
+.. automodule:: moe.edit
    :members:
 
 Import
 ------
-``moe.plugins.moe_import``
+``moe.moe_import``
 
-.. automodule:: moe.plugins.moe_import
+.. automodule:: moe.moe_import
    :members:
    :exclude-members: match_value_pct
 
 Move
 ----
-``moe.plugins.move``
+``moe.move``
 
-.. automodule:: moe.plugins.move
+.. automodule:: moe.move
    :members:
 
 Musicbrainz
 -----------
-``moe.plugins.musicbrainz``
+``moe.musicbrainz``
 
-.. automodule:: moe.plugins.musicbrainz
+.. automodule:: moe.musicbrainz
    :members:
 
 Read
 ----
-``moe.plugins.read``
+``moe.read``
 
-.. automodule:: moe.plugins.read
+.. automodule:: moe.read
    :members:
 
 Remove
 ------
-``moe.plugins.remove``
+``moe.remove``
 
-.. automodule:: moe.plugins.remove
+.. automodule:: moe.remove
    :members:
 
 Sync
 ----
-``moe.plugins.sync``
+``moe.sync``
 
-.. automodule:: moe.plugins.sync
+.. automodule:: moe.sync
    :members:
 
 Write
 -----
-``moe.plugins.write``
+``moe.write``
 
-.. automodule:: moe.plugins.write
+.. automodule:: moe.write
    :members:
