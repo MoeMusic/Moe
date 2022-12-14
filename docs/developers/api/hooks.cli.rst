@@ -15,5 +15,5 @@ Plugins
 
 Import
 ------
-.. autoclass:: moe.plugins.moe_import.import_cli.Hooks
+.. autoclass:: moe.moe_import.import_cli.Hooks
    :members:

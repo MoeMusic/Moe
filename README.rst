@@ -22,10 +22,10 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
     import argparse
     import pathlib
 
-    import moe.plugins.musicbrainz as moe_mb
+    import moe.musicbrainz as moe_mb
     from moe.config import Config, ConfigValidationError
     from moe.library import Album
-    from moe.plugins.write import write_tags
+    from moe.write import write_tags
 
 
     def main():

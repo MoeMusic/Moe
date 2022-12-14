@@ -93,7 +93,7 @@ class TestPlugins:
         plugin_dir = config_dir / "plugins"
         plugin_dir.mkdir()
 
-        list_path = Path(__file__).resolve().parent.parent / "moe/plugins/list.py"
+        list_path = Path(__file__).resolve().parent.parent / "moe/list.py"
         shutil.copyfile(list_path, plugin_dir / "my_list.py")
 
         tmp_config(settings="enable_plugins = ['my_list']", config_dir=config_dir)
