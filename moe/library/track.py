@@ -89,7 +89,7 @@ class Hooks:
         See Also:
             * :ref:`Album and track fields <fields:Fields>`
             * `Mediafile docs <https://mediafile.readthedocs.io/en/latest/>`_
-            * The :meth:`~moe.plugins.write.Hooks.write_custom_tags` hook for writing
+            * The :meth:`~moe.write.Hooks.write_custom_tags` hook for writing
               tags.
         """
 

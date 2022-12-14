@@ -38,18 +38,18 @@ __all__ = ["CONFIG", "Config", "ConfigValidationError", "ExtraPlugin"]
 log = logging.getLogger("moe.config")
 
 DEFAULT_PLUGINS = {
-    "add": "moe.plugins.add",
+    "add": "moe.add",
     "cli": "moe.cli",
-    "duplicate": "moe.plugins.duplicate",
-    "edit": "moe.plugins.edit",
-    "import": "moe.plugins.moe_import",
-    "list": "moe.plugins.list",
-    "move": "moe.plugins.move",
-    "musicbrainz": "moe.plugins.musicbrainz",
-    "read": "moe.plugins.read",
-    "sync": "moe.plugins.sync",
-    "remove": "moe.plugins.remove",
-    "write": "moe.plugins.write",
+    "duplicate": "moe.duplicate",
+    "edit": "moe.edit",
+    "import": "moe.moe_import",
+    "list": "moe.list",
+    "move": "moe.move",
+    "musicbrainz": "moe.musicbrainz",
+    "read": "moe.read",
+    "sync": "moe.sync",
+    "remove": "moe.remove",
+    "write": "moe.write",
 }
 CORE_PLUGINS = {
     "config": "moe.config",
@@ -99,7 +99,7 @@ class Hooks:
         Example:
             .. code:: python
 
-                from moe.plugins.add import Hooks
+                from moe.add import Hooks
                 pm.add_hookspecs(Hooks)
         """
 
@@ -387,7 +387,7 @@ class Config:
             )
 
         # register all third-party installed plugins
-        plugins = importlib.metadata.entry_points().get("moe.plugins")
+        plugins = importlib.metadata.entry_points().get("moe")
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
