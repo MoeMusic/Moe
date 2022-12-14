@@ -20,7 +20,3 @@ def plugin_registration():
     config.CONFIG.pm.register(import_core, "import_core")
     if config.CONFIG.pm.has_plugin("cli"):
         config.CONFIG.pm.register(import_cli, "import_cli")
-
-    # re-register under the "import" name instead of "moe_import"
-    config.CONFIG.pm.unregister(name="moe_import")
-    config.CONFIG.pm.register(sys.modules[__name__], "import")

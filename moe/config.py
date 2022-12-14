@@ -38,18 +38,18 @@ __all__ = ["CONFIG", "Config", "ConfigValidationError", "ExtraPlugin"]
 log = logging.getLogger("moe.config")
 
 DEFAULT_PLUGINS = {
-    "add",
-    "cli",
-    "duplicate",
-    "edit",
-    "import",
-    "list",
-    "move",
-    "musicbrainz",
-    "read",
-    "sync",
-    "remove",
-    "write",
+    "add": "moe.plugins.add",
+    "cli": "moe.cli",
+    "duplicate": "moe.plugins.duplicate",
+    "edit": "moe.plugins.edit",
+    "import": "moe.plugins.moe_import",
+    "list": "moe.plugins.list",
+    "move": "moe.plugins.move",
+    "musicbrainz": "moe.plugins.musicbrainz",
+    "read": "moe.plugins.read",
+    "sync": "moe.plugins.sync",
+    "remove": "moe.plugins.remove",
+    "write": "moe.plugins.write",
 }
 CORE_PLUGINS = {
     "config": "moe.config",
@@ -210,6 +210,7 @@ class Config:
     Attributes:
         config_dir (Path): Filesystem path of the configuration directory.
         config_file (Path): Filesystem path of the configuration settings file.
+        enabled_plugins (set[str]): Enabled plugins as specified by the configuration.
         engine (sa.engine.base.Engine): Database engine in use.
         pm (pluggy.manager.PluginManager): Plugin manager that handles plugin logic.
         settings (dynaconf.base.LazySettings): User configuration settings.
@@ -343,18 +344,24 @@ class Config:
         except dynaconf.validator.ValidationError as err:
             raise ConfigValidationError(err) from err
 
-    def _setup_plugins(self, core_plugins: dict[str, str] = CORE_PLUGINS):
+    def _setup_plugins(
+        self,
+        core_plugins: dict[str, str] = CORE_PLUGINS,
+        default_plugins: dict[str, str] = DEFAULT_PLUGINS,
+    ):
         """Setup pm and hook logic.
 
         Args:
             core_plugins: Optional mapping of core plugin modules to names.
                 These plugins cannot be overwritten by the user configuration.
+            default_plugins: Optional mapping of default plugin modules to names.
+                These plugins are enabled by default, but can be disabled by the config.
         """
         log.debug("Setting up plugins.")
 
         self.pm = pluggy.PluginManager("moe")
 
-        # register core modules that are not considered plugins
+        # register core modules that cannot be disabled by the config
         for plugin_name, module in core_plugins.items():
             self.pm.register(importlib.import_module(module), plugin_name)
 
@@ -364,32 +371,26 @@ class Config:
         self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
-        config_plugins = (
+        self.enabled_plugins = (
             set(self.settings.default_plugins) | set(self.settings.enable_plugins)
         ) - set(self.settings.disable_plugins)
 
-        # the 'import' plugin maps to the 'moe_import' package
-        if "import" in config_plugins:
-            config_plugins.remove("import")
-            config_plugins.add("moe_import")
+        # register default plugins
+        for plugin_name, module in default_plugins.items():
+            if plugin_name in self.enabled_plugins:
+                self.pm.register(importlib.import_module(module), plugin_name)
 
-        if "cli" in config_plugins:
-            self.pm.register(importlib.import_module("moe.cli"), name="cli")
-
-        # register plugin hookimpls for all enabled plugins
-        internal_plugin_dir = Path(__file__).resolve().parent / "plugins"
-        self._register_local_plugins(
-            config_plugins, internal_plugin_dir, "moe.plugins."
-        )
         if Path(self.config_dir / "plugins").exists():
             sys.path.append(str(self.config_dir / "plugins"))
-            self._register_local_plugins(config_plugins, self.config_dir / "plugins")
+            self._register_local_plugins(
+                self.enabled_plugins, self.config_dir / "plugins"
+            )
 
         # register all third-party installed plugins
         plugins = importlib.metadata.entry_points().get("moe.plugins")
         if plugins:
             for plugin in plugins:
-                if plugin.name in config_plugins:
+                if plugin.name in self.enabled_plugins:
                     plugin.load()
                     self.pm.register(plugin.load(), plugin.name)
 
