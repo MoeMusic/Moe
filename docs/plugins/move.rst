@@ -45,7 +45,7 @@ Custom Path Template Functions
 ==============================
 Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
 
-.. autofunction:: moe.plugins.move.move_core.e_unique
+.. autofunction:: moe.move.move_core.e_unique
 
 .. tip::
     - For any path formatting changes, run ``moe move -n`` for a dry-run to avoid any unexpected results.

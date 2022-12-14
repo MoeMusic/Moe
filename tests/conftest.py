@@ -13,10 +13,10 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 import sqlalchemy.orm
 
+import moe.write
 from moe import config
 from moe.config import Config, ExtraPlugin, MoeSession, session_factory
 from moe.library import Album, Extra, Track
-from moe.plugins import write as moe_write
 
 __all__ = ["album_factory", "extra_factory", "track_factory"]
 
@@ -200,7 +200,7 @@ def track_factory(
     if exists:
         track.path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(EMPTY_MP3_FILE, track.path)
-        moe_write.write_tags(track)
+        moe.write.write_tags(track)
 
     return track
 

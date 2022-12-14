@@ -42,20 +42,20 @@ Plugins
 
 Add
 ---
-.. autoclass:: moe.plugins.add.add_core.Hooks
+.. autoclass:: moe.add.add_core.Hooks
    :members:
 
 Import
 ------
-.. autoclass:: moe.plugins.moe_import.import_core.Hooks
+.. autoclass:: moe.moe_import.import_core.Hooks
    :members:
 
 Move
 ----
-.. autoclass:: moe.plugins.move.move_core.Hooks
+.. autoclass:: moe.move.move_core.Hooks
    :members:
 
 Write
 -----
-.. autoclass:: moe.plugins.write.Hooks
+.. autoclass:: moe.write.Hooks
    :members:

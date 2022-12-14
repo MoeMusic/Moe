@@ -36,13 +36,13 @@ If you'd like to make your plugin available on pip, there are a few required ste
    .. note::
       It's encouraged that the actual name of your plugin module or package not include the ``moe_`` prefix. The prefix is only necessary for the name of your project on PyPI.
 
-#. Include the `entry_point group <https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata>`_ ``moe.plugins`` in your ``setup.py`` or ``pyproject.toml``.
+#. Include the `entry_point group <https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata>`_ ``moe`` in your ``setup.py`` or ``pyproject.toml``.
 
    * For example, if using *poetry*, include the following in your ``pyproject.toml``.
 
      .. code:: toml
 
-        [tool.poetry.plugins."moe.plugins"]
+        [tool.poetry.plugins."moe"]
         "<plugin_name>" = "<plugin_module or package>"
 
      .. seealso::
