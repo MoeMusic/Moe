@@ -21,7 +21,7 @@ moe = 'moe.cli:main'
 python = ">=3.9, <3.12"
 alembic = "^1.4.2"
 dynaconf = "^3.1.4"
-moe_mediafile = "^0.10.1"
+mediafile = "^0.11.0"
 musicbrainzngs = "^0.7.1"
 pluggy = "^0.13.1"
 rich = "^12.5.1"
