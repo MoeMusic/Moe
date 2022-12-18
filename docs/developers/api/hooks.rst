@@ -6,7 +6,7 @@ Moe uses `pluggy hooks <https://pluggy.readthedocs.io/en/latest/>`_ in order to 
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    hooks.cli
    hooks.core

@@ -27,6 +27,8 @@ You can create a local plugin by adding a module ``<plugin_name>.py`` or package
 .. important::
     The name of your local plugin cannot conflict with any other modules in the current namespace. For example, you can't name your plugin ``random`` because it conflicts with the ``random`` module in the standard library. It may be useful to preface any local plugins with ``moe_`` or any other prefix of your choice if you think there may be a potential conflict.
 
+Once you create a plugin, all you have to do is enable it in your configuration to start using it!
+
 Published Plugins
 =================
 If you'd like to make your plugin available on pip, there are a few required steps:
@@ -50,8 +52,6 @@ If you'd like to make your plugin available on pip, there are a few required ste
 
 Once you've accomplished the above, your plugin will be automatically loaded by Moe provided the user has installed your package and enabled the plugin in their configuration.
 
-For examples of existing third-party plugins, see the :ref:`plugin docs <plugins/plugins:Third-Party Plugins>`.
-
 .. tip::
    Check out the `plugin_template <https://github.com/MoeMusic/plugin_template>`_ repository to quickly create a plugin to publish to PyPI complete with CI scripts and configuration files consistent with the rest of Moe.
 
@@ -71,7 +71,7 @@ When your plugin is loaded by Moe, it is actually just loading its ``__init__.py
     def plugin_registration():
         """Only register the cli sub-plugin if the cli is enabled."""
         config.CONFIG.pm.register(add_core, "add_core")
-        if config.CONFIG.pm.has_plugin("cli"):
+        if "cli" in config.CONFIG.enabled_plugins:
             config.CONFIG.pm.register(add_cli, "add_cli``)
 
 .. seealso::
