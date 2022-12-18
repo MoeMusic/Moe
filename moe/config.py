@@ -387,7 +387,7 @@ class Config:
             )
 
         # register all third-party installed plugins
-        plugins = importlib.metadata.entry_points().get("moe.plugins")
+        plugins = importlib.metadata.entry_points(group="moe.plugins")
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
