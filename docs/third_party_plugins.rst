@@ -13,5 +13,6 @@ Known Plugins
 =============
 Below is a list of known third-party plugins for Moe. If you'd like to add your plugin to this list, please submit a pull request.
 
+* `musicbrainz <https://moe-musicbrainz.readthedocs.io/en/latest/>`_ - Musicbrainz integration.
 * `random <https://github.com/MoeMusic/moe_random>`_ - CLI command to output a random item from your library.
 * `transcode <https://moe-transcode.readthedocs.io/en/latest/>`_ - API functions for transcoding music in your library.

@@ -148,12 +148,6 @@ If adding a new field to Moe, the following checklist can help ensure you cover 
 
    * Add tests under ``test_write.py:TestWriteTags:test_write_tags()``
 
-#. Read/load from the field from musicbrainz as necessary.
-
-   * See ``mb_core.py:_create_album()``
-   * Is it possible a musicbrainz release may not contain this field? Use safe dict access if necessary.
-   * Add to the ``album`` function in ``tests/plugins/musicbrainz/full_release.py`` to test parsing the new field from a musicbrainz release.
-
 #. Add a weight for how much the field should factor into matching a track or album to another track or album in ``moe/util/core/match.py:MATCH_<TRACK/ALBUM>_FIELD_WEIGHTS``.
 #. Include documentation for your new field in ``docs/fields.rst``
 #. Create a migration script for your new field.

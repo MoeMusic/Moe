@@ -29,6 +29,10 @@ There also exist external or third-party plugins that extend the functionality o
 *********
 Now what?
 *********
-The first step is configuring Moe to your liking. To do this, check out the :doc:`configuration docs <configuration>`.
+The first step is configuring Moe to your liking. To do this, check out the :doc:`configuration docs <configuration>`. You can also check out the various :doc:`third-party plugins <third_party_plugins>` available to extend the core functionality even further.
+
+.. note::
+
+   Moe doesn't ship with any metadata source connections by default. If you'd like to import metadata from online sources such as Musicbrainz, you'll have to install a third-party plugin.
 
 Once you're satisfied with everything, you can start using Moe! For normal users, check out the :doc:`command-line interface docs <cli>` to interact with and start adding music to your music library. If you're a developer, check out the relevant :doc:`developer docs <developers/developers>`.
