@@ -153,8 +153,8 @@ class TestFmtItemPath:
         assert str(moe_move.fmt_item_path(album)).isascii()
 
     @pytest.mark.usefixtures("_tmp_move_config")
-    def test_given_lib_path(self, tmp_path):
-        """If provided, paths should be relative to ``lib_path``."""
+    def test_given_parent(self, tmp_path):
+        """If provided, paths should be relative to ``parent``."""
         track = track_factory()
         track_path = moe_move.fmt_item_path(track, tmp_path)
 

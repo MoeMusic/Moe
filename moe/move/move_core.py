@@ -90,58 +90,38 @@ def e_unique(extra: Extra) -> str:
 ########################################################################################
 # Format paths
 ########################################################################################
-def fmt_item_path(item: LibItem, lib_path: Optional[Path] = None) -> Path:
+def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
     """Returns a formatted item path according to the user configuration.
 
     Args:
         item: Item whose path will be formatted.
-        lib_path: Optional library path the outputted path will be relative to. By
-            default, this will be the ``library_path`` setting in the config.
+        parent: Optional path the formatted path will be relative to. By
+            default, this will be according to the configuration path settings.
 
     Returns:
         A formatted path as defined by the ``{album/extra/track}_path`` config template
-            settings relative to ``lib_path``.
+            settings relative to ``parent``.
     """
     log.debug(f"Formatting item path. [path={item.path}]")
 
-    lib_path = lib_path or Path(config.CONFIG.settings.library_path).expanduser()
-
     if isinstance(item, Album):
-        new_path = _fmt_album_path(item, lib_path)
+        parent = parent or Path(config.CONFIG.settings.library_path).expanduser()
+        item_path = _eval_path_template(config.CONFIG.settings.move.album_path, item)
     elif isinstance(item, Extra):
-        new_path = _fmt_extra_path(item, lib_path)
+        parent = parent or fmt_item_path(item.album)
+        item_path = _eval_path_template(config.CONFIG.settings.move.extra_path, item)
     else:
         assert isinstance(item, Track)
-        new_path = _fmt_track_path(item, lib_path)
+        parent = parent or fmt_item_path(item.album)
+        item_path = _eval_path_template(config.CONFIG.settings.move.track_path, item)
+
+    new_path = parent / item_path
 
     if config.CONFIG.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))
 
     log.debug(f"Formatted item path. [path={new_path}]")
     return new_path
-
-
-def _fmt_album_path(album: Album, lib_path: Path) -> Path:
-    """Returns a formatted album directory according to the user configuration."""
-    album_path = _eval_path_template(config.CONFIG.settings.move.album_path, album)
-
-    return lib_path / album_path
-
-
-def _fmt_extra_path(extra: Extra, lib_path: Path) -> Path:
-    """Returns a formatted extra path according to the user configuration."""
-    album_path = _fmt_album_path(extra.album, lib_path)
-    extra_path = _eval_path_template(config.CONFIG.settings.move.extra_path, extra)
-
-    return album_path / extra_path
-
-
-def _fmt_track_path(track: Track, lib_path: Path) -> Path:
-    """Returns a formatted track path according to the user configuration."""
-    album_path = _fmt_album_path(track.album, lib_path)
-    track_path = _eval_path_template(config.CONFIG.settings.move.track_path, track)
-
-    return album_path / track_path
 
 
 def _eval_path_template(template, lib_item) -> str:
