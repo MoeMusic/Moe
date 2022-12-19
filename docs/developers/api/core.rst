@@ -2,14 +2,12 @@
 Core
 ####
 
-Util
-====
-``moe.util.core``
+Add
+===
+``moe.add``
 
-.. automodule:: moe.util.core
+.. automodule:: moe.add
    :members:
-   :show-inheritance:
-
 
 Config
 ======
@@ -22,6 +20,28 @@ Config
 
 .. _Library API:
 
+Duplicate
+=========
+``moe.duplicate``
+
+.. automodule:: moe.duplicate
+   :members:
+
+Edit
+====
+``moe.edit``
+
+.. automodule:: moe.edit
+   :members:
+
+Import
+======
+``moe.moe_import``
+
+.. automodule:: moe.moe_import
+   :members:
+   :exclude-members: match_value_pct
+
 Library
 =======
 ``moe.library``
@@ -32,6 +52,12 @@ Library
    :show-inheritance:
    :special-members: __init__
 
+Move
+====
+``moe.move``
+
+.. automodule:: moe.move
+   :members:
 
 Query
 =====
@@ -41,62 +67,30 @@ Query
    :members:
    :undoc-members:
 
-Plugins
-=======
-``moe``
-
-Add
----
-``moe.add``
-
-.. automodule:: moe.add
-   :members:
-
-Duplicate
----------
-``moe.duplicate``
-
-.. automodule:: moe.duplicate
-   :members:
-
-Edit
-----
-``moe.edit``
-
-.. automodule:: moe.edit
-   :members:
-
-Import
-------
-``moe.moe_import``
-
-.. automodule:: moe.moe_import
-   :members:
-   :exclude-members: match_value_pct
-
-Move
-----
-``moe.move``
-
-.. automodule:: moe.move
-   :members:
-
 Read
-----
+====
 ``moe.read``
 
 .. automodule:: moe.read
    :members:
 
 Remove
-------
+======
 ``moe.remove``
 
 .. automodule:: moe.remove
    :members:
 
+Util
+====
+``moe.util.core``
+
+.. automodule:: moe.util.core
+   :members:
+   :show-inheritance:
+
 Write
------
+=====
 ``moe.write``
 
 .. automodule:: moe.write
