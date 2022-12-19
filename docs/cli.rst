@@ -148,25 +148,3 @@ Optional Arguments
     Query for matching albums instead of tracks.
 ``-e, --extra``
     Query for matching extras instead of tracks.
-
-sync
-====
-Syncs any changes to your music from connected metadata sources.
-
-.. code-block:: bash
-
-    moe sync [-h] [-a | -e] [-p] query
-
-Positional Arguments
---------------------
-``query``
-    Query your library for items to sync. See the :doc:`query docs <../query>` for more info.
-
-Optional Arguments
-------------------
-``-h, --help``
-    Display the help message.
-``-a, --album``
-    Query for matching albums instead of tracks.
-``-e, --extra``
-    Query for matching extras instead of tracks.
