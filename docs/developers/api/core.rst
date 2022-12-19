@@ -82,13 +82,6 @@ Move
 .. automodule:: moe.move
    :members:
 
-Musicbrainz
------------
-``moe.musicbrainz``
-
-.. automodule:: moe.musicbrainz
-   :members:
-
 Read
 ----
 ``moe.read``

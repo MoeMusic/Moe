@@ -13,7 +13,7 @@ Moe comes with a command-line interface which is how most users will take advant
 
 Alternatively, because all the core functionality is available via an API, the underlying music management system can be incorporated into any existing program or other user interface.
 
-Finally, although a lot of Moe's functionality exists around the idea of operating on a library database of your music, the database is entirely optional. In this case, Moe provides a convenient set of tools and functionality for handling music in a general sense. For example, below is a standalone python script that takes an album directory and Musicbrainz release ID from the command-line, and then updates the underlying files' tags with any changes from Musicbrainz.
+Finally, although a lot of Moe's functionality exists around the idea of operating on a library database of your music, the database is entirely optional. In this case, Moe provides a convenient set of tools and functionality for handling music in a general sense. For example, below is a standalone python script that takes an album directory and Musicbrainz release ID from the command-line, and then updates the underlying files' tags with any changes from Musicbrainz (utilizing the ``musicbrainz`` plugin).
 
 .. code:: python
 
@@ -22,11 +22,11 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
     import argparse
     import pathlib
 
-    import moe.musicbrainz as moe_mb
     from moe.config import Config, ConfigValidationError
     from moe.library import Album
     from moe.write import write_tags
 
+    import moe_musicbrainz
 
     def main():
         try:
@@ -43,7 +43,7 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
 
         album = Album.from_dir(pathlib.Path(args.path))
 
-        album.merge(moe_mb.get_album_by_id(args.mb_id), overwrite=True)
+        album.merge(moe_musicbrainz.get_album_by_id(args.mb_id), overwrite=True)
 
         for track in album.tracks:
             write_tags(track)

@@ -53,12 +53,4 @@ Extra Fields
 *************
 Custom Fields
 *************
-In addition to the above fields, plugins may add any number of custom fields to Moe. These fields can be edited, queried, etc. the same as normal fields. The following custom fields currently are available by default:
-
-Track Fields
-============
-* ``mb_track_id`` - musicbrainz track id
-
-Album Fields
-============
-* ``mb_album_id`` - musicbrainz album aka release id
+In addition to the above fields, plugins may add any number of custom fields to Moe. These fields can be edited, queried, etc. the same as normal fields.
