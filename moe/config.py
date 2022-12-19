@@ -45,7 +45,6 @@ DEFAULT_PLUGINS = {
     "import": "moe.moe_import",
     "list": "moe.list",
     "move": "moe.move",
-    "musicbrainz": "moe.musicbrainz",
     "read": "moe.read",
     "sync": "moe.sync",
     "remove": "moe.remove",
