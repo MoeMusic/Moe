@@ -29,7 +29,10 @@ class TestPrompt:
         tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
         album = album_factory(num_discs=2)
         candidate = CandidateAlbum(
-            album=album_factory(num_discs=2), match_value=1, source_str="Tests"
+            album=album_factory(num_discs=2),
+            match_value=1,
+            plugin_source="Tests",
+            source_id="1",
         )
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
@@ -70,7 +73,10 @@ class TestHookSpecs:
         """Plugins can add prompt choices to the import prompt."""
         album = album_factory()
         candidate = CandidateAlbum(
-            album=album_factory(), match_value=1, source_str="tests"
+            album=album_factory(),
+            match_value=1,
+            plugin_source="Tests",
+            source_id="1",
         )
         album.title = "not ImportPlugin"
         tmp_config(
@@ -152,7 +158,10 @@ class TestAddImportPromptChoice:
         """
         album = album_factory()
         candidate = CandidateAlbum(
-            album=album_factory(), match_value=1, source_str="test"
+            album=album_factory(),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
         )
         missing_track = track_factory(
             album=candidate.album, track_num=len(album.tracks) + 1
@@ -185,7 +194,10 @@ class TestAddImportPromptChoice:
         """
         album = album_factory(num_tracks=0)
         candidate = CandidateAlbum(
-            album=album_factory(num_tracks=0), match_value=1, source_str="tests"
+            album=album_factory(num_tracks=0),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
         )
         track_factory(album=album, track_num=1, title="old track 1")
         track_factory(album=candidate.album, track_num=1, title="new track 1")
@@ -224,7 +236,10 @@ class TestAddImportPromptChoice:
         """`apply` prompt choice should keep any extras."""
         album = album_factory()
         candidate = CandidateAlbum(
-            album=album_factory(), match_value=1, source_str="tests"
+            album=album_factory(),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
         )
         new_extra = extra_factory(album=album)
 
@@ -242,7 +257,10 @@ class TestAddImportPromptChoice:
         """Fields get applied onto the old album."""
         album = album_factory()
         candidate = CandidateAlbum(
-            album=album_factory(title="new title"), match_value=1, source_str="tests"
+            album=album_factory(title="new title"),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
         )
         assert album.title != candidate.album.title
 
@@ -272,7 +290,10 @@ class TestAddImportPromptChoice:
         """The `abort` prompt choice should raise an AbortImport error."""
         album = album_factory()
         candidate = CandidateAlbum(
-            album=album_factory(), match_value=1, source_str="tests"
+            album=album_factory(),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
         )
 
         mock_choice = PromptChoice("mock", "m", moe_import.import_cli._abort_changes)
@@ -328,7 +349,8 @@ class TestImportCLIOutput:
                 label="me",
             ),
             match_value=1,
-            source_str="tests",
+            plugin_source="tests",
+            source_id="1",
         )
         album.tracks[0].title = "really really long old title"
 
