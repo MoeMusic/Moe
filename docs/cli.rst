@@ -103,34 +103,6 @@ Optional Arguments
 ``-n, --dry-run``
     Show what will be moved without actually moving any files.
 
-mbcol
-=====
-Used to sync a musicbrainz collection with musicbrainz releases in the library. The collection synced is the one specified under ``collection_id`` in the user config.
-
-.. code-block:: bash
-
-    moe mbcol [-h] [-a | -e] [--add | --remove] query
-
-By default, the musicbrainz collection will be set to the releases found in the queried items. If tracks or extras are queried, their associated album releases will be synced with the collection.
-
-Positional Arguments
---------------------
-``query``
-    Query your library for items to sync your collection with. See the :doc:`query docs <../query>` for more info.
-
-Optional Arguments
-------------------
-``-h, --help``
-    Display the help message.
-``-a, --album``
-    Query for matching albums instead of tracks.
-``-e, --extra``
-    Query for matching extras instead of tracks.
-``--add``
-    Add releases to the collection.
-``--remove``
-    Remove releases from the collection.
-
 read
 ====
 Updates Moe with any changes to your music files.
