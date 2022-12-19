@@ -96,13 +96,6 @@ Remove
 .. automodule:: moe.remove
    :members:
 
-Sync
-----
-``moe.sync``
-
-.. automodule:: moe.sync
-   :members:
-
 Write
 -----
 ``moe.write``

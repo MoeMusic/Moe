@@ -46,7 +46,6 @@ DEFAULT_PLUGINS = {
     "list": "moe.list",
     "move": "moe.move",
     "read": "moe.read",
-    "sync": "moe.sync",
     "remove": "moe.remove",
     "write": "moe.write",
 }
