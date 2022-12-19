@@ -41,7 +41,6 @@ Query
    :members:
    :undoc-members:
 
-
 Plugins
 =======
 ``moe``
@@ -94,13 +93,6 @@ Remove
 ``moe.remove``
 
 .. automodule:: moe.remove
-   :members:
-
-Sync
-----
-``moe.sync``
-
-.. automodule:: moe.sync
    :members:
 
 Write
