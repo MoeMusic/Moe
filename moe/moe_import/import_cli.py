@@ -150,10 +150,10 @@ def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]):
 def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
     """Formats a candidates info for the candidate prompt."""
     sub_header_values = []
-    for str_field in ["media", "country", "label", "catalog_num"]:
-        if value := getattr(candidate.album, str_field):
+    for field in ["media", "country", "label", "catalog_num"]:
+        if value := getattr(candidate.album, field):
             sub_header_values.append(value)
-    sub_header_values.extend(candidate.sub_header_info)
+    sub_header_values.extend(candidate.disambigs)
     sub_header = " | ".join(sub_header_values)
 
     return (
@@ -163,7 +163,7 @@ def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
         + sub_header
         + "\n"
         + " " * (9 + len(candidate.match_value_pct))
-        + candidate.source_str
+        + f"{candidate.plugin_source.capitalize()}: {candidate.source_id}"
         + "\n"
     )
 
@@ -273,7 +273,7 @@ def _fmt_album(new_album: Album, candidate: CandidateAlbum) -> Text:
     return (
         header_text.append_text(sub_header_text)
         .append("\n")
-        .append(candidate.source_str)
+        .append(f"{candidate.plugin_source.capitalize()}: {candidate.source_id}")
         .append("\n")
     )
 

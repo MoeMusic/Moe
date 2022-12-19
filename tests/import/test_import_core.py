@@ -20,7 +20,9 @@ class ImportPlugin:
         """Changes the album title."""
         album.title = "candidate title"
 
-        return [CandidateAlbum(album=album, match_value=1, source_str="hook")]
+        return [
+            CandidateAlbum(album, match_value=1, plugin_source="hook", source_id="1")
+        ]
 
     @staticmethod
     @moe.hookimpl
@@ -59,7 +61,9 @@ class TestHookSpecs:
         config.CONFIG.pm.hook.process_candidates(
             new_album=album,
             candidates=[
-                CandidateAlbum(album=new_album, match_value=1, source_str="tests")
+                CandidateAlbum(
+                    album=new_album, match_value=1, plugin_source="tests", source_id="1"
+                )
             ],
         )
 

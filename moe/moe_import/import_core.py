@@ -22,21 +22,22 @@ class CandidateAlbum:
 
     Attributes:
         album (Album): The candidate album.
+        disambigs (list[str]): Any additional source-specific values that may be used to
+            disambiguate or identify the candidate from others.
         match_value (float): 0 to 1 scale of how well the candidate album matches with
             the album being imported.
-        source_str (str): A string identifying the release and it's source
-            e.g. 'Musicbrainz: 1234'. This will be displayed as the last line in the
-            candidate prompt.
-        sub_header_info (list[str]): List of any additional info to include in the
-            candidate sub-header. The following fields are already included:
-            ['media', 'country', 'label']
         match_value_pct (str): ``match_value`` as a percentage.
+        plugin_source (str): String identifying the plugin this candidate came from e.g
+            "musicbrainz".
+        source_id (str): A unique string identifying the release within the source e.g.
+            musicbrainz' release id.
     """
 
     album: MetaAlbum
     match_value: float
-    source_str: str
-    sub_header_info: list[str] = field(default_factory=list)
+    plugin_source: str
+    source_id: str
+    disambigs: list[str] = field(default_factory=list)
 
     @property
     def match_value_pct(self) -> str:
