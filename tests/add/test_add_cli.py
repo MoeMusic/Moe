@@ -49,7 +49,11 @@ class AddCLIPlugin:
     @moe.hookimpl
     def get_candidates(album: Album) -> list[CandidateAlbum]:
         """Return a fake candidate for testing."""
-        return [CandidateAlbum(album=album, match_value=1, source_str="add plugin")]
+        return [
+            CandidateAlbum(
+                album=album, match_value=1, plugin_source="add plugin", source_id="1"
+            )
+        ]
 
 
 @pytest.mark.usefixtures("_tmp_add_config")
