@@ -16,7 +16,7 @@ from rich.console import Console
 
 import moe
 from moe import config
-from moe.config import Config, ConfigValidationError, MoeSession
+from moe.config import Config, ConfigValidationError, moe_sessionmaker
 
 __all__ = ["console"]
 
@@ -50,7 +50,7 @@ class Hooks:
             The function will be called like::
 
                 func(
-                    config: moe.Config,  # user config
+                    session: sqlalchemy.orm.session.Session, # library db session
                     args: argparse.Namespace,  # parsed commandline arguments
                 )
 
@@ -108,12 +108,11 @@ def _parse_args(args: list[str]):
     _set_log_lvl(parsed_args)
 
     # call the sub-command's handler within a single session
-    cli_session = MoeSession()
-    with cli_session.begin():
+    with moe_sessionmaker.begin() as session:
         try:
-            parsed_args.func(args=parsed_args)
+            parsed_args.func(session=session, args=parsed_args)
         except SystemExit:
-            cli_session.commit()
+            session.commit()
             raise
 
 

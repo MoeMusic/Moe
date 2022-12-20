@@ -2,6 +2,7 @@
 
 
 from datetime import date
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -91,16 +92,16 @@ class TestQueries:
     def test_empty_query_str(self):
         """Empty queries strings should raise a QueryError."""
         with pytest.raises(QueryError):
-            query("", "track")
+            query(MagicMock(), "", "track")
 
     def test_empty_query(self, tmp_session):
         """Empty queries should return an empty list."""
-        assert not query("title:nope", "track")
+        assert not query(tmp_session, "title:nope", "track")
 
     def test_invalid_query_str(self, tmp_session):
         """Invalid queries should raise a QueryError."""
         with pytest.raises(QueryError):
-            query("invalid", "track")
+            query(tmp_session, "invalid", "track")
 
     def test_return_type(self, tmp_session):
         """Queries return the appropriate type."""
@@ -108,9 +109,9 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        albums = query(f"a:title:'{album.title}'", "album")
-        extras = query(f"a:title:'{album.title}'", "extra")
-        tracks = query(f"a:title:'{album.title}'", "track")
+        albums = query(tmp_session, f"a:title:'{album.title}'", "album")
+        extras = query(tmp_session, f"a:title:'{album.title}'", "extra")
+        tracks = query(tmp_session, f"a:title:'{album.title}'", "track")
 
         assert albums
         for album in albums:
@@ -128,8 +129,8 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query(f"a:year:{album.year}", "album")
-        assert query(f"a:original_year:{album.original_year}", "album")
+        assert query(tmp_session, f"a:year:{album.year}", "album")
+        assert query(tmp_session, f"a:original_year:{album.original_year}", "album")
 
     def test_multiple_terms(self, tmp_session):
         """We should be able to query for multiple terms at once."""
@@ -137,14 +138,14 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query(f"a:year:{album.year} a:title:{album.title}", "album")
+        assert query(tmp_session, f"a:year:{album.year} a:title:{album.title}", "album")
 
     def test_regex(self, tmp_session):
         """Queries can use regular expression matching."""
         tmp_session.add(track_factory())
         tmp_session.flush()
 
-        assert query("title::.*", "track")
+        assert query(tmp_session, "title::.*", "track")
 
     def test_path_query(self, tmp_config, tmp_session):
         """We can query for paths."""
@@ -153,22 +154,22 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query(f"'a:path:{str(album.path.resolve())}'", "album")
-        assert query("'a:path::.*'", "album")
+        assert query(tmp_session, f"'a:path:{str(album.path.resolve())}'", "album")
+        assert query(tmp_session, "'a:path::.*'", "album")
 
     def test_case_insensitive_value(self, tmp_session):
         """Query values should be case-insensitive."""
         tmp_session.add(album_factory(title="TMP"))
         tmp_session.flush()
 
-        assert query("a:title:tmp", "album")
+        assert query(tmp_session, "a:title:tmp", "album")
 
     def test_regex_non_str(self, tmp_session):
         """Non string fields should be converted to strings for matching."""
         tmp_session.add(album_factory())
         tmp_session.flush()
 
-        assert query("a:year::.*", "album")
+        assert query(tmp_session, "a:year::.*", "album")
 
     def test_invalid_regex(self, tmp_session):
         """Invalid regex queries should raise a QueryError."""
@@ -176,22 +177,22 @@ class TestQueries:
         tmp_session.flush()
 
         with pytest.raises(QueryError):
-            query("title::[", "album")
+            query(tmp_session, "title::[", "album")
 
     def test_regex_case_insensitive(self, tmp_session):
         """Regex queries should be case-insensitive."""
         tmp_session.add(album_factory(title="TMP"))
         tmp_session.flush()
 
-        assert query("a:title::tmp", "album")
+        assert query(tmp_session, "a:title::tmp", "album")
 
     def test_like_query(self, tmp_session):
         """Test sql LIKE queries. '%' and '_' are wildcard characters."""
         tmp_session.add(track_factory(track_num=1))
         tmp_session.flush()
 
-        assert query("track_num:_", "track")
-        assert query("track_num:%", "track")
+        assert query(tmp_session, "track_num:_", "track")
+        assert query(tmp_session, "track_num:%", "track")
 
     def test_like_escape_query(self, tmp_session):
         r"""We should be able to escape the LIKE wildcard characters with '/'.
@@ -203,29 +204,29 @@ class TestQueries:
         tmp_session.add(album_factory(title="_"))
         tmp_session.flush()
 
-        assert len(query("a:title:/_", "album")) == 1
+        assert len(query(tmp_session, "a:title:/_", "album")) == 1
 
     def test_track_genre_query(self, tmp_session):
         """Querying 'genre' should use the 'genres' field."""
         tmp_session.add(track_factory(genres={"hip hop", "rock"}))
         tmp_session.flush()
 
-        assert query("'genre::.*'", "track")
-        assert query("'genre:hip hop'", "track")
+        assert query(tmp_session, "'genre::.*'", "track")
+        assert query(tmp_session, "'genre:hip hop'", "track")
 
     def test_album_catalog_num_query(self, tmp_session):
         """Querying 'catalog_num' should use the 'catalog_nums' field."""
         tmp_session.add(album_factory(catalog_nums={"1", "2"}))
         tmp_session.flush()
 
-        assert query("a:catalog_num:1 a:catalog_num:2", "album")
+        assert query(tmp_session, "a:catalog_num:1 a:catalog_num:2", "album")
 
     def test_wildcard_query(self, tmp_session):
         """'*' as a query should return all items."""
         tmp_session.add(album_factory())
         tmp_session.flush()
 
-        assert len(query("*", "album")) == 1
+        assert len(query(tmp_session, "*", "album")) == 1
 
     def test_missing_extras_tracks(self, tmp_session):
         """Ensure albums without extras or tracks."""
@@ -234,7 +235,7 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert len(query("*", "album")) == 1
+        assert len(query(tmp_session, "*", "album")) == 1
 
     def test_custom_fields(self, tmp_session):
         """We can query a custom field."""
@@ -245,7 +246,7 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:blah:album t:blah:track e:blah:extra", "album")
+        assert query(tmp_session, "a:blah:album t:blah:track e:blah:extra", "album")
 
     def test_custom_field_regex(self, tmp_session):
         """We can regex query a custom field."""
@@ -256,7 +257,7 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:blah::albu. t:blah::trac. e:blah::3", "album")
+        assert query(tmp_session, "a:blah::albu. t:blah::trac. e:blah::3", "album")
 
     def test_custom_list_field(self, tmp_session):
         """We can query custom list fields."""
@@ -267,6 +268,6 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query("a:blah:album t:blah:track e:blah:extra", "album")
-        assert query("a:blah:1 e:blah:2 t:blah:3", "album")
-        assert query("t:blah:3 t:blah:track", "album")
+        assert query(tmp_session, "a:blah:album t:blah:track e:blah:extra", "album")
+        assert query(tmp_session, "a:blah:1 e:blah:2 t:blah:3", "album")
+        assert query(tmp_session, "t:blah:3 t:blah:track", "album")

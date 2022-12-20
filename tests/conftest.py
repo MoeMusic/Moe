@@ -15,7 +15,7 @@ import sqlalchemy.orm
 
 import moe.write
 from moe import config
-from moe.config import Config, ExtraPlugin, MoeSession, session_factory
+from moe.config import Config, ExtraPlugin, moe_sessionmaker
 from moe.library import Album, Extra, Track
 
 __all__ = ["album_factory", "extra_factory", "track_factory"]
@@ -72,9 +72,7 @@ def tmp_config(
     Args:
         settings: Settings string to use. This has the same format as a normal
             ``config.toml`` file.
-        init_db: Whether or not to initialize the database.
-        tmp_db: Whether or not to use a temporary (in-memory) database. If ``True``,
-            the database will be initialized regardless of ``init_db``.
+        tmp_db: Whether or not to use a temporary (in-memory) database.
         extra_plugins: Any additional plugins to enable.
         config_dir: Optionally specifiy a config directory to use.
 
@@ -114,7 +112,7 @@ def tmp_config(
         )
 
     yield _tmp_config
-    session_factory.configure(bind=None)  # reset the database in between tests
+    moe_sessionmaker.configure(bind=None)  # reset the database in between tests
 
 
 @pytest.fixture
@@ -128,22 +126,17 @@ def tmp_session(tmp_config) -> Iterator[sqlalchemy.orm.session.Session]:
         The temporary session.
     """
     try:
-        MoeSession().get_bind()
+        moe_sessionmaker().get_bind()
     except sqlalchemy.exc.UnboundExecutionError:
-        MoeSession.remove()
         tmp_config("default_plugins = []", tmp_db=True)
 
-    session = MoeSession()
-    with session.begin():
+    with moe_sessionmaker.begin() as session:
         yield session
-
-    MoeSession.remove()
 
 
 @pytest.fixture(autouse=True)
 def _clean_moe():
-    """Ensure we aren't sharing sessions or configs between tests."""
-    MoeSession.remove()
+    """Ensure we aren't sharing configs between tests."""
     config.CONFIG = MagicMock()
 
 

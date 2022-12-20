@@ -9,6 +9,8 @@ import logging
 from collections import OrderedDict
 from typing import Any
 
+from sqlalchemy.orm.session import Session
+
 import moe
 import moe.cli
 from moe import config
@@ -53,16 +55,17 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     ls_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
+        session: Library db session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Invalid query or no items found.
     """
-    items = cli_query(args.query, query_type=args.query_type)
+    items = cli_query(session, args.query, query_type=args.query_type)
     items.sort()
 
     if args.info:

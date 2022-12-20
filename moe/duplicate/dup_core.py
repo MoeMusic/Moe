@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 import sqlalchemy
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe import config
@@ -24,7 +25,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def resolve_dup_items(item_a: LibItem, item_b: LibItem):
+    def resolve_dup_items(session: Session, item_a: LibItem, item_b: LibItem):
         """Resolve two duplicate items.
 
         A resolution should come in one of two forms:
@@ -49,6 +50,7 @@ class Hooks:
             addition to what's offered by default.
 
         Args:
+            session: Library db session.
             item_a: First item.
             item_b: Second item.
 
@@ -60,30 +62,30 @@ class Hooks:
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_changed_items(items: list[LibItem]):
+def edit_changed_items(session: Session, items: list[LibItem]):
     """Check for and resolve duplicates when items are edited."""
     yield  # run all `edit_changed_items` hook implementations
     albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
-    resolve_duplicates(albums)  # type: ignore
-    resolve_duplicates(tracks)  # type: ignore
-    resolve_duplicates(extras)  # type: ignore
+    resolve_duplicates(session, albums)  # type: ignore
+    resolve_duplicates(session, tracks)  # type: ignore
+    resolve_duplicates(session, extras)  # type: ignore
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_new_items(items: list[LibItem]):
+def edit_new_items(session: Session, items: list[LibItem]):
     """Check for and resolve duplicates when items are added to the library."""
     yield  # run all `edit_new_items` hook implementations
     albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
-    resolve_duplicates(albums)  # type: ignore
-    resolve_duplicates(tracks)  # type: ignore
-    resolve_duplicates(extras)  # type: ignore
+    resolve_duplicates(session, albums)  # type: ignore
+    resolve_duplicates(session, tracks)  # type: ignore
+    resolve_duplicates(session, extras)  # type: ignore
 
 
-def resolve_duplicates(items: list[LibItem]):
+def resolve_duplicates(session: Session, items: list[LibItem]):
     """Search for and resolve any duplicates of items in ``items``."""
     log.debug(f"Checking for duplicate items. [{items=!r}]")
 
@@ -92,8 +94,8 @@ def resolve_duplicates(items: list[LibItem]):
         if _is_removed(item):
             continue
 
-        dup_items = get_duplicates(item, items)
-        dup_items += get_duplicates(item)
+        dup_items = get_duplicates(session, item, items)
+        dup_items += get_duplicates(session, item)
 
         for dup_item in dup_items:
             if dup_item in resolved_items or _is_removed(item):
@@ -102,7 +104,9 @@ def resolve_duplicates(items: list[LibItem]):
             log.debug(
                 f"Resolving duplicate items. [item_a={item!r}, item_b={dup_item!r}]"
             )
-            config.CONFIG.pm.hook.resolve_dup_items(item_a=item, item_b=dup_item)
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=session, item_a=item, item_b=dup_item
+            )
             if (
                 not item.is_unique(dup_item)
                 and not _is_removed(item)
@@ -133,11 +137,12 @@ def _is_removed(item):
 
 
 def get_duplicates(
-    item: LibItem, others: Optional[list[LibItem]] = None
+    session: Session, item: LibItem, others: Optional[list[LibItem]] = None
 ) -> list[LibItem]:
     """Returns items considered duplicates of ``item``.
 
     Args:
+        session: Library db session.
         item: Library item to get duplicates of.
         others: Items to compare against. If not given, will query the database
             and compare against all items in the library.
@@ -148,7 +153,7 @@ def get_duplicates(
     """
     dup_items = []
     if not others:
-        others = query("*", type(item).__name__.lower())
+        others = query(session, "*", type(item).__name__.lower())
 
     for other in others:
         if (

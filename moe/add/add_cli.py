@@ -5,6 +5,8 @@ import logging
 from pathlib import Path
 from typing import Optional, cast
 
+from sqlalchemy.orm.session import Session
+
 import moe
 import moe.add
 import moe.cli
@@ -58,12 +60,13 @@ def _skip_import(
     raise SkipAdd()
 
 
-def _parse_args(args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
 
     Args:
+        session: Library db session.
         args: Commandline arguments to parse.
 
     Raises:
@@ -73,7 +76,7 @@ def _parse_args(args: argparse.Namespace):
 
     album: Optional[Album] = None
     if args.album_query:
-        albums = cast(Album, cli_query(args.album_query, "album"))
+        albums = cast(Album, cli_query(session, args.album_query, "album"))
 
         if len(albums) > 1:
             log.error("Query returned more than one album.")
@@ -84,7 +87,7 @@ def _parse_args(args: argparse.Namespace):
     error_count = 0
     for path in paths:
         try:
-            _add_path(path, album)
+            _add_path(session, path, album)
         except (AddError, AlbumError) as err:
             log.error(err)
             error_count += 1
@@ -95,10 +98,11 @@ def _parse_args(args: argparse.Namespace):
         raise SystemExit(1)
 
 
-def _add_path(path: Path, album: Optional[Album]):
+def _add_path(session: Session, path: Path, album: Optional[Album]):
     """Adds an item to the library from a given path.
 
     Args:
+        session: Library db session.
         path: Path to add. Either a directory for an Album or a file for a Track.
         album: If ``path`` is a file, add it to ``album`` if given. Note, this
             argument is required if adding an Extra.
@@ -110,15 +114,15 @@ def _add_path(path: Path, album: Optional[Album]):
     """
     if path.is_file():
         try:
-            moe.add.add_item(Track.from_file(path, album=album))
+            moe.add.add_item(session, Track.from_file(path, album=album))
         except TrackError:
             if not album:
                 raise AddError(
                     f"An album query is required to add an extra. [{path=!r}]"
                 ) from None
 
-            moe.add.add_item(Extra(album, path))
+            moe.add.add_item(session, Extra(album, path))
     elif path.is_dir():
-        moe.add.add_item(Album.from_dir(path))
+        moe.add.add_item(session, Album.from_dir(path))
     else:
         raise AddError(f"Path not found. [{path=}]")

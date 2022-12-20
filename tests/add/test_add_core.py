@@ -34,7 +34,7 @@ class TestAddItem:
     def test_track(self, tmp_session):
         """We can add tracks to the library."""
         track = track_factory()
-        moe.add.add_item(track)
+        moe.add.add_item(tmp_session, track)
 
         assert tmp_session.query(Track).one() == track
 
@@ -42,7 +42,7 @@ class TestAddItem:
     def test_album(self, tmp_session):
         """We can add albums to the library."""
         album = album_factory()
-        moe.add.add_item(album)
+        moe.add.add_item(tmp_session, album)
 
         assert tmp_session.query(Album).one() == album
 
@@ -50,7 +50,7 @@ class TestAddItem:
     def test_extra(self, tmp_session):
         """We can add extras to the library."""
         extra = extra_factory()
-        moe.add.add_item(extra)
+        moe.add.add_item(tmp_session, extra)
 
         assert tmp_session.query(Extra).one() == extra
 
@@ -62,7 +62,7 @@ class TestAddItem:
             tmp_db=True,
         )
 
-        moe.add.add_item(track_factory())
+        moe.add.add_item(tmp_session, track_factory())
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "pre_add"
@@ -76,7 +76,7 @@ class TestAddItem:
         track1.genre = "pop"
         track2.genre = "pop"
 
-        moe.add.add_item(album)
+        moe.add.add_item(tmp_session, album)
 
         db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:
@@ -88,8 +88,8 @@ class TestAddItem:
         track1 = track_factory(genres={"pop"})
         track2 = track_factory(genres={"pop"})
 
-        moe.add.add_item(track1)
-        moe.add.add_item(track2)
+        moe.add.add_item(tmp_session, track1)
+        moe.add.add_item(tmp_session, track2)
 
         db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:

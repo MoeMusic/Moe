@@ -1,7 +1,7 @@
 """Test shared library functionality."""
 
 import moe
-from moe.config import ExtraPlugin, MoeSession
+from moe.config import ExtraPlugin, moe_sessionmaker
 from moe.library import Album, Extra, Track
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -11,35 +11,35 @@ class LibItemPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def edit_changed_items(items):
+    def edit_changed_items(session, items):
         """Edit changed items."""
         for item in items:
             item.custom["changed"] = "edited"
 
     @staticmethod
     @moe.hookimpl
-    def edit_new_items(items):
+    def edit_new_items(session, items):
         """Edit new items."""
         for item in items:
             item.custom["new"] = "edited"
 
     @staticmethod
     @moe.hookimpl
-    def process_changed_items(items):
+    def process_changed_items(session, items):
         """Process changed items."""
         for item in items:
             item.custom["changed"] = "processed"
 
     @staticmethod
     @moe.hookimpl
-    def process_new_items(items):
+    def process_new_items(session, items):
         """Process new items."""
         for item in items:
             item.custom["new"] = "processed"
 
     @staticmethod
     @moe.hookimpl
-    def process_removed_items(items):
+    def process_removed_items(session, items):
         """Process removed items."""
         for item in items:
             item.custom["removed"] = "processed"
@@ -59,7 +59,7 @@ class TestHooks:
         extra = extra_factory()
         track = track_factory()
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(album)
         session.add(extra)
         session.add(track)
@@ -85,7 +85,7 @@ class TestHooks:
         extra = extra_factory()
         track = track_factory()
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(album)
         session.add(extra)
         session.add(track)
@@ -106,7 +106,7 @@ class TestHooks:
         extra = extra_factory()
         track = track_factory()
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(album)
         session.add(extra)
         session.add(track)
@@ -137,7 +137,7 @@ class TestHooks:
         extra = extra_factory()
         track = track_factory()
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(album)
         session.add(extra)
         session.add(track)
@@ -164,7 +164,7 @@ class TestHooks:
         extra = extra_factory(album=album)
         track = track_factory(album=album)
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(album)
         session.add(extra)
         session.add(track)
@@ -206,7 +206,7 @@ class TestCustomFields:
             db="persists", my_list=["wow", "change me"], growing_list=["one"]
         )
 
-        session = MoeSession()
+        session = moe_sessionmaker()
         session.add(track)
         session.commit()
         track.custom["db"] = "persisted"

@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -50,7 +50,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
         mock_edit.assert_called_once_with(track, "track_num", "3")
 
     def test_album(self, mock_query, mock_edit):
@@ -61,7 +61,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", query_type="album")
         mock_edit.assert_called_once_with(album, "title", "edit")
 
     def test_extra(self, mock_query, mock_edit):
@@ -72,7 +72,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="extra")
+        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
         mock_edit.assert_called_once_with(extra, "title", "edit")
 
     def test_multiple_items(self, mock_query, mock_edit):
