@@ -39,7 +39,7 @@ term in quotes.
 
 Numeric Range Queries
 =====================
-Queries on numeric fields can specify an acceptable range. To do this, specify the range by using two dots ``..`` in the beginning, middle, or end of the value. Dots in the beginning let you specifiy a minimum e.g. ``1..``, dots and the end let you specify a maximum e.g. ``..10``, and dots in the middle let you specify a range e.g. ``1..10``.
+Queries on numeric fields can specify a range of acceptable values by using two dots ``..`` in the beginning, middle, or end of the value. Dots in the beginning let you specifiy a minimum e.g. ``1..``, dots and the end let you specify a maximum e.g. ``..10``, and dots in the middle let you specify a range e.g. ``1..10``.
 
 For instance, the following will query for any albums released between 2010 and 2020:
 
