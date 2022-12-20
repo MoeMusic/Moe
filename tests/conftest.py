@@ -1,4 +1,5 @@
 """Shared pytest configuration."""
+
 import datetime
 import random
 import shutil
