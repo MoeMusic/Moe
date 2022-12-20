@@ -106,7 +106,9 @@ class TestUI:
 
     def test_full_diff_album(self):
         """Print prompt for fully different albums."""
-        old_album = album_factory(num_tracks=6, num_discs=2, artist="outkist")
+        old_album = album_factory(
+            num_tracks=6, num_discs=2, artist="outkist", label="new"
+        )
         new_album = album_factory(
             title=old_album.title,
             date=datetime.date(1999, 12, 31),
@@ -139,5 +141,12 @@ class TestUI:
         album_a = album_factory()
         album_b = album_factory(dup_album=album_a)
         album_a.title = "diff"
+
+        console.print(dup_cli._fmt_item_vs(album_a, album_b))
+
+    def test_no_extras(self):
+        """No extras section if the album doesn't have any extras."""
+        album_a = album_factory(num_extras=0)
+        album_b = album_factory(num_extras=0)
 
         console.print(dup_cli._fmt_item_vs(album_a, album_b))

@@ -65,9 +65,11 @@ class Hooks:
 def edit_changed_items(session: Session, items: list[LibItem]):
     """Check for and resolve duplicates when items are edited."""
     yield  # run all `edit_changed_items` hook implementations
+
     albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
+
     resolve_duplicates(session, albums)  # type: ignore
     resolve_duplicates(session, tracks)  # type: ignore
     resolve_duplicates(session, extras)  # type: ignore
@@ -77,9 +79,11 @@ def edit_changed_items(session: Session, items: list[LibItem]):
 def edit_new_items(session: Session, items: list[LibItem]):
     """Check for and resolve duplicates when items are added to the library."""
     yield  # run all `edit_new_items` hook implementations
+
     albums = [item for item in items if isinstance(item, Album)]  # resolve albums first
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
+
     resolve_duplicates(session, albums)  # type: ignore
     resolve_duplicates(session, tracks)  # type: ignore
     resolve_duplicates(session, extras)  # type: ignore
