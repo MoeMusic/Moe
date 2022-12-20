@@ -5,6 +5,7 @@ import logging
 from typing import cast
 
 import sqlalchemy.orm
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe import move as moe_move
@@ -32,18 +33,19 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     move_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Items will be moved according to the given user configuration.
 
     Args:
+        session: Library db session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Invalid query or no items found to move.
     """
-    albums = cast(list[Album], cli_query("*", query_type="album"))
+    albums = cast(list[Album], cli_query(session, "*", query_type="album"))
 
     if args.dry_run:
         dry_run_str = _dry_run(albums)

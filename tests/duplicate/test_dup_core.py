@@ -6,7 +6,7 @@ import pytest
 
 import moe
 from moe import remove
-from moe.config import ExtraPlugin, MoeSession
+from moe.config import ExtraPlugin
 from moe.library import Album, Extra, Track
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -16,13 +16,13 @@ class DuplicatePlugin:
 
     @staticmethod
     @moe.hookimpl
-    def resolve_dup_items(item_a, item_b):
+    def resolve_dup_items(session, item_a, item_b):
         """Resolve duplicates."""
         if isinstance(item_a, (Track, Album)):
             if item_a.title == "remove me":
-                remove.remove_item(item_a)
+                remove.remove_item(session, item_a)
             if item_b.title == "remove me":
-                remove.remove_item(item_b)
+                remove.remove_item(session, item_b)
             if item_a.title == "change me":
                 dest = item_a.path.parent / "new.mp3"
                 shutil.copyfile(item_a.path, dest)
@@ -45,103 +45,96 @@ def _tmp_dup_config(tmp_config):
 class TestResolveDupItems:
     """Test ``resolve_dup_items()``."""
 
-    def test_remove_a(self):
+    def test_remove_a(self, tmp_session):
         """Remove a track."""
         track_a = track_factory(exists=True, title="remove me")
         track_b = track_factory(exists=True, path=track_a.path)
 
-        session = MoeSession()
-        session.add(track_a)
-        session.add(track_b)
-        session.flush()
+        tmp_session.add(track_a)
+        tmp_session.add(track_b)
+        tmp_session.flush()
 
-        db_track = session.query(Track).one()
+        db_track = tmp_session.query(Track).one()
         assert db_track == track_b
 
-    def test_remove_b(self):
+    def test_remove_b(self, tmp_session):
         """Remove b track."""
         track_a = track_factory(exists=True)
         track_b = track_factory(exists=True, path=track_a.path, title="remove me")
 
-        session = MoeSession()
-        session.add(track_a)
-        session.add(track_b)
-        session.flush()
+        tmp_session.add(track_a)
+        tmp_session.add(track_b)
+        tmp_session.flush()
 
-        db_track = session.query(Track).one()
+        db_track = tmp_session.query(Track).one()
         assert db_track == track_a
 
-    def test_rm_existing_track(self):
+    def test_rm_existing_track(self, tmp_session):
         """Remove b track."""
         track_a = track_factory(exists=True, title="remove me")
         track_b = track_factory(exists=True, path=track_a.path)
 
-        session = MoeSession()
-        session.add(track_a)
-        session.flush()
-        session.add(track_b)
-        session.flush()
+        tmp_session.add(track_a)
+        tmp_session.flush()
+        tmp_session.add(track_b)
+        tmp_session.flush()
 
-        db_track = session.query(Track).one()
+        db_track = tmp_session.query(Track).one()
         assert db_track == track_b
 
-    def test_changing_fields(self):
+    def test_changing_fields(self, tmp_session):
         """Duplicates can be avoided by changing conflicting fields."""
         track_a = track_factory(exists=True, title="change me")
         track_b = track_factory(exists=True, path=track_a.path)
 
-        session = MoeSession()
-        session.add(track_a)
-        session.add(track_b)
-        session.flush()
+        tmp_session.add(track_a)
+        tmp_session.add(track_b)
+        tmp_session.flush()
 
-        db_tracks = session.query(Track).all()
+        db_tracks = tmp_session.query(Track).all()
         assert track_a in db_tracks
         assert track_b in db_tracks
 
-    def test_change_extra(self):
+    def test_change_extra(self, tmp_session):
         """Duplicate extras can be avoided."""
         extra_a = extra_factory(exists=True)
         extra_b = extra_factory(exists=True, path=extra_a.path)
 
-        session = MoeSession()
-        session.add(extra_a)
-        session.add(extra_b)
-        session.flush()
+        tmp_session.add(extra_a)
+        tmp_session.add(extra_b)
+        tmp_session.flush()
 
-        db_extras = session.query(Extra).all()
+        db_extras = tmp_session.query(Extra).all()
         assert extra_a in db_extras
         assert extra_b in db_extras
 
-    def test_remove_album(self):
+    def test_remove_album(self, tmp_session):
         """Remove an album."""
         album_a = album_factory(exists=True, title="remove me")
         album_b = album_factory(exists=True, path=album_a.path)
 
-        session = MoeSession()
-        session.add(album_a)
-        session.add(album_b)
-        session.flush()
+        tmp_session.add(album_a)
+        tmp_session.add(album_b)
+        tmp_session.flush()
 
-        db_album = session.query(Album).one()
+        db_album = tmp_session.query(Album).one()
         assert db_album == album_b
 
-    def test_album_first(self):
+    def test_album_first(self, tmp_session):
         """Albums should be processed first as they may resolve tracks or extras too."""
         album_a = album_factory(exists=True, title="remove me")
         album_b = album_factory(exists=True, path=album_a.path)
         album_b.tracks[0].path = album_a.tracks[0].path
         album_a.tracks[0].title = "change me"  # shouldn't get changed as
 
-        session = MoeSession()
-        session.add(album_a.tracks[0])
-        session.add(album_b.tracks[0])
-        session.add(album_a)
-        session.add(album_b)
-        session.flush()
+        tmp_session.add(album_a.tracks[0])
+        tmp_session.add(album_b.tracks[0])
+        tmp_session.add(album_a)
+        tmp_session.add(album_b)
+        tmp_session.flush()
 
-        db_album = session.query(Album).one()
+        db_album = tmp_session.query(Album).one()
         assert db_album == album_b
-        db_tracks = session.query(Track).all()
+        db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:
             assert track.title != "changed"

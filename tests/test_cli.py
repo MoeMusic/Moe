@@ -7,6 +7,7 @@ import pytest
 import moe
 import moe.cli
 from moe import config
+from moe.config import moe_sessionmaker
 from moe.library import Track
 from tests.conftest import track_factory
 
@@ -31,8 +32,7 @@ def test_commit_on_systemexit(tmp_config):
 
     assert error.value.code != 0
 
-    session = config.MoeSession()
-    with session.begin():
+    with moe_sessionmaker.begin() as session:
         session.query(Track).one()
 
 
@@ -42,8 +42,7 @@ def test_default_config(tmp_config):
     tmp_config(settings="default_plugins = ['cli', 'write', 'list']", init_db=True)
     track = track_factory(exists=True)
 
-    session = config.MoeSession()
-    with session.begin():
+    with moe_sessionmaker.begin() as session:
         session.add(track)
 
     moe.cli.main(cli_args)
@@ -69,7 +68,7 @@ class CLIPlugin:
     def add_command(cmd_parsers):
         """Add a `cli` command to Moe."""
 
-        def say_hello(args):
+        def say_hello(session, args):
             print("hello")
 
         cli_parser = cmd_parsers.add_parser("cli")

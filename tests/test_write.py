@@ -1,7 +1,7 @@
 """Tests the ``write`` plugin."""
 
 import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import mediafile
 import pytest
@@ -124,27 +124,38 @@ class TestProcessNewItems:
     def test_process_track(self, mock_write):
         """Any altered Tracks have their tags written."""
         track = track_factory()
-        config.CONFIG.pm.hook.process_new_items(items=[track])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_new_items(session=mock_session, items=[track])
 
         mock_write.assert_called_once_with(track)
 
     def test_process_extra(self, mock_write):
         """Any altered extras are ignored."""
-        config.CONFIG.pm.hook.process_new_items(items=[extra_factory()])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_new_items(
+            session=mock_session, items=[extra_factory()]
+        )
 
         mock_write.assert_not_called()
 
     def test_process_album(self, mock_write):
         """Any altered albums are ignored."""
-        config.CONFIG.pm.hook.process_new_items(items=[album_factory()])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_new_items(
+            session=mock_session, items=[album_factory()]
+        )
 
         mock_write.assert_not_called()
 
     def test_process_multiple_tracks(self, mock_write):
         """All altered tracks are written."""
         tracks = [track_factory(), track_factory()]
+        mock_session = MagicMock()
 
-        config.CONFIG.pm.hook.process_new_items(items=tracks)
+        config.CONFIG.pm.hook.process_new_items(session=mock_session, items=tracks)
 
         for track in tracks:
             mock_write.assert_any_call(track)
@@ -158,20 +169,28 @@ class TestProcessChangedItems:
     def test_process_track(self, mock_write):
         """Any altered Tracks have their tags written."""
         track = track_factory()
-        config.CONFIG.pm.hook.process_changed_items(items=[track])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_changed_items(session=mock_session, items=[track])
 
         mock_write.assert_called_once_with(track)
 
     def test_process_extra(self, mock_write):
         """Any altered extras are ignored."""
-        config.CONFIG.pm.hook.process_changed_items(items=[extra_factory()])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_changed_items(
+            session=mock_session, items=[extra_factory()]
+        )
 
         mock_write.assert_not_called()
 
     def test_process_album(self, mock_write):
         """Any altered albums should have their tracks written."""
         album = album_factory()
-        config.CONFIG.pm.hook.process_changed_items(items=[album])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.process_changed_items(session=mock_session, items=[album])
 
         for track in album.tracks:
             mock_write.assert_any_call(track)
@@ -179,8 +198,9 @@ class TestProcessChangedItems:
     def test_process_multiple_tracks(self, mock_write):
         """All altered tracks are written."""
         tracks = [track_factory(), track_factory()]
+        mock_session = MagicMock()
 
-        config.CONFIG.pm.hook.process_changed_items(items=tracks)
+        config.CONFIG.pm.hook.process_changed_items(session=mock_session, items=tracks)
 
         for track in tracks:
             mock_write.assert_any_call(track)
@@ -189,7 +209,10 @@ class TestProcessChangedItems:
     def test_dont_write_tracks_twice(self, mock_write):
         """Don't write a track twice if it's album is also in `items`."""
         track = track_factory()
+        mock_session = MagicMock()
 
-        config.CONFIG.pm.hook.process_changed_items(items=[track, track.album])
+        config.CONFIG.pm.hook.process_changed_items(
+            session=mock_session, items=[track, track.album]
+        )
 
         mock_write.assert_called_once_with(track)

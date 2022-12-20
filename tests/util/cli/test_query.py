@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -29,19 +29,21 @@ class TestCLIQuery:
     def test_bad_query(self, mock_query):
         """Exit with non-zero code if bad query given."""
         mock_query.side_effect = QueryError
+        mock_session = MagicMock()
 
         with pytest.raises(SystemExit) as error:
-            cli_query("bad query", "track")
+            cli_query(mock_session, "bad query", "track")
 
         assert error.value.code != 0
-        mock_query.assert_called_once_with("bad query", "track")
+        mock_query.assert_called_once_with(mock_session, "bad query", "track")
 
     def test_empty_query(self, mock_query):
         """Exit with non-zero code if bad query given."""
         mock_query.return_value = []
+        mock_session = MagicMock()
 
         with pytest.raises(SystemExit) as error:
-            cli_query("*", "track")
+            cli_query(mock_session, "*", "track")
 
         assert error.value.code != 0
-        mock_query.assert_called_once_with("*", "track")
+        mock_query.assert_called_once_with(mock_session, "*", "track")

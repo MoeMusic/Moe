@@ -6,6 +6,7 @@ This module provides the main entry point into the add process via ``add_item()`
 import logging
 
 import pluggy
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe import config
@@ -61,17 +62,17 @@ class AddAbortError(Exception):
     """Add process has been aborted by the user."""
 
 
-def add_item(item: LibItem):
+def add_item(session: Session, item: LibItem):
     """Adds a LibItem to the library.
 
     Args:
+        session: Library db session.
         item: Item to be added.
 
     Raises:
         AddError: Unable to add the item to the library.
     """
     log.debug(f"Adding item to the library. [{item=!r}]")
-    session = config.MoeSession()
 
     config.CONFIG.pm.hook.pre_add(item=item)
     session.add(item)

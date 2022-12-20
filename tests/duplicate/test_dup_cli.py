@@ -1,7 +1,7 @@
 """Test the duplicate plugin cli."""
 
 import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -27,13 +27,18 @@ class TestPrompt:
         track_a = track_factory()
         track_b = track_factory()
 
+        mock_session = MagicMock()
         with patch(
             "moe.duplicate.dup_cli.choice_prompt",
             autospec=True,
         ) as mock_prompt_choice:
-            config.CONFIG.pm.hook.resolve_dup_items(item_a=track_a, item_b=track_b)
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=mock_session, item_a=track_a, item_b=track_b
+            )
 
-        mock_prompt_choice.return_value.func.assert_called_once_with(track_a, track_b)
+        mock_prompt_choice.return_value.func.assert_called_once_with(
+            mock_session, track_a, track_b
+        )
 
     def test_keep_a(self, tmp_session):
         """When keeping item a."""
@@ -42,7 +47,7 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._keep_a(track_a, track_b)
+        dup_cli._keep_a(tmp_session, track_a, track_b)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "a"
@@ -54,7 +59,7 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._keep_b(track_a, track_b)
+        dup_cli._keep_b(tmp_session, track_a, track_b)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "b"
@@ -67,7 +72,7 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._merge(track_a, track_b)
+        dup_cli._merge(tmp_session, track_a, track_b)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "b"
@@ -81,7 +86,7 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._overwrite(track_a, track_b)
+        dup_cli._overwrite(tmp_session, track_a, track_b)
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "a"

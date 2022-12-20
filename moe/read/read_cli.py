@@ -3,6 +3,8 @@
 import argparse
 import logging
 
+from sqlalchemy.orm.session import Session
+
 import moe
 import moe.cli
 from moe import read, remove
@@ -31,18 +33,19 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     read_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
 
     Args:
+        session: Library db session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Path given does not exist.
     """
-    items = cli_query(args.query, args.query_type)
+    items = cli_query(session, args.query, args.query_type)
 
     error_count = 0
     for item in items:
@@ -50,7 +53,7 @@ def _parse_args(args: argparse.Namespace):
             read.read_item(item)
         except FileNotFoundError:
             if args.remove:
-                remove.remove_item(item)
+                remove.remove_item(session, item)
             else:
                 log.error(f"Could not find item's path. [{item=!r}]")
                 error_count += 1

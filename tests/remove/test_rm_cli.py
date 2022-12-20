@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -48,8 +48,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
-        mock_rm.assert_called_once_with(track)
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
+        mock_rm.assert_called_once_with(ANY, track)
 
     def test_album(self, mock_query, mock_rm):
         """Albums are removed from the database with valid query."""
@@ -59,8 +59,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="album")
-        mock_rm.assert_called_once_with(album)
+        mock_query.assert_called_once_with(ANY, "*", query_type="album")
+        mock_rm.assert_called_once_with(ANY, album)
 
     def test_extra(self, mock_query, mock_rm):
         """Extras are removed from the database with valid query."""
@@ -70,8 +70,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="extra")
-        mock_rm.assert_called_once_with(extra)
+        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
+        mock_rm.assert_called_once_with(ANY, extra)
 
     def test_multiple_items(self, mock_query, mock_rm):
         """All items returned from the query are removed."""
@@ -82,7 +82,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         for track in tracks:
-            mock_rm.assert_any_call(track)
+            mock_rm.assert_any_call(ANY, track)
         assert mock_rm.call_count == 2
 
 

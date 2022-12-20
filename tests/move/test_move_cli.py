@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -50,7 +50,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         mock_move.assert_not_called()
-        mock_query.assert_called_once_with("*", "album")
+        mock_query.assert_called_once_with(ANY, "*", "album")
 
     def test_move(self, mock_query, mock_move):
         """Test all items in the library are moved when the command is invoked."""
@@ -63,7 +63,7 @@ class TestCommand:
         for album in albums:
             mock_move.assert_any_call(album)
         assert mock_move.call_count == len(albums)
-        mock_query.assert_called_once_with("*", "album")
+        mock_query.assert_called_once_with(ANY, "*", "album")
 
 
 class TestPluginRegistration:

@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -48,7 +48,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
         mock_read.assert_called_once_with(track)
 
     def test_album(self, mock_query, mock_read):
@@ -59,7 +59,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", query_type="album")
         mock_read.assert_called_once_with(album)
 
     def test_multiple_items(self, mock_query, mock_read):
@@ -70,7 +70,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
         for track in tracks:
             mock_read.assert_any_call(track)
         assert mock_read.call_count == 2
@@ -108,7 +108,7 @@ class TestCommand:
         with patch("moe.read.read_cli.remove.remove_item") as mock_rm:
             moe.cli.main(cli_args)
 
-        mock_rm.assert_called_once_with(track)
+        mock_rm.assert_called_once_with(ANY, track)
 
 
 class TestPluginRegistration:

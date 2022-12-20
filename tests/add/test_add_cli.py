@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -68,7 +68,7 @@ class TestAddImportPromptChoice:
 
         assert any(choice.shortcut_key == "s" for choice in prompt_choices)
 
-    def test_skip_item(self, tmp_config):
+    def test_skip_item(self, tmp_config, tmp_session):
         """We can skip adding items to the library."""
         tmp_config(
             'default_plugins = ["cli", "add", "import", "write"]',
@@ -85,7 +85,7 @@ class TestAddImportPromptChoice:
         ):
             moe.cli.main(cli_args)
 
-        assert not config.MoeSession().query(Track).all()
+        assert not tmp_session.query(Track).all()
 
 
 @pytest.mark.usefixtures("_tmp_add_config")
@@ -99,7 +99,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_add.assert_called_once_with(track)
+        mock_add.assert_called_once_with(ANY, track)
 
     def test_non_track_file(self, mock_add):
         """Raise SystemExit if bad track file given."""
@@ -129,8 +129,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_add.assert_any_call(track)
-        mock_add.assert_any_call(album)
+        mock_add.assert_any_call(ANY, track)
+        mock_add.assert_any_call(ANY, album)
         assert mock_add.call_count == 2
 
     def test_single_error(self, tmp_path, mock_add):
@@ -145,7 +145,7 @@ class TestCommand:
             moe.cli.main(cli_args)
 
         assert error.value.code != 0
-        mock_add.assert_called_once_with(track)
+        mock_add.assert_called_once_with(ANY, track)
 
     def test_extra_file(self, mock_add, mock_query):
         """Extra files are added as tracks."""
@@ -155,7 +155,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_add.assert_called_once_with(extra)
+        mock_add.assert_called_once_with(ANY, extra)
 
     def test_extra_no_album(self, mock_add):
         """Raise SystemExit if trying to add an extra but no query was given."""

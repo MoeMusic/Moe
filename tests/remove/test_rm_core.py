@@ -7,7 +7,7 @@ import sqlalchemy.orm
 
 import moe
 from moe import remove as moe_rm
-from moe.config import ExtraPlugin, MoeSession
+from moe.config import ExtraPlugin
 from moe.library import Album, Extra, Track
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -22,7 +22,7 @@ def rm_track_before_flush(session, flush_context, instances):
     """Remove a track while the session is already flushing."""
     for item in session.new | session.dirty:
         if isinstance(item, Track) and item.title == "remove me":
-            moe_rm.remove_item(item)
+            moe_rm.remove_item(session, item)
 
 
 class RmPlugin:
@@ -30,10 +30,10 @@ class RmPlugin:
 
     @staticmethod
     @moe.hookimpl
-    def register_sa_event_listeners(session):
+    def register_sa_event_listeners():
         """Registers event listeners for editing and processing new items."""
         sqlalchemy.event.listen(
-            session,
+            sqlalchemy.orm.session.Session,
             "before_flush",
             rm_track_before_flush,
         )
@@ -49,7 +49,7 @@ class TestRemoveItem:
         tmp_session.add(track)
         tmp_session.flush()
 
-        moe_rm.remove_item(track)
+        moe_rm.remove_item(tmp_session, track)
 
         assert not tmp_session.query(Track).scalar()
 
@@ -63,7 +63,7 @@ class TestRemoveItem:
         tmp_session.add(album)
         tmp_session.flush()
 
-        moe_rm.remove_item(album)
+        moe_rm.remove_item(tmp_session, album)
 
         assert not tmp_session.query(Album).scalar()
         assert not tmp_session.query(Track).scalar()
@@ -76,23 +76,22 @@ class TestRemoveItem:
         tmp_session.add(extra)
         tmp_session.flush()
 
-        moe_rm.remove_item(extra)
+        moe_rm.remove_item(tmp_session, extra)
 
         assert not tmp_session.query(Extra).scalar()
 
     @pytest.mark.usefixtures("_tmp_rm_config")
-    def test_pending(self):
+    def test_pending(self, tmp_session):
         """We can remove items that have not yet been flushed."""
         track = track_factory()
-        session = MoeSession()
-        session.add(track)
+        tmp_session.add(track)
 
-        moe_rm.remove_item(track)
-        session.flush()
+        moe_rm.remove_item(tmp_session, track)
+        tmp_session.flush()
 
-        assert not session.query(Track).all()
+        assert not tmp_session.query(Track).all()
 
-    def test_in_flush(self, tmp_config):
+    def test_in_flush(self, tmp_config, tmp_session):
         """If the session is already flushing, ensure the delete happens first.
 
         This is to prevent potential duplciates from inserting into the database before
@@ -103,36 +102,34 @@ class TestRemoveItem:
             extra_plugins=[ExtraPlugin(RmPlugin, "rm_test")],
             tmp_db=True,
         )
-        session = MoeSession()
         track = track_factory()
         conflict_track = track_factory(path=track.path, title="remove me")
 
-        session.add(track)
-        session.flush()
-        session.add(conflict_track)
-        session.flush()
+        tmp_session.add(track)
+        tmp_session.flush()
+        tmp_session.add(conflict_track)
+        tmp_session.flush()
 
-        db_track = session.query(Track).one()
+        db_track = tmp_session.query(Track).one()
         assert db_track == track
 
-    def test_in_flush_rm_existing(self, tmp_config):
+    def test_in_flush_rm_existing(self, tmp_config, tmp_session):
         """Remove an already existing item while a session is flushing."""
         tmp_config(
             "default_plugins = ['remove']",
             extra_plugins=[ExtraPlugin(RmPlugin, "rm_test")],
             tmp_db=True,
         )
-        session = MoeSession()
         track = track_factory()
         conflict_track = track_factory(path=track.path)
 
-        session.add(track)
-        session.flush()
+        tmp_session.add(track)
+        tmp_session.flush()
         track.title = "remove me"
-        session.add(conflict_track)
-        session.flush()
+        tmp_session.add(conflict_track)
+        tmp_session.flush()
 
-        db_track = session.query(Track).one()
+        db_track = tmp_session.query(Track).one()
         assert db_track == conflict_track
 
 

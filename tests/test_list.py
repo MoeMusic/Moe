@@ -2,7 +2,7 @@
 
 from types import FunctionType
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -41,7 +41,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
         assert capsys.readouterr().out.strip("\n") == str(track)
 
     def test_album(self, capsys, mock_query):
@@ -52,7 +52,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", query_type="album")
         assert capsys.readouterr().out.strip("\n") == str(album)
 
     def test_extra(self, capsys, mock_query):
@@ -63,7 +63,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="extra")
+        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
         assert capsys.readouterr().out.strip("\n") == str(extra)
 
     def test_multiple_items(self, capsys, mock_query):
@@ -85,7 +85,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with("*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", query_type="track")
         assert capsys.readouterr().out.strip("\n") == str(track.path)
 
     def test_info_album(self, mock_query):
