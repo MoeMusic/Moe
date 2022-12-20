@@ -6,6 +6,7 @@ Note:
 
 import argparse
 import logging
+import shutil
 
 from sqlalchemy.orm.session import Session
 
@@ -29,6 +30,12 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         help="remove music from the library",
         parents=[query_parser],
     )
+    rm_parser.add_argument(
+        "-d",
+        "--delete",
+        action="store_true",
+        help="delete the items from the filesystem",
+    )
     rm_parser.set_defaults(func=_parse_args)
 
 
@@ -46,3 +53,9 @@ def _parse_args(session: Session, args: argparse.Namespace):
 
     for item in items:
         moe_rm.remove_item(session, item)
+
+        if args.delete:
+            if item.path.is_file():
+                item.path.unlink()
+            else:
+                shutil.rmtree(item.path)

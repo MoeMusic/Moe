@@ -33,7 +33,7 @@ def mock_query() -> Iterator[FunctionType]:
 @pytest.fixture
 def _tmp_rm_config(tmp_config):
     """A temporary config for the edit plugin with the cli."""
-    tmp_config('default_plugins = ["cli", "remove"]')
+    tmp_config('default_plugins = ["cli", "remove", "write"]')
 
 
 @pytest.mark.usefixtures("_tmp_rm_config")
@@ -84,6 +84,36 @@ class TestCommand:
         for track in tracks:
             mock_rm.assert_any_call(ANY, track)
         assert mock_rm.call_count == 2
+
+    def test_delete_album(self, mock_query, mock_rm):
+        """Delete albums if `-d` passed."""
+        cli_args = ["remove", "--delete", "*"]
+        album = album_factory(exists=True)
+        mock_query.return_value = [album]
+
+        moe.cli.main(cli_args)
+
+        assert not album.path.exists()
+
+    def test_delete_extra(self, mock_query, mock_rm):
+        """Delete extras if `-d` passed."""
+        cli_args = ["remove", "-d", "*"]
+        extra = extra_factory(exists=True)
+        mock_query.return_value = [extra]
+
+        moe.cli.main(cli_args)
+
+        assert not extra.path.exists()
+
+    def test_delete_track(self, mock_query, mock_rm):
+        """Delete tracks if `-d` passed."""
+        cli_args = ["remove", "-d", "*"]
+        track = track_factory(exists=True)
+        mock_query.return_value = [track]
+
+        moe.cli.main(cli_args)
+
+        assert not track.path.exists()
 
 
 class TestPluginRegistration:
