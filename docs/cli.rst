@@ -7,7 +7,7 @@ Moe ships with a command-line interface to access and manipulate your music libr
 
 add
 ===
-Adds music to your library.
+Adds music to your library and attempts to import metadata from any enabled sources.
 
 .. code-block:: bash
 
