@@ -212,5 +212,3 @@ def _fmt_value_vs(value_a: Any, value_b: Any) -> Optional[Text]:
         return Text(str(value_a), style="yellow")
     if value_a and not value_b:
         return Text(str(value_a), style="green")
-
-    return None

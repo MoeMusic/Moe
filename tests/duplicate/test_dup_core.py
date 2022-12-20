@@ -1,11 +1,15 @@
 """Test the duplicate plugin core."""
+
 import shutil
 from pathlib import Path
+from types import FunctionType
+from typing import Iterator
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 import moe
-from moe import remove
+from moe import config, remove
 from moe.config import ExtraPlugin
 from moe.library import Album, Extra, Track
 from tests.conftest import album_factory, extra_factory, track_factory
@@ -39,6 +43,15 @@ def _tmp_dup_config(tmp_config):
         extra_plugins=[ExtraPlugin(DuplicatePlugin, "dup_test")],
         tmp_db=True,
     )
+
+
+@pytest.fixture
+def mock_resolve_duplicates() -> Iterator[FunctionType]:
+    """Mock the `resolve_duplicates` function."""
+    with patch(
+        "moe.duplicate.dup_core.resolve_duplicates", autospec=True
+    ) as mock_resolve_dups:
+        yield mock_resolve_dups
 
 
 @pytest.mark.usefixtures("_tmp_dup_config")
@@ -138,3 +151,45 @@ class TestResolveDupItems:
         db_tracks = tmp_session.query(Track).all()
         for track in db_tracks:
             assert track.title != "changed"
+
+
+@pytest.mark.usefixtures("_tmp_dup_config")
+class TestEditChangedItems:
+    """Test the `edit_changed_items` hook."""
+
+    def test_dup_items(self, mock_resolve_duplicates):
+        """Resolve any duplicate albums when they're edited."""
+        album = album_factory()
+        extra = extra_factory()
+        track = track_factory()
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.edit_changed_items(
+            session=mock_session, items=[album, extra, track]
+        )
+
+        mock_resolve_duplicates.assert_any_call(mock_session, [album])
+        mock_resolve_duplicates.assert_any_call(mock_session, [extra])
+        mock_resolve_duplicates.assert_any_call(mock_session, [track])
+        assert mock_resolve_duplicates.call_count == 3
+
+
+@pytest.mark.usefixtures("_tmp_dup_config")
+class TestEditNewItems:
+    """Test the `edit_new_items` hook."""
+
+    def test_dup_items(self, mock_resolve_duplicates):
+        """Resolve any duplicate albums when they're edited."""
+        album = album_factory()
+        extra = extra_factory()
+        track = track_factory()
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.edit_new_items(
+            session=mock_session, items=[album, extra, track]
+        )
+
+        mock_resolve_duplicates.assert_any_call(mock_session, [album])
+        mock_resolve_duplicates.assert_any_call(mock_session, [extra])
+        mock_resolve_duplicates.assert_any_call(mock_session, [track])
+        assert mock_resolve_duplicates.call_count == 3

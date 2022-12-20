@@ -401,7 +401,6 @@ class Config:
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
-                    plugin.load()
                     self.pm.register(plugin.load(), plugin.name)
 
         # register plugin hookimpls for all extra plugins
