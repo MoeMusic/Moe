@@ -25,10 +25,6 @@ Optional Arguments
 ``-a ALBUM_QUERY, --album_query ALBUM_QUERY``
     Album to add an extra or track to (required if adding an extra).
 
-.. code-block:: bash
-
-    moe edit [-h] [-a | -e] query FIELD=VALUE [FIELD=VALUE ...]
-
 edit
 ====
 Edits music in your library.
