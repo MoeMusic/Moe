@@ -129,7 +129,7 @@ Removes music from your library.
 
 .. code-block:: bash
 
-    moe remove [-h] [-a | -e] query
+    moe remove [-h] [-a | -e] [-d] query
 
 Positional Arguments
 --------------------
@@ -144,3 +144,5 @@ Optional Arguments
     Query for matching albums instead of tracks.
 ``-e, --extra``
     Query for matching extras instead of tracks.
+``-d, --delete``
+    Delete the items from the filesystem.
