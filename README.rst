@@ -25,7 +25,6 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
     from moe.config import Config, ConfigValidationError
     from moe.library import Album
     from moe.write import write_tags
-
     import moe_musicbrainz
 
     def main():
