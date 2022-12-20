@@ -23,42 +23,6 @@ class QueryError(Exception):
     """Error querying an item from the library."""
 
 
-HELP_STR = r"""
-The query must be in the format 'field:value' where field is, by default, a track's
-field to match and value is that field's value (case-insensitive). To match an album's
-field or an extra's field, prepend the field with `a:` or `e:` respectively.
-Internally, this 'field:value' pair is referred to as a single term.
-
-By default, tracks will be returned by the query, but you can choose to return albums
-by using the ``-a, --album`` option, or you can return extras using the ``-e, --extra``
-option.
-
-If you would like to specify a value with whitespace or multiple words, enclose the
-term in quotes. Note, powershell users must use " as the outer quotes in this case.
-
-SQL LIKE query syntax is used for normal queries, which means
-the '_'  and '%' characters have special meaning:
-% - The percent sign represents zero, one, or multiple characters.
-_ - The underscore represents a single character.
-
-To match these special characters as normal, use '/' as an escape character.
-
-The value can also be a regular expression. To enforce this, use two colons
-e.g. 'field::value.*'
-
-As a shortcut to matching all entries, use '*' as the term.
-
-Finally, you can also specify any number of terms.
-For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
-"'artist:wu-tang clan' title:a%"
-
-Note that when using multiple terms, they are joined together using AND logic, meaning
-all terms must be true to return a match.
-
-For more information on queries, see the docs.
-https://mrmoe.readthedocs.io/en/latest/query.html
-"""
-
 # each query will be split into these groups
 FIELD_TYPE = "field_type"
 FIELD = "field"
@@ -71,7 +35,7 @@ def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
 
     Args:
         session: Library db session.
-        query_str: Query string to parse. See HELP_STR for more info.
+        query_str: Query string to parse. See the query docs for more info.
         query_type: Type of library item to return: either 'album', 'extra', or 'track'.
 
     Returns:
@@ -87,7 +51,7 @@ def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
 
     terms = shlex.split(query_str)
     if not terms:
-        raise QueryError(f"No query given.\n{HELP_STR}")
+        raise QueryError("No query given.")
 
     if query_type == "album":
         library_query = session.query(Album)
@@ -158,7 +122,7 @@ def _parse_term(term: str) -> dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        raise QueryError(f"Invalid query term. [{term=!r}]\n{HELP_STR}")
+        raise QueryError(f"Invalid query term. [{term=!r}]")
 
     match_dict = match.groupdict()
     match_dict[FIELD] = match_dict[FIELD].lower()

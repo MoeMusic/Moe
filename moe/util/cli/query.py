@@ -65,7 +65,7 @@ def cli_query(session: Session, query_str: str, query_type: str) -> list[LibItem
 
     Args:
         session: Library db session.
-        query_str: Query string to parse. See HELP_STR for more info.
+        query_str: Query string to parse. See the query docs for more info.
         query_type: Type of library item to return: either 'album', 'extra', or 'track'.
 
     Returns:
@@ -73,6 +73,9 @@ def cli_query(session: Session, query_str: str, query_type: str) -> list[LibItem
 
     Raises:
         SystemExit: QueryError or no items returned from the query.
+
+    See Also:
+        `The query docs <https://mrmoe.readthedocs.io/en/latest/query.html>`_
     """
     try:
         items = query(session, query_str, query_type)
