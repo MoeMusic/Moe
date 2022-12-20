@@ -29,7 +29,7 @@ There also exist external or third-party plugins that extend the functionality o
 *********
 Now what?
 *********
-The first step is configuring Moe to your liking. To do this, check out the :doc:`configuration docs <configuration>`. You can also check out the various :doc:`third-party plugins <third_party_plugins>` available to extend the core functionality even further.
+The first step is configuring Moe to your liking. To do this, check out the :doc:`configuration docs <configuration>`.
 
 .. note::
 
