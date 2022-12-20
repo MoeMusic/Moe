@@ -77,8 +77,8 @@ To match these special characters as normal, use ``/`` as an escape character.
 
     'title:100/%'
 
-Regular Express Queries
-=======================
+Regular Expression Queries
+==========================
 The value can also be a regular expression. To enforce this, use two colons
 e.g. ``field::value.*``
 
