@@ -11,6 +11,8 @@ The query must be in the format ``field:value`` where ``field`` is, by default, 
 
 By default, tracks will be returned by the query, but you can choose to return albums by using the ``-a, --album`` option, or you can return extras using the ``-e, --extra`` option.
 
+Normal Queries
+==============
 If you would like to specify a value with whitespace or multiple words, enclose the
 term in quotes.
 
@@ -28,7 +30,41 @@ term in quotes.
 
    For powershell users, it's necessary to use ``"`` as the outer quotes.
 
+.. note::
+   When querying for a field that supports multiple values, query for one term per value. For example, to query for tracks with the genres 'hip hop' and 'pop', use:
 
+   .. code-block:: bash
+
+       "'genre:hip hop' genre:pop"
+
+Numeric Range Queries
+=====================
+Queries on numeric fields can specify an acceptable range. To do this, specify the range by using two dots ``..`` in the beginning, middle, or end of the value. Dots in the beginning let you specifiy a minimum e.g. ``1..``, dots and the end let you specify a maximum e.g. ``..10``, and dots in the middle let you specify a range e.g. ``1..10``.
+
+For instance, the following will query for any albums released between 2010 and 2020:
+
+.. code-block::
+
+    "a:year:2010..2020"
+
+Whereas this query will find any albums released prior to 2020:
+
+.. code-block::
+
+    "a:year:..2020"
+
+And finally, this query will find any albums released after 2010:
+
+.. code-block::
+
+    "a:year:2010.."
+
+.. note::
+
+   Query ranges are *inclusive* i.e. items matching the minimum or maximum value will also be included.
+
+SQL Like Queries
+================
 `SQL LIKE <https://www.w3schools.com/sql/sql_like.asp>`_ query syntax is used for normal queries, which means
 the ``_``  and ``%`` characters have special meaning:
 
@@ -41,6 +77,8 @@ To match these special characters as normal, use ``/`` as an escape character.
 
     'title:100/%'
 
+Regular Express Queries
+=======================
 The value can also be a regular expression. To enforce this, use two colons
 e.g. ``field::value.*``
 
@@ -54,7 +92,12 @@ As a shortcut to matching all entries, use ``*`` as the term.
 
     '*'
 
-Finally, you can also specify any number of terms.
+.. tip::
+    Normal queries may be faster when compared to regular expression queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the ``%`` and ``_`` wildcard characters.
+
+Multiple Query Terms
+====================
+You can also specify any number of terms.
 For example, to match all Wu-Tang Clan tracks that start with the letter 'A', use:
 
 .. code-block:: bash
@@ -64,15 +107,5 @@ For example, to match all Wu-Tang Clan tracks that start with the letter 'A', us
 .. note::
     When using multiple terms, they are joined together using AND logic, meaning all terms must be true to return a match.
 
-.. note::
-   When querying for a field that supports multiple values, query for one term per value. For example, to query for tracks with the genres 'hip hop' and 'pop', use:
-
-   .. code-block:: bash
-
-       "'genre:hip hop' genre:pop"
-
 .. tip::
     Fields of different types can be mixed and matched in a query string. For example, the query ``--extras 'album:The College Dropout' e:path:%jpg$`` will return any extras with the 'jpg' file extension belonging to the album titled 'The College Dropout'.
-
-.. tip::
-    Normal queries may be faster when compared to regular expression queries. If you are experiencing performance issues with regex queries, see if you can make an equivalent normal query using the ``%`` and ``_`` wildcard characters.

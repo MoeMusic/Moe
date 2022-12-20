@@ -271,3 +271,34 @@ class TestQueries:
         assert query(tmp_session, "a:blah:album t:blah:track e:blah:extra", "album")
         assert query(tmp_session, "a:blah:1 e:blah:2 t:blah:3", "album")
         assert query(tmp_session, "t:blah:3 t:blah:track", "album")
+
+    def test_numeric_query_range(self, tmp_session):
+        """We can query for a range."""
+        tmp_session.add(track_factory(track_num=2))
+        tmp_session.flush()
+
+        assert query(tmp_session, "t:track_num:1..3", "track")
+
+    def test_numeric_lt(self, tmp_session):
+        """Numeric queries without a lower bound test less than the upper bound."""
+        tmp_session.add(track_factory(track_num=1))
+        tmp_session.flush()
+
+        assert query(tmp_session, "t:track_num:..3", "track")
+
+    def test_numeric_gt(self, tmp_session):
+        """Numeric queries without an upper bound test greater than the lower bound."""
+        tmp_session.add(track_factory(track_num=2))
+        tmp_session.flush()
+
+        assert query(tmp_session, "t:track_num:1..", "track")
+
+    def test_numeric_query_inclusive(self, tmp_session):
+        """Numeric queries should be inclusive of their upper or lower bounds."""
+        tmp_session.add(track_factory(track_num=1))
+        tmp_session.add(track_factory(track_num=3))
+        tmp_session.flush()
+
+        assert len(query(tmp_session, "t:track_num:1..3", "track")) == 2
+        assert len(query(tmp_session, "t:track_num:1..", "track")) == 2
+        assert len(query(tmp_session, "t:track_num:..3", "track")) == 2
