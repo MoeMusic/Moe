@@ -14,7 +14,7 @@ There's a couple of things you should understand about Moe's underlying API layo
 
 Using the API in other programs
 ===============================
-As illustrated :ref:`in the usage docs <index:Usage>`, Moe's suite of music management functions can be utilized in external programs without requiring a database of music.
+As illustrated :ref:`in the usage docs <index:Usage>`, Moe's suite of music management functions can be utilized in external programs without requiring a database of music. Obviously, in this case, you can't utilize any functions that require a database ``session``.
 
 The only requirement is to have or create a configuration file and initialize the configuration in your program. For example, your script should include something like the following:
 
