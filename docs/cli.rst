@@ -43,7 +43,7 @@ Positional Arguments
     ``FIELD`` is any field for the type of query given. For example, if you are querying for albums with ``-a, --album``, ``field`` must be an album field.
     ``VALUE`` is the value to set the field to.
 
-    See the :doc:`fields page<../fields>` for all the available fields you can edit. The only exception is that you cannot edit the ``path`` of an item.
+    See the :doc:`fields page<fields>` for all the available fields you can edit. Note that some fields cannot be edited and are annotated as such.
 
     .. note::
         If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
