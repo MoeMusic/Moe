@@ -6,6 +6,83 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.0.0 (2022-12-20)
+===================
+I'm not particularly happy about how little time as passed between v1.0.0 and this release and I don't expect this timeframe to be the norm. In a perfect world, I'm releasing `at most` 1-2 major versions per year of Moe. I justified this timeframe as I still don't think there's many people using Moe and the list of breaking changes I wanted to implement had settled at a good number.
+
+With that said, I recommend reading through the following notes before upgrading.
+
+Breaking Changes
+----------------
+* Use mediafile dependency over moe_mediafile fork (`bcda77d <https://github.com/MoeMusic/Moe/commit/bcda77d3a16f545cc413c83b8e3fe031ae92ecab>`_)
+
+  Now that our changes have been merged into mediafile, there's no longer a need to use our fork.
+
+  You may experience issues if you have both moe_mediafile and mediafile installed together. **All users upgrading should explicitly uninstall moe_mediafile by running ``pip uninstall moe_mediafile``.**
+* DB sessions are now explicitly passed as arguments (`228a017 <https://github.com/MoeMusic/Moe/commit/228a01752b2d7a262a6c126ff9015da168e94e89>`_)
+
+  This helps clarify exactly which functions require the database to be initialized. Also, it helps avoid any potential future issues with relying entirely on a global/thread-local session factory.
+
+  The following functions/hooks are affected by this change:
+
+  * ``add.add_item`` - new ``session`` parameter
+  * ``cli.Hooks.add_command`` - the sub-command functions are now passed a ``session`` parameter
+  * ``config.Hooks.register_sa_event_listeners`` - ``session`` parameter removed
+  * ``duplicate.resolve_dup_items`` - new ``session`` parameter
+  * ``duplicate.Hooks.resolve_dup_items`` - new ``session`` parameter
+  * ``duplicate.resolve_duplicates`` - new ``session`` parameter
+  * ``duplicate.get_duplicates`` - new ``session`` parameter
+  * ``library.lib_item.Hooks.edit_changed_items`` - new ``session`` parameter
+  * ``library.lib_item.Hooks.edit_new_items`` - new ``session`` parameter
+  * ``library.lib_item.Hooks.process_removed_items`` - new ``session`` parameter
+  * ``library.lib_item.Hooks.process_changed_items`` - new ``session`` parameter
+  * ``library.lib_item.Hooks.process_new_items`` - new ``session`` parameter
+  * ``query.query`` - new ``session`` parameter
+  * ``remove.remove_item`` - new ``session`` parameter
+  * ``util.cli.query.cli_query`` - new ``session`` parameter
+
+  ``config.MoeSession`` has also been replaced with ``config.moe_sessionmaker``. Sessions should no longer be created by importing ``MoeSession``, and instead should use a session parameter that is created at the top-level of an application. Refer to the ``config.py`` docstring as well as ``cli.py`` for more information on how to handle sessions now.
+* Changed CandidateAlbum attributes (`9cc69db <https://github.com/MoeMusic/Moe/commit/9cc69db04de874fa00d69eadb031c8b3837c200e>`_)
+
+  * ``source_str`` is now split into two fields: ``plugin_source`` and ``source_id``. This is so in the future we can check against the ``plugin_source`` and apply different handling criteria per plugin e.g. import weight values.
+  * ``sub_header_info`` renamed to ``disambigs``. The "sub-header" is specific to the cli, so it was renamed to be more generalized.
+* Replaced ``lib_path`` arg for ``fmt_item_path`` with optional ``parent`` arg (`cc267d5 <https://github.com/MoeMusic/Moe/commit/cc267d526f864eea63b9b8474f9a17ce2284eddb>`_)
+
+  This is more flexible as it allows specifying the direct parent for albums, extras and tracks instead of just albums.
+* Removed sync plugin (`ae0889d <https://github.com/MoeMusic/Moe/commit/ae0889ddb743930ffc283f91e3e8924658e03287>`_)
+
+  The original idea of the sync plugin to sync multiple metadata sources with one command has some implementation barriers that were not fully fleshed out. Instead, each plugin should just implement their own sync commands.
+* Removed musicbrainz plugin (`d171be0 <https://github.com/MoeMusic/Moe/commit/d171be042a8b9ada544096eb0245c5fe3d31020b>`_)
+
+  Musicbrainz is now a third-party plugin to be consistent with Moe's policy that any external source plugins should not be in the core repository.
+
+  If you'd like to continue to use musicbrainz as an import source, you can install the new plugin with ``pip install moe_musicbrainz``. Also, ensure to enable it in your configuration. You can find more information on the `Thid-Pary Plugins` documentation page.
+* Removed ``plugin`` sub-directory and package (`d3d756d <https://github.com/MoeMusic/Moe/commit/d3d756d5f49dab27baad42b7ccc5b547a03a726d>`_)
+
+  Now, rather than having to import an api function as ``moe.plugins.add.add_item``, it's just ``moe.add.add_item``. I felt the extra ``plugins`` import level was unnecessarily verbose.
+* Custom fields now require dictionary access (`1df625c <https://github.com/MoeMusic/Moe/commit/1df625cd1bc924301fe7cf807f354cbab458738e>`_)
+
+  Custom fields must now be accessed via ``item.custom["my_custom_field"]`` i.e. normal dictionary access.
+
+  I changed this from normal attribute access as overriding ``__getattr__`` and ``__setattr__`` (required for transparent attribute access) had some finicky conflicts with sqlalchemy. Also, it prevented type hinting the custom attribute dictionary as well as integration with data serializers such as pydantic.
+
+  Overall, the more I used them, the more issues I found, and the more it felt like a hack. I believe the new explicit dictionary access for custom attributes will prove to be more bulletproof. It also explicitly delineates normal and custom attributes which can be useful in some cases.
+* Renamed ``album_obj`` reference to ``album`` in tracks and extras (`51ff9a9 <https://github.com/MoeMusic/Moe/commit/51ff9a97284c0bb9bc891b763030565670fed7cf>`_)
+
+  ``track.album`` now refers to the actual album object (renamed from ``track.album_obj``) and ``track.albumartist`` has been removed. Similarly, ``extra.album_obj`` has been renamed to ``extra.album``.
+
+  The original idea was that ``track.album`` was a string that referred to an album's title, while ``track.album_obj`` was the actual album object itself. ``track.album`` and ``track.albumartist`` were "mapped" attributes of an album directly exposed in the track API due to convention. However, these mapped attributes are not first-class attributes as far as sqlalchemy is concerned, and thus have additional issues and considerations compared to normal attributes. Ultimately, I decided these mapped attributes are not worth the headache.
+
+Performance Enhancements
+------------------------
+* Slightly improved start-up time by importing default plugins (`0ffd10a <https://github.com/MoeMusic/Moe/commit/0ffd10a08d26e330308944ff01dcab77fbc6f4ac>`_)
+
+Build Changes
+-------------
+* Removed pyyaml dependency (`2519817 <https://github.com/MoeMusic/Moe/commit/2519817b984a83837118c4b671b7f7386b5bb887>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.5.1...v2.0.0>`__
+
 v1.5.1 (2022-11-06)
 ===================
 
