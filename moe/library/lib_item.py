@@ -11,6 +11,7 @@ import sqlalchemy.event
 import sqlalchemy.orm
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe import config
@@ -31,10 +32,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_changed_items(items: list["LibItem"]):
+    def edit_changed_items(session: Session, items: list["LibItem"]):
         """Edit items in the library that were changed in some way.
 
         Args:
+            session: Library db session.
             items: Any changed items that existed in the library prior to the current
                 session.
 
@@ -45,10 +47,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def edit_new_items(items: list["LibItem"]):
+    def edit_new_items(session: Session, items: list["LibItem"]):
         """Edit new items in the library.
 
         Args:
+            session: Library db session.
             items: Any items being added to the library for the first time.
 
         See Also:
@@ -58,20 +61,22 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_removed_items(items: list["LibItem"]):
+    def process_removed_items(session: Session, items: list["LibItem"]):
         """Process items that have been removed from the library.
 
         Args:
+            session: Library db session.
             items: Any items that existed in the library prior to the current session,
                 but have now been removed from the library.
         """
 
     @staticmethod
     @moe.hookspec
-    def process_changed_items(items: list["LibItem"]):
+    def process_changed_items(session: Session, items: list["LibItem"]):
         """Process items in the library that were changed in some way.
 
         Args:
+            session: Library db session.
             items: Any changed items that existed in the library prior to the current
                 session.
 
@@ -85,10 +90,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def process_new_items(items: list["LibItem"]):
+    def process_new_items(session: Session, items: list["LibItem"]):
         """Process new items in the library.
 
         Args:
+            session: Library db session.
             items: Any items being added to the library for the first time.
 
         Important:
@@ -109,15 +115,15 @@ def add_hooks(pm: pluggy.manager.PluginManager):
 
 
 @moe.hookimpl
-def register_sa_event_listeners(session: sqlalchemy.orm.Session):
+def register_sa_event_listeners():
     """Registers event listeners for editing and processing new items."""
     sqlalchemy.event.listen(
-        session,
+        Session,
         "before_flush",
         _edit_before_flush,
     )
     sqlalchemy.event.listen(
-        session,
+        Session,
         "after_flush",
         _process_after_flush,
     )
@@ -148,7 +154,7 @@ def _edit_before_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Editing changed items. [{changed_items=!r}]")
-        config.CONFIG.pm.hook.edit_changed_items(items=changed_items)
+        config.CONFIG.pm.hook.edit_changed_items(session=session, items=changed_items)
         log.debug(f"Edited changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -157,7 +163,7 @@ def _edit_before_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Editing new items. [{new_items=!r}]")
-        config.CONFIG.pm.hook.edit_new_items(items=new_items)
+        config.CONFIG.pm.hook.edit_new_items(session=session, items=new_items)
         log.debug(f"Edited new items. [{new_items=!r}]")
 
 
@@ -184,7 +190,9 @@ def _process_after_flush(
             changed_items.append(dirty_item)
     if changed_items:
         log.debug(f"Processing changed items. [{changed_items=!r}]")
-        config.CONFIG.pm.hook.process_changed_items(items=changed_items)
+        config.CONFIG.pm.hook.process_changed_items(
+            session=session, items=changed_items
+        )
         log.debug(f"Processed changed items. [{changed_items=!r}]")
 
     new_items = []
@@ -193,7 +201,7 @@ def _process_after_flush(
             new_items.append(new_item)
     if new_items:
         log.debug(f"Processing new items. [{new_items=!r}]")
-        config.CONFIG.pm.hook.process_new_items(items=new_items)
+        config.CONFIG.pm.hook.process_new_items(session=session, items=new_items)
         log.debug(f"Processed new items. [{new_items=!r}]")
 
     removed_items = []
@@ -202,7 +210,9 @@ def _process_after_flush(
             removed_items.append(removed_item)
     if removed_items:
         log.debug(f"Processing removed items. [{removed_items=!r}]")
-        config.CONFIG.pm.hook.process_removed_items(items=removed_items)
+        config.CONFIG.pm.hook.process_removed_items(
+            session=session, items=removed_items
+        )
         log.debug(f"Processed removed items. [{removed_items=!r}]")
 
 

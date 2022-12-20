@@ -6,7 +6,6 @@ import sqlalchemy
 import sqlalchemy.exc
 from sqlalchemy.orm.session import Session
 
-from moe.config import MoeSession
 from moe.library import Extra, LibItem, Track
 
 __all__ = ["remove_item"]
@@ -14,10 +13,9 @@ __all__ = ["remove_item"]
 log = logging.getLogger("moe.remove")
 
 
-def remove_item(item: LibItem):
+def remove_item(session: Session, item: LibItem):
     """Removes an item from the library."""
     log.debug(f"Removing item from the library. [{item=!r}]")
-    session = MoeSession()
 
     insp = sqlalchemy.inspect(item)
     if insp.persistent:

@@ -3,6 +3,8 @@
 import argparse
 import logging
 
+from sqlalchemy.orm.session import Session
+
 from moe.library import LibItem
 from moe.query import QueryError, query
 
@@ -58,10 +60,11 @@ query_type_group.add_argument(
 query_parser.set_defaults(query_type="track")
 
 
-def cli_query(query_str: str, query_type: str) -> list[LibItem]:
+def cli_query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
     """Wrapper around the core query call, with some added cli error handling.
 
     Args:
+        session: Library db session.
         query_str: Query string to parse. See HELP_STR for more info.
         query_type: Type of library item to return: either 'album', 'extra', or 'track'.
 
@@ -72,7 +75,7 @@ def cli_query(query_str: str, query_type: str) -> list[LibItem]:
         SystemExit: QueryError or no items returned from the query.
     """
     try:
-        items = query(query_str, query_type)
+        items = query(session, query_str, query_type)
     except QueryError as err:
         log.error(err)
         raise SystemExit(1) from err

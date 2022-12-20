@@ -9,8 +9,8 @@ from typing import Type
 import sqlalchemy as sa
 import sqlalchemy.orm
 import sqlalchemy.sql.elements
+from sqlalchemy.orm.session import Session
 
-from moe.config import MoeSession
 from moe.library import Album, Extra, LibItem, Track
 from moe.library.lib_item import SetType
 
@@ -66,10 +66,11 @@ SEPARATOR = "separator"
 VALUE = "value"
 
 
-def query(query_str: str, query_type: str) -> list[LibItem]:
+def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
     """Queries the database for items matching the given query string.
 
     Args:
+        session: Library db session.
         query_str: Query string to parse. See HELP_STR for more info.
         query_type: Type of library item to return: either 'album', 'extra', or 'track'.
 
@@ -83,7 +84,6 @@ def query(query_str: str, query_type: str) -> list[LibItem]:
         `The query docs <https://mrmoe.readthedocs.io/en/latest/query.html>`_
     """
     log.debug(f"Querying library for items. [{query_str=!r}, {query_type=!r}]")
-    session = MoeSession()
 
     terms = shlex.split(query_str)
     if not terms:

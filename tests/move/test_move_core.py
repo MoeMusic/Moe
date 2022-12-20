@@ -1,6 +1,6 @@
 """Tests the core api for moving items."""
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -476,21 +476,27 @@ class TestEditNewItems:
     def test_album(self, mock_copy):
         """Albums are copied after they are added to the library."""
         album = album_factory()
-        config.CONFIG.pm.hook.edit_new_items(items=[album])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.edit_new_items(session=mock_session, items=[album])
 
         mock_copy.assert_called_once_with(album)
 
     def test_track(self, mock_copy):
         """Tracks are copied after they are added to the library."""
         track = track_factory()
-        config.CONFIG.pm.hook.edit_new_items(items=[track])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.edit_new_items(session=mock_session, items=[track])
 
         mock_copy.assert_called_once_with(track)
 
     def test_extra(self, mock_copy):
         """Extras are copied after they are added to the library."""
         extra = extra_factory()
-        config.CONFIG.pm.hook.edit_new_items(items=[extra])
+        mock_session = MagicMock()
+
+        config.CONFIG.pm.hook.edit_new_items(session=mock_session, items=[extra])
 
         mock_copy.assert_called_once_with(extra)
 

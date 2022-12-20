@@ -7,6 +7,8 @@ Note:
 import argparse
 import logging
 
+from sqlalchemy.orm.session import Session
+
 import moe
 import moe.cli
 from moe import remove as moe_rm
@@ -30,16 +32,17 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     rm_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace):
     """Parses the given commandline arguments.
 
     Args:
+        session: Library db session.
         args: Commandline arguments to parse.
 
     Raises:
         SystemExit: Invalid query given, or no items to remove.
     """
-    items = cli_query(args.query, query_type=args.query_type)
+    items = cli_query(session, args.query, query_type=args.query_type)
 
     for item in items:
-        moe_rm.remove_item(item)
+        moe_rm.remove_item(session, item)

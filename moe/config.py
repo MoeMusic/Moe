@@ -7,6 +7,19 @@ config can be accessed through import and should be treated as a constant::
 
     from moe import config
     print(config.CONFIG.settings.library_path)
+
+Any application requiring use of the database should initiate a single sqlalchemy
+'session'. This session should use ``moe_sessionmaker`` to instantiate a session to
+connect to the database::
+
+    with moe_sessionmaker.begin() as session:
+        # do work
+
+See Also:
+    * `The sqlalchemy Session docs
+      <https://docs.sqlalchemy.org/en/20/orm/session_basics.html#session-basics>`
+    * ``moe/cli.py`` for an example on how the CLI handles creating the configuration
+      and database connection via the session.
 """
 
 import importlib
@@ -30,8 +43,7 @@ import alembic.command
 import alembic.config
 import moe
 
-session_factory = sqlalchemy.orm.sessionmaker(autoflush=False)
-MoeSession = sqlalchemy.orm.scoped_session(session_factory)
+moe_sessionmaker = sqlalchemy.orm.sessionmaker(autoflush=False)
 
 __all__ = ["CONFIG", "Config", "ConfigValidationError", "ExtraPlugin"]
 
@@ -145,11 +157,11 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def register_sa_event_listeners(session: sqlalchemy.orm.Session):
+    def register_sa_event_listeners():
         """Registers new sqlalchemy event listeners.
 
-        Args:
-            session: Session to attach the listener to.
+        These listeners will automatically apply to all sessions globally if the
+        `Session` class is passed as the listener target as shown in the example.
 
         Important:
             This hooks is for Moe internal use only and should not be used by plugins.
@@ -158,7 +170,7 @@ class Hooks:
             .. code:: python
 
                 sqlalchemy.event.listen(
-                    session,
+                    Session,
                     "before_flush",
                     _my_func,
                 )
@@ -269,7 +281,7 @@ class Config:
         if not self.engine:
             self.engine = sqlalchemy.create_engine("sqlite:///" + str(db_path))
 
-        session_factory.configure(bind=self.engine)
+        moe_sessionmaker.configure(bind=self.engine)
 
         # create and update database tables
         if create_tables:
@@ -282,7 +294,7 @@ class Config:
                 alembic_cfg.attributes["connection"] = connection
                 alembic.command.upgrade(alembic_cfg, "head")
 
-        self.pm.hook.register_sa_event_listeners(config=self, session=MoeSession())
+        self.pm.hook.register_sa_event_listeners()
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")
