@@ -14,6 +14,7 @@ import datetime
 import pathlib
 import re
 import subprocess
+from textwrap import indent
 
 import github3
 from github3.repos import Repository
@@ -193,6 +194,8 @@ def generate_changelog(old_version: str, new_version: str) -> None:
         for commit in commits:
             if commit_type == commit.commit_type:
                 changelog_body += str(commit) + "\n"
+                if commit.breaking:
+                    changelog_body += "\n" + indent(commit.body, "  ") + "\n"
 
         changelog_body += "\n"
 
