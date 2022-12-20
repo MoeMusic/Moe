@@ -35,7 +35,7 @@ Album Fields
 * ``original_year`` - year of the original release of the album [#f3]_
 * ``path`` - filesystem path of the album [#f3]_
 * ``title`` - album title
-* ``track_total`` - number of tracks an album *should* have, not necessarily the number of tracks an album has in Mo
+* ``track_total`` - number of tracks an album *should* have, not necessarily the number of tracks an album has in Moe.
 * ``year`` - album release year
 
 ************
