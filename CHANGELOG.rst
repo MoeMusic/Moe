@@ -6,6 +6,31 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.0.0 (2022-12-20)
+===================
+
+Breaking Changes
+----------------
+* Db sessions are now explicitly passed as arguments (`228a017 <https://github.com/MoeMusic/Moe/commit/228a01752b2d7a262a6c126ff9015da168e94e89>`_)
+* Changed candidatealbum fields (`9cc69db <https://github.com/MoeMusic/Moe/commit/9cc69db04de874fa00d69eadb031c8b3837c200e>`_)
+* Replace lib_path arg for fmt_item_path with optional parent (`cc267d5 <https://github.com/MoeMusic/Moe/commit/cc267d526f864eea63b9b8474f9a17ce2284eddb>`_)
+* Remove sync plugin (`ae0889d <https://github.com/MoeMusic/Moe/commit/ae0889ddb743930ffc283f91e3e8924658e03287>`_)
+* Remove musicbrainz plugin (`d171be0 <https://github.com/MoeMusic/Moe/commit/d171be042a8b9ada544096eb0245c5fe3d31020b>`_)
+* Use mediafile over moe_mediafile (`bcda77d <https://github.com/MoeMusic/Moe/commit/bcda77d3a16f545cc413c83b8e3fe031ae92ecab>`_)
+* Remove plugin sub-directory and package (`d3d756d <https://github.com/MoeMusic/Moe/commit/d3d756d5f49dab27baad42b7ccc5b547a03a726d>`_)
+* Custom fields now require dictionary access (`1df625c <https://github.com/MoeMusic/Moe/commit/1df625cd1bc924301fe7cf807f354cbab458738e>`_)
+* Rename `album_obj` reference to `album` in tracks and extras (`51ff9a9 <https://github.com/MoeMusic/Moe/commit/51ff9a97284c0bb9bc891b763030565670fed7cf>`_)
+
+Performance Enhancements
+------------------------
+* Slightly improved start-up time by importing default plugins (`0ffd10a <https://github.com/MoeMusic/Moe/commit/0ffd10a08d26e330308944ff01dcab77fbc6f4ac>`_)
+
+Build Changes
+-------------
+* Remove pyyaml dependency (`2519817 <https://github.com/MoeMusic/Moe/commit/2519817b984a83837118c4b671b7f7386b5bb887>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v1.5.1...v2.0.0>`__
+
 v1.5.1 (2022-11-06)
 ===================
 
