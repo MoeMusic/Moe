@@ -7,7 +7,13 @@ Moe ships with a command-line interface to access and manipulate your music libr
 
 add
 ===
-Adds music to your library and attempts to import metadata from any enabled sources.
+Adds music to your library.
+
+By default, when adding music to your library, the ``import`` plugin will attempt to import metadata from any enabled sources, and the ``move`` plugin will copy the newly added files per your configuration. If you'd like to disable either behavior, you can disable the plugins either in your configuration file or by setting the ``MOE_DISABLE_PLUGINS`` environment variable.
+
+.. tip::
+
+   If your music already has correct tags, you can save a lot of time when adding it to Moe by disabling the ``import`` plugin.
 
 .. code-block:: bash
 
