@@ -6,6 +6,16 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.1.0 (2022-12-21)
+===================
+
+New Features
+------------
+* Add `-d` option to `rm` command to delete files (`8246eb8 <https://github.com/MoeMusic/Moe/commit/8246eb80da0453299274e133b27407917643cbd4>`_)
+* Query: Added support for numeric range queries (`fac29a1 <https://github.com/MoeMusic/Moe/commit/fac29a189cace54878c75a7373355b334ca84e14>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.0.0...v2.1.0>`__
+
 v2.0.0 (2022-12-20)
 ===================
 I'm not particularly happy about how little time as passed between v1.0.0 and this release and I don't expect this timeframe to be the norm. In a perfect world, I'm releasing `at most` 1-2 major versions per year of Moe. I justified this timeframe as I still don't think there's many people using Moe and the list of breaking changes I wanted to implement had settled at a good number.
