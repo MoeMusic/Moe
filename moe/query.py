@@ -157,13 +157,13 @@ def _create_filter_expression(field_type: str, field: str, separator: str, value
     attr = _get_field_attr(field, field_type)
 
     if separator == ":":
-        if match := re.fullmatch(r"(?P<low>\d*)..(?P<high>\d*)", value):
-            if match["low"] and match["high"]:
-                return sa.and_(attr >= match["low"], attr <= match["high"])
-            if match["low"]:
-                return attr >= match["low"]
-            if match["high"]:
-                return attr <= match["high"]
+        if num_range := re.fullmatch(r"(?P<min>\d*)..(?P<max>\d*)", value):
+            if num_range["min"] and num_range["max"]:
+                return sa.and_(attr >= num_range["min"], attr <= num_range["max"])
+            if num_range["min"]:
+                return attr >= num_range["min"]
+            if num_range["max"]:
+                return attr <= num_range["max"]
 
         if str(attr).endswith(".path"):
             return attr == Path(value)
