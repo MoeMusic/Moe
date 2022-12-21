@@ -5,15 +5,22 @@ Moe is our resident Music-Organizer-Extraordinaire who's sole purpose is to give
 
 In short, Moe maintains a database of your music library that can be updated with various metadata sources, queried, edited, etc. through either an API or command-line interface. All of these features, and more, are made available by a highly extensible plugin ecosystem.
 
+Because all of this functionality is available as a python API which doesn't always require a database of music to operate on, Moe also provides an extensive suite of tools for handling and operating on music files. This can greatly simplify or enhance any other script/program that deals with music.
+
 Usage
 =====
+
+CLI
+---
 Moe comes with a command-line interface which is how most users will take advantage of the library management features. Below is a screenshot of Moe importing an album from the filesystem and adding it to the underlying database all while fixing tags, relocating the files, and anything else you can imagine.
 
 .. image:: _static/import_example.png
 
-Alternatively, because all the core functionality is available via an API, the underlying music management system can be incorporated into any existing program or other user interface.
+Once added to Moe, querying your library or manipulating your music by editing tags, renaming files, etc. is all just a single command away. The ultimate goal is to automate away any tedius and time-consuming steps you have in your workflow without sacrificing the attention to detail. With the help of an *extremely* flexible plugin system, you can easily fine-tune your music library exactly how you like.
 
-Finally, although a lot of Moe's functionality exists around the idea of operating on a library database of your music, the database is entirely optional. In this case, Moe provides a convenient set of tools and functionality for handling music in a general sense. For example, below is a standalone python script that takes an album directory and Musicbrainz release ID from the command-line, and then updates the underlying files' tags with any changes from Musicbrainz (utilizing the ``musicbrainz`` plugin).
+Library
+-------
+As previously mentioned, all of Moe's music management logic and functionality is also available as a python library. As an example, below is a standalone script that takes an album directory and Musicbrainz release ID from the command-line, and then updates the underlying files' tags with any changes from Musicbrainz.
 
 .. code:: python
 
@@ -51,6 +58,6 @@ Finally, although a lot of Moe's functionality exists around the idea of operati
     if __name__ == "__main__":
         main()
 
-This is just a small taste of what Moe is capable of and how it can make your life easier when dealing with music in Python.
+This is just a small taste of what Moe is capable of and how it can make your life easier when dealing with music.
 
 If you want to learn more, check out the `Getting Started <https://mrmoe.readthedocs.io/en/latest/getting_started.html>`_ docs.
