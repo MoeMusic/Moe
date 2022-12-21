@@ -9,7 +9,7 @@ add
 ===
 Adds music to your library.
 
-By default, when adding music to your library, the ``import`` plugin will attempt to import metadata from any enabled sources, and the ``move`` plugin will copy the newly added files per your configuration. If you'd like to disable either behavior, you can disable the plugins either in your configuration file or by setting the ``MOE_DISABLE_PLUGINS`` environment variable.
+By default, when adding music to your library, the ``import`` plugin will attempt to import metadata from any enabled sources (e.g. musicbrainz), and then the ``move`` plugin will copy the newly added files per your configuration. If you'd like to disable either behavior, you can disable the plugins in your configuration file or by setting the ``MOE_DISABLE_PLUGINS`` environment variable.
 
 .. tip::
 
