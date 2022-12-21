@@ -63,8 +63,8 @@ Optional Arguments
 ``-e, --extra``
     Query for matching extras instead of tracks.
 
-list
-====
+list (ls)
+=========
 Lists music in your library.
 
 .. code-block:: bash
@@ -89,8 +89,8 @@ Optional Arguments
 ``-p, --paths``
     List item paths.
 
-move
-====
+move (mv)
+=========
 Moves all items in the library according to your configuration file. This can be used to update the items in your library to reflect changes in your configuration.
 
 .. code-block:: bash
@@ -129,8 +129,8 @@ Optional Arguments
 ``-r, --remove``
     Remove items that no longer exist on the filesystem.
 
-remove
-======
+remove (rm)
+===========
 Removes music from your library.
 
 .. code-block:: bash
