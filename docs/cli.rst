@@ -1,8 +1,8 @@
 :tocdepth: 2
 
-**********************
+######################
 Command-Line Interface
-**********************
+######################
 Moe ships with a command-line interface to access and manipulate your music library.
 
 add
