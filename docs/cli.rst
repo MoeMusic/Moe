@@ -5,6 +5,29 @@ Command-Line Interface
 ######################
 Moe ships with a command-line interface to access and manipulate your music library.
 
+Global Options
+==============
+
+.. code-block:: bash
+
+    moe [-h] [--version] [--verbose] [--quiet] {add,edit,move,mv,read,remove,rm,list,ls} ...
+
+Positional Arguments
+--------------------
+``{add,edit,move,mv,read,remove,rm,list,ls}``
+    The various sub-commands as described below.
+
+Optional Arguments
+------------------
+``-h, --help``
+    Display the help message.
+``--version``
+    Display the current version of Moe.
+``--verbose, -v``
+    Increase logging verbosity; use ``-vv`` to enable debug logging. This will increase the information displayed to you about what Moe is doing behind the scenes.
+``--quiet, -q``
+    Decrease logging verbosity; use -qq to limit logging to critical. This will decrease the information displayed to you about what Moe is doing behind the scenes.
+
 add
 ===
 Adds music to your library.
