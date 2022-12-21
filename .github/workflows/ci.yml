@@ -54,7 +54,7 @@ jobs:
 
       - name: Run tests
         run: |
-          poetry run pytest -m "not network"
+          poetry run pytest
 
   docs:
     runs-on: ubuntu-latest
@@ -96,5 +96,5 @@ jobs:
         run: |
           poetry run pytest -v --cov=moe --cov-report=xml
 
-      - name: Upload network test coverage report
+      - name: Upload test coverage report
         uses: codecov/codecov-action@v3

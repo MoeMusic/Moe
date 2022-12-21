@@ -19,7 +19,7 @@ In short, to contribute code to Moe, you should follow these steps:
 
    .. code:: bash
 
-        $ pytest -m "not network"
+        $ pytest
         $ sphinx-build  -q -b html docs ~/src/Moe/docs/_build/html/
 
 #. :ref:`Lint your code <developers/contributing:Linting>`
@@ -175,13 +175,6 @@ Each module should correspond to a single test module, and each public function 
 Style/Conventions
 -----------------
 * `pytest <https://docs.pytest.org/en/latest/contents.html>`_ is used to write tests and should be used over the standard library `unittest <https://docs.python.org/3/library/unittest.html>`_. The only exception is when it comes to mocking. Use ``unittest.mock`` over ``pytest-mock`` or other alternatives.
-* Any tests that require internet connection i.e. make a network call should be marked with the ``network`` marker.
-
-  .. code:: python
-
-   @pytest.mark.network
-   def test_external_api():
-       make_network_call()
 * Any tests specific to an operating system should use one of the following markers:
 
   * ``@pytest.mark.darwin`` - MacOS
