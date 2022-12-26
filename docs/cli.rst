@@ -26,7 +26,7 @@ Optional Arguments
 ``--verbose, -v``
     Increase logging verbosity; use ``-vv`` to enable debug logging. This will increase the information displayed to you about what Moe is doing behind the scenes.
 ``--quiet, -q``
-    Decrease logging verbosity; use -qq to limit logging to critical. This will decrease the information displayed to you about what Moe is doing behind the scenes.
+    Decrease logging verbosity; use ``-qq`` to limit logging to critical. This will decrease the information displayed to you about what Moe is doing behind the scenes.
 
 add
 ===
