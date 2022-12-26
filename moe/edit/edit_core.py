@@ -61,4 +61,4 @@ def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
     else:
         setattr(item, field, value)
 
-    log.info(f"Item edited. [{item=!r}, {field=!r}, {value=!r}]")
+    log.info(f"Item edited. [{item=!s}, {field=}, {value=}]")

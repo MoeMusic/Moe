@@ -78,4 +78,4 @@ def add_item(session: Session, item: LibItem):
     session.add(item)
     session.flush()
 
-    log.info(f"Item added to the library. [{item=!r}]")
+    log.info(f"Added item to the library. [{item=!s}]")
