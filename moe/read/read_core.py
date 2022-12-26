@@ -28,4 +28,4 @@ def read_item(item: LibItem):
     elif isinstance(item, Album):
         item.merge(Album.from_dir(item.path), overwrite=True)
 
-    log.info(f"Updated item from filesystem. [{item=!r}]")
+    log.info(f"Updated item from filesystem. [{item=!s}]")

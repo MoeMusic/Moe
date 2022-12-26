@@ -103,4 +103,4 @@ def write_tags(track: Track):
 
     config.CONFIG.pm.hook.write_custom_tags(track=track)
 
-    log.info(f"Wrote tags to track. [{track=!r}]")
+    log.info(f"Wrote tags to track. [{track=!s}]")

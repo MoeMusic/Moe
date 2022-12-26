@@ -245,7 +245,7 @@ def _copy_album(album: Album):
     for extra in album.extras:
         _copy_file_item(extra)
 
-    log.info(f"Album copied. [{dest=}, {album=!r}]")
+    log.info(f"Copied album. [{dest=!s}, {album=!s}]")
 
 
 def _copy_file_item(item: Union[Extra, Track]):
@@ -262,7 +262,7 @@ def _copy_file_item(item: Union[Extra, Track]):
 
     item.path = dest
 
-    log.info(f"Copied item. [{dest=}, {item=!r}]")
+    log.info(f"Copied item. [{dest=!s}, {item=!s}]")
 
 
 ########################################################################################
@@ -310,7 +310,7 @@ def _move_album(album: Album):
         with suppress(OSError):
             old_parent.rmdir()
 
-    log.info(f"Moved album. [{dest=}, {album=!r}]")
+    log.info(f"Moved album. [{dest=!s}, {album=!s}]")
 
 
 def _move_file_item(item: Union[Extra, Track]):
@@ -327,4 +327,4 @@ def _move_file_item(item: Union[Extra, Track]):
 
     item.path = dest
 
-    log.info(f"Moved item. [{dest=}, {item=!r}]")
+    log.info(f"Moved item. [{dest=!s}, {item=!s}]")

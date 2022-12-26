@@ -36,4 +36,4 @@ def remove_item(session: Session, item: LibItem):
             new_session.delete(item)
             new_session.flush()
 
-    log.info(f"Removed item from the library. [{item=!r}]")
+    log.info(f"Removed item from the library. [{item=!s}]")
