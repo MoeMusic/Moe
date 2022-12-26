@@ -47,7 +47,7 @@ def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
     See Also:
         `The query docs <https://mrmoe.readthedocs.io/en/latest/query.html>`_
     """
-    log.debug(f"Querying library for items. [{query_str=!r}, {query_type=!r}]")
+    log.debug(f"Querying library for items. [{query_str=}, {query_type=}]")
 
     terms = shlex.split(query_str)
     if not terms:
@@ -76,7 +76,7 @@ def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
         )
     items = library_query.all()
 
-    log.debug(f"Queried library for items. [{items=!r}]")
+    log.debug(f"Queried library for items. [{items=}]")
     return items
 
 
@@ -122,7 +122,7 @@ def _parse_term(term: str) -> dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        raise QueryError(f"Invalid query term. [{term=!r}]")
+        raise QueryError(f"Invalid query term. [{term=}]")
 
     match_dict = match.groupdict()
     match_dict[FIELD] = match_dict[FIELD].lower()
@@ -180,7 +180,7 @@ def _create_filter_expression(field_type: str, field: str, separator: str, value
 
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
-    raise QueryError(f"Invalid query type separator. [{separator=!r}]")
+    raise QueryError(f"Invalid query type separator. [{separator=}]")
 
 
 def _get_field_attr(field: str, field_type: str):

@@ -225,7 +225,7 @@ class MetaTrack(MetaLibItem):
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
         log.debug(
-            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
+            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=}]"
         )
 
         omit_fields = {"album"}
@@ -242,9 +242,7 @@ class MetaTrack(MetaLibItem):
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(
-            f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=!r}]"
-        )
+        log.debug(f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=}]")
 
     def __eq__(self, other) -> bool:
         """Compares Tracks by their fields."""
@@ -464,7 +462,7 @@ class Track(LibItem, SABase, MetaTrack):
             missing_reqd_fields.append("date")
         if missing_reqd_fields:
             raise ValueError(
-                f"Track is missing required fields. [{missing_reqd_fields=!r}]"
+                f"Track is missing required fields. [{missing_reqd_fields=}]"
             )
 
         if not album:

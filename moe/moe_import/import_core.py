@@ -112,7 +112,7 @@ def pre_add(item: LibItem):
 
 def import_album(album: Album):
     """Imports album metadata for an album."""
-    log.debug(f"Importing album metadata. [{album=!r}]")
+    log.debug(f"Importing album metadata. [{album=}]")
 
     candidates = config.CONFIG.pm.hook.get_candidates(album=album)
     candidates = list(itertools.chain.from_iterable(candidates))
@@ -123,4 +123,4 @@ def import_album(album: Album):
         candidates=candidates,
     )
 
-    log.debug(f"Imported album metadata. [{album=!r}]")
+    log.debug(f"Imported album metadata. [{album=}]")

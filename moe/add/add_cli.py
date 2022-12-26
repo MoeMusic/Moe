@@ -118,7 +118,7 @@ def _add_path(session: Session, path: Path, album: Optional[Album]):
         except TrackError:
             if not album:
                 raise AddError(
-                    f"An album query is required to add an extra. [{path=!r}]"
+                    f"An album query is required to add an extra. [{path=}]"
                 ) from None
 
             moe.add.add_item(session, Extra(album, path))

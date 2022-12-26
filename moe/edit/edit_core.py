@@ -28,10 +28,10 @@ def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
     Raises:
         EditError: ``field`` is not a valid attribute or is not editable.
     """
-    log.debug(f"Editing item. [{item=!r}, {field=!r}, {value=!r}]")
+    log.debug(f"Editing item. [{item=}, {field=}, {value=}]")
 
     if field == "path":
-        raise EditError(f"Non-editable field given. [{field=!r}]")
+        raise EditError(f"Non-editable field given. [{field=}]")
 
     try:
         attr = getattr(item.__class__, field)
@@ -40,7 +40,7 @@ def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
             item.custom[field] = value
             return
 
-        raise EditError(f"Invalid field given. [{field=!r}]") from a_err
+        raise EditError(f"Invalid field given. [{field=}]") from a_err
 
     try:
         column_type = attr.property.columns[0].type

@@ -49,7 +49,7 @@ def get_match_value(
         The match value is a weighted sum according to the defined weights for each
         applicable field.
     """
-    log.debug(f"Determining match value between items. [{item_a=!r}, {item_b=!r}]")
+    log.debug(f"Determining match value between items. [{item_a=}, {item_b=}]")
 
     if issubclass(type(item_a), MetaAlbum):
         field_weights = MATCH_ALBUM_FIELD_WEIGHTS
@@ -78,7 +78,7 @@ def get_match_value(
 
     match_value = 1 - sum(penalties) / sum(field_weights.values())
 
-    log.debug(f"Determined match value between items. [{match_value=!r}]")
+    log.debug(f"Determined match value between items. [{match_value=}]")
     return match_value
 
 
@@ -99,9 +99,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         was found. Each tuple represents a match and will be in the form
         ``(album_a_track, album_b_track)``.
     """
-    log.debug(
-        f"Finding matching tracks. [{album_a=!r}, {album_b=!r}, {match_threshold=!r}]"
-    )
+    log.debug(f"Finding matching tracks. [{album_a=}, {album_b=}, {match_threshold=}]")
 
     # get all match values for every pair of tracks between both albums
     track_match_values: dict[TrackCoord, float] = {}

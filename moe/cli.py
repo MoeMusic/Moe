@@ -156,7 +156,7 @@ def _set_log_lvl(args):
 
 def main(args: list[str] = sys.argv[1:]):
     """Runs the CLI."""
-    log.debug(f"Commandline arguments received. [{args=!r}]")
+    log.debug(f"Commandline arguments received. [{args=}]")
 
     if not config.CONFIG:
         try:

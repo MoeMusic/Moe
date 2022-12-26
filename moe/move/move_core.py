@@ -234,7 +234,7 @@ def _copy_album(album: Album):
     """Copies an album to a destination as determined by the user configuration."""
     dest = fmt_item_path(album)
 
-    log.debug(f"Copying album. [{dest=}, {album=!r}]")
+    log.debug(f"Copying album. [{dest=}, {album=}]")
 
     dest.mkdir(parents=True, exist_ok=True)
     album.path = dest
@@ -255,7 +255,7 @@ def _copy_file_item(item: Union[Extra, Track]):
         item.path = dest
         return
 
-    log.debug(f"Copying item. [{dest=}, {item=!r}]")
+    log.debug(f"Copying item. [{dest=}, {item=}]")
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(item.path, dest)
@@ -289,7 +289,7 @@ def _move_album(album: Album):
     dest = fmt_item_path(album)
     old_album_dir = album.path
 
-    log.debug(f"Moving album. [{dest=}, {album=!r}]")
+    log.debug(f"Moving album. [{dest=}, {album=}]")
 
     dest.mkdir(parents=True, exist_ok=True)
     album.path = dest
@@ -320,7 +320,7 @@ def _move_file_item(item: Union[Extra, Track]):
         item.path = dest
         return
 
-    log.debug(f"Moving item. [{dest=}, {item=!r}]")
+    log.debug(f"Moving item. [{dest=}, {item=}]")
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     item.path.replace(dest)

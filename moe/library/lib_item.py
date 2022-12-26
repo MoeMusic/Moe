@@ -153,18 +153,18 @@ def _edit_before_flush(
         if session.is_modified(dirty_item) and isinstance(dirty_item, LibItem):
             changed_items.append(dirty_item)
     if changed_items:
-        log.debug(f"Editing changed items. [{changed_items=!r}]")
+        log.debug(f"Editing changed items. [{changed_items=}]")
         config.CONFIG.pm.hook.edit_changed_items(session=session, items=changed_items)
-        log.debug(f"Edited changed items. [{changed_items=!r}]")
+        log.debug(f"Edited changed items. [{changed_items=}]")
 
     new_items = []
     for new_item in session.new:
         if isinstance(new_item, LibItem):
             new_items.append(new_item)
     if new_items:
-        log.debug(f"Editing new items. [{new_items=!r}]")
+        log.debug(f"Editing new items. [{new_items=}]")
         config.CONFIG.pm.hook.edit_new_items(session=session, items=new_items)
-        log.debug(f"Edited new items. [{new_items=!r}]")
+        log.debug(f"Edited new items. [{new_items=}]")
 
 
 def _process_after_flush(
@@ -189,31 +189,31 @@ def _process_after_flush(
         if session.is_modified(dirty_item) and isinstance(dirty_item, LibItem):
             changed_items.append(dirty_item)
     if changed_items:
-        log.debug(f"Processing changed items. [{changed_items=!r}]")
+        log.debug(f"Processing changed items. [{changed_items=}]")
         config.CONFIG.pm.hook.process_changed_items(
             session=session, items=changed_items
         )
-        log.debug(f"Processed changed items. [{changed_items=!r}]")
+        log.debug(f"Processed changed items. [{changed_items=}]")
 
     new_items = []
     for new_item in session.new:
         if isinstance(new_item, LibItem):
             new_items.append(new_item)
     if new_items:
-        log.debug(f"Processing new items. [{new_items=!r}]")
+        log.debug(f"Processing new items. [{new_items=}]")
         config.CONFIG.pm.hook.process_new_items(session=session, items=new_items)
-        log.debug(f"Processed new items. [{new_items=!r}]")
+        log.debug(f"Processed new items. [{new_items=}]")
 
     removed_items = []
     for removed_item in session.deleted:
         if isinstance(removed_item, LibItem):
             removed_items.append(removed_item)
     if removed_items:
-        log.debug(f"Processing removed items. [{removed_items=!r}]")
+        log.debug(f"Processing removed items. [{removed_items=}]")
         config.CONFIG.pm.hook.process_removed_items(
             session=session, items=removed_items
         )
-        log.debug(f"Processed removed items. [{removed_items=!r}]")
+        log.debug(f"Processed removed items. [{removed_items=}]")
 
 
 class PathType(sa.types.TypeDecorator):
