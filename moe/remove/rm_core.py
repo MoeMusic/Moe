@@ -15,7 +15,7 @@ log = logging.getLogger("moe.remove")
 
 def remove_item(session: Session, item: LibItem):
     """Removes an item from the library."""
-    log.debug(f"Removing item from the library. [{item=!r}]")
+    log.debug(f"Removing item from the library. [{item=}]")
 
     insp = sqlalchemy.inspect(item)
     if insp.persistent:

@@ -72,7 +72,7 @@ def add_item(session: Session, item: LibItem):
     Raises:
         AddError: Unable to add the item to the library.
     """
-    log.debug(f"Adding item to the library. [{item=!r}]")
+    log.debug(f"Adding item to the library. [{item=}]")
 
     config.CONFIG.pm.hook.pre_add(item=item)
     session.add(item)

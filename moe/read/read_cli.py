@@ -55,7 +55,7 @@ def _parse_args(session: Session, args: argparse.Namespace):
             if args.remove:
                 remove.remove_item(session, item)
             else:
-                log.error(f"Could not find item's path. [{item=!r}]")
+                log.error(f"Could not find item's path. [{item=}]")
                 error_count += 1
 
     if error_count:

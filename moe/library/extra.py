@@ -134,7 +134,7 @@ class Extra(LibItem, SABase):
             overwrite: Whether or not to overwrite self if a conflict exists.
         """
         log.debug(
-            f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
+            f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=}]"
         )
 
         omit_fields = {"album"}
@@ -151,9 +151,7 @@ class Extra(LibItem, SABase):
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(
-            f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=!r}]"
-        )
+        log.debug(f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=}]")
 
     def __eq__(self, other):
         """Compares Extras by their fields."""

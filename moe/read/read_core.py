@@ -18,7 +18,7 @@ def read_item(item: LibItem):
     Raises:
         FileNotFoundError: Item's path doesn't exist.
     """
-    log.debug(f"Reading item's file for changes. [{item=!r}]")
+    log.debug(f"Reading item's file for changes. [{item=}]")
 
     if not item.path.exists():
         raise FileNotFoundError(f"Item's path does not exist. [path={item.path!r}]")

@@ -204,7 +204,7 @@ class MetaAlbum(MetaLibItem):
                 self.custom[custom_field] = other_value
 
         log.debug(
-            f"MetaAlbums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
+            f"MetaAlbums merged. [album_a={self!r}, album_b={other!r}, {overwrite=}]"
         )
 
     def __eq__(self, other: "MetaAlbum") -> bool:
@@ -418,7 +418,7 @@ class Album(LibItem, SABase, MetaAlbum):
         for extra_path in extra_paths:
             Extra(album, extra_path)
 
-        log.debug(f"Album created from directory. [dir={album_path}, {album=!r}]")
+        log.debug(f"Album created from directory. [dir={album_path}, {album=}]")
         return album
 
     @property
@@ -474,9 +474,7 @@ class Album(LibItem, SABase, MetaAlbum):
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(
-            f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=!r}]"
-        )
+        log.debug(f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=}]")
 
     def _merge_tracks(
         self, other: Union["Album", MetaAlbum], overwrite: bool = False

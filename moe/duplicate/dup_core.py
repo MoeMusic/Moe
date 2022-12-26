@@ -91,7 +91,7 @@ def edit_new_items(session: Session, items: list[LibItem]):
 
 def resolve_duplicates(session: Session, items: list[LibItem]):
     """Search for and resolve any duplicates of items in ``items``."""
-    log.debug(f"Checking for duplicate items. [{items=!r}]")
+    log.debug(f"Checking for duplicate items. [{items=}]")
 
     resolved_items = []
     for item in items:
@@ -125,7 +125,7 @@ def resolve_duplicates(session: Session, items: list[LibItem]):
             resolved_items.append(item)
 
     if resolved_items:
-        log.debug(f"Resolved duplicate items. [{resolved_items=!r}]")
+        log.debug(f"Resolved duplicate items. [{resolved_items=}]")
     else:
         log.debug("No duplicate items found.")
 

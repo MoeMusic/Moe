@@ -70,5 +70,5 @@ def choice_prompt(
         if prompt_choice.shortcut_key == user_input:
             return prompt_choice
 
-    log.error(f"Invalid option selected. [{user_input=!r}]")
+    log.error(f"Invalid option selected. [{user_input=}]")
     raise SystemExit(1)

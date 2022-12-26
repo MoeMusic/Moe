@@ -99,7 +99,7 @@ def write_custom_tags(track: Track):
 
 def write_tags(track: Track):
     """Write tags to a track's file."""
-    log.debug(f"Writing tags to track. [{track=!r}]")
+    log.debug(f"Writing tags to track. [{track=}]")
 
     config.CONFIG.pm.hook.write_custom_tags(track=track)
 

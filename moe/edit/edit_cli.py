@@ -57,7 +57,7 @@ def _parse_args(session: Session, args: argparse.Namespace):
         try:
             field, value = term.split("=")
         except ValueError:
-            log.error(f"Invalid FIELD=VALUE format. [{term=!r}]")
+            log.error(f"Invalid FIELD=VALUE format. [{term=}]")
             error_count += 1
             continue
 
