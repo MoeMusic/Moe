@@ -36,3 +36,7 @@ The first step is configuring Moe to your liking. To do this, check out the :doc
    Moe doesn't ship with any metadata source connections by default. If you'd like to import metadata from online sources such as Musicbrainz, you'll have to install a third-party plugin.
 
 Once you're satisfied with everything, you can start using Moe! For normal users, check out the :doc:`command-line interface docs <cli>` to interact with and start adding music to your music library. If you're a developer, check out the relevant :doc:`developer docs <developers/developers>`.
+
+.. tip::
+
+   Starting out, it may be helpful to run Moe in *verbose* mode (``moe -v ...``) to get a better of idea of what's happening behind the scenes when executing various commands.
