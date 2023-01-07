@@ -26,29 +26,6 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_custom_track_fields() -> dict[str, Any]:  # type: ignore
-        """Creates new custom fields for a Track.
-
-        Returns:
-            Dict of the field names to their default values or ``None`` for no default.
-
-        Example:
-            Inside your hook implementation::
-
-                return {"my_new_field": "default value", "other_field": None}
-
-            You can then access your new field as if it were a normal field::
-
-                track.my_new_field = "awesome new value"
-
-        Important:
-            Your custom field should follow the same naming rules as any other python
-            variable i.e. no spaces, starts with a letter, and consists solely of
-            alpha-numeric and underscore characters.
-        """  # noqa: DAR202
-
-    @staticmethod
-    @moe.hookspec
     def is_unique_track(track: "Track", other: "Track") -> bool:  # type: ignore
         """Add new conditions to determine whether two tracks are unique.
 
