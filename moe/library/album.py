@@ -40,7 +40,7 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager):
     """Registers `album` hookspecs to Moe."""
     from moe.library.album import Hooks
 

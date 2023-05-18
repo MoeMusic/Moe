@@ -100,7 +100,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_hooks(pm: pluggy.manager.PluginManager):
+    def add_hooks(pm: pluggy._manager.PluginManager):
         """Add hookspecs to be registered to Moe.
 
         Args:
@@ -222,7 +222,7 @@ class Config:
         config_file (Path): Filesystem path of the configuration settings file.
         enabled_plugins (set[str]): Enabled plugins as specified by the configuration.
         engine (sa.engine.base.Engine): Database engine in use.
-        pm (pluggy.manager.PluginManager): Plugin manager that handles plugin logic.
+        pm (pluggy._manager.PluginManager): Plugin manager that handles plugin logic.
         settings (dynaconf.base.LazySettings): User configuration settings.
     """
 

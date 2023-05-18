@@ -82,7 +82,7 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager):
     """Registers `import` cli hookspecs to Moe."""
     from moe.moe_import.import_cli import Hooks
 
