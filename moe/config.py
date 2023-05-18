@@ -31,9 +31,11 @@ import re
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, Union, cast
 
 import dynaconf
+import dynaconf.base
+import dynaconf.validator
 import pluggy
 import sqlalchemy
 import sqlalchemy.event
@@ -199,7 +201,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
         dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
         dynaconf.Validator("ORIGINAL_DATE", default=False),
     ]
-    settings.validators.register(*validators)
+    settings.validators.register(*validators)  # type: ignore
 
 
 class ExtraPlugin(NamedTuple):
@@ -330,10 +332,13 @@ class Config:
 
         self.config_file.touch(exist_ok=True)
 
-        self.settings = dynaconf.Dynaconf(
-            envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
-            settings_file=str(self.config_file.resolve()),
-        )
+        self.settings = cast(
+            Any,
+            dynaconf.Dynaconf(
+                envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
+                settings_file=str(self.config_file.resolve()),
+            ),
+        )  # cast to Any until dynaconf implements proper type stubs
 
         self._setup_plugins()
         self.pm.hook.add_config_validator(settings=self.settings)
@@ -369,7 +374,9 @@ class Config:
         """
         log.debug("Setting up plugins.")
 
-        self.pm = pluggy.PluginManager("moe")
+        self.pm = cast(
+            Any, pluggy.PluginManager("moe")
+        )  # avoids pluggy hook type errors
 
         # register core modules that cannot be disabled by the config
         for plugin_name, module in core_plugins.items():

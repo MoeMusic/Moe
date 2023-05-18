@@ -6,9 +6,9 @@ from typing import Any, cast
 
 import pluggy
 import sqlalchemy
-import sqlalchemy as sa
 import sqlalchemy.event
 import sqlalchemy.orm
+import sqlalchemy.types
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm.session import Session
@@ -216,7 +216,7 @@ def _process_after_flush(
         log.debug(f"Processed removed items. [{removed_items=}]")
 
 
-class PathType(sa.types.TypeDecorator):
+class PathType(sqlalchemy.types.TypeDecorator):
     """A custom type for paths for database storage.
 
     Normally, paths are Path type, but we can't store that in the database,
@@ -224,7 +224,7 @@ class PathType(sa.types.TypeDecorator):
     relative paths from ``library_path`` in the config.
     """
 
-    impl = sa.types.String  # sql type
+    impl = sqlalchemy.types.String  # sql type
     cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
     library_path: Path  # will be set on config initialization
@@ -253,10 +253,10 @@ class PathType(sa.types.TypeDecorator):
         return Path(self.library_path / path_str)
 
 
-class SetType(sa.types.TypeDecorator):
+class SetType(sqlalchemy.types.TypeDecorator):
     """A custom type for storing sets as json in a database."""
 
-    impl = sa.types.JSON  # sql type
+    impl = sqlalchemy.types.JSON  # sql type
     cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
     def process_bind_param(self, json_set, dialect):

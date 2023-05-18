@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, Optional, Union
 
 import dynaconf
+import dynaconf.base
 import pluggy
 from unidecode import unidecode
 
@@ -61,7 +62,7 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
         dynaconf.Validator("MOVE.EXTRA_PATH", default=default_extra_path),
         dynaconf.Validator("MOVE.TRACK_PATH", default=default_track_path),
     ]
-    settings.validators.register(*validators)
+    settings.validators.register(*validators)  # type: ignore
 
 
 @moe.hookimpl(trylast=True)
