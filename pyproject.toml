@@ -55,7 +55,7 @@ pyright = "^1.1.267"
 [tool.poetry.group.docs.dependencies]
 furo = "*"
 pypandoc = "^1.9"
-Sphinx = "^5.2.3"
+Sphinx = "^6.0.0"
 
 [tool.commitizen]
 name = "cz_customize"
