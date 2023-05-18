@@ -72,7 +72,7 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy.manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager):
     """Registers `track` hookspecs to Moe."""
     from moe.library.track import Hooks
 
