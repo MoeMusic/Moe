@@ -32,8 +32,8 @@ questionary = "^1.9.0"
 [tool.poetry.group.test.dependencies]
 debugpy = "^1.4.1"
 pytest = "^7.0.0"
-pytest-cov = "^2.10.0"
-tox = "^3.26.0"
+pytest-cov = "^4.0.0"
+tox = "^4.0.0"
 
 [tool.poetry.group.lint.dependencies]
 black = "^22.6.0"
