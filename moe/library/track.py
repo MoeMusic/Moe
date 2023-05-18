@@ -254,7 +254,7 @@ class MetaTrack(MetaLibItem):
         repr_str = (
             f"{type(self).__name__}("
             + ", ".join(field_reprs)
-            + f", album='{self.album}'"
+            + f", album='{self.album}'"  # noqa: B907 album repr is too long
         )
 
         custom_field_reprs = []

@@ -157,7 +157,11 @@ class Extra(LibItem, SABase):
         for field in self.fields - omit_fields:
             if hasattr(self, field):
                 field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album}'"
+        repr_str = (
+            "Extra("
+            + ", ".join(field_reprs)
+            + f", album='{self.album}'"  # noqa: B907 album repr is too long
+        )
 
         custom_field_reprs = []
         for custom_field, value in self.custom.items():

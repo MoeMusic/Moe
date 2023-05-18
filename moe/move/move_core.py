@@ -187,7 +187,7 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
         for func in funcs:
             globals()[func.__name__] = func
 
-    return eval(f'f"""{template}"""')
+    return eval(f'f"""{template}"""')  # noqa: B907
 
 
 def _sanitize_path_part(path_part: str) -> str:
