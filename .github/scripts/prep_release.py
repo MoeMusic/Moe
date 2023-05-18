@@ -140,6 +140,7 @@ def prepare_release_pr(token: str) -> None:
     )
 
     repo = login(token)
+    assert repo
     repo.create_pull(
         f"Prepare release {new_version}",
         base="main",
@@ -218,10 +219,12 @@ def generate_changelog(old_version: str, new_version: str) -> None:
         f.writelines(contents)
 
 
-def login(token: str) -> Repository:
+def login(token: str) -> Repository | None:
     """Logins to github and returns the working repository."""
     github = github3.login(token=token)
+    assert github
     owner, repo = SLUG.split("/")
+
     return github.repository(owner, repo)
 
 
