@@ -31,7 +31,7 @@ questionary = "^1.9.0"
 
 [tool.poetry.group.test.dependencies]
 debugpy = "^1.4.1"
-pytest = "^6.0.1"
+pytest = "^7.0.0"
 pytest-cov = "^2.10.0"
 tox = "^3.26.0"
 
