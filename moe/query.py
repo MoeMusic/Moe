@@ -4,7 +4,7 @@ import logging
 import re
 import shlex
 from pathlib import Path
-from typing import Type
+from typing import Type, Union
 
 import sqlalchemy as sa
 import sqlalchemy.orm
@@ -30,7 +30,9 @@ SEPARATOR = "separator"
 VALUE = "value"
 
 
-def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
+def query(
+    session: Session, query_str: str, query_type: str
+) -> Union[list[Album], list[Extra], list[Track]]:
     """Queries the database for items matching the given query string.
 
     Args:
@@ -67,7 +69,7 @@ def query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
     for term in terms:
         parsed_term = _parse_term(term)
         library_query = library_query.filter(
-            _create_filter_expression(
+            _create_filter_expression(  # type: ignore
                 parsed_term[FIELD_TYPE],
                 parsed_term[FIELD],
                 parsed_term[SEPARATOR],

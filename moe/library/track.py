@@ -2,13 +2,13 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional
 
 import mediafile
 import pluggy
-from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy import JSON, Integer
 from sqlalchemy.ext.mutable import MutableDict, MutableSet
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
 import moe
@@ -111,10 +111,6 @@ def read_custom_tags(
 
 class TrackError(LibraryError):
     """Error performing some operation on a Track."""
-
-
-# Track generic, used for typing classmethod
-T = TypeVar("T", bound="Track")
 
 
 class MetaTrack(MetaLibItem):
@@ -292,27 +288,22 @@ class Track(LibItem, SABase, MetaTrack):
 
     __tablename__ = "track"
 
-    artist: str = cast(str, Column(String, nullable=False))
-    artists: Optional[set[str]] = cast(
-        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    artist: Mapped[str]
+    artists: Mapped[Optional[set[str]]] = mapped_column(
+        MutableSet.as_mutable(SetType()), nullable=True
     )
-    disc: int = cast(int, Column(Integer, nullable=False, default=1))
-    genres: Optional[set[str]] = cast(
-        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    disc: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    genres: Mapped[Optional[set[str]]] = mapped_column(
+        MutableSet.as_mutable(SetType()), nullable=True
     )
-    title: str = cast(str, Column(String, nullable=False))
-    track_num: int = cast(int, Column(Integer, nullable=False))
-    custom: dict[str, Any] = cast(
-        dict[str, Any],
-        Column(
-            MutableDict.as_mutable(JSON(none_as_null=True)),
-            default="{}",
-            nullable=False,
-        ),
+    title: Mapped[str]
+    track_num: Mapped[int]
+    custom: Mapped[dict[str, Any]] = mapped_column(
+        MutableDict.as_mutable(JSON(none_as_null=True)), default="{}", nullable=False
     )
 
-    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
-    album: Album = relationship("Album", back_populates="tracks")
+    _album_id: Mapped[int] = mapped_column(Integer, ForeignKey("album._id"))
+    album: Mapped["Album"] = relationship(back_populates="tracks")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
@@ -385,7 +376,7 @@ class Track(LibItem, SABase, MetaTrack):
         return 1
 
     @classmethod
-    def from_file(cls: type[T], track_path: Path, album: Optional[Album] = None) -> T:
+    def from_file(cls, track_path: Path, album: Optional[Album] = None) -> "Track":
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.

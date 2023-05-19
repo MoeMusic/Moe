@@ -2,15 +2,15 @@
 
 import logging
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pluggy
 import sqlalchemy
 import sqlalchemy.event
 import sqlalchemy.orm
 import sqlalchemy.types
-from sqlalchemy import Column, Integer
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Integer
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.session import Session
 
 import moe
@@ -20,7 +20,9 @@ __all__ = ["LibItem", "LibraryError", "MetaLibItem"]
 
 log = logging.getLogger("moe.lib_item")
 
-SABase = declarative_base()
+
+class SABase(DeclarativeBase):
+    pass
 
 
 class LibraryError(Exception):
@@ -301,8 +303,8 @@ class MetaLibItem:
 class LibItem(MetaLibItem):
     """Base class for library items i.e. Albums, Extras, and Tracks."""
 
-    _id: int = cast(int, Column(Integer, primary_key=True))
-    path: Path = cast(Path, Column(PathType, nullable=False, unique=True))
+    _id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    path: Mapped[Path] = mapped_column(PathType, nullable=False, unique=True)
 
     def is_unique(self, other: "LibItem") -> bool:
         """Returns whether an item is unique in the library from ``other``."""

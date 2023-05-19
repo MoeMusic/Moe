@@ -76,7 +76,7 @@ def _parse_args(session: Session, args: argparse.Namespace):
 
     album: Optional[Album] = None
     if args.album_query:
-        albums = cast(Album, cli_query(session, args.album_query, "album"))
+        albums = cast(list[Album], cli_query(session, args.album_query, "album"))
 
         if len(albums) > 1:
             log.error("Query returned more than one album.")

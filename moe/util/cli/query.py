@@ -2,10 +2,11 @@
 
 import argparse
 import logging
+from typing import Union
 
 from sqlalchemy.orm.session import Session
 
-from moe.library import LibItem
+from moe.library import Album, Extra, Track
 from moe.query import QueryError, query
 
 __all__ = ["cli_query", "query_parser"]
@@ -60,7 +61,9 @@ query_type_group.add_argument(
 query_parser.set_defaults(query_type="track")
 
 
-def cli_query(session: Session, query_str: str, query_type: str) -> list[LibItem]:
+def cli_query(
+    session: Session, query_str: str, query_type: str
+) -> Union[list[Album], list[Extra], list[Track]]:
     """Wrapper around the core query call, with some added cli error handling.
 
     Args:
