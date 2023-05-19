@@ -2,12 +2,12 @@
 
 import logging
 from pathlib import Path, PurePath
-from typing import Any, cast
+from typing import Any
 
 import pluggy
-from sqlalchemy import JSON, Column, Integer
+from sqlalchemy import JSON, Integer
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import ForeignKey
 
 import moe
@@ -53,17 +53,12 @@ class Extra(LibItem, SABase):
 
     __tablename__ = "extra"
 
-    custom: dict[str, Any] = cast(
-        dict[str, Any],
-        Column(
-            MutableDict.as_mutable(JSON(none_as_null=True)),
-            default="{}",
-            nullable=False,
-        ),
+    custom: Mapped[dict[str, Any]] = mapped_column(
+        MutableDict.as_mutable(JSON(none_as_null=True)), default="{}", nullable=False
     )
 
-    _album_id: int = cast(int, Column(Integer, ForeignKey("album._id")))
-    album: Album = relationship("Album", back_populates="extras")
+    _album_id: Mapped[int] = mapped_column(Integer, ForeignKey("album._id"))
+    album: Mapped["Album"] = relationship(back_populates="extras")
 
     def __init__(self, album: Album, path: Path, **kwargs):
         """Creates an Extra.

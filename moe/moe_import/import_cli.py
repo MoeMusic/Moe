@@ -212,9 +212,9 @@ def _apply_changes(
         if not old_track and new_track:
             candidate.album.tracks.remove(new_track)  # missing track
         elif old_track and not new_track:
-            new_album.tracks.remove(
-                new_album.get_track(old_track.track_num, old_track.disc)
-            )  # unmatched track
+            unmatched_track = new_album.get_track(old_track.track_num, old_track.disc)
+            assert unmatched_track
+            new_album.tracks.remove(unmatched_track)
         elif (
             old_track
             and new_track

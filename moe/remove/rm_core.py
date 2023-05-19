@@ -5,6 +5,7 @@ import logging
 import sqlalchemy
 import sqlalchemy.exc
 from sqlalchemy.orm.session import Session
+from sqlalchemy.orm.state import InstanceState
 
 from moe.library import Extra, LibItem, Track
 
@@ -18,6 +19,8 @@ def remove_item(session: Session, item: LibItem):
     log.debug(f"Removing item from the library. [{item=}]")
 
     insp = sqlalchemy.inspect(item)
+    assert isinstance(insp, InstanceState)
+
     if insp.persistent:
         session.delete(item)
     elif insp.pending:

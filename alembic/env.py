@@ -48,17 +48,27 @@ def run_migrations_online():
     with the context.
     """
     connectable = config.attributes.get("connection", None)
+
     if not connectable:
         # only create Engine if we don't have a Connection from the outside
         moe_config = Config(init_db=False)
         moe_config._init_db(create_tables=False)
         connectable = moe_config.engine
 
-    # When connectable is already a Connection object, calling
-    # connect() gives us a *branched connection*.
-    with connectable.connect() as connection:
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                render_as_batch=True,
+            )
+
+            with context.begin_transaction():
+                context.run_migrations()
+    else:
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True
+            connection=connectable,
+            target_metadata=target_metadata,
+            render_as_batch=True,
         )
 
         with context.begin_transaction():

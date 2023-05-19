@@ -3,14 +3,14 @@
 import datetime
 import logging
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import pluggy
 import sqlalchemy as sa
-from sqlalchemy import JSON, Column, Date, Integer, String
+from sqlalchemy import JSON, Integer
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict, MutableSet
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 import moe
 from moe import config
@@ -274,10 +274,6 @@ class MetaAlbum(MetaLibItem):
         return repr_str
 
 
-# Album generic, used for typing classmethod
-A = TypeVar("A", bound="Album")
-
-
 class Album(LibItem, SABase, MetaAlbum):
     """An album is a collection of tracks and represents a specific album release.
 
@@ -306,38 +302,30 @@ class Album(LibItem, SABase, MetaAlbum):
 
     __tablename__ = "album"
 
-    artist: str = cast(str, Column(String, nullable=False))
-    barcode: Optional[str] = cast(Optional[str], Column(String, nullable=True))
-    catalog_nums: Optional[set[str]] = cast(
-        Optional[set[str]], MutableSet.as_mutable(Column(SetType, nullable=True))
+    artist: Mapped[str]
+    barcode: Mapped[Optional[str]]
+    catalog_nums: Mapped[Optional[set[str]]] = mapped_column(
+        MutableSet.as_mutable(SetType()), nullable=True
     )
-    country: Optional[str] = cast(Optional[str], Column(String, nullable=True))
-    date: datetime.date = cast(datetime.date, Column(Date, nullable=False))
-    disc_total: int = cast(int, Column(Integer, nullable=False, default=1))
-    label: Optional[str] = cast(Optional[str], Column(String, nullable=True))
-    media: Optional[str] = cast(Optional[str], Column(String, nullable=True))
-    original_date: Optional[datetime.date] = cast(
-        Optional[datetime.date], Column(Date, nullable=True)
-    )
-    title: str = cast(str, Column(String, nullable=False))
-    track_total: Optional[int] = cast(Optional[int], Column(Integer, nullable=True))
-    custom: dict[str, Any] = cast(
-        dict[str, Any],
-        Column(
-            MutableDict.as_mutable(JSON(none_as_null=True)),
-            default="{}",
-            nullable=False,
-        ),
+    country: Mapped[Optional[str]]
+    date: Mapped[datetime.date]
+    disc_total: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    label: Mapped[Optional[str]]
+    media: Mapped[Optional[str]]
+    original_date: Mapped[Optional[datetime.date]]
+
+    title: Mapped[str]
+    track_total: Mapped[Optional[int]]
+    custom: Mapped[dict[str, Any]] = mapped_column(
+        MutableDict.as_mutable(JSON(none_as_null=True)), default="{}", nullable=False
     )
 
-    tracks: list["Track"] = relationship(
-        "Track",
+    tracks: Mapped[list["Track"]] = relationship(
         back_populates="album",
         cascade="all, delete-orphan",
         collection_class=list,
     )
-    extras: list["Extra"] = relationship(
-        "Extra",
+    extras: Mapped[list["Extra"]] = relationship(
         back_populates="album",
         cascade="all, delete-orphan",
         collection_class=list,
@@ -381,7 +369,7 @@ class Album(LibItem, SABase, MetaAlbum):
         log.debug(f"Album created. [album={self!r}]")
 
     @classmethod
-    def from_dir(cls: type[A], album_path: Path) -> A:
+    def from_dir(cls, album_path: Path) -> "Album":
         """Creates an album from a directory.
 
         Args:
@@ -506,25 +494,27 @@ class Album(LibItem, SABase, MetaAlbum):
             self.extras.extend(new_extras)
 
     @hybrid_property
-    def original_year(self) -> Optional[int]:  # type: ignore
+    def original_year(self) -> Optional[int]:
         """Gets an Album's year."""
         if self.original_date is None:
             return None
 
         return self.original_date.year
 
-    @original_year.expression  # type: ignore
-    def original_year(cls):  # noqa: B902
+    @original_year.inplace.expression  # type: ignore
+    @classmethod
+    def _original_year_expression(cls):
         """Returns a year at the sql level."""
         return sa.extract("year", cls.original_date)
 
     @hybrid_property
-    def year(self) -> int:  # type: ignore
+    def year(self) -> int:
         """Gets an Album's year."""
         return self.date.year
 
-    @year.expression  # type: ignore
-    def year(cls):  # noqa: B902
+    @year.inplace.expression
+    @classmethod
+    def _year_expression(cls):
         """Returns a year at the sql level."""
         return sa.extract("year", cls.date)
 
