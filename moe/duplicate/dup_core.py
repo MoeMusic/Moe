@@ -1,7 +1,7 @@
 """Detect and handle duplicates in the library."""
 
 import logging
-from typing import Optional
+from typing import Optional, Sequence
 
 import sqlalchemy
 from sqlalchemy.orm.session import Session
@@ -70,9 +70,9 @@ def edit_changed_items(session: Session, items: list[LibItem]):
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
 
-    resolve_duplicates(session, albums)  # type: ignore
-    resolve_duplicates(session, tracks)  # type: ignore
-    resolve_duplicates(session, extras)  # type: ignore
+    resolve_duplicates(session, albums)
+    resolve_duplicates(session, tracks)
+    resolve_duplicates(session, extras)
 
 
 @moe.hookimpl(hookwrapper=True)
@@ -84,12 +84,12 @@ def edit_new_items(session: Session, items: list[LibItem]):
     tracks = [item for item in items if isinstance(item, Track)]
     extras = [item for item in items if isinstance(item, Extra)]
 
-    resolve_duplicates(session, albums)  # type: ignore
-    resolve_duplicates(session, tracks)  # type: ignore
-    resolve_duplicates(session, extras)  # type: ignore
+    resolve_duplicates(session, albums)
+    resolve_duplicates(session, tracks)
+    resolve_duplicates(session, extras)
 
 
-def resolve_duplicates(session: Session, items: list[LibItem]):
+def resolve_duplicates(session: Session, items: Sequence[LibItem]):
     """Search for and resolve any duplicates of items in ``items``."""
     log.debug(f"Checking for duplicate items. [{items=}]")
 
@@ -141,7 +141,7 @@ def _is_removed(item):
 
 
 def get_duplicates(
-    session: Session, item: LibItem, others: Optional[list[LibItem]] = None
+    session: Session, item: LibItem, others: Optional[Sequence[LibItem]] = None
 ) -> list[LibItem]:
     """Returns items considered duplicates of ``item``.
 

@@ -7,7 +7,7 @@ Note:
 import argparse
 import logging
 from collections import OrderedDict
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy.orm.session import Session
 
@@ -78,7 +78,7 @@ def _parse_args(session: Session, args: argparse.Namespace):
                 print(item)
 
 
-def _fmt_infos(items: list[LibItem]):
+def _fmt_infos(items: Sequence[LibItem]):
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
