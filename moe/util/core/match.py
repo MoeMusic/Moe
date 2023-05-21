@@ -10,6 +10,7 @@ log = logging.getLogger("moe")
 
 __all__ = ["get_match_value", "get_matching_tracks"]
 
+# Custom type declarations used for abbreviated annotations.
 TrackMatch = tuple[Optional[MetaTrack], Optional[MetaTrack]]
 TrackCoord = tuple[
     tuple[int, int], tuple[int, int]
