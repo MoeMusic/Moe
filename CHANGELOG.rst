@@ -6,6 +6,21 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.1.1 (2023-05-22)
+===================
+
+Build Changes
+-------------
+* Upgrade sqlalchemy to v2.0.0 (`4e568e5 <https://github.com/MoeMusic/Moe/commit/4e568e5cbdf535d243de1184490b0e8e09ff05d7>`_)
+* Upgrade lint dependencies (`8a9047d <https://github.com/MoeMusic/Moe/commit/8a9047d1bddb5794ddb56ac759794658d53f4874>`_)
+* Upgrade docs dependencies (`8d95017 <https://github.com/MoeMusic/Moe/commit/8d95017601fcff71069986cc7c6bbd4daabdedaf>`_)
+* Upgrade test dependencies (`0b5b384 <https://github.com/MoeMusic/Moe/commit/0b5b3847e14bba20a2deb238262ed715e2d5688f>`_)
+* Upgrade pytest to v7.0.0 (`50eb061 <https://github.com/MoeMusic/Moe/commit/50eb0611c9d3e496c3b57adf3b6676c9dafaee7b>`_)
+* Upgrade rich to v13.0.0 (`3ee7ef0 <https://github.com/MoeMusic/Moe/commit/3ee7ef017dc4fbd2f84e9f1611418ab4b63634f9>`_)
+* Upgrade pluggy to v1.0.0 (`88c0384 <https://github.com/MoeMusic/Moe/commit/88c03844b10e95c6bf4fd870c2524e2038052056>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.1.0...v2.1.1>`__
+
 v2.1.0 (2022-12-21)
 ===================
 
