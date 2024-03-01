@@ -162,7 +162,7 @@ def get_duplicates(
     for other in others:
         if (
             item is not other
-            and type(item) == type(other)
+            and type(item) == type(other)  # noqa: E721
             and not item.is_unique(other)
         ):
             dup_items.append(other)
