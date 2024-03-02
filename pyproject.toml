@@ -28,6 +28,7 @@ rich = "^13.0.0"
 SQLAlchemy = "^2.0.0"
 Unidecode = "^1.2.0"
 questionary = "^2.0.0"
+importlib-metadata = "^7.0.1"
 
 [tool.poetry.group.test.dependencies]
 debugpy = "^1.4.1"

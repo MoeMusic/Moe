@@ -23,7 +23,6 @@ See Also:
 """
 
 import importlib
-import importlib.metadata
 import importlib.util
 import logging
 import os
@@ -36,6 +35,7 @@ from typing import Any, NamedTuple, Optional, Union, cast
 import dynaconf
 import dynaconf.base
 import dynaconf.validator
+import importlib_metadata
 import pluggy
 import sqlalchemy
 import sqlalchemy.event
@@ -404,7 +404,7 @@ class Config:
             )
 
         # register all third-party installed plugins
-        plugins = importlib.metadata.entry_points().get("moe.plugins")
+        plugins = importlib_metadata.entry_points().select(group="moe.plugins")
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
