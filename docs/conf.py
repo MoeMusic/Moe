@@ -5,7 +5,7 @@ list see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
-import pkg_resources
+import importlib.metadata
 
 # -- Path setup --------------------------------------------------------------
 
@@ -21,7 +21,7 @@ import pkg_resources
 project = "Moe"
 copyright = "2021, Jacob Pavlock"
 author = "Jacob Pavlock"
-release = pkg_resources.get_distribution("moe").version
+release = importlib.metadata.version("moe")
 
 
 # -- General configuration ---------------------------------------------------

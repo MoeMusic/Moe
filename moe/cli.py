@@ -7,10 +7,10 @@ For general shared CLI functionality, see the ``moe.util.cli`` package.
 """
 
 import argparse
+import importlib.metadata
 import logging
 import sys
 
-import pkg_resources
 import pluggy
 from rich.console import Console
 
@@ -118,7 +118,7 @@ def _parse_args(args: list[str]):
 
 def _create_arg_parser() -> argparse.ArgumentParser:
     """Creates the root argument parser."""
-    version = pkg_resources.get_distribution("moe").version
+    version = importlib.metadata.version("moe")
 
     moe_parser = argparse.ArgumentParser()
     moe_parser.add_argument(
