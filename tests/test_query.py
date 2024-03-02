@@ -1,6 +1,5 @@
 """Tests the core query module."""
 
-
 from datetime import date
 from unittest.mock import MagicMock
 
