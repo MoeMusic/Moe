@@ -207,7 +207,7 @@ class MetaAlbum(MetaLibItem):
             f"MetaAlbums merged. [album_a={self!r}, album_b={other!r}, {overwrite=}]"
         )
 
-    def __eq__(self, other: "MetaAlbum") -> bool:
+    def __eq__(self, other) -> bool:
         """Compares MetaAlbums by their fields."""
         if type(self) != type(other):  # noqa: E721
             return False

@@ -85,7 +85,7 @@ class Extra(LibItem, SABase):
         """Returns the extra's path relative to its album's path."""
         return self.path.relative_to(self.album.path)
 
-    def is_unique(self, other: "Extra") -> bool:
+    def is_unique(self, other: "LibItem") -> bool:
         """Returns whether an extra is unique in the library from ``other``."""
         if self.path == other.path:
             return False
