@@ -231,24 +231,29 @@ class PathType(sqlalchemy.types.TypeDecorator):
 
     library_path: Path  # will be set on config initialization
 
-    def process_bind_param(self, pathlib_path, dialect):
+    def process_bind_param(self, value, dialect):
         """Normalize pathlib paths as strings for the database.
 
         Args:
-            pathlib_path: Inbound path to the db.
+            value: Inbound path to the db.
             dialect: Database in use.
 
         Returns:
             Relative path from ``library_path`` if possible, otherwise stores the
             absolute path.
         """
+        assert isinstance(value, Path)
+        pathlib_path: Path = value
+
         try:
             return str(pathlib_path.relative_to(self.library_path))
         except ValueError:
             return str(pathlib_path.resolve())
 
-    def process_result_value(self, path_str, dialect):
+    def process_result_value(self, value, dialect):
         """Convert the path back to a Path object on the way out."""
+        path_str = value
+
         if path_str is None:
             return None
 
@@ -261,14 +266,18 @@ class SetType(sqlalchemy.types.TypeDecorator):
     impl = sqlalchemy.types.JSON  # sql type
     cache_ok = True  # expected to produce same bind/result behavior and sql generation
 
-    def process_bind_param(self, json_set, dialect):
+    def process_bind_param(self, value, dialect):
         """Convert the set to a list so it's valid json."""
+        json_set = value
+
         if json_set is not None:
             return list(json_set)
         return None
 
-    def process_result_value(self, json_list, dialect):
+    def process_result_value(self, value, dialect):
         """Convert the list in the db back to a set."""
+        json_list = value
+
         if json_list is not None:
             return set(json_list)
         return None
@@ -306,6 +315,6 @@ class LibItem(MetaLibItem):
     _id: Mapped[int] = mapped_column(Integer, primary_key=True)
     path: Mapped[Path] = mapped_column(PathType, nullable=False, unique=True)
 
-    def is_unique(self, other: "LibItem") -> bool:
+    def is_unique(self, other) -> bool:
         """Returns whether an item is unique in the library from ``other``."""
         raise NotImplementedError
