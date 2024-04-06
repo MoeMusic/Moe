@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'CHANGELOG.rst'
+  workflow_dispatch:
 
 jobs:
   github_release:
