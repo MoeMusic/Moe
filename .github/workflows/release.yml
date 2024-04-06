@@ -53,6 +53,12 @@ jobs:
   pypi_release:
     if: contains(github.event.head_commit.message, 'release:')
     runs-on: ubuntu-latest
+
+    permissions:
+      # required for trusted publishing
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -67,9 +73,9 @@ jobs:
       - name: Build
         run: |
           poetry build
+      - name: Mint token
+        id: mint
+        uses: tschm/token-mint-action@v1.0.3
       - name: Publish to PyPI
-        env:
-          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
+          poetry publish -u __token__ -p '${{ steps.mint.outputs.api-token }}'
