@@ -6,6 +6,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.1.3 (2024-04-06)
+===================
+
+Bug Fixes
+---------
+* Metatracks always failing equality (`89e25d2 <https://github.com/MoeMusic/Moe/commit/89e25d2e6a04a5673de74ca837dc682d9157193b>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.1.2...v2.1.3>`__
+
 v2.1.2 (2024-04-06)
 ===================
 
