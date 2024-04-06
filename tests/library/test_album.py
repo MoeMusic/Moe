@@ -412,6 +412,20 @@ class TestIsUnique:
 class TestEquality:
     """Test equality of albums."""
 
+    def test_meta_equals(self):
+        """Meta Albums with the same fields are equal."""
+        album1 = MetaAlbum(artist="equals")
+        album2 = MetaAlbum(artist="equals")
+
+        assert album1 == album2
+
+    def test_meta_not_equals(self):
+        """Meta Albums with different fields are not equal."""
+        album1 = MetaAlbum(artist="equals")
+        album2 = MetaAlbum(artist="not equal")
+
+        assert album1 != album2
+
     def test_equals(self):
         """Albums with the same fields are equal."""
         album1 = album_factory()

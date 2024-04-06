@@ -209,7 +209,7 @@ class MetaAlbum(MetaLibItem):
 
     def __eq__(self, other) -> bool:
         """Compares MetaAlbums by their fields."""
-        if type(self) != type(other):  # noqa: E721
+        if not isinstance(other, MetaAlbum):
             return False
 
         for field in self.fields:
