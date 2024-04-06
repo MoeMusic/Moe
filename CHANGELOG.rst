@@ -6,6 +6,17 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.1.2 (2024-04-06)
+===================
+
+Build Changes
+-------------
+* Add importlib_metadata dependency for entry_points backport (`4cc6b97 <https://github.com/MoeMusic/Moe/commit/4cc6b9757faca0daf5ef7753ba33f94dfdf24c6b>`_)
+* Update dependencies (`50e148c <https://github.com/MoeMusic/Moe/commit/50e148cc3f91558233cdf6a2c82c7d6206be37ae>`_)
+* Support python 3.12 (`408594a <https://github.com/MoeMusic/Moe/commit/408594a8d6708c4142ae5d34abf9e7b50435aa7a>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.1.1...v2.1.2>`__
+
 v2.1.1 (2023-05-22)
 ===================
 
