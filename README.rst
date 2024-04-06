@@ -27,7 +27,7 @@ As previously mentioned, all of Moe's music management logic and functionality i
     #!/usr/bin/env python3
 
     import argparse
-    import pathlib
+    from pathlib import Path
 
     from moe.config import Config, ConfigValidationError
     from moe.library import Album
@@ -36,8 +36,8 @@ As previously mentioned, all of Moe's music management logic and functionality i
 
     def main():
         try:
-            config.Config(config_dir=Path.home() / ".config" / "my_script", init_db=False)
-        except config.ConfigValidationError as err:
+            Config(config_dir=Path.home() / ".config" / "my_script", init_db=False)
+        except ConfigValidationError as err:
             raise SystemExit(1) from err
 
         parser = argparse.ArgumentParser(
@@ -47,7 +47,7 @@ As previously mentioned, all of Moe's music management logic and functionality i
         parser.add_argument("mb_id", help="musicbrainz id of the album to fetch")
         args = parser.parse_args()
 
-        album = Album.from_dir(pathlib.Path(args.path))
+        album = Album.from_dir(Path(args.path))
 
         album.merge(moe_musicbrainz.get_album_by_id(args.mb_id), overwrite=True)
 
