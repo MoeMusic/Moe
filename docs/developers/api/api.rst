@@ -20,6 +20,7 @@ The only requirement is to have or create a configuration file and initialize th
 
 .. code:: python
 
+    from pathlib import Path
     from moe import config
 
     try:
