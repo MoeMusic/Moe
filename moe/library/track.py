@@ -219,7 +219,7 @@ class MetaTrack(MetaLibItem):
 
     def __eq__(self, other) -> bool:
         """Compares Tracks by their fields."""
-        if not isinstance(other, Track):
+        if not isinstance(other, MetaTrack):
             return False
 
         for field in self.fields:

@@ -224,6 +224,22 @@ class TestFromFile:
 class TestEquality:
     """Test equality of tracks."""
 
+    def test_meta_equals(self):
+        """Meta Tracks with the same metadata are equal."""
+        album = MetaAlbum(artist="meta_artist")
+        track1 = MetaTrack(album, 1)
+        track2 = MetaTrack(album, 1)
+
+        assert track1 == track2
+
+    def test_meta_not_equals(self):
+        """Meta Tracks with different metadata are not equal."""
+        album = MetaAlbum(artist="meta_artist")
+        track1 = MetaTrack(album, 1)
+        track2 = MetaTrack(album, 2)
+
+        assert track1 != track2
+
     def test_equals(self):
         """Tracks with the same metadata are equal."""
         track1 = track_factory()
