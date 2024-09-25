@@ -104,7 +104,7 @@ The description should be present tense, not capitalized, and have no punctuatio
 
 Body
 -----
-The body should include amplifying information on the change both for users looking at the commit from the changelog, as well as developers to understand the change. Including a body is always encourage, but only mandatory if the commit introduces a breaking change.
+The body should include amplifying information on the change both for users looking at the commit from the changelog, as well as developers to understand the change. Including a body is always encouraged, but only mandatory if the commit introduces a breaking change.
 
 Footer
 -------
@@ -135,8 +135,9 @@ New Field Checklist
 If adding a new field to Moe, the following checklist can help ensure you cover all your bases:
 
 #. Add the database column to the appropriate library class (``Album``, ``Extra``, or ``Track``).
+
    * If the field represents metadata and does not deal with the filesystem, also add to the appropriate ``Meta`` class (``MetaAlbum`` or ``MetaTrack``).
-   * If a multi-value field, add the non-plural equivalent property. See ``Track.genres`` and the accompanying single-value field, ``Track.genre`` for an example.
+   * If creating a multi-value field, add the non-plural equivalent property. See ``Track.genres`` and the accompanying single-value field, ``Track.genre`` for an example.
    * Include documentation for the new field in the class docstring(s).
 
 #. Add to the item's ``fields`` method as necessary.
