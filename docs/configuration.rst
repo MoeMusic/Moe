@@ -6,7 +6,7 @@ Configuration
 Moe will automatically create a config file, ``config.toml``, in ``$HOME/.config/moe`` or ``%USERPROFILE%\.config\moe`` if you're on Windows. This directory is also where your library database file will reside.
 
 .. note::
-    The configuration directory can be overwritten by setting the environment variable ``MOE_CONFIG.CONFIG_DIR``.
+    The configuration directory can be overwritten by setting the environment variable ``MOE_CONFIG_DIR``.
 
 Throughout this documentation, all configuration options will be displayed in the following format:
 
