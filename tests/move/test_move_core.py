@@ -1,6 +1,7 @@
 """Tests the core api for moving items."""
 
 from pathlib import Path
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,8 @@ import pytest
 import moe
 from moe import config
 from moe import move as moe_move
+from moe.config import ExtraPlugin
+from moe.library import Album
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -510,3 +513,87 @@ class TestPluginRegistration:
         tmp_config(settings='default_plugins = ["move"]')
 
         assert config.CONFIG.pm.has_plugin("move_core")
+
+
+class TestPluginOverrideAlbumPathConfig:
+    """Test plugin that implements the override_album_path_config hook."""
+
+    @staticmethod
+    @moe.hookimpl
+    def override_album_path_config(album: Album) -> Optional[str]:
+        """Override the `album_path` for classical music albums."""
+        if "Classical" in album.title:
+            return "Classical/{album.artist}/{album.title}"
+
+
+class TestOverrideAlbumPathConfig:
+    """Test the `override_album_path_config` hook implementation."""
+
+    @pytest.fixture
+    def _tmp_album_path_config(self, tmp_config):
+        """Create a temporary configuration with the test plugin."""
+        tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            album_path = "{album.artist}/{album.title}"
+            """,
+            extra_plugins=[
+                ExtraPlugin(
+                    TestPluginOverrideAlbumPathConfig, "override_album_path_plugin"
+                )
+            ],
+        )
+
+    @pytest.mark.usefixtures("_tmp_album_path_config")
+    def test_classical_album(self):
+        """Test that classical albums use the artist in the path."""
+        album = album_factory(
+            artist="Antonín Dvořák",
+            title="Classical Symphony No. 6",
+        )
+
+        path = moe_move.fmt_item_path(album)
+        expected_path = (
+            Path(moe.config.CONFIG.settings.library_path).expanduser()
+            / "Classical"
+            / "Antonín Dvořák"
+            / "Classical Symphony No. 6"
+        )
+
+        assert path == expected_path
+
+    @pytest.mark.usefixtures("_tmp_album_path_config")
+    def test_other_genre_album(self):
+        """Test that other albums use the default path configuration."""
+        album = album_factory(artist="Foreigner", title="Double Vision")
+
+        path = moe_move.fmt_item_path(album)
+        expected_path = (
+            Path(moe.config.CONFIG.settings.library_path).expanduser()
+            / "Foreigner"
+            / "Double Vision"
+        )
+
+        assert path == expected_path
+
+    def test_no_plugin(self, tmp_config):
+        """Test that the default configuration is used when no plugin is active."""
+        tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            album_path = "{album.artist}/{album.title}"
+            """
+        )
+
+        album = album_factory(artist="Antonín Dvořák", title="Classical Symphony No. 6")
+
+        path = moe_move.fmt_item_path(album)
+        expected_path = (
+            Path(moe.config.CONFIG.settings.library_path).expanduser()
+            / "Antonín Dvořák"
+            / "Classical Symphony No. 6"
+        )
+
+        assert path == expected_path

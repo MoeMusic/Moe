@@ -37,6 +37,33 @@ class Hooks:
             contain the callable functions themselves.
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec(firstresult=True)
+    def override_album_path_config(album: Album) -> Optional[str]:  # type: ignore
+        """Allows plugins to override the user's album path configuration.
+
+        This hook allows plugins to replace the entire album path template based on
+        album properties, rather than just adding custom functions to existing
+        templates.
+
+        Args:
+            album: The Album object for which the path is being generated.
+
+        Returns:
+            An optional string representing the new album path configuration template.
+            If None is returned, the user's configured album path template will be used.
+
+        Example:
+            .. code:: python
+
+                @moe.hookimpl
+                def override_album_path_config(album: Album) -> Optional[str]:
+                    if "Classical" in album.title:
+                        return "Classical/{album.artist}/{album.title} ({album.year})"
+                    elif "Soundtrack" in album.title:
+                        return "Soundtracks/{album.title} ({album.year})"
+        """  # noqa: DAR202
+
 
 @moe.hookimpl
 def add_hooks(pm: pluggy._manager.PluginManager):
@@ -107,7 +134,14 @@ def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
 
     if isinstance(item, Album):
         parent = parent or Path(config.CONFIG.settings.library_path).expanduser()
-        item_path = _eval_path_template(config.CONFIG.settings.move.album_path, item)
+
+        # Potentially override the album path config.
+        album_path_config = (
+            config.CONFIG.pm.hook.override_album_path_config(album=item)
+            or config.CONFIG.settings.move.album_path
+        )
+
+        item_path = _eval_path_template(album_path_config, item)
     elif isinstance(item, Extra):
         parent = parent or fmt_item_path(item.album)
         item_path = _eval_path_template(config.CONFIG.settings.move.extra_path, item)

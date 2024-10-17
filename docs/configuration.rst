@@ -89,6 +89,9 @@ Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/
     - For any path formatting changes, run ``moe move -n`` for a dry-run to avoid any unexpected results.
     - For a more detailed look at all the field options and types, take a look at the :ref:`library api <Library API>`. ``album``, ``track``, and ``extra`` in the path formats are ``Album``, ``Track``, and ``Extra`` objects respectively and thus you can reference any of their available attributes.
 
+.. note::
+    The ``album_path`` configuration can be completely overridden by plugins using the :meth:`~moe.move.move_core.Hooks.override_album_path_config` hook. This allows dynamic path structures based on album properties, such as redirecting classical albums or soundtracks to separate directory structures.
+
 Custom Path Template Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
