@@ -6,6 +6,17 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.1.4 (2024-11-07)
+===================
+
+Build Changes
+-------------
+* Update lint dependencies (`3e45c32 <https://github.com/MoeMusic/Moe/commit/3e45c32eb7a915187e64b852682968a130bf6f95>`_)
+* Update test dependencies (`cd43156 <https://github.com/MoeMusic/Moe/commit/cd4315633b71128c5344734524e5d86a3ac51d11>`_)
+* Support python 3.13 (`b47029a <https://github.com/MoeMusic/Moe/commit/b47029a4c5dbd1ad6ad8f6a1aa448755db36226d>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.1.3...v2.1.4>`__
+
 v2.1.3 (2024-04-06)
 ===================
 
