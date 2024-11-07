@@ -363,8 +363,8 @@ class Album(LibItem, SABase, MetaAlbum):
         self.track_total = track_total
         self.title = title
 
-        if config.CONFIG.settings.original_date and self.original_date:
-            self.date = self.original_date
+        if config.CONFIG.settings.original_date and original_date:
+            self.date = original_date
 
         log.debug(f"Album created. [album={self!r}]")
 
