@@ -67,6 +67,8 @@ version_files = [
 tag_format = "v$version"
 
 [tool.commitizen.customize]
+bump_pattern = '^(build|deprecate|feat|fix|perf)'
+bump_map = { feat = "MINOR", build = "PATCH", deprecate = "PATCH", fix = "PATCH", perf = "PATCH" }
 schema_pattern = '(build|ci|deprecate|docs|feat|fix|perf|refactor|release|style|test)(\(\w+\))?!?:\s\S.*'
 
 [tool.isort]
