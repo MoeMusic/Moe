@@ -19,14 +19,7 @@ In short, to contribute code to Moe, you should follow these steps:
 
    .. code:: bash
 
-        $ pytest
-        $ sphinx-build  -q -b html docs ~/src/Moe/docs/_build/html/
-
-#. :ref:`Lint your code <developers/contributing:Linting>`
-
-   .. code:: bash
-
-        $ pre-commit run -a
+        $ tox run-parallel
 
 #. Submit a pull request
 
@@ -182,24 +175,50 @@ Style/Conventions
   * ``@pytest.mark.linux`` - Linux
   * ``@pytest.mark.win32`` - Windows
 
-*******
+Running Tests
+=============
+When you've finished writing your tests, you'll want to make sure everything works:
+
+.. code::
+
+    $ tox run -e test
+
+Once that passes, the next step is to check against all python versions Moe supports, as well as run the documentation and `lint <#linting>`_ checks.
+
+.. code::
+
+    $ tox run-parallel
+
+.. important::
+   Tox will only be able to use python versions you have installed already. The easiest way to install multiple python versions is to use `pyenv <https://github.com/pyenv/pyenv>`_.
+
+.. tip::
+   If you only want to run specific checks, such as the unit tests for a specific python version, or just the lint or documentation tests, you can specify the test "environment" with ``tox run -e [env]``. For example:
+
+   .. code::
+
+      $ tox run -e py313-test
+
+   Which will run all unit tests with python 3.13. For a list of all possible environments you can use, run ``tox -l``.
+
 Linting
-*******
-`pre-commit <https://pre-commit.com/>`_ is used to test the various linters set up. If you'd like to automatically run the linters on each commit, you can 'install' ``pre-commit``:
-
+-------
 .. code::
 
-    $ pre-commit install
+    $ tox run -e lint
 
-Otherwise, to manually run all the checks:
-
-.. code::
-
-    $ pre-commit run -a
-
-``pre-commit`` will run the following checks:
+Runs the following checks:
 
 * `black <https://github.com/psf/black>`_ - used to keep a consistent code format.
 * `flake8 <https://github.com/PyCQA/flake8>`_ - used to check for various stylistic rules. See ``setup.cfg`` for an overview on the various rules encompassed by this check.
 * `isort <https://github.com/PyCQA/isort>`_ - used for sorting imports in modules.
 * `pyright <https://github.com/microsoft/pyright>`_ - used for type checking.
+* `commitizen <https://github.com/commitizen-tools/commitizen>`_ - used to ensure proper `commit conventions <#committing>`_.
+
+Building Documentation
+----------------------
+.. code::
+
+    $ tox run -e docs
+
+Builds and tests the documentation. You can view the newly built documentation under ``Moe/.tox/docs/tmp/html/``.
