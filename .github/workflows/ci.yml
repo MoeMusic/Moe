@@ -30,7 +30,7 @@ jobs:
       - name: Lint
         run: |
           poetry run pre-commit run --all-files
-          poetry run cz check --rev-range $(git describe --tags --abbrev=0)..HEAD
+          poetry run cz check --rev-range "$(git describe --tags --abbrev=0)..HEAD"
 
   test:
     runs-on: ${{ matrix.platform }}
