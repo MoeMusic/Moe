@@ -7,11 +7,11 @@ Installation
 ************
 Moe requires python 3.9 or greater.
 
-#. The latest release of Moe is available on `PyPI <https://pypi.org/project/moe>`_
+#. The latest release of Moe is available on `PyPI <https://pypi.org/project/moe>`_. It's recommended to install with `pipx <https://github.com/pypa/pipx>`_:
 
    .. code-block:: bash
 
-       $ pip install moe
+       $ pipx install moe
 
 #. Ensure everything is working properly.
 
