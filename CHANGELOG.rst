@@ -6,6 +6,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.2.0 (2025-04-06)
+===================
+
+New Features
+------------
+* Edit: Editing fields now allows for creation of new custom fields (`6fd538d <https://github.com/MoeMusic/Moe/commit/6fd538deb8732637882608d8d9bea9772c3b5b64>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.1.4...v2.2.0>`__
+
 v2.1.4 (2024-11-07)
 ===================
 
