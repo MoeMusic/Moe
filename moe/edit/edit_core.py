@@ -17,13 +17,15 @@ class EditError(Exception):
     """Error editing an item in the library."""
 
 
-def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
+def edit_item(item: LibItem, field: str, value: str, create_field=False):  # noqa: C901
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:
         item: Library item to edit.
         field: Item field to edit.
         value: Value to set the item's field to.
+        create_field: Whether to create ``field`` as a new custom field if it doesn't
+            already exist.
 
     Raises:
         EditError: ``field`` is not a valid attribute or is not editable.
@@ -36,7 +38,7 @@ def edit_item(item: LibItem, field: str, value: str):  # noqa: C901
     try:
         attr = getattr(item.__class__, field)
     except AttributeError as a_err:
-        if field in item.custom:
+        if create_field or field in item.custom:
             item.custom[field] = value
             return
 

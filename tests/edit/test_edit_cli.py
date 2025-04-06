@@ -51,7 +51,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with(ANY, "*", query_type="track")
-        mock_edit.assert_called_once_with(track, "track_num", "3")
+        mock_edit.assert_called_once_with(track, "track_num", "3", create_field=False)
 
     def test_album(self, mock_query, mock_edit):
         """Albums are edited."""
@@ -62,7 +62,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with(ANY, "*", query_type="album")
-        mock_edit.assert_called_once_with(album, "title", "edit")
+        mock_edit.assert_called_once_with(album, "title", "edit", create_field=False)
 
     def test_extra(self, mock_query, mock_edit):
         """Extras are edited."""
@@ -73,7 +73,7 @@ class TestCommand:
         moe.cli.main(cli_args)
 
         mock_query.assert_called_once_with(ANY, "*", query_type="extra")
-        mock_edit.assert_called_once_with(extra, "title", "edit")
+        mock_edit.assert_called_once_with(extra, "title", "edit", create_field=False)
 
     def test_multiple_items(self, mock_query, mock_edit):
         """All items returned from a query are edited."""
@@ -84,8 +84,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_edit.assert_any_call(track1, "track_num", "3")
-        mock_edit.assert_any_call(track2, "track_num", "3")
+        mock_edit.assert_any_call(track1, "track_num", "3", create_field=False)
+        mock_edit.assert_any_call(track2, "track_num", "3", create_field=False)
         assert mock_edit.call_count == 2
 
     def test_multiple_terms(self, mock_query, mock_edit):
@@ -96,8 +96,8 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_edit.assert_any_call(track, "track_num", "3")
-        mock_edit.assert_any_call(track, "title", "yo")
+        mock_edit.assert_any_call(track, "track_num", "3", create_field=False)
+        mock_edit.assert_any_call(track, "title", "yo", create_field=False)
         assert mock_edit.call_count == 2
 
     def test_invalid_fv_term(self, mock_query):
@@ -121,7 +121,7 @@ class TestCommand:
             moe.cli.main(cli_args)
 
         assert error.value.code != 0
-        mock_edit.assert_called_once_with(track, "track_num", "3")
+        mock_edit.assert_called_once_with(track, "track_num", "3", create_field=False)
 
     def test_edit_error(self, mock_query, mock_edit):
         """Raise SystemExit if there is an error editing the item."""
@@ -134,6 +134,16 @@ class TestCommand:
             moe.cli.main(cli_args)
 
         assert error.value.code != 0
+
+    def test_create_new_custom_field(self, mock_query, mock_edit):
+        """Create a new custom field if given '-c' and it doesn't exist."""
+        track = track_factory()
+        cli_args = ["edit", "-c", "*", "track_num=3"]
+        mock_query.return_value = [track]
+
+        moe.cli.main(cli_args)
+
+        mock_edit.assert_called_once_with(track, "track_num", "3", create_field=True)
 
 
 class TestPluginRegistration:

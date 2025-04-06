@@ -80,6 +80,13 @@ class TestEditItem:
 
         assert track.custom["my_title"] == "new"
 
+    def test_create_custom_field(self):
+        """We can create a new custom field and set it if specified."""
+        track = track_factory()
+        edit.edit_item(track, "my_title", "new", create_field=True)
+
+        assert track.custom["my_title"] == "new"
+
 
 class TestPluginRegistration:
     """Test the `plugin_registration` hook implementation."""

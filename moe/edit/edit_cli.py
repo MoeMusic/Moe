@@ -34,6 +34,12 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
         epilog=epilog_help,
     )
     edit_parser.add_argument(
+        "-c",
+        "--create",
+        action="store_true",
+        help="creates the field if it doesn't already exist",
+    )
+    edit_parser.add_argument(
         "fv_terms", metavar="FIELD=VALUE", nargs="+", help="set FIELD to VALUE"
     )
     edit_parser.set_defaults(func=_parse_args)
@@ -63,7 +69,7 @@ def _parse_args(session: Session, args: argparse.Namespace):
 
         for item in items:
             try:
-                edit.edit_item(item, field, value)
+                edit.edit_item(item, field, value, args.create)
             except edit.EditError as err:
                 log.error(err)
                 error_count += 1
