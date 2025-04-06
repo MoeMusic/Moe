@@ -60,7 +60,7 @@ Sphinx = "^7.0.0"
 
 [tool.commitizen]
 name = "cz_customize"
-version = "2.2.0"
+version = "2.2.1"
 version_files = [
     "pyproject.toml:^version",
 ]
