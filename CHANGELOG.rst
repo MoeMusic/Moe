@@ -6,6 +6,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.2.1 (2025-04-06)
+===================
+
+Build Changes
+-------------
+* Fix alembic config getting overwritten on build (`7f1e9fc <https://github.com/MoeMusic/Moe/commit/7f1e9fcab4693e69f133b937c0bb090d00a76882>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.2.0...v2.2.1>`__
+
 v2.2.0 (2025-04-06)
 ===================
 
