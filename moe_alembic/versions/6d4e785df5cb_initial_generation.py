@@ -7,10 +7,10 @@ Create Date: 2022-09-27 19:19:39.281403
 """
 
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.ext.mutable import MutableDict
 
 import moe
-from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "6d4e785df5cb"
