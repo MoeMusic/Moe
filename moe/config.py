@@ -166,7 +166,7 @@ class Hooks:
         `Session` class is passed as the listener target as shown in the example.
 
         Important:
-            This hooks is for Moe internal use only and should not be used by plugins.
+            This hook is for Moe internal use only and should not be used by plugins.
 
         Example:
             .. code:: python
