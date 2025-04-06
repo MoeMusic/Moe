@@ -7,10 +7,10 @@ Create Date: 2022-10-17 21:09:09.265544
 """
 
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.ext.mutable import MutableSet
 from sqlalchemy.orm import Session, declarative_base
 
-from alembic import op
 from moe.library.lib_item import SetType
 
 # revision identifiers, used by Alembic.

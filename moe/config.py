@@ -32,6 +32,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, NamedTuple, Optional, Union, cast
 
+import alembic.command
+import alembic.config
 import dynaconf
 import dynaconf.base
 import dynaconf.validator
@@ -41,8 +43,6 @@ import sqlalchemy
 import sqlalchemy.event
 import sqlalchemy.orm
 
-import alembic.command
-import alembic.config
 import moe
 
 moe_sessionmaker = sqlalchemy.orm.sessionmaker(autoflush=False)
@@ -289,7 +289,7 @@ class Config:
         if create_tables:
             config_path = Path(__file__)
             alembic_cfg = alembic.config.Config(
-                str(config_path.parents[1] / "alembic" / "alembic.ini")
+                str(config_path.parents[1] / "moe_alembic" / "alembic.ini")
             )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
