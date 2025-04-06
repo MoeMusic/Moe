@@ -97,16 +97,17 @@ Moe allows plugins to create custom path template functions that can be called w
 
 Overriding Config Values
 ========================
-All configuration parameters can be overridden through environment variables. To override the configuration parameter ``{param}``, use an environment variable named ``MOE_{PARAM}``.
-
-For example, to override the ``asciify_paths`` variable, you can run Moe with:
+All configuration parameters can be overridden through environment variables. To override global configuration parameters use an environment variable named ``MOE_{PARAM}``:
 
 .. code-block:: bash
 
-    $ MOE_MOVE.ASCIIFY_PATHS="true" moe
+    $ MOE_DISABLE_PLUGINS="['musicbrainz']" moe
 
-.. note::
-   Notice since the ``asciify_paths`` option is specific to the ``move`` plugin, we use ``move.asciify_paths`` to access it.
+For plugin specific configuration parameters, use ``MOE_{PLUGIN}__{PARAM}``:
+
+.. code-block:: bash
+
+    $ MOE_MOVE__ASCIIFY_PATHS=true moe
 
 Extending Your Configuration With Plugins
 =========================================
