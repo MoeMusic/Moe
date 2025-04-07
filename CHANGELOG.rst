@@ -6,6 +6,15 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.2.2 (2025-04-07)
+===================
+
+Build Changes
+-------------
+* Move alembic to be within moe source directory (`3f3a0d2 <https://github.com/MoeMusic/Moe/commit/3f3a0d2376c5529c5df754b24f6d63eca0590af8>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.2.1...v2.2.2>`__
+
 v2.2.1 (2025-04-06)
 ===================
 
