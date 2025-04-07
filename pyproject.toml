@@ -1,6 +1,5 @@
 [tool.poetry]
 name = "Moe"
-include = ["moe_alembic/*", "moe_alembic/versions/*"]
 version = "2.2.1"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
@@ -85,7 +84,7 @@ markers = [
 
 [tool.pyright]
 exclude = [
-    "moe_alembic", "tests"
+    "moe/moe_alembic", "tests"
 ]
 pythonPlatform = "All"
 

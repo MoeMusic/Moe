@@ -115,11 +115,11 @@ Moe uses `alembic <https://alembic.sqlalchemy.org/en/latest/ops.html>`_ for its 
 
    .. important::
 
-      You must be in the ``Moe/moe_alembic`` directory for this command to work.
+      You must be in the ``Moe/moe/moe_alembic`` directory for this command to work.
 
 #. Adjust the auto-generated script as necessary.
 
-   * The script will be under ``Moe/moe_alembic/versions``.
+   * The script will be under ``Moe/moe/moe_alembic/versions``.
 
 That's it! For more information regarding migrations, reference the `alembic docs <https://alembic.sqlalchemy.org/en/latest/ops.html>`_. Moe will automatically upgrade or downgrade each user's database the next time the program is run.
 

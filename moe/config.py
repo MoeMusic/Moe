@@ -289,7 +289,7 @@ class Config:
         if create_tables:
             config_path = Path(__file__)
             alembic_cfg = alembic.config.Config(
-                str(config_path.parents[1] / "moe_alembic" / "alembic.ini")
+                str(config_path.parents[0] / "moe_alembic" / "alembic.ini")
             )
             alembic_cfg.attributes["configure_logger"] = False
             with self.engine.begin() as connection:
