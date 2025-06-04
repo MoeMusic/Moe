@@ -501,6 +501,17 @@ class TestEditNewItems:
 
         mock_copy.assert_called_once_with(extra)
 
+    def test_album_with_tracks_and_extras_no_duplicate_copy(self, mock_copy):
+        """Avoid duplicate copying when album and its items are batched."""
+        album = album_factory(num_tracks=2, num_extras=2)
+        mock_session = MagicMock()
+
+        items = [album] + album.tracks + album.extras
+
+        config.CONFIG.pm.hook.edit_new_items(session=mock_session, items=items)
+
+        mock_copy.assert_called_once_with(album)
+
 
 class TestPluginRegistration:
     """Test the `plugin_registration` hook implementation."""
