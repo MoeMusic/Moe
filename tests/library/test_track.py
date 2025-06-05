@@ -285,6 +285,10 @@ class TestIsUnique:
 
         assert track1.is_unique(track2)
 
+    def test_non_track(self):
+        """Other library items that aren't tracks are unique."""
+        assert track_factory().is_unique(album_factory())
+
 
 class TestMerge:
     """Test merging two tracks."""

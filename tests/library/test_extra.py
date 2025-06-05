@@ -5,7 +5,7 @@ from pathlib import Path
 import moe
 from moe.config import ExtraPlugin
 from moe.library import Extra
-from tests.conftest import extra_factory
+from tests.conftest import extra_factory, track_factory
 
 
 class MyExtraPlugin:
@@ -47,6 +47,10 @@ class TestIsUnique:
         extra2 = extra_factory()
 
         assert extra1.is_unique(extra2)
+
+    def test_non_extra(self):
+        """Other library items that aren't extras are unique."""
+        assert extra_factory().is_unique(track_factory())
 
 
 class TestMerge:

@@ -87,6 +87,9 @@ class Extra(LibItem, SABase):
 
     def is_unique(self, other: "LibItem") -> bool:
         """Returns whether an extra is unique in the library from ``other``."""
+        if not isinstance(other, Extra):
+            return True
+
         if self.path == other.path:
             return False
 

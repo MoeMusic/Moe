@@ -315,6 +315,6 @@ class LibItem(MetaLibItem):
     _id: Mapped[int] = mapped_column(Integer, primary_key=True)
     path: Mapped[Path] = mapped_column(PathType, nullable=False, unique=True)
 
-    def is_unique(self, other) -> bool:
+    def is_unique(self, other: "LibItem") -> bool:
         """Returns whether an item is unique in the library from ``other``."""
         raise NotImplementedError

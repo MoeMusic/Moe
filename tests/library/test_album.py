@@ -408,6 +408,10 @@ class TestIsUnique:
 
         assert album1.is_unique(album2)
 
+    def test_non_album(self):
+        """Other library items that aren't albums are unique."""
+        assert album_factory().is_unique(track_factory())
+
 
 class TestEquality:
     """Test equality of albums."""

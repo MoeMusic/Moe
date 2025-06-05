@@ -482,8 +482,11 @@ class Track(LibItem, SABase, MetaTrack):
         """
         return mediafile.MediaFile(self.path).samplerate
 
-    def is_unique(self, other: "Track") -> bool:
+    def is_unique(self, other: "LibItem") -> bool:
         """Returns whether a track is unique in the library from ``other``."""
+        if not isinstance(other, Track):
+            return True
+
         if self.path == other.path:
             return False
         if (
