@@ -72,7 +72,7 @@ Positional Arguments
     ``FIELD`` is any field for the type of query given. For example, if you are querying for albums with ``-a, --album``, ``field`` must be an album field.
     ``VALUE`` is the value to set the field to.
 
-    See the :doc:`fields page<fields>` for all the available fields you can edit. Note that some fields cannot be edited and are annotated as such.
+    See the :doc:`fields page<fields>` for all the available fields you can edit. Note that some fields cannot be edited and are annotated as such. If you want to create a new custom field, use the ``-c, --create`` option.
 
     .. note::
         If the specified field supports multiple values, you can separate those values with a semicolon e.g. ``genre=hip hop;pop``.
@@ -83,6 +83,8 @@ Optional Arguments
     Display the help message.
 ``-a, --album``
     Query for matching albums instead of tracks.
+``-c, --create``
+    Creates the field if it doesn't already exist.
 ``-e, --extra``
     Query for matching extras instead of tracks.
 
