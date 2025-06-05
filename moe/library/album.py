@@ -424,8 +424,11 @@ class Album(LibItem, SABase, MetaAlbum):
         """Gets a Track by its track number."""
         return cast("Track", super().get_track(track_num, disc))
 
-    def is_unique(self, other: "Album") -> bool:
+    def is_unique(self, other: "LibItem") -> bool:
         """Returns whether an album is unique in the library from ``other``."""
+        if not isinstance(other, Album):
+            return True
+
         if self.path == other.path:
             return False
 

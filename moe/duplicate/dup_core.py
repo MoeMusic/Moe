@@ -160,11 +160,7 @@ def get_duplicates(
         others = query(session, "*", type(item).__name__.lower())
 
     for other in others:
-        if (
-            item is not other
-            and type(item) == type(other)  # noqa: E721
-            and not item.is_unique(other)
-        ):
+        if item is not other and not item.is_unique(other):
             dup_items.append(other)
 
     return dup_items
