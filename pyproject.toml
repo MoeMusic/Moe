@@ -72,6 +72,7 @@ schema_pattern = '(build|ci|deprecate|docs|feat|fix|perf|refactor|release|style|
 
 [tool.isort]
 profile = 'black'
+known_third_party = ["alembic"]
 
 [tool.pytest.ini_options]
 log_cli_level = 10
