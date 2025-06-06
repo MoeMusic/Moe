@@ -6,6 +6,19 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.3.0 (2025-06-06)
+===================
+
+New Features
+------------
+* Move: Add `override_album_path_config` hook (`b062fc5 <https://github.com/MoeMusic/Moe/commit/b062fc55d5a1a90bc4451504330e4edefad0e3a7>`_)
+
+Bug Fixes
+---------
+* Move: Prevent duplicate copying of tracks and extras when processing albums (`cc54a8f <https://github.com/MoeMusic/Moe/commit/cc54a8ffe191fd5547519156b422a6f773029755>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.2.2...v2.3.0>`__
+
 v2.2.2 (2025-04-07)
 ===================
 
