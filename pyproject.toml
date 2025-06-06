@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Moe"
-version = "2.2.2"
+version = "2.3.0"
 description = "The ultimate tool for managing your music library."
 authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
 repository = "https://github.com/MoeMusic/Moe"
@@ -59,7 +59,7 @@ Sphinx = "^7.0.0"
 
 [tool.commitizen]
 name = "cz_customize"
-version = "2.2.2"
+version = "2.3.0"
 version_files = [
     "pyproject.toml:^version",
 ]
