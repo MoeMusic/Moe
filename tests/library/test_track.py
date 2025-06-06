@@ -105,6 +105,22 @@ class TestInit:
 
         assert new_track.custom["custom"] == "custom"
 
+    def test_composer_fields(self):
+        """Composer fields can be assigned during initialization."""
+        track = track_factory()
+
+        new_track = Track(
+            track.album,
+            track.path,
+            track.title,
+            track.track_num,
+            composer="Antonín Leopold Dvořák",
+            composer_sort="Dvořák, Antonín Leopold",
+        )
+
+        assert new_track.composer == "Antonín Leopold Dvořák"
+        assert new_track.composer_sort == "Dvořák, Antonín Leopold"
+
 
 class TestMetaInit:
     """Test MetaTrack initialization."""
@@ -122,6 +138,16 @@ class TestMetaInit:
         track = MetaTrack(album, 1, artist="use me")
 
         assert track.artist == "use me"
+
+    def test_composer_fields(self):
+        """Composer fields can be assigned during MetaTrack initialization."""
+        album = MetaAlbum(artist="test_artist")
+        track = MetaTrack(
+            album, 1, composer="Jane Melody", composer_sort="Melody, Jane"
+        )
+
+        assert track.composer == "Jane Melody"
+        assert track.composer_sort == "Melody, Jane"
 
 
 class TestFromFile:
@@ -352,6 +378,34 @@ class TestMerge:
         track.merge(other_track)
 
         assert track.custom["custom"] == "new"
+
+    def test_composer_fields(self):
+        """Composer fields merge correctly."""
+        album = MetaAlbum(artist="album_artist")
+        track1 = MetaTrack(album, 1)
+        track2 = MetaTrack(
+            album, 1, composer="Alex Harmony", composer_sort="Harmony, Alex"
+        )
+
+        track1.merge(track2)
+
+        assert track1.composer == "Alex Harmony"
+        assert track1.composer_sort == "Harmony, Alex"
+
+    def test_composer_overwrite(self):
+        """Composer fields overwrite correctly when specified."""
+        album = MetaAlbum(artist="album_artist")
+        track1 = MetaTrack(
+            album, 1, composer="Sam Rhythm", composer_sort="Rhythm, Sam"
+        )
+        track2 = MetaTrack(
+            album, 1, composer="Taylor Beat", composer_sort="Beat, Taylor"
+        )
+
+        track1.merge(track2, overwrite=True)
+
+        assert track1.composer == "Taylor Beat"
+        assert track1.composer_sort == "Beat, Taylor"
 
 
 class TestProperties:
