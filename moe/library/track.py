@@ -21,6 +21,45 @@ __all__ = ["MetaTrack", "Track", "TrackError"]
 log = logging.getLogger("moe.track")
 
 
+def _detect_album_path(track_path: Path) -> Path:
+    """Detect the correct album path for a track, handling multi-disc albums.
+
+    For single-disc albums, returns the parent directory.
+    For multi-disc albums, returns the grandparent directory if the parent
+    looks like a disc folder and there are other disc folders at the same level.
+
+    Args:
+        track_path: Path to the track file.
+
+    Returns:
+        Path to the album directory.
+    """
+    track_parent = track_path.parent
+    parent_name = track_parent.name.lower()
+
+    disc_keywords = ["disc", "disk", "cd"]
+    is_disc_dir = any(keyword in parent_name for keyword in disc_keywords)
+
+    if is_disc_dir and track_parent.parent.exists():
+        # Check if there are other disc directories at the same level
+        grandparent = track_parent.parent
+        other_disc_dirs = [
+            sibling
+            for sibling in grandparent.iterdir()
+            if (
+                sibling.is_dir()
+                and sibling != track_parent
+                and any(keyword in sibling.name.lower() for keyword in disc_keywords)
+            )
+        ]
+
+        # If we found other disc directories, use the grandparent as album path
+        if other_disc_dirs:
+            return grandparent
+
+    return track_parent
+
+
 class Hooks:
     """Track hook specifications."""
 
@@ -434,8 +473,10 @@ class Track(LibItem, SABase, MetaTrack):
             )
 
         if not album:
+            album_path = _detect_album_path(track_path)
+
             album = Album(
-                path=track_path.parent,
+                path=album_path,
                 artist=album_artist,
                 title=album_title,
                 date=date,

@@ -365,7 +365,7 @@ class TestFromDir:
             Album.from_dir(empty_path)
 
     def test_add_multi_disc(self, tmp_config):
-        """We can add a multi-disc album."""
+        """We can add a multi-disc album with extra files at the root level."""
         tmp_config()
         album = album_factory(exists=True)
         track1 = album.tracks[0]
@@ -375,6 +375,9 @@ class TestFromDir:
         album.disc_total = 2
         moe_write.write_tags(track1)
         moe_write.write_tags(track2)
+
+        cover_art = album.path / "cover.jpg"
+        cover_art.write_text("album artwork")
 
         track1_path = Path(album.path / "disc 01" / track1.path.name)
         track2_path = Path(album.path / "disc 02" / track2.path.name)
@@ -389,6 +392,10 @@ class TestFromDir:
 
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
+
+        cover_extra = album.get_extra(Path("cover.jpg"))
+        assert cover_extra is not None
+        assert cover_extra.path.is_relative_to(album.path)
 
 
 class TestIsUnique:

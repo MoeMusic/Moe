@@ -391,14 +391,19 @@ class Album(LibItem, SABase, MetaAlbum):
         extra_paths = []
         album_file_paths = [path for path in album_path.rglob("*") if path.is_file()]
         album: Optional[Album] = None
+
         for file_path in album_file_paths:
             try:
                 track = Track.from_file(file_path, album)
-            except TrackError:
-                extra_paths.append(file_path)
-            else:
                 if not album:
                     album = track.album
+                    # Ensure the album path is set to the directory we're scanning from
+                    # This handles cases where Track.from_file detected a different
+                    # album path
+                    if album.path != album_path:
+                        album.path = album_path
+            except TrackError:
+                extra_paths.append(file_path)
 
         if not album:
             raise AlbumError(f"No tracks found in album directory. [dir={album_path}]")
