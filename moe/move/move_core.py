@@ -64,6 +64,36 @@ class Hooks:
                         return "Soundtracks/{album.title} ({album.year})"
         """  # noqa: DAR202
 
+    @staticmethod
+    @moe.hookspec(firstresult=True)
+    def override_extra_path_config(extra: Extra) -> Optional[str]:  # type: ignore
+        """Allows plugins to override the user's extra path configuration.
+
+        This hook allows plugins to replace the entire extra path template based on
+        extra properties, rather than just adding custom functions to existing
+        templates.
+
+        Args:
+            extra: The Extra object for which the path is being generated.
+
+        Returns:
+            An optional string representing the new extra path configuration template.
+            If None is returned, the user's configured extra path template will be used.
+
+        Example:
+            .. code:: python
+
+                @moe.hookimpl
+                def override_extra_path_config(extra: Extra) -> Optional[str]:
+                    if extra.path.name.lower().endswith(('.jpg', '.png')):
+                        if 'cover' in extra.path.name.lower():
+                            return f"{extra.album.title}.jpg"
+                        elif 'scan' in str(extra.path).lower():
+                            return f"scans/{extra.path.name}"
+                    elif extra.path.name.lower().endswith('.cue'):
+                        return f"{extra.album.title}.cue"
+        """  # noqa: DAR202
+
 
 @moe.hookimpl
 def add_hooks(pm: pluggy._manager.PluginManager):
@@ -140,21 +170,24 @@ def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
         parent = parent or Path(config.CONFIG.settings.library_path).expanduser()
 
         # Potentially override the album path config.
-        album_path_config = (
+        item_path_config = (
             config.CONFIG.pm.hook.override_album_path_config(album=item)
             or config.CONFIG.settings.move.album_path
         )
-
-        item_path = _eval_path_template(album_path_config, item)
     elif isinstance(item, Extra):
         parent = parent or fmt_item_path(item.album)
-        item_path = _eval_path_template(config.CONFIG.settings.move.extra_path, item)
+
+        # Potentially override the extra path config.
+        item_path_config = (
+            config.CONFIG.pm.hook.override_extra_path_config(extra=item)
+            or config.CONFIG.settings.move.extra_path
+        )
     else:
         assert isinstance(item, Track)
         parent = parent or fmt_item_path(item.album)
-        item_path = _eval_path_template(config.CONFIG.settings.move.track_path, item)
+        item_path_config = config.CONFIG.settings.move.track_path
 
-    new_path = parent / item_path
+    new_path = parent / _eval_path_template(item_path_config, item)
 
     if config.CONFIG.settings.move.asciify_paths:
         new_path = Path(unidecode(str(new_path)))

@@ -77,6 +77,9 @@ Path Configuration Options
 ``extra_path = "{e_unique(extra)}"``
     Extra filesystem path format relative to ``album_path``.
 
+.. note::
+    The ``extra_path`` configuration can be completely overridden by plugins using the :meth:`~moe.move.move_core.Hooks.override_extra_path_config` hook. This allows dynamic path structures based on extra file properties, such as organizing cover art, scans, and cue files into appropriate subdirectories or with specific naming conventions.
+
 Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals>`_ which, as demonstrated by the default track path, allow all the advanced formatting and expression evaluation that come with them. You can access any of the :ref:`respective item's fields <fields:Fields>` in these strings using ``{[album/track/extra].field}`` notation as shown.
 
 .. important::
