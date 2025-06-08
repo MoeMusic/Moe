@@ -10,7 +10,7 @@ import moe
 from moe import config
 from moe import move as moe_move
 from moe.config import ExtraPlugin
-from moe.library import Album
+from moe.library import Album, Extra
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -606,5 +606,76 @@ class TestOverrideAlbumPathConfig:
             / "Antonín Dvořák"
             / "Classical Symphony No. 6"
         )
+
+        assert path == expected_path
+
+
+class TestPluginOverrideExtraPathConfig:
+    """Test plugin that implements the override_extra_path_config hook."""
+
+    @staticmethod
+    @moe.hookimpl
+    def override_extra_path_config(extra: Extra) -> Optional[str]:
+        """Override the `extra_path` for specific extra file types."""
+        if "cover" in extra.path.name.lower():
+            return f"{extra.album.title}.jpg"
+
+
+class TestOverrideExtraPathConfig:
+    """Test the `override_extra_path_config` hook implementation."""
+
+    @pytest.fixture
+    def _tmp_extra_path_config(self, tmp_config):
+        """Create a temporary configuration with the test plugin."""
+        tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            extra_path = "{extra.path.name}"
+            """,
+            extra_plugins=[
+                ExtraPlugin(
+                    TestPluginOverrideExtraPathConfig, "override_extra_path_plugin"
+                )
+            ],
+        )
+
+    @pytest.mark.usefixtures("_tmp_extra_path_config")
+    def test_cover_extra(self):
+        """Test that cover files get renamed to use the album title."""
+        album = album_factory(title="Test Album")
+        extra = extra_factory(album=album, path=album.path / "cover.jpg")
+
+        path = moe_move.fmt_item_path(extra)
+        expected_path = moe_move.fmt_item_path(album) / "Test Album.jpg"
+
+        assert path == expected_path
+
+    @pytest.mark.usefixtures("_tmp_extra_path_config")
+    def test_other_extra(self):
+        """Test that other extras use the default path configuration."""
+        album = album_factory(title="Test Album")
+        extra = extra_factory(album=album, path=album.path / "playlist.m3u")
+
+        path = moe_move.fmt_item_path(extra)
+        expected_path = moe_move.fmt_item_path(album) / "playlist.m3u"
+
+        assert path == expected_path
+
+    def test_no_plugin(self, tmp_config):
+        """Test that the default configuration is used when no plugin is active."""
+        tmp_config(
+            settings="""
+            default_plugins = ["move"]
+            [move]
+            extra_path = "{extra.path.name}"
+            """
+        )
+
+        album = album_factory(title="Test Album")
+        extra = extra_factory(album=album, path=album.path / "cover.jpg")
+
+        path = moe_move.fmt_item_path(extra)
+        expected_path = moe_move.fmt_item_path(album) / "cover.jpg"
 
         assert path == expected_path
