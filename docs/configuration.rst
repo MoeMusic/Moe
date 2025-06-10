@@ -59,6 +59,21 @@ Move
 
     If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
 
+Import
+------
+``max_candidates = 5``
+    Maximum number of candidate albums to display in the import prompt.
+
+    When running ``moe add``, this setting controls how many potential matches are shown when importing albums. Increasing this value allows you to see more options when multiple matches are found from metadata providers like MusicBrainz and Discogs.
+
+    .. code-block:: toml
+
+        [import]
+        max_candidates = 10  # Show up to 10 candidate albums
+
+    .. note::
+        This setting only affects the number of candidates displayed in the interactive prompt. To increase the number of candidates fetched from metadata providers, you may also need to adjust the search limits for individual plugins like ``musicbrainz.search_limit``.
+
 Path Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. note::

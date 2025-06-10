@@ -1,7 +1,7 @@
 """Tests the import cli plugin."""
 
 import datetime
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 
@@ -9,7 +9,7 @@ import moe
 import moe.cli
 from moe import config, moe_import
 from moe.cli import console
-from moe.config import ExtraPlugin
+from moe.config import ConfigValidationError, ExtraPlugin
 from moe.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice
 from tests.conftest import album_factory, extra_factory, track_factory
@@ -135,6 +135,68 @@ class TestProcessCandidates:
             config.CONFIG.pm.hook.process_candidates(new_album=Mock(), candidates=[])
 
         mock_import_prompt.assert_not_called()
+
+    def test_max_candidates_default(self):
+        """By default, only the first 5 candidates should be processed."""
+        mock_candidates = [Mock() for _ in range(10)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=Mock(),
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(ANY, mock_candidates[:5])
+
+    def test_max_candidates_custom(self, tmp_config):
+        """Should respect the custom max_candidates configuration."""
+        tmp_config(
+            """
+            default_plugins = ['cli', 'import']
+            [import]
+            max_candidates = 3
+        """
+        )
+
+        mock_candidates = [Mock() for _ in range(10)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=Mock(),
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(ANY, mock_candidates[:3])
+
+    def test_max_candidates_more_than_available(self):
+        """Should handle cases where max_candidates > available candidates."""
+        mock_candidates = [Mock() for _ in range(2)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=Mock(),
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(ANY, mock_candidates)
+
+    def test_max_candidates_invalid_value(self, tmp_config):
+        """The max_candidates option should raise an error if set to less than 1."""
+        with pytest.raises(ConfigValidationError):
+            tmp_config(
+                settings="""
+                default_plugins = ['cli', 'import']
+
+                [import]
+                max_candidates = 0
+                """
+            )
 
 
 @pytest.mark.usefixtures("_tmp_import_config")
