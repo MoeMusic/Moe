@@ -2,6 +2,9 @@
 
 import sys
 
+import dynaconf
+import dynaconf.base
+
 import moe
 from moe import config
 
