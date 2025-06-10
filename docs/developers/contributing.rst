@@ -97,11 +97,20 @@ The description should be present tense, not capitalized, and have no punctuatio
 
 Body
 -----
-The body should include amplifying information on the change both for users looking at the commit from the changelog, as well as developers to understand the change. Including a body is always encouraged, but only mandatory if the commit introduces a breaking change.
+The body should include amplifying information on the change both for users looking at the commit from the changelog, as well as developers to understand the change. This is especially important for any breaking changes.
 
 Footer
 -------
-The footer should include references to any relevant issues or other information. If resolving an issue, prepend the issue with 'fixes' (`or other supported keywords <https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword>`_) e.g. ``Fixes #1234``.
+The footer should include references to any relevant issues, discussions, pull requests, or other information. If resolving an issue, prepend the issue with 'fixes' (`or other supported keywords <https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword>`_). For example:
+
+   .. code:: markdown
+
+      feat(add): cool new command
+
+      This new command allows to you to do this one very cool specific thing.
+
+      Fixes #345
+      See #987 for more discussion
 
 Migrations
 ==========
