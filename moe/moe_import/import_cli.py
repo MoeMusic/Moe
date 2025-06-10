@@ -113,7 +113,8 @@ def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
         try:
-            candidate_prompt(new_album, candidates[:5])
+            max_candidates = config.CONFIG.settings.get("import.max_candidates", 5)
+            candidate_prompt(new_album, candidates[:max_candidates])
         except AbortImport as err:
             log.debug(err)
             raise SystemExit(0) from err

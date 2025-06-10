@@ -2,6 +2,9 @@
 
 import sys
 
+import dynaconf
+import dynaconf.base
+
 import moe
 from moe import config
 
@@ -12,6 +15,14 @@ from .import_core import *
 __all__ = []
 __all__.extend(import_cli.__all__)
 __all__.extend(import_core.__all__)
+
+
+@moe.hookimpl
+def add_config_validator(settings: dynaconf.base.LazySettings):
+    """Add configuration validators for the import plugin."""
+    settings.validators.register(  # type: ignore
+        dynaconf.Validator("import.max_candidates", default=5, gte=1)
+    )
 
 
 @moe.hookimpl

@@ -136,6 +136,64 @@ class TestProcessCandidates:
 
         mock_import_prompt.assert_not_called()
 
+    def test_max_candidates_default(self):
+        """By default, only the first 5 candidates should be processed."""
+        mock_new_album = Mock()
+        mock_candidates = [Mock() for _ in range(10)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=mock_new_album,
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(
+            mock_new_album, mock_candidates[:5]
+        )
+
+    def test_max_candidates_custom(self, tmp_config):
+        """Should respect the custom max_candidates configuration."""
+        tmp_config(
+            """
+            default_plugins = ['cli', 'import']
+            [import]
+            max_candidates = 3
+        """,
+            tmp_db=True,
+        )
+
+        mock_new_album = Mock()
+        mock_candidates = [Mock() for _ in range(10)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=mock_new_album,
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(
+            mock_new_album, mock_candidates[:3]
+        )
+
+    def test_max_candidates_more_than_available(self):
+        """Should handle cases where max_candidates > available candidates."""
+        mock_new_album = Mock()
+        mock_candidates = [Mock() for _ in range(2)]
+
+        with patch(
+            "moe.moe_import.import_cli.candidate_prompt", autospec=True
+        ) as mock_candidate_prompt:
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=mock_new_album,
+                candidates=mock_candidates,
+            )
+
+        mock_candidate_prompt.assert_called_once_with(mock_new_album, mock_candidates)
+
 
 @pytest.mark.usefixtures("_tmp_import_config")
 class TestAddImportPromptChoice:

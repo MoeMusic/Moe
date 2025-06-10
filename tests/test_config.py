@@ -180,3 +180,17 @@ class TestConfigOptions:
             settings=f"library_path = '{tmp_windows_path}'",
         )
         assert Path(config.settings.library_path).exists()
+
+    def test_import_max_candidates(self, tmp_config):
+        """Import max_candidates configuration is validated."""
+        # Test default value
+        config = tmp_config(settings='default_plugins = ["import"]')
+        assert config.settings.get("import.max_candidates", 5) == 5
+
+        # Test custom value
+        config = tmp_config(
+            settings="""default_plugins = ["import"]
+            [import]
+            max_candidates = 10"""
+        )
+        assert config.settings.get("import.max_candidates") == 10
