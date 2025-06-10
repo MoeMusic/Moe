@@ -77,9 +77,6 @@ Path Configuration Options
 ``extra_path = "{e_unique(extra)}"``
     Extra filesystem path format relative to ``album_path``.
 
-.. note::
-    The ``extra_path`` configuration can be completely overridden by plugins using the :meth:`~moe.move.move_core.Hooks.override_extra_path_config` hook. This allows dynamic path structures based on extra file properties, such as organizing cover art, scans, and cue files into appropriate subdirectories or with specific naming conventions.
-
 Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals>`_ which, as demonstrated by the default track path, allow all the advanced formatting and expression evaluation that come with them. You can access any of the :ref:`respective item's fields <fields:Fields>` in these strings using ``{[album/track/extra].field}`` notation as shown.
 
 .. important::
@@ -92,14 +89,25 @@ Paths are formatted using python `f-strings <https://docs.python.org/3/tutorial/
     - For any path formatting changes, run ``moe move -n`` for a dry-run to avoid any unexpected results.
     - For a more detailed look at all the field options and types, take a look at the :ref:`library api <Library API>`. ``album``, ``track``, and ``extra`` in the path formats are ``Album``, ``Track``, and ``Extra`` objects respectively and thus you can reference any of their available attributes.
 
-.. note::
-    The ``album_path`` configuration can be completely overridden by plugins using the :meth:`~moe.move.move_core.Hooks.override_album_path_config` hook. This allows dynamic path structures based on album properties, such as redirecting classical albums or soundtracks to separate directory structures.
+Advanced Path Template Configuration
+************************************
+There are two options for even more customization of your path templates: functions, and programmatically overriding the template entirely. Both of these options require :ref:`extending_your_config_with_plugins`.
 
 Custom Path Template Functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Moe allows plugins to create custom path template functions that can be called within the path templates. The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Plugins can create custom path template functions to be called within the path templates. These functions are useful for altering the results of directory or file names, but cannot be used to specify custom sub-directories (for that, see :ref:`overriding_path_templates_programmatically`).
+
+The function called in the default ``extra_path`` template, ``e_unique``, is an example of a custom path template function. The following custom template functions are included in the move plugin:
 
 .. autofunction:: moe.move.move_core.e_unique
+
+To create your own path template functions, implement the :meth:`~moe.move.move_core.Hooks.create_path_template_func` hook in your plugin.
+
+.. _overriding_path_templates_programmatically:
+
+Overriding Path Templates Programmatically
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The path templates themselves can also be set programmatically via a plugin rather than from your configuration file. Using python to set your path templates allows you to specify different path templates entirely based on criteria such as storing all classical albums in a separate directory. Currently, both the album and extra path templates can be set by plugins using the :meth:`~moe.move.move_core.Hooks.override_album_path_config` and the  :meth:`~moe.move.move_core.Hooks.override_extra_path_config` hooks.
 
 Overriding Config Values
 ========================
@@ -114,6 +122,8 @@ For plugin specific configuration parameters, use ``MOE_{PLUGIN}__{PARAM}``:
 .. code-block:: bash
 
     $ MOE_MOVE__ASCIIFY_PATHS=true moe
+
+.. _extending_your_config_with_plugins:
 
 Extending Your Configuration With Plugins
 =========================================
