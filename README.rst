@@ -60,4 +60,24 @@ As previously mentioned, all of Moe's music management logic and functionality i
 
 This is just a small taste of what Moe is capable of and how it can make your life easier when dealing with music.
 
+Why Moe?
+--------
+While powerful music taggers like `beets`_ exist, Moe was developed to address several fundamental, long-standing issues in the music tagging space with a fresh architectural approach. It aims to provide a more modern and extensible platform for both users and developers.
+
+Key Differentiators
+~~~~~~~~~~~~~~~~~~~
+* **First-Class Support for "Extras":** Moe treats "extra" files like artwork, booklets, and log files as integral components of an album and manages them as first-class objects in your library.
+* **Multi-Value Tag Support:** Moe supports multi-valued tags, addressing a common limitation in other taggers often restricted to single values or limited multi-value tag support.
+* **Highly Extensible Plugin System:** Moe's plugin system is inspired by pytest, utilizing a powerful hook system. This allows plugins to extend or modify the behavior of Moe's core components and even other plugins, simplifying plugin development and providing lots of customization options. It's extremely easy to create local plugins to complement your configuration, or to publish ones to PyPI for others to use.
+* **Metadata-Source Agnostic:** Metadata sources such as Musicbrainz are implemented as standalone plugins that can be added or removed based on your preferences.
+* **Modern, Maintainable, and Library-First Architecture:**
+
+  * **Library First:** Moe is built as a library before a CLI. This enables easy integration of Moe's logic into other programs and supports the development of alternative user interfaces.
+  * **Modern Tooling:** It leverages mature libraries such as `SQLAlchemy`_ for database management and `pathlib`_ for path handling. This approach greatly reduces the maintenance overhead that comes with hand-rolled solutions for complex issues.
+  * **Contribution Friendly:** A lean core, high test coverage, and modern architecture make Moe approachable for new contributors and make it easy to introduce new changes.
+
+.. _beets: https://github.com/beetbox/beets
+.. _SQLAlchemy: https://www.sqlalchemy.org/
+.. _pathlib: https://docs.python.org/3/library/pathlib.html
+
 If you want to learn more, check out the `Getting Started <https://mrmoe.readthedocs.io/en/latest/getting_started.html>`_ docs.
