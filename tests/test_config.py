@@ -1,5 +1,6 @@
 """Tests configuration."""
 
+import logging
 import shutil
 from pathlib import Path
 from unittest.mock import patch
@@ -99,6 +100,20 @@ class TestPlugins:
         tmp_config(settings="enable_plugins = ['my_list']", config_dir=config_dir)
 
         assert config.CONFIG.pm.has_plugin("my_list")
+
+    def test_warn_uninstalled_plugin(self, tmp_config, caplog):
+        """Warn the user if an enabled plugin cannot be loaded."""
+        with caplog.at_level(logging.WARNING):
+            tmp_config(
+                settings="""enable_plugins = ["non_existent"]
+            """
+            )
+            assert (
+                "Plugin 'non_existent' is enabled in the configuration but could not be"
+                " loaded. Is it installed?" in caplog.text
+            )
+
+        assert not config.CONFIG.pm.has_plugin("non_existent")
 
 
 class ConfigPlugin:
