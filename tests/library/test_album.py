@@ -368,6 +368,7 @@ class TestFromDir:
         """We can add a multi-disc album."""
         tmp_config()
         album = album_factory(exists=True)
+        original_album_path = album.path
         track1 = album.tracks[0]
         track2 = album.tracks[1]
         track1.disc = 1
@@ -387,6 +388,7 @@ class TestFromDir:
 
         album = Album.from_dir(album.path)
 
+        assert album.path == original_album_path
         assert album.get_track(track1.track_num, track1.disc)
         assert album.get_track(track2.track_num, track2.disc)
 
