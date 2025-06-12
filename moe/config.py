@@ -421,6 +421,13 @@ class Config:
         self.pm.hook.add_hooks(pm=self.pm)
 
         log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
+        # check if all enabled plugins were loaded
+        for plugin in self.enabled_plugins:
+            if not self.pm.has_plugin(plugin):
+                log.warning(
+                    f"Plugin {plugin!r} is enabled in the configuration but could not "
+                    "be loaded. Is it installed?"
+                )
 
     def _register_local_plugins(
         self, enabled_plugins: set[str], plugin_dir: Path, pkg_name: str = ""
