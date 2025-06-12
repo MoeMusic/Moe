@@ -393,7 +393,7 @@ class Album(LibItem, SABase, MetaAlbum):
         album: Optional[Album] = None
         for file_path in album_file_paths:
             try:
-                track = Track.from_file(file_path, album)
+                track = Track.from_file(file_path, album, album_path)
             except TrackError:
                 extra_paths.append(file_path)
             else:

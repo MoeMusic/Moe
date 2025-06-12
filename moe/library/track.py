@@ -376,15 +376,24 @@ class Track(LibItem, SABase, MetaTrack):
         return 1
 
     @classmethod
-    def from_file(cls, track_path: Path, album: Optional[Album] = None) -> "Track":
+    def from_file(
+        cls,
+        track_path: Path,
+        album: Optional[Album] = None,
+        album_path: Optional[Path] = None,
+    ) -> "Track":
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
 
         Args:
             track_path: Filesystem path of the track.
-            album: Corresponding album for the track. If not given, the album will be
-                created.
+            album: Corresponding album for the track. If ``None``, the album will be
+                created using the parent directory of ``track_path``, unless
+                ``album_path`` is also given.
+            album_path: When ``album`` is ``None``, this is the path of the created
+                album. If ``None`` it defaults to the parent directory of
+                ``track_path``.
 
         Returns:
             Track instance.
@@ -435,7 +444,7 @@ class Track(LibItem, SABase, MetaTrack):
 
         if not album:
             album = Album(
-                path=track_path.parent,
+                path=album_path or track_path.parent,
                 artist=album_artist,
                 title=album_title,
                 date=date,

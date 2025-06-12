@@ -220,6 +220,23 @@ class TestFromFile:
 
         Track.from_file(track.path).album.disc_total = 1
 
+    def test_init_album_defaults(self, tmp_config):
+        """If an album is not given, we will create it with the track's parent path."""
+        tmp_config()
+        track = track_factory(exists=True)
+
+        new_track = Track.from_file(track.path)
+        assert new_track.album.path == new_track.path.parent
+
+    def test_init_album_with_album_path(self, tmp_config):
+        """If an album is not given, we will create it with a specified album_path."""
+        tmp_config()
+        track = track_factory(exists=True)
+        album_path = track.path.parent.parent
+
+        new_track = Track.from_file(track.path, None, album_path)
+        assert new_track.album.path == album_path
+
 
 class TestEquality:
     """Test equality of tracks."""
