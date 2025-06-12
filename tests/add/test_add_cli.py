@@ -190,7 +190,7 @@ class TestPluginRegistration:
 
         assert not config.pm.has_plugin("add_cli")
 
-    def test_cli(self, caplog, tmp_config):
+    def test_cli(self, tmp_config):
         """Enable the add cli plugin if the `cli` plugin is enabled."""
         config = tmp_config(settings='default_plugins = ["add", "cli"]')
 
