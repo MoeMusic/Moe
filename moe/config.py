@@ -359,19 +359,8 @@ class Config:
         except dynaconf.validator.ValidationError as err:
             raise ConfigValidationError(err) from err
 
-    def _setup_plugins(
-        self,
-        core_plugins: dict[str, str] = CORE_PLUGINS,
-        default_plugins: dict[str, str] = DEFAULT_PLUGINS,
-    ):
-        """Setup pm and hook logic.
-
-        Args:
-            core_plugins: Optional mapping of core plugin modules to names.
-                These plugins cannot be overwritten by the user configuration.
-            default_plugins: Optional mapping of default plugin modules to names.
-                These plugins are enabled by default, but can be disabled by the config.
-        """
+    def _setup_plugins(self):
+        """Setup pm and hook logic."""
         log.debug("Setting up plugins.")
 
         self.pm = cast(
@@ -379,48 +368,55 @@ class Config:
         )  # avoids pluggy hook type errors
 
         # register core modules that cannot be disabled by the config
-        for plugin_name, module in core_plugins.items():
+        for plugin_name, module in CORE_PLUGINS.items():
             self.pm.register(importlib.import_module(module), plugin_name)
 
-        # need to validate `config` specific settings separately so we have access to
-        # the 'default_plugins' setting
+        # need to validate `config` settings separately so we have access to them
         self.pm.add_hookspecs(Hooks)
         self.pm.hook.add_config_validator(settings=self.settings)
         self._validate_settings()
 
+        self._register_enabled_plugins()
+
+        # register plugin hookspecs for all enabled plugins
+        self.pm.hook.add_hooks(pm=self.pm)
+
+        log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
+
+    def _register_enabled_plugins(self):
+        """Registers all enabled plugins in the configuration."""
         self.enabled_plugins = (
             set(self.settings.default_plugins) | set(self.settings.enable_plugins)
         ) - set(self.settings.disable_plugins)
 
+        log.debug(f"Registering enabled plugins. {self.enabled_plugins=}")
+
         # register default plugins
-        for plugin_name, module in default_plugins.items():
+        for plugin_name, module in DEFAULT_PLUGINS.items():
             if plugin_name in self.enabled_plugins:
                 self.pm.register(importlib.import_module(module), plugin_name)
 
+        # register local user plugins
         if Path(self.config_dir / "plugins").exists():
             sys.path.append(str(self.config_dir / "plugins"))
             self._register_local_plugins(
                 self.enabled_plugins, self.config_dir / "plugins"
             )
 
-        # register all third-party installed plugins
+        # register third-party installed plugins
         plugins = importlib_metadata.entry_points().select(group="moe.plugins")
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
                     self.pm.register(plugin.load(), plugin.name)
 
-        # register plugin hookimpls for all extra plugins
+        # register explicitly given extra plugins
         for extra_plugin in self._extra_plugins:
             self.pm.register(extra_plugin.plugin, extra_plugin.name)
 
         # register individual plugin sub-modules
         self.pm.hook.plugin_registration(pm=self.pm)
 
-        # register plugin hookspecs for all enabled plugins
-        self.pm.hook.add_hooks(pm=self.pm)
-
-        log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
         # check if all enabled plugins were loaded
         for plugin in self.enabled_plugins:
             if not self.pm.has_plugin(plugin):
