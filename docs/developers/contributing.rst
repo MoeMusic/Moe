@@ -120,11 +120,8 @@ Moe uses `alembic <https://alembic.sqlalchemy.org/en/latest/ops.html>`_ for its 
 
    .. code:: bash
 
+       $ cd Moe/moe/moe_alembic
        $ alembic revision --autogenerate -m "<description of the change>"
-
-   .. important::
-
-      You must be in the ``Moe/moe/moe_alembic`` directory for this command to work.
 
 #. Adjust the auto-generated script as necessary.
 
