@@ -112,6 +112,8 @@ The footer should include references to any relevant issues, discussions, pull r
       Fixes #345
       See #987 for more discussion
 
+.. _migrations:
+
 Migrations
 ==========
 Moe uses `alembic <https://alembic.sqlalchemy.org/en/latest/ops.html>`_ for its database migrations. If your code change requires a database migration, use the following steps:
@@ -150,7 +152,7 @@ If adding a new field to Moe, the following checklist can help ensure you cover 
 
 #. Add a weight for how much the field should factor into matching a track or album to another track or album in ``moe/util/core/match.py:MATCH_<TRACK/ALBUM>_FIELD_WEIGHTS``.
 #. Include documentation for your new field in ``docs/fields.rst``
-#. Create a migration script for your new field.
+#. Create a :ref:`migration script <migrations>` for your new field.
 
 *******
 Testing
