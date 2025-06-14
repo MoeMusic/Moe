@@ -21,7 +21,7 @@ In short, to contribute code to Moe, you should follow these steps:
 
         $ tox run-parallel
 
-#. Submit a pull request
+#. :ref:`Submit a pull request <developers/contributing:Submitting Pull Requests>`
 
 **************************
 Creating a dev environment
@@ -230,3 +230,23 @@ Building Documentation
     $ tox run -e docs
 
 Builds and tests the documentation. You can view the newly built documentation under ``Moe/.tox/docs/tmp/html/``.
+
+************************
+Submitting Pull Requests
+************************
+Once your code changes are ready, or if you just want some early feedback, it's time to create a **Pull Request (PR)**.
+
+Here's how the process works:
+
+1.  **Open a Pull Request:** On GitHub, navigate to your forked repository and click the "New pull request" button. Select the branch where you made your changes and compare it to the ``main`` branch of the original ``MoeMusic/Moe`` repository.
+2.  **Choose Draft or Ready:**
+
+    * If your work is still in progress, you have questions, or you just want early feedback, open a **Draft Pull Request**. This clearly signals that it's not yet ready for a full review.
+    * If you think your changes are complete and all tests are passing, you can open a regular Pull Request, indicating it's ready for review.
+    * You can switch between Draft and Ready at any time. If you opened a ready PR but realize more work is needed or tests fail, just convert it back to a draft.
+3.  **Review and Feedback:** Once your PR is open (and marked as ready), a project maintainer will review your changes.
+4.  **Making Requested Changes:** If changes are requested, update your code locally and push the new commits to your branch using `fixup commits <https://git-scm.com/docs/git-commit#Documentation/git-commit.txt-code--fixupamendrewordltcommitgtcode>`_.
+5.  **Request Another Review:** After pushing the changes addressing the feedback, request another review on the PR.
+6.  **Merging:** Once the reviewers are happy with your contribution and all checks pass, your Pull Request will be approved and merged into the main Moe project!
+
+Don't hesitate to ask questions in the PR comments if anything is unclear during the review process.
