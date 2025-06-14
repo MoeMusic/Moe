@@ -4,6 +4,8 @@ import functools
 import logging
 from typing import Optional, Union
 
+import dynaconf
+import dynaconf.base
 import pluggy
 from rich import box
 from rich.console import Group
@@ -109,11 +111,20 @@ def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
 
 
 @moe.hookimpl
+def add_config_validator(settings: dynaconf.base.LazySettings):
+    """Validates import plugin configuration settings."""
+    settings.validators.register(  # type: ignore
+        dynaconf.Validator("import.max_candidates", default=5, gte=1)
+    )
+
+
+@moe.hookimpl
 def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
+        max_candidates = config.CONFIG.settings.get("import.max_candidates")
         try:
-            candidate_prompt(new_album, candidates[:5])
+            candidate_prompt(new_album, candidates[:max_candidates])
         except AbortImport as err:
             log.debug(err)
             raise SystemExit(0) from err
