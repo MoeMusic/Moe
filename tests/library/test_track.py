@@ -115,10 +115,12 @@ class TestInit:
             track.title,
             track.track_num,
             composer="Antonín Leopold Dvořák",
+            composers={"Antonín Leopold Dvořák", "Ludwig van Beethoven"},
             composer_sort="Dvořák, Antonín Leopold",
         )
 
         assert new_track.composer == "Antonín Leopold Dvořák"
+        assert new_track.composers == {"Antonín Leopold Dvořák", "Ludwig van Beethoven"}
         assert new_track.composer_sort == "Dvořák, Antonín Leopold"
 
 
@@ -143,10 +145,15 @@ class TestMetaInit:
         """Composer fields can be assigned during MetaTrack initialization."""
         album = MetaAlbum(artist="test_artist")
         track = MetaTrack(
-            album, 1, composer="Jane Melody", composer_sort="Melody, Jane"
+            album,
+            1,
+            composer="Jane Melody",
+            composers={"Jane Melody", "John Harmony"},
+            composer_sort="Melody, Jane",
         )
 
         assert track.composer == "Jane Melody"
+        assert track.composers == {"Jane Melody", "John Harmony"}
         assert track.composer_sort == "Melody, Jane"
 
 
@@ -185,6 +192,23 @@ class TestFromFile:
         new_track = Track.from_file(track.path)
 
         assert new_track.title == "custom track title"
+
+    def test_read_composers_field(self, tmp_config):
+        """Composers field is read correctly from track files."""
+        tmp_config()
+        track = track_factory(
+            exists=True,
+            composer="Johann Sebastian Bach",
+            composers={"Johann Sebastian Bach", "Georg Philipp Telemann"},
+        )
+        moe_write.write_tags(track)
+
+        new_track = Track.from_file(track.path)
+        assert new_track.composer == "Johann Sebastian Bach"
+        assert new_track.composers == {
+            "Johann Sebastian Bach",
+            "Georg Philipp Telemann",
+        }
 
     def test_missing_artist(self, tmp_config):
         """Raise ValueError if track is missing both an artist and albumartist."""
@@ -401,27 +425,41 @@ class TestMerge:
         album = MetaAlbum(artist="album_artist")
         track1 = MetaTrack(album, 1)
         track2 = MetaTrack(
-            album, 1, composer="Alex Harmony", composer_sort="Harmony, Alex"
+            album,
+            1,
+            composer="Alex Harmony",
+            composers={"Alex Harmony", "Sam Rhythm"},
+            composer_sort="Harmony, Alex",
         )
 
         track1.merge(track2)
 
         assert track1.composer == "Alex Harmony"
+        assert track1.composers == {"Alex Harmony", "Sam Rhythm"}
         assert track1.composer_sort == "Harmony, Alex"
 
     def test_composer_overwrite(self):
         """Composer fields overwrite correctly when specified."""
         album = MetaAlbum(artist="album_artist")
         track1 = MetaTrack(
-            album, 1, composer="Sam Rhythm", composer_sort="Rhythm, Sam"
+            album,
+            1,
+            composer="Sam Rhythm",
+            composers={"Sam Rhythm"},
+            composer_sort="Rhythm, Sam",
         )
         track2 = MetaTrack(
-            album, 1, composer="Taylor Beat", composer_sort="Beat, Taylor"
+            album,
+            1,
+            composer="Taylor Beat",
+            composers={"Taylor Beat", "Jordan Note"},
+            composer_sort="Beat, Taylor",
         )
 
         track1.merge(track2, overwrite=True)
 
         assert track1.composer == "Taylor Beat"
+        assert track1.composers == {"Taylor Beat", "Jordan Note"}
         assert track1.composer_sort == "Beat, Taylor"
 
 

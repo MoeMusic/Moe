@@ -67,6 +67,7 @@ class TestWriteTags:
         barcode = "1234"
         catalog_nums = {"1", "2"}
         composer = "Elephant Seal"
+        composers = {"Elephant Seal", "Penguin Orchestra"}
         composer_sort = "Seal, Elephant"
         country = "US"
         date = datetime.date(1996, 10, 13)
@@ -88,6 +89,7 @@ class TestWriteTags:
         track.album.date = date
         track.album.original_date = original_date
         track.composer = composer
+        track.composers = composers
         track.composer_sort = composer_sort
         track.disc = disc
         track.album.disc_total = disc_total
@@ -106,6 +108,7 @@ class TestWriteTags:
         assert new_track.artist == artist
         assert new_track.artists == artists
         assert new_track.composer == composer
+        assert new_track.composers == composers
         assert new_track.composer_sort == composer_sort
         assert new_track.disc == disc
         assert new_track.genres == genres
