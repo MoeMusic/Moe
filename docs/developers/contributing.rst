@@ -166,9 +166,7 @@ What to test
 ------------
 At a minimum, every public function/method should be tested. This includes hook specifications and implementations.
 
-.. note::
-
-    If there are no public functions in your code change, then test the public interface into the module. For example, cli plugins are tested by running ``main`` with the appropriate arguments.
+Non-public functions/methods should generally *not* be tested directly in order to maintain flexibility for these functions to be refactored without breaking tests. Instead, test the public interface that uses the non-public function. For example, cli plugins are tested by running ``main`` with the appropriate arguments.
 
 Test structure
 --------------
