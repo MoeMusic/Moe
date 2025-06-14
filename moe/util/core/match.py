@@ -20,6 +20,7 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
     "artist": 0.8,
     "barcode": 1.0,
     "catalog_nums": 1.0,
+    "composer": 0.8,
     "country": 0.3,
     "date": 0.2,
     "disc_total": 0.8,

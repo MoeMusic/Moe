@@ -102,6 +102,10 @@ def read_custom_tags(
     track_fields["artist"] = audio_file.artist
     if audio_file.artists is not None:
         track_fields["artists"] = set(audio_file.artists)
+    track_fields["composer"] = audio_file.composer
+    if audio_file.composers is not None:
+        track_fields["composers"] = set(audio_file.composers)
+    track_fields["composer_sort"] = audio_file.composer_sort
     track_fields["disc"] = audio_file.disc
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
@@ -124,6 +128,9 @@ class MetaTrack(MetaLibItem):
         album (Optional[Album]): Corresponding Album object.
         artist (Optional[str])
         artists (Optional[set[str]]): Set of all artists.
+        composer (Optional[str]): Track composer.
+        composers (Optional[set[str]]): Set of all composers.
+        composer_sort (Optional[str]): Composer sort field.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (Optional[int]): Disc number the track is on.
         genres (Optional[set[str]]): Set of all genres.
@@ -137,6 +144,9 @@ class MetaTrack(MetaLibItem):
         track_num: int,
         artist: Optional[str] = None,
         artists: Optional[set[str]] = None,
+        composer: Optional[str] = None,
+        composers: Optional[set[str]] = None,
+        composer_sort: Optional[str] = None,
         disc: int = 1,
         genres: Optional[set[str]] = None,
         title: Optional[str] = None,
@@ -151,6 +161,9 @@ class MetaTrack(MetaLibItem):
         self.track_num = track_num
         self.artist = artist or self.album.artist
         self.artists = artists
+        self.composer = composer
+        self.composers = composers
+        self.composer_sort = composer_sort
         self.disc = disc
         self.genres = genres
         self.title = title
@@ -178,12 +191,35 @@ class MetaTrack(MetaLibItem):
             self.genres = {genre.strip() for genre in genre_str.split(";")}
 
     @property
+    def composer_str(self) -> Optional[str]:
+        """Returns a string of all composers concatenated with ';'."""
+        if self.composers is None:
+            return None
+
+        return ";".join(self.composers)
+
+    @composer_str.setter
+    def composer_str(self, composer_str: Optional[str]):
+        """Sets a track's composers from a string.
+
+        Args:
+            composer_str: For more than one composer, they should be split with ';'.
+        """
+        if composer_str is None:
+            self.composers = None
+        else:
+            self.composers = {composer.strip() for composer in composer_str.split(";")}
+
+    @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
         return {
             "album",
             "artist",
             "artists",
+            "composer",
+            "composers",
+            "composer_sort",
             "disc",
             "genres",
             "title",
@@ -274,6 +310,9 @@ class Track(LibItem, SABase, MetaTrack):
         album (Album): Corresponding Album object.
         artist (str)
         artists (Optional[set[str]]): Set of all artists.
+        composer (Optional[str]): Track composer.
+        composers (Optional[set[str]]): Set of all composers.
+        composer_sort (Optional[str]): Composer sort field.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (int): Disc number the track is on.
         genres (Optional[set[str]]): Set of all genres.
@@ -292,6 +331,11 @@ class Track(LibItem, SABase, MetaTrack):
     artists: Mapped[Optional[set[str]]] = mapped_column(
         MutableSet.as_mutable(SetType()), nullable=True
     )
+    composer: Mapped[Optional[str]]
+    composers: Mapped[Optional[set[str]]] = mapped_column(
+        MutableSet.as_mutable(SetType()), nullable=True
+    )
+    composer_sort: Mapped[Optional[str]]
     disc: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     genres: Mapped[Optional[set[str]]] = mapped_column(
         MutableSet.as_mutable(SetType()), nullable=True
@@ -315,6 +359,9 @@ class Track(LibItem, SABase, MetaTrack):
         track_num: int,
         artist: Optional[str] = None,
         artists: Optional[set[str]] = None,
+        composer: Optional[str] = None,
+        composers: Optional[set[str]] = None,
+        composer_sort: Optional[str] = None,
         disc: Optional[int] = None,
         genres: Optional[set[str]] = None,
         **kwargs,
@@ -328,6 +375,9 @@ class Track(LibItem, SABase, MetaTrack):
             track_num: Track number.
             artist: Track artist. Defaults to the album artist if not given.
             artists: Set of all artists.
+            composer: Track composer.
+            composers: Set of all composers.
+            composer_sort: Composer sort field.
             disc: Disc the track belongs to. If not given, will try to guess the disc
                 based on the ``path`` of the track.
             genres (Optional[set[str]]): Set of all genres.
@@ -340,6 +390,9 @@ class Track(LibItem, SABase, MetaTrack):
         self.path = path
         self.artist = artist or self.album.artist
         self.artists = artists
+        self.composer = composer
+        self.composers = composers
+        self.composer_sort = composer_sort
         self.disc = disc or self._guess_disc()
         self.genres = genres
         self.title = title
