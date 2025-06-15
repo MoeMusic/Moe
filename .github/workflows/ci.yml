@@ -100,3 +100,10 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  fixup-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Block fixup commit merge
+      uses: 13rac1/block-fixup-merge-action@v2.0.0
