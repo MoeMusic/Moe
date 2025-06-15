@@ -105,6 +105,34 @@ class TestInit:
 
         assert new_track.custom["custom"] == "custom"
 
+    def test_composer_field(self):
+        """Composer field can be assigned during initialization."""
+        track = track_factory()
+
+        new_track = Track(
+            track.album,
+            track.path,
+            track.title,
+            track.track_num,
+            composer="Antonín Leopold Dvořák",
+        )
+
+        assert new_track.composer == "Antonín Leopold Dvořák"
+
+    def test_composer_sort_field(self):
+        """Composer sort field can be assigned during initialization."""
+        track = track_factory()
+
+        new_track = Track(
+            track.album,
+            track.path,
+            track.title,
+            track.track_num,
+            composer_sort="Dvořák, Antonín Leopold",
+        )
+
+        assert new_track.composer_sort == "Dvořák, Antonín Leopold"
+
 
 class TestMetaInit:
     """Test MetaTrack initialization."""
@@ -122,6 +150,28 @@ class TestMetaInit:
         track = MetaTrack(album, 1, artist="use me")
 
         assert track.artist == "use me"
+
+    def test_composer_field(self):
+        """Composer field can be assigned during MetaTrack initialization."""
+        album = MetaAlbum(artist="test_artist")
+        track = MetaTrack(
+            album,
+            1,
+            composer="Jane Melody",
+        )
+
+        assert track.composer == "Jane Melody"
+
+    def test_composer_sort_field(self):
+        """Composer sort field can be assigned during MetaTrack initialization."""
+        album = MetaAlbum(artist="test_artist")
+        track = MetaTrack(
+            album,
+            1,
+            composer_sort="Melody, Jane",
+        )
+
+        assert track.composer_sort == "Melody, Jane"
 
 
 class TestFromFile:
@@ -150,14 +200,6 @@ class TestFromFile:
         new_track = Track.from_file(track.path)
 
         assert new_track.album.title == "custom album title"
-        assert new_track.title == "custom track title"
-
-    def test_read_track_fields(self, tmp_config):
-        """Plugins can add additional album fields via the `read_album_fields` hook."""
-        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
-        track = track_factory(exists=True)
-        new_track = Track.from_file(track.path)
-
         assert new_track.title == "custom track title"
 
     def test_missing_artist(self, tmp_config):

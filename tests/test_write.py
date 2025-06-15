@@ -59,13 +59,15 @@ class TestWriteTags:
     """Tests `write_tags()`."""
 
     def test_write_tags(self, tmp_config):
-        """We can write track changes to the file."""
+        """Test writing and reading tags to a track."""
         tmp_config()
         track = track_factory(exists=True)
         artist = "4 Non Blondes"
         artists = {"4 Non Blondes", "Me"}
         barcode = "1234"
         catalog_nums = {"1", "2"}
+        composer = "Elephant Seal"
+        composer_sort = "Seal, Elephant"
         country = "US"
         date = datetime.date(1996, 10, 13)
         disc = 2
@@ -85,6 +87,8 @@ class TestWriteTags:
         track.album.country = country
         track.album.date = date
         track.album.original_date = original_date
+        track.composer = composer
+        track.composer_sort = composer_sort
         track.disc = disc
         track.album.disc_total = disc_total
         track.genres = genres
@@ -101,6 +105,8 @@ class TestWriteTags:
 
         assert new_track.artist == artist
         assert new_track.artists == artists
+        assert new_track.composer == composer
+        assert new_track.composer_sort == composer_sort
         assert new_track.disc == disc
         assert new_track.genres == genres
         assert new_track.title == title

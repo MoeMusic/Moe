@@ -140,12 +140,12 @@ If adding a new field to Moe, the following checklist can help ensure you cover 
    * If the field represents metadata and does not deal with the filesystem, also add to the appropriate ``Meta`` class (``MetaAlbum`` or ``MetaTrack``).
    * If creating a multi-value field, add the non-plural equivalent property. See ``Track.genres`` and the accompanying single-value field, ``Track.genre`` for an example.
    * Include documentation for the new field in the class docstring(s).
+#. Add the new field to the appropriate library item's ``__init__`` method.
 
+   * If the field represents metadata and does not deal with the filesystem, also add to the appropriate ``Meta`` class (``MetaAlbum`` or ``MetaTrack``).
+   * Add tests for constructing an item with the new field in the appropriate test file's ``TestInit`` and ``TestMetaInit`` classes.
 #. Add to the item's ``fields`` method as necessary.
 #. Add code for reading the tag from a track file under ``Track.read_custom_tags``.
-
-   * Add tests under ``test_track.py:TestFromFile:test_read_tags()``
-
 #. Add code for writing the tag to a track file under ``write.write_custom_tags``.
 
    * Add tests under ``test_write.py:TestWriteTags:test_write_tags()``
