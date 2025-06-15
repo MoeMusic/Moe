@@ -30,6 +30,7 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 }  # how much to weigh matches of various fields
 
 MATCH_TRACK_FIELD_WEIGHTS = {
+    "composer": 0.8,
     "disc": 0.3,
     "title": 0.7,
     "track_num": 0.9,
