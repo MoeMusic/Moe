@@ -14,6 +14,7 @@ Track Fields
 * ``audio_format`` - aac, aiff, alac, ape, asf, dsf, flac, ogg, opus, mp3, mpc, wav, or wv [#f3]_ [#f4]_
 * ``bit_depth`` - number of bits per sample in the audio encoding [#f3]_ [#f4]_
 * ``composer`` - track composer
+* ``composer_sort`` - composer sort field
 * ``disc`` - disc number
 * ``genre`` - genre [#f1]_
 * ``path`` - filesystem path of the track [#f3]_
