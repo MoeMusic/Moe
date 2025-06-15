@@ -59,7 +59,7 @@ class TestWriteTags:
     """Tests `write_tags()`."""
 
     def test_write_tags(self, tmp_config):
-        """We can write track changes to the file."""
+        """Test writing and reading tags to a track."""
         tmp_config()
         track = track_factory(exists=True)
         artist = "4 Non Blondes"
