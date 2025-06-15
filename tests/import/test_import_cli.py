@@ -27,23 +27,26 @@ class TestPrompt:
     def test_multi_disc_album(self, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
         tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
-        album = album_factory(num_discs=2)
+        num_discs = 2
+        album = album_factory(num_discs=num_discs)
         candidate = CandidateAlbum(
-            album=album_factory(num_discs=2),
+            album=album_factory(num_discs=num_discs),
             match_value=1,
             plugin_source="Tests",
             source_id="1",
         )
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
         with patch(
             "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
+            return_value=apply_choice,
             autospec=True,
         ):
             moe_import.import_cli.import_prompt(album, candidate)
 
-        assert album.disc_total == 2
+        assert album.disc_total == num_discs
         assert album.get_track(1, disc=2)
 
 
@@ -115,15 +118,17 @@ class TestProcessCandidates:
 
     def test_abort_import(self):
         """Raise SystemExit if the import is aborted."""
-        with patch(
-            "moe.moe_import.import_cli.candidate_prompt",
-            side_effect=moe_import.import_cli.AbortImport,
-            autospec=True,
+        with (
+            patch(
+                "moe.moe_import.import_cli.candidate_prompt",
+                side_effect=moe_import.import_cli.AbortImport,
+                autospec=True,
+            ),
+            pytest.raises(SystemExit) as error,
         ):
-            with pytest.raises(SystemExit) as error:
-                config.CONFIG.pm.hook.process_candidates(
-                    new_album=Mock(), candidates=[Mock()]
-                )
+            config.CONFIG.pm.hook.process_candidates(
+                new_album=Mock(), candidates=[Mock()]
+            )
 
         assert error.value.code == 0
 
@@ -206,10 +211,11 @@ class TestAddImportPromptChoice:
     def test_add_choices(self):
         """The apply and abort import prompt choices are added."""
         prompt_choices = []
+        num_prompt_choices = 2
 
         config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
 
-        assert len(prompt_choices) == 2
+        assert len(prompt_choices) == num_prompt_choices
         assert any(choice.shortcut_key == "a" for choice in prompt_choices)
         assert any(choice.shortcut_key == "x" for choice in prompt_choices)
 
@@ -234,10 +240,12 @@ class TestAddImportPromptChoice:
         assert not album.get_track(missing_track.track_num)
         assert not candidate.album.get_track(unmatched_track.track_num)
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
         with patch(
             "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
+            return_value=apply_choice,
             autospec=True,
         ):
             moe_import.import_cli.import_prompt(album, candidate)
@@ -266,22 +274,26 @@ class TestAddImportPromptChoice:
         track_factory(album=album, track_num=2, title="old track 2")
         track_factory(album=candidate.album, track_num=2, title="new track 2")
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
         mock_matches = [
             (album.get_track(1), candidate.album.get_track(2)),
             (album.get_track(2), candidate.album.get_track(1)),
         ]
-        with patch(
-            "moe.moe_import.import_cli.get_matching_tracks",
-            return_value=mock_matches,
-            autospec=True,
-        ):
-            with patch(
-                "moe.moe_import.import_cli.choice_prompt",
-                return_value=mock_choice,
+        with (
+            patch(
+                "moe.moe_import.import_cli.get_matching_tracks",
+                return_value=mock_matches,
                 autospec=True,
-            ):
-                moe_import.import_cli.import_prompt(album, candidate)
+            ),
+            patch(
+                "moe.moe_import.import_cli.choice_prompt",
+                return_value=apply_choice,
+                autospec=True,
+            ),
+        ):
+            moe_import.import_cli.import_prompt(album, candidate)
 
         old_track1 = album.get_track(1)
         assert old_track1
@@ -305,10 +317,12 @@ class TestAddImportPromptChoice:
         )
         new_extra = extra_factory(album=album)
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
         with patch(
             "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
+            return_value=apply_choice,
             autospec=True,
         ):
             moe_import.import_cli.import_prompt(album, candidate)
@@ -327,16 +341,18 @@ class TestAddImportPromptChoice:
         assert album.title != candidate.album.title
 
         # new albums won't have paths
-        candidate.album.path = None  # type: ignore
+        candidate.album.path = None
         for new_track in candidate.album.tracks:
-            new_track.path = None  # type: ignore
+            new_track.path = None
         for new_extra in candidate.album.extras:
-            new_extra.album = None  # type: ignore
+            new_extra.album = None
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._apply_changes)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
         with patch(
             "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
+            return_value=apply_choice,
             autospec=True,
         ):
             moe_import.import_cli.import_prompt(album, candidate)
@@ -358,14 +374,18 @@ class TestAddImportPromptChoice:
             source_id="1",
         )
 
-        mock_choice = PromptChoice("mock", "m", moe_import.import_cli._abort_changes)
-        with patch(
-            "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
-            autospec=True,
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        abort_choice = next(c for c in prompt_choices if c.shortcut_key == "x")
+        with (
+            patch(
+                "moe.moe_import.import_cli.choice_prompt",
+                return_value=abort_choice,
+                autospec=True,
+            ),
+            pytest.raises(moe_import.import_cli.AbortImport),
         ):
-            with pytest.raises(moe_import.import_cli.AbortImport):
-                moe_import.import_cli.import_prompt(album, candidate)
+            moe_import.import_cli.import_prompt(album, candidate)
 
         assert album != candidate.album
 
@@ -418,4 +438,4 @@ class TestImportCLIOutput:
 
         assert album is not candidate.album
 
-        console.print(moe_import.import_cli._fmt_import_updates(album, candidate))
+        console.print(moe_import.import_cli._fmt_import_updates(album, candidate))  # noqa: SLF001

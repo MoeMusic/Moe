@@ -115,12 +115,15 @@ class TestGetMatchingTracks:
 class TestMatchValue:
     """Test ``get_match_value()``."""
 
+    HIGH_MATCH_THRESHOLD = 0.9
+    LOW_MATCH_THRESHOLD = 0.7  # default match threshold used in `get_matching_tracks`
+
     def test_same_album(self):
         """Albums with the same values for all used fields should be a perfect match."""
         album1 = album_factory()
         album2 = album_factory(dup_album=album1)
 
-        assert get_match_value(album1, album2) > 0.9
+        assert get_match_value(album1, album2) > self.HIGH_MATCH_THRESHOLD
 
     def test_diff_album(self):
         """Albums with different values for each field should not match."""
@@ -132,14 +135,14 @@ class TestMatchValue:
         assert album1.title != album2.title
         assert album1.disc_total != album2.disc_total
 
-        assert get_match_value(album1, album2) < 1
+        assert get_match_value(album1, album2) < self.LOW_MATCH_THRESHOLD
 
     def test_same_track(self):
         """Tracks with the same values for all used fields should be a perfect match."""
         track1 = track_factory()
         track2 = track_factory(dup_track=track1)
 
-        assert get_match_value(track1, track2) > 0.9
+        assert get_match_value(track1, track2) > self.HIGH_MATCH_THRESHOLD
 
     def test_diff_track(self):
         """Tracks with different values for each field should not match."""
@@ -152,4 +155,4 @@ class TestMatchValue:
         assert track1.disc != track2.disc
         assert track1.track_num != track2.track_num
 
-        assert get_match_value(track1, track2) < 1
+        assert get_match_value(track1, track2) < self.LOW_MATCH_THRESHOLD

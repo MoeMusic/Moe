@@ -35,7 +35,7 @@ class TestInit:
         """
         config = tmp_config(settings='default_plugins = ["list", "write"]')
 
-        plugins = list(CORE_PLUGINS) + ["list", "write"]
+        plugins = [*CORE_PLUGINS, "list", "write"]
         for plugin_name, _ in config.pm.list_name_plugin():
             assert plugin_name in plugins
 
@@ -65,7 +65,7 @@ class TestPlugins:
         disable_plugins = ["list"]"""
         )
 
-        plugins = list(CORE_PLUGINS) + ["cli"]
+        plugins = [*CORE_PLUGINS, "cli"]
         for plugin_name, plugin_module in config.CONFIG.pm.list_name_plugin():
             assert plugin_name in plugins
             assert plugin_module

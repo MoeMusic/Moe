@@ -1,7 +1,7 @@
 """initial generation.
 
 Revision ID: 6d4e785df5cb
-Revises: 
+Revises:
 Create Date: 2022-09-27 19:19:39.281403
 
 """

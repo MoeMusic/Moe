@@ -1,9 +1,9 @@
 """Test the duplicate plugin core."""
 
 import shutil
+from collections.abc import Iterator
 from pathlib import Path
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -162,6 +162,7 @@ class TestEditChangedItems:
         album = album_factory()
         extra = extra_factory()
         track = track_factory()
+        num_dup_albums = 3
         mock_session = MagicMock()
 
         config.CONFIG.pm.hook.edit_changed_items(
@@ -171,7 +172,7 @@ class TestEditChangedItems:
         mock_resolve_duplicates.assert_any_call(mock_session, [album])
         mock_resolve_duplicates.assert_any_call(mock_session, [extra])
         mock_resolve_duplicates.assert_any_call(mock_session, [track])
-        assert mock_resolve_duplicates.call_count == 3
+        assert mock_resolve_duplicates.call_count == num_dup_albums
 
 
 @pytest.mark.usefixtures("_tmp_dup_config")
@@ -183,6 +184,7 @@ class TestEditNewItems:
         album = album_factory()
         extra = extra_factory()
         track = track_factory()
+        num_dup_albums = 3
         mock_session = MagicMock()
 
         config.CONFIG.pm.hook.edit_new_items(
@@ -192,4 +194,4 @@ class TestEditNewItems:
         mock_resolve_duplicates.assert_any_call(mock_session, [album])
         mock_resolve_duplicates.assert_any_call(mock_session, [extra])
         mock_resolve_duplicates.assert_any_call(mock_session, [track])
-        assert mock_resolve_duplicates.call_count == 3
+        assert mock_resolve_duplicates.call_count == num_dup_albums

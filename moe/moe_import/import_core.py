@@ -44,7 +44,7 @@ class CandidateAlbum:
         """Formats `match_value` as a percentage."""
         return f"{round(self.match_value * 100, 1)}%"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation of a CandidateAlbum."""
         return f"[{self.match_value_pct}] {self.album.artist} - {self.album.title}"
 
@@ -54,7 +54,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def get_candidates(album: Album) -> list[CandidateAlbum]:  # type: ignore
+    def get_candidates(album: Album) -> list[CandidateAlbum]:  # type: ignore[reportReturnType]
         """Return candidate albums from implemented sources based on the given album.
 
         This hook should be used to import metadata from an external source and return
@@ -69,11 +69,11 @@ class Hooks:
 
         Returns:
             New candidate album.
-        """  # noqa: DAR202
+        """
 
     @staticmethod
     @moe.hookspec
-    def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
+    def process_candidates(new_album: Album, candidates: list[CandidateAlbum]) -> None:
         """Process the imported candidate albums.
 
         If you wish to save and apply any candidate album metadata, it should be applied
@@ -90,15 +90,15 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `import` core hookspecs to Moe."""
-    from moe.moe_import.import_core import Hooks
+    from moe.moe_import.import_core import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
-def pre_add(item: LibItem):
+def pre_add(item: LibItem) -> None:
     """Fixes album metadata via external sources prior to it being added to the lib."""
     if isinstance(item, Album):
         album = item
@@ -110,7 +110,7 @@ def pre_add(item: LibItem):
     import_album(album)
 
 
-def import_album(album: Album):
+def import_album(album: Album) -> None:
     """Imports album metadata for an album."""
     log.debug(f"Importing album metadata. [{album=}]")
 

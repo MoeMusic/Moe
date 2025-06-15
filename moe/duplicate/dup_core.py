@@ -1,15 +1,21 @@
 """Detect and handle duplicates in the library."""
 
+from __future__ import annotations
+
 import logging
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING
 
 import sqlalchemy
-from sqlalchemy.orm.session import Session
 
 import moe
 from moe import config
 from moe.library import Album, Extra, LibItem, Track
 from moe.query import query
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Sequence
+
+    from sqlalchemy.orm.session import Session
 
 __all__ = ["DuplicateError", "get_duplicates", "resolve_duplicates"]
 
@@ -25,7 +31,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def resolve_dup_items(session: Session, item_a: LibItem, item_b: LibItem):
+    def resolve_dup_items(session: Session, item_a: LibItem, item_b: LibItem) -> None:
         """Resolve two duplicate items.
 
         A resolution should come in one of two forms:
@@ -62,7 +68,9 @@ class Hooks:
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_changed_items(session: Session, items: list[LibItem]):
+def edit_changed_items(
+    session: Session, items: list[LibItem]
+) -> Generator[None, None, None]:
     """Check for and resolve duplicates when items are edited."""
     yield  # run all `edit_changed_items` hook implementations
 
@@ -76,7 +84,9 @@ def edit_changed_items(session: Session, items: list[LibItem]):
 
 
 @moe.hookimpl(hookwrapper=True)
-def edit_new_items(session: Session, items: list[LibItem]):
+def edit_new_items(
+    session: Session, items: list[LibItem]
+) -> Generator[None, None, None]:
     """Check for and resolve duplicates when items are added to the library."""
     yield  # run all `edit_new_items` hook implementations
 
@@ -89,7 +99,7 @@ def edit_new_items(session: Session, items: list[LibItem]):
     resolve_duplicates(session, extras)
 
 
-def resolve_duplicates(session: Session, items: Sequence[LibItem]):
+def resolve_duplicates(session: Session, items: Sequence[LibItem]) -> None:
     """Search for and resolve any duplicates of items in ``items``."""
     log.debug(f"Checking for duplicate items. [{items=}]")
 
@@ -116,10 +126,11 @@ def resolve_duplicates(session: Session, items: Sequence[LibItem]):
                 and not _is_removed(item)
                 and not _is_removed(dup_item)
             ):
-                raise DuplicateError(
+                err_msg = (
                     "Duplicate items could not be resolved. "
                     f"[item_a={item!r}, item_b={dup_item!r}]"
                 )
+                raise DuplicateError(err_msg)
 
         if dup_items:
             resolved_items.append(item)
@@ -130,18 +141,15 @@ def resolve_duplicates(session: Session, items: Sequence[LibItem]):
         log.debug("No duplicate items found.")
 
 
-def _is_removed(item):
+def _is_removed(item: LibItem) -> bool:
     """Check whether or not an item is removed from the library."""
-    insp = sqlalchemy.inspect(item)
+    insp = sqlalchemy.inspect(item, raiseerr=True)
 
-    if insp.deleted or insp.transient:
-        return True
-
-    return False
+    return insp.deleted or insp.transient
 
 
 def get_duplicates(
-    session: Session, item: LibItem, others: Optional[Sequence[LibItem]] = None
+    session: Session, item: LibItem, others: Sequence[LibItem] | None = None
 ) -> list[LibItem]:
     """Returns items considered duplicates of ``item``.
 
@@ -155,12 +163,9 @@ def get_duplicates(
         Any items considered a duplicate as defined by
         :meth:`~moe.library.lib_item.LibItem.is_unique`.
     """
-    dup_items = []
     if not others:
         others = query(session, "*", type(item).__name__.lower())
 
-    for other in others:
-        if item is not other and not item.is_unique(other):
-            dup_items.append(other)
-
-    return dup_items
+    return [
+        other for other in others if item is not other and not item.is_unique(other)
+    ]

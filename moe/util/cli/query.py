@@ -1,13 +1,17 @@
 """CLI-specific query help functionality."""
 
+from __future__ import annotations
+
 import argparse
 import logging
-from typing import Union
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm.session import Session
-
-from moe.library import Album, Extra, Track
 from moe.query import QueryError, query
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm.session import Session
+
+    from moe.library import Album, Extra, Track
 
 __all__ = ["cli_query", "query_parser"]
 
@@ -63,7 +67,7 @@ query_parser.set_defaults(query_type="track")
 
 def cli_query(
     session: Session, query_str: str, query_type: str
-) -> Union[list[Album], list[Extra], list[Track]]:
+) -> list[Album] | list[Extra] | list[Track]:
     """Wrapper around the core query call, with some added cli error handling.
 
     Args:
@@ -83,7 +87,7 @@ def cli_query(
     try:
         items = query(session, query_str, query_type)
     except QueryError as err:
-        log.error(err)
+        log.exception("Failed query.")
         raise SystemExit(1) from err
 
     if not items:

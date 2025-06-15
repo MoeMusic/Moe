@@ -1,7 +1,7 @@
 """Test the read cli."""
 
+from collections.abc import Iterator
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import ANY, patch
 
 import pytest
@@ -73,7 +73,7 @@ class TestCommand:
         mock_query.assert_called_once_with(ANY, "*", query_type="track")
         for track in tracks:
             mock_read.assert_any_call(track)
-        assert mock_read.call_count == 2
+        assert mock_read.call_count == len(tracks)
 
     def test_file_dne(self, mock_query, mock_read):
         """Exit with non-zero code if file does not exist."""
@@ -96,7 +96,7 @@ class TestCommand:
             moe.cli.main(cli_args)
 
         assert err.value.code != 0
-        assert mock_read.call_count == 3
+        assert mock_read.call_count == len(mock_query.return_value)
 
     def test_rm_item(self, mock_query, mock_read):
         """Remove the item if it doesn't exist and the remove argument is given."""

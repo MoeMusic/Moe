@@ -22,7 +22,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def pre_add(item: LibItem):
+    def pre_add(item: LibItem) -> None:
         """Provides an item prior to it being added to the library.
 
         Use this hook if you wish to change an item's metadata prior to it being
@@ -47,9 +47,9 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `add` hookspecs to Moe."""
-    from moe.add.add_core import Hooks
+    from moe.add.add_core import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
@@ -62,7 +62,7 @@ class AddAbortError(Exception):
     """Add process has been aborted by the user."""
 
 
-def add_item(session: Session, item: LibItem):
+def add_item(session: Session, item: LibItem) -> None:
     """Adds a LibItem to the library.
 
     Args:

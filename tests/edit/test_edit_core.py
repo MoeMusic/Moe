@@ -28,9 +28,10 @@ class TestEditItem:
     def test_int_field(self):
         """We can edit integer fields."""
         track = track_factory()
-        edit.edit_item(track, "track_num", "3")
+        str_track_num = "3"
+        edit.edit_item(track, "track_num", str_track_num)
 
-        assert track.track_num == 3
+        assert track.track_num == int(str_track_num)
 
     def test_date_field(self):
         """We can edit the date."""

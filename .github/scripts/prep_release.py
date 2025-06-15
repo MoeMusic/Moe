@@ -9,15 +9,21 @@ See Also:
     (pytest's script I stole a lot from)
 """
 
+from __future__ import annotations
+
 import argparse
-import datetime
+import datetime as dt
 import pathlib
 import re
+import shutil
 import subprocess
 from textwrap import indent
+from typing import TYPE_CHECKING
 
 import github3
-from github3.repos import Repository
+
+if TYPE_CHECKING:
+    from github3.repos import Repository
 
 SLUG = "MoeMusic/Moe"
 PR_BODY = """
@@ -67,7 +73,7 @@ class Commit:
         title=(?P<title>.+);\s
         body=(?P<body>.*);
         """,
-        re.VERBOSE | re.S,
+        re.VERBOSE | re.DOTALL,
     )  # based on "git_log_format defined below"
 
     def __init__(self, commit_log: str) -> None:
@@ -77,7 +83,10 @@ class Commit:
         self.breaking = False
 
         match = re.match(self.COMMIT_RE, commit_log)
-        assert match
+        if not match:
+            err_msg = f"Could not parse commit log: '{commit_log}'"
+            raise ValueError(err_msg)
+
         self.commit_hash = match["hash"]
         title = match["title"]
         self.body = match["body"].strip()
@@ -110,37 +119,52 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("token")
 
+    git_path = shutil.which("git")
+    if not git_path:
+        err_msg = "Could not find 'git' executable in PATH."
+        raise RuntimeError(err_msg)
+
     args = parser.parse_args()
-    prepare_release_pr(args.token)
+    prepare_release_pr(args.token, git_path)
 
 
-def prepare_release_pr(token: str) -> None:
+def prepare_release_pr(token: str, git_path: str) -> None:
     """Prepares the release pull request."""
-    subprocess.run(["git", "config", "user.name", "Moe bot"], check=True)
-    subprocess.run(["git", "config", "user.email", "<>"], check=True)
+    subprocess.run([git_path, "config", "user.name", "Moe bot"], check=True)  # noqa: S603 git is a trusted executable
+    subprocess.run([git_path, "config", "user.email", "<>"], check=True)  # noqa: S603 git is a trusted executable
 
-    old_version = subprocess.run(
-        ["cz", "version", "--project"], text=True, capture_output=True, check=True
+    cz_path = shutil.which("cz")
+    if not cz_path:
+        err_msg = "Could not find 'cz' executable in PATH."
+        raise RuntimeError(err_msg)
+
+    old_version = subprocess.run(  # noqa: S603 trusted inputs
+        [cz_path, "version", "--project"], text=True, capture_output=True, check=True
     ).stdout
     old_version = f"v{old_version.strip()}"
-    subprocess.run(["cz", "bump", "--files-only"], check=True)
-    new_version = subprocess.run(
-        ["cz", "version", "--project"], text=True, capture_output=True, check=True
+    subprocess.run([cz_path, "bump", "--files-only"], check=True)  # noqa: S603 trusted inputs
+    new_version = subprocess.run(  # noqa: S603 trusted inputs
+        [cz_path, "version", "--project"], text=True, capture_output=True, check=True
     ).stdout
     new_version = f"v{new_version.strip()}"
 
-    generate_changelog(old_version, new_version)
+    generate_changelog(old_version, new_version, git_path)
     release_branch = f"release_{new_version}"
-    subprocess.run(["git", "checkout", "-b", f"{release_branch}"], check=True)
+    subprocess.run([git_path, "checkout", "-b", f"{release_branch}"], check=True)  # noqa: S603 git is a trusted executable
 
-    subprocess.run(["git", "commit", "-a", "-m", f"release: {new_version}"], check=True)
+    subprocess.run(  # noqa: S603 git is a trusted executable
+        [git_path, "commit", "-a", "-m", f"release: {new_version}"], check=True
+    )
     oauth_url = f"https://{token}:x-oauth-basic@github.com/{SLUG}.git"
-    subprocess.run(
-        ["git", "push", oauth_url, f"HEAD:{release_branch}", "--force"], check=True
+    subprocess.run(  # noqa: S603 git is a trusted executable
+        [git_path, "push", oauth_url, f"HEAD:{release_branch}", "--force"], check=True
     )
 
     repo = login(token)
-    assert repo
+    if not repo:
+        err_msg = f"Failed to get repository '{SLUG}'."
+        raise RuntimeError(err_msg)
+
     repo.create_pull(
         f"Prepare release {new_version}",
         base="main",
@@ -149,24 +173,23 @@ def prepare_release_pr(token: str) -> None:
     )
 
 
-def generate_changelog(old_version: str, new_version: str) -> None:
+def generate_changelog(old_version: str, new_version: str, git_path: str) -> None:
     """Generates a changelog for a new release."""
     changelog_path = pathlib.Path("CHANGELOG.rst")
 
-    release_title = f"{new_version} ({datetime.date.today()})"
+    release_title = f"{new_version} ({dt.datetime.now(dt.timezone.utc).date()})"
     changelog_title = f"\n{release_title}\n"
     changelog_title += "=" * len(release_title) + "\n"
 
     field_delim = ";"
     commit_delim = ";|;"
     git_log_format = (
-        f"hash=%H{field_delim} title=%s{field_delim} "
-        f"body=%b{field_delim}{commit_delim}"
+        f"hash=%H{field_delim} title=%s{field_delim} body=%b{field_delim}{commit_delim}"
     )
     git_log = str(
-        subprocess.run(
+        subprocess.run(  # noqa: S603 git is a trusted executable
             [
-                "git",
+                git_path,
                 "log",
                 f"--pretty=format:{git_log_format}",
                 f"{old_version}..HEAD",
@@ -222,7 +245,10 @@ def generate_changelog(old_version: str, new_version: str) -> None:
 def login(token: str) -> Repository | None:
     """Logins to github and returns the working repository."""
     github = github3.login(token=token)
-    assert github
+    if not github:
+        err_msg = "Failed to login to GitHub. Check the provided token."
+        raise RuntimeError(err_msg)
+
     owner, repo = SLUG.split("/")
 
     return github.repository(owner, repo)

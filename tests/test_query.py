@@ -5,84 +5,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import moe.query
 from moe.library import Album, Extra, Track
 from moe.query import QueryError, query
 from tests.conftest import album_factory, extra_factory, track_factory
-
-
-class TestParseTerm:
-    """Test the query term parsing _parse_term()."""
-
-    def test_basic(self):
-        """Simplest case field:value test."""
-        match = moe.query._parse_term("field:value")
-
-        assert match["field_type"] == "track"
-        assert match["field"] == "field"
-        assert match["separator"] == ":"
-        assert match["value"] == "value"
-
-    def test_album_field_type(self):
-        """Use 'a:' before the rest of the term to specify it's an album field."""
-        match = moe.query._parse_term("a:field:value")
-
-        assert match["field_type"] == "album"
-        assert match["field"] == "field"
-        assert match["separator"] == ":"
-        assert match["value"] == "value"
-
-    def test_extra_field_type(self):
-        """Use 'a:' before the rest of the term to specify it's an extra field."""
-        match = moe.query._parse_term("e:field:value")
-
-        assert match["field_type"] == "extra"
-        assert match["field"] == "field"
-        assert match["separator"] == ":"
-        assert match["value"] == "value"
-
-    def test_track_field_type(self):
-        """Optionally use 't:' before the rest of the term to specify a track field."""
-        match = moe.query._parse_term("t:field:value")
-
-        assert match["field_type"] == "track"
-        assert match["field"] == "field"
-        assert match["separator"] == ":"
-        assert match["value"] == "value"
-
-    def test_lowercase_field(self):
-        """Fields should be case lowercase."""
-        match = moe.query._parse_term("t:FIELD:value")
-
-        assert match["field_type"] == "track"
-        assert match["field"] == "field"
-        assert match["separator"] == ":"
-        assert match["value"] == "value"
-
-    def test_value_spaces(self):
-        """Values can contain arbitrary whitespace.
-
-        The only exception is immediately after the colon.
-        """
-        match = moe.query._parse_term("field:val u e")
-
-        assert match["field_type"] == "track"
-        assert match["field"] == "field"
-        assert match["value"] == "val u e"
-
-    def test_regex_value(self):
-        """Regular expression values are indicated by a '::' separator."""
-        match = moe.query._parse_term("field::A.*")
-
-        assert match["field_type"] == "track"
-        assert match["field"] == "field"
-        assert match["separator"] == "::"
-        assert match["value"] == "A.*"
-
-    def test_invalid(self):
-        """Invalid terms should raise a ValueError."""
-        with pytest.raises(QueryError):
-            moe.query._parse_term("invalid")
 
 
 class TestQueries:
@@ -97,10 +22,15 @@ class TestQueries:
         """Empty queries should return an empty list."""
         assert not query(tmp_session, "title:nope", "track")
 
-    def test_invalid_query_str(self, tmp_session):
+    def test_invalid_query_str(self):
         """Invalid queries should raise a QueryError."""
         with pytest.raises(QueryError):
-            query(tmp_session, "invalid", "track")
+            query(MagicMock(), "invalid", "track")
+
+    def test_invalid_querty_type_separate(self):
+        """Queries can have either a : or :: separator, otherwise throw QuerError."""
+        with pytest.raises(QueryError):
+            query(MagicMock(), "title$nope", "track")
 
     def test_return_type(self, tmp_session):
         """Queries return the appropriate type."""
@@ -153,7 +83,7 @@ class TestQueries:
         tmp_session.add(album)
         tmp_session.flush()
 
-        assert query(tmp_session, f"'a:path:{str(album.path.resolve())}'", "album")
+        assert query(tmp_session, f"'a:path:{album.path.resolve()}'", "album")
         assert query(tmp_session, "'a:path::.*'", "album")
 
     def test_case_insensitive_value(self, tmp_session):
@@ -294,10 +224,10 @@ class TestQueries:
 
     def test_numeric_query_inclusive(self, tmp_session):
         """Numeric queries should be inclusive of their upper or lower bounds."""
-        tmp_session.add(track_factory(track_num=1))
-        tmp_session.add(track_factory(track_num=3))
+        tracks = [track_factory(track_num=1), track_factory(track_num=3)]
+        tmp_session.add_all(tracks)
         tmp_session.flush()
 
-        assert len(query(tmp_session, "t:track_num:1..3", "track")) == 2
-        assert len(query(tmp_session, "t:track_num:1..", "track")) == 2
-        assert len(query(tmp_session, "t:track_num:..3", "track")) == 2
+        assert len(query(tmp_session, "t:track_num:1..3", "track")) == len(tracks)
+        assert len(query(tmp_session, "t:track_num:1..", "track")) == len(tracks)
+        assert len(query(tmp_session, "t:track_num:..3", "track")) == len(tracks)

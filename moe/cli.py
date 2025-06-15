@@ -24,13 +24,19 @@ log = logging.getLogger("moe.cli")
 
 console = Console()
 
+# define logging levels based on verbose/quiet flags
+VERBOSE_INFO_LEVEL = 1
+VERBOSE_DEBUG_LEVEL = 2
+QUIET_ERROR_LEVEL = 1
+QUIET_CRITICAL_LEVEL = 2
+
 
 class Hooks:
     """General CLI hook specifications."""
 
     @staticmethod
     @moe.hookspec
-    def add_command(cmd_parsers: argparse._SubParsersAction):
+    def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
         """Add a sub-command to Moe's CLI.
 
         Args:
@@ -75,14 +81,14 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `CLI` hookspecs to Moe."""
-    from moe.cli import Hooks
+    from moe.cli import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
-def _parse_args(args: list[str]):
+def _parse_args(args: list[str]) -> None:
     """Parses the commandline arguments.
 
     Args:
@@ -140,21 +146,21 @@ def _create_arg_parser() -> argparse.ArgumentParser:
     return moe_parser
 
 
-def _set_log_lvl(args):
+def _set_log_lvl(args: argparse.Namespace) -> None:
     """Sets the root logger level based on cli arguments."""
     moe_log = logging.getLogger("moe")
 
-    if args.verbose == 1:
+    if args.verbose == VERBOSE_INFO_LEVEL:
         moe_log.setLevel(logging.INFO)
-    elif args.verbose == 2:
+    elif args.verbose == VERBOSE_DEBUG_LEVEL:
         moe_log.setLevel(logging.DEBUG)
-    elif args.quiet == 1:
+    elif args.quiet == QUIET_ERROR_LEVEL:
         moe_log.setLevel(logging.ERROR)
-    elif args.quiet == 2:
+    elif args.quiet == QUIET_CRITICAL_LEVEL:
         moe_log.setLevel(logging.CRITICAL)
 
 
-def main(args: list[str] = sys.argv[1:]):
+def main(args: list[str] = sys.argv[1:]) -> None:
     """Runs the CLI."""
     log.debug(f"Commandline arguments received. [{args=}]")
 
@@ -162,7 +168,7 @@ def main(args: list[str] = sys.argv[1:]):
         try:
             Config()
         except ConfigValidationError as err:
-            log.error(err)
+            log.exception("Config validation error.")
             raise SystemExit(1) from err
     _parse_args(args)
 

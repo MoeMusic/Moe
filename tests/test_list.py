@@ -1,7 +1,7 @@
 """Tests the ``list`` plugin."""
 
+from collections.abc import Iterator
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import ANY, patch
 
 import pytest

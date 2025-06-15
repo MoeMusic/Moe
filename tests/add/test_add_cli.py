@@ -1,7 +1,7 @@
 """Tests the add plugin."""
 
+from collections.abc import Iterator
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import ANY, patch
 
 import pytest
@@ -10,9 +10,7 @@ import moe
 import moe.cli
 from moe import config
 from moe.add import add_cli
-from moe.library import Album, Track
 from moe.moe_import.import_core import CandidateAlbum
-from moe.util.cli import PromptChoice
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -42,50 +40,29 @@ def _tmp_add_config(tmp_config):
     tmp_config('default_plugins = ["cli", "add", "write"]')
 
 
-class AddCLIPlugin:
-    """Imports fake candidates to test the import prompt hook."""
-
-    @staticmethod
-    @moe.hookimpl
-    def get_candidates(album: Album) -> list[CandidateAlbum]:
-        """Return a fake candidate for testing."""
-        return [
-            CandidateAlbum(
-                album=album, match_value=1, plugin_source="add plugin", source_id="1"
-            )
-        ]
-
-
 @pytest.mark.usefixtures("_tmp_add_config")
 class TestAddImportPromptChoice:
     """Test the `add_import_prompt_choice` hook implementation."""
 
-    def test_add_choice(self):
-        """The "s" key to skip adding an item is added."""
-        prompt_choices = []
-
-        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
-
-        assert any(choice.shortcut_key == "s" for choice in prompt_choices)
-
-    def test_skip_item(self, tmp_config, tmp_session):
+    def test_skip_item(self, tmp_config):
         """We can skip adding items to the library."""
         tmp_config(
-            'default_plugins = ["cli", "add", "import", "write"]',
-            tmp_db=True,
-            extra_plugins=[config.ExtraPlugin(AddCLIPlugin, "add_plugin")],
+            'default_plugins = ["cli", "add", "import"]',
         )
-        cli_args = ["add", str(track_factory(exists=True).path)]
+        album = album_factory()
+        candidate = CandidateAlbum(
+            album=album_factory(),
+            match_value=1,
+            plugin_source="tests",
+            source_id="1",
+        )
 
-        mock_choice = PromptChoice("mock", "m", add_cli._skip_import)
-        with patch(
-            "moe.moe_import.import_cli.choice_prompt",
-            return_value=mock_choice,
-            autospec=True,
-        ):
-            moe.cli.main(cli_args)
+        prompt_choices = []
+        config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
+        skip_choice = next(c for c in prompt_choices if c.shortcut_key == "s")
 
-        assert not tmp_session.query(Track).all()
+        with pytest.raises(add_cli.SkipAdd):
+            skip_choice.func(album, candidate)
 
 
 @pytest.mark.usefixtures("_tmp_add_config")
@@ -123,15 +100,14 @@ class TestCommand:
 
     def test_multiple_items(self, mock_add):
         """Items are added to the library when given a path."""
-        track = track_factory(exists=True)
-        album = album_factory(exists=True)
-        cli_args = ["add", str(track.path), str(album.path)]
+        items = [track_factory(exists=True), album_factory(exists=True)]
+        cli_args = ["add", str(items[0].path), str(items[1].path)]
 
         moe.cli.main(cli_args)
 
-        mock_add.assert_any_call(ANY, track)
-        mock_add.assert_any_call(ANY, album)
-        assert mock_add.call_count == 2
+        mock_add.assert_any_call(ANY, items[0])
+        mock_add.assert_any_call(ANY, items[1])
+        assert mock_add.call_count == len(items)
 
     def test_single_error(self, tmp_path, mock_add):
         """Don't exit after the first failed item if more to be added.

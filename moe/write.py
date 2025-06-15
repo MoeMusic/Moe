@@ -19,7 +19,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def write_custom_tags(track: Track):
+    def write_custom_tags(track: Track) -> None:
         """Allow plugins to write tags to a Track.
 
         How you write tags to the track is up to each individual plugin. Internally,
@@ -45,15 +45,15 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `write` hookspecs to Moe."""
-    from moe.write import Hooks
+    from moe.write import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
-def process_new_items(items: list[LibItem]):
+def process_new_items(items: list[LibItem]) -> None:
     """Writes tags to any new tracks in the library."""
     for item in items:
         if isinstance(item, Track):
@@ -61,7 +61,7 @@ def process_new_items(items: list[LibItem]):
 
 
 @moe.hookimpl
-def process_changed_items(items: list[LibItem]):
+def process_changed_items(items: list[LibItem]) -> None:
     """Writes tags to any altered tracks or albums in the library."""
     for item in items:
         if isinstance(item, Track) and item.album not in items:
@@ -72,7 +72,7 @@ def process_changed_items(items: list[LibItem]):
 
 
 @moe.hookimpl(tryfirst=True)
-def write_custom_tags(track: Track):
+def write_custom_tags(track: Track) -> None:
     """Writes all internally tracked tags to the track."""
     audio_file = mediafile.MediaFile(track.path)
 
@@ -99,7 +99,7 @@ def write_custom_tags(track: Track):
     audio_file.save()
 
 
-def write_tags(track: Track):
+def write_tags(track: Track) -> None:
     """Write tags to a track's file."""
     log.debug(f"Writing tags to track. [{track=}]")
 

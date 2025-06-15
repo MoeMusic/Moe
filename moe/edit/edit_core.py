@@ -17,7 +17,12 @@ class EditError(Exception):
     """Error editing an item in the library."""
 
 
-def edit_item(item: LibItem, field: str, value: str, create_field=False):  # noqa: C901
+def edit_item(
+    item: LibItem,
+    field: str,
+    value: str,
+    create_field: bool = False,  # noqa: FBT001, FBT002
+) -> None:
     """Sets a LibItem's ``field`` to ``value``.
 
     Args:
@@ -33,7 +38,8 @@ def edit_item(item: LibItem, field: str, value: str, create_field=False):  # noq
     log.debug(f"Editing item. [{item=}, {field=}, {value=}]")
 
     if field == "path":
-        raise EditError(f"Non-editable field given. [{field=}]")
+        err_msg = f"Non-editable field given. [{field=}]"
+        raise EditError(err_msg)
 
     try:
         attr = getattr(item.__class__, field)
@@ -42,7 +48,8 @@ def edit_item(item: LibItem, field: str, value: str, create_field=False):  # noq
             item.custom[field] = value
             return
 
-        raise EditError(f"Invalid field given. [{field=}]") from a_err
+        err_msg = f"Invalid field given. [{field=}]"
+        raise EditError(err_msg) from a_err
 
     try:
         column_type = attr.property.columns[0].type
@@ -59,7 +66,8 @@ def edit_item(item: LibItem, field: str, value: str, create_field=False):  # noq
         try:
             setattr(item, field, datetime.date.fromisoformat(value))
         except ValueError as v_err:
-            raise EditError("Date must be in format YYYY-MM-DD") from v_err
+            err_msg = "Date must be in format YYYY-MM-DD"
+            raise EditError(err_msg) from v_err
     else:
         setattr(item, field, value)
 

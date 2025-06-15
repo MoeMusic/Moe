@@ -1,20 +1,24 @@
 """Core api for moving items."""
 
+from __future__ import annotations
+
 import logging
 import re
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable
 
 import dynaconf
 import dynaconf.base
-import pluggy
 from unidecode import unidecode
 
 import moe
 from moe import config
 from moe.library import Album, Extra, LibItem, Track
+
+if TYPE_CHECKING:
+    import pluggy
 
 __all__ = ["copy_item", "fmt_item_path", "move_item"]
 
@@ -26,7 +30,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def create_path_template_func() -> list[Callable]:  # type: ignore
+    def create_path_template_func() -> list[Callable]:  # type: ignore[reportReturnType]
         """Create a custom path template function.
 
         Any functions returned by this hook will be available to be called from within
@@ -35,11 +39,11 @@ class Hooks:
         Returns:
             A list of all custom path functions your plugin creates. The list should
             contain the callable functions themselves.
-        """  # noqa: DAR202
+        """
 
     @staticmethod
     @moe.hookspec(firstresult=True)
-    def override_album_path_config(album: Album) -> Optional[str]:  # type: ignore
+    def override_album_path_config(album: Album) -> str | None:
         """Allows plugins to override the user's album path configuration.
 
         This hook allows plugins to replace the entire album path template based on
@@ -62,11 +66,11 @@ class Hooks:
                         return "Classical/{album.artist}/{album.title} ({album.year})"
                     elif "Soundtrack" in album.title:
                         return "Soundtracks/{album.title} ({album.year})"
-        """  # noqa: DAR202
+        """
 
     @staticmethod
     @moe.hookspec(firstresult=True)
-    def override_extra_path_config(extra: Extra) -> Optional[str]:  # type: ignore
+    def override_extra_path_config(extra: Extra) -> str | None:
         """Allows plugins to override the user's extra path configuration.
 
         This hook allows plugins to replace the entire extra path template based on
@@ -92,19 +96,19 @@ class Hooks:
                             return f"scans/{extra.path.name}"
                     elif extra.path.name.lower().endswith('.cue'):
                         return f"{extra.album.title}.cue"
-        """  # noqa: DAR202
+        """
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `add` hookspecs to Moe."""
-    from moe.move.move_core import Hooks
+    from moe.move.move_core import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
-def add_config_validator(settings: dynaconf.base.LazySettings):
+def add_config_validator(settings: dynaconf.base.LazySettings) -> None:
     """Validate move plugin configuration settings."""
     default_album_path = "{album.artist}/{album.title} ({album.year})"
     default_extra_path = "{e_unique(extra)}"
@@ -113,17 +117,17 @@ def add_config_validator(settings: dynaconf.base.LazySettings):
         "{track.track_num:02} - {track.title}{track.path.suffix}"
     )
 
-    validators = [
+    moe_validators = [
         dynaconf.Validator("MOVE.ASCIIFY_PATHS", default=False),
         dynaconf.Validator("MOVE.ALBUM_PATH", default=default_album_path),
         dynaconf.Validator("MOVE.EXTRA_PATH", default=default_extra_path),
         dynaconf.Validator("MOVE.TRACK_PATH", default=default_track_path),
     ]
-    settings.validators.register(*validators)  # type: ignore
+    settings.validators.register(*moe_validators)  # type: ignore[reportCallIssue]
 
 
 @moe.hookimpl(trylast=True)
-def edit_new_items(items: list[LibItem]):
+def edit_new_items(items: list[LibItem]) -> None:
     """Copies and formats the path of an item after it has been added to the library."""
     for item in items:
         # Only copy tracks and extras if their album is not also being processed.
@@ -152,7 +156,7 @@ def e_unique(extra: Extra) -> str:
 ########################################################################################
 # Format paths
 ########################################################################################
-def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
+def fmt_item_path(item: LibItem, parent: Path | None = None) -> Path:
     """Returns a formatted item path according to the user configuration.
 
     Args:
@@ -163,6 +167,9 @@ def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
     Returns:
         A formatted path as defined by the ``{album/extra/track}_path`` config template
             settings relative to ``parent``.
+
+    Raises:
+        NotImplementedError: If ``item`` is not an ``Album``, ``Extra``, or ``Track``.
     """
     log.debug(f"Formatting item path. [path={item.path}]")
 
@@ -182,10 +189,12 @@ def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
             config.CONFIG.pm.hook.override_extra_path_config(extra=item)
             or config.CONFIG.settings.move.extra_path
         )
-    else:
-        assert isinstance(item, Track)
+    elif isinstance(item, Track):
         parent = parent or fmt_item_path(item.album)
         item_path_config = config.CONFIG.settings.move.track_path
+    else:
+        err_msg = f"Unsupported item type: {type(item).__name__}"
+        raise NotImplementedError(err_msg)
 
     new_path = parent / _eval_path_template(item_path_config, item)
 
@@ -196,7 +205,7 @@ def fmt_item_path(item: LibItem, parent: Optional[Path] = None) -> Path:
     return new_path
 
 
-def _eval_path_template(template, lib_item) -> str:
+def _eval_path_template(template: str, lib_item: LibItem) -> str:
     """Evaluates and sanitizes a path template.
 
     Args:
@@ -243,13 +252,13 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
     """
     # add the appropriate library item to the scope
     if isinstance(lib_item, Album):
-        album = lib_item  # noqa: F841
+        album = lib_item
     elif isinstance(lib_item, Track):
-        track = lib_item  # noqa: F841
+        track = lib_item
         album = track.album
     elif isinstance(lib_item, Extra):
-        extra = lib_item  # noqa: F841
-        album = extra.album  # noqa: F841
+        extra = lib_item
+        album = extra.album  # noqa: F841 added to scope
     else:
         raise NotImplementedError
 
@@ -258,7 +267,7 @@ def _lazy_fstr_item(template: str, lib_item: LibItem) -> str:
         for func in funcs:
             globals()[func.__name__] = func
 
-    return eval(f'f"""{template}"""')  # noqa: B907
+    return eval(f'f"""{template}"""')  # noqa: S307
 
 
 def _sanitize_path_part(path_part: str) -> str:
@@ -274,14 +283,14 @@ def _sanitize_path_part(path_part: str) -> str:
     Returns:
         Path part with all the replacements applied.
     """
-    PATH_REPLACE_CHARS = {
+    path_replace_chars = {
         r"^\.": "_",  # leading '.' (hidden files on Unix)
         r'[<>:"\?\*\|\\/]': "_",  # <, >, : , ", ?, *, |, \, / (Windows reserved chars)
         r"\.$": "_",  # trailing '.' (Windows restriction)
         r"\s+$": "",  # trailing whitespace (Windows restriction)
     }
 
-    for regex, replacement in PATH_REPLACE_CHARS.items():
+    for regex, replacement in path_replace_chars.items():
         path_part = re.sub(regex, replacement, path_part)
 
     return path_part
@@ -290,7 +299,7 @@ def _sanitize_path_part(path_part: str) -> str:
 ########################################################################################
 # Copy
 ########################################################################################
-def copy_item(item: LibItem):
+def copy_item(item: LibItem) -> None:
     """Copies an item to a destination as determined by the user configuration.
 
     Overwrites any existing files. Will create the destination if it does not already
@@ -302,7 +311,7 @@ def copy_item(item: LibItem):
         _copy_file_item(item)
 
 
-def _copy_album(album: Album):
+def _copy_album(album: Album) -> None:
     """Copies an album to a destination as determined by the user configuration."""
     dest = fmt_item_path(album)
 
@@ -320,7 +329,7 @@ def _copy_album(album: Album):
     log.info(f"Copied album. [{dest=!s}, {album=!s}]")
 
 
-def _copy_file_item(item: Union[Extra, Track]):
+def _copy_file_item(item: Extra | Track) -> None:
     """Copies an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
     if dest.exists() and dest.samefile(item.path):
@@ -340,7 +349,7 @@ def _copy_file_item(item: Union[Extra, Track]):
 ########################################################################################
 # Move
 ########################################################################################
-def move_item(item: LibItem):
+def move_item(item: LibItem) -> None:
     """Moves an item to a destination as determined by the user configuration.
 
     Overwrites any existing files. Will create the destination if it does not already
@@ -352,7 +361,7 @@ def move_item(item: LibItem):
         _move_file_item(item)
 
 
-def _move_album(album: Album):
+def _move_album(album: Album) -> None:
     """Moves an album to a given destination.
 
     Note:
@@ -385,7 +394,7 @@ def _move_album(album: Album):
     log.info(f"Moved album. [{dest=!s}, {album=!s}]")
 
 
-def _move_file_item(item: Union[Extra, Track]):
+def _move_file_item(item: Extra | Track) -> None:
     """Moves an extra or track to a destination as determined by the user config."""
     dest = fmt_item_path(item)
     if dest.exists() and dest.samefile(item.path):

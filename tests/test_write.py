@@ -58,7 +58,7 @@ class TestHooks:
 class TestWriteTags:
     """Tests `write_tags()`."""
 
-    def test_write_tags(self, tmp_config):
+    def test_write_tags(self, tmp_config):  # noqa: PLR0915
         """Test writing and reading tags to a track."""
         tmp_config()
         track = track_factory(exists=True)
@@ -165,7 +165,7 @@ class TestProcessNewItems:
 
         for track in tracks:
             mock_write.assert_any_call(track)
-        assert mock_write.call_count == 2
+        assert mock_write.call_count == len(tracks)
 
 
 @pytest.mark.usefixtures("_tmp_write_config")
@@ -210,7 +210,7 @@ class TestProcessChangedItems:
 
         for track in tracks:
             mock_write.assert_any_call(track)
-        assert mock_write.call_count == 2
+        assert mock_write.call_count == len(tracks)
 
     def test_dont_write_tracks_twice(self, mock_write):
         """Don't write a track twice if it's album is also in `items`."""

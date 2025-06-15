@@ -26,14 +26,14 @@ def main() -> None:
             if re.match(rf"{version}", line) or re.match(r"=", line):
                 correct_version = True
                 continue
-            elif re.match(r"v\d+\.\d+\.\d+", line):
+            if re.match(r"v\d+\.\d+\.\d+", line):
                 # encountered next version
                 break
 
             if correct_version:
                 changes += line
 
-    print(convert_rst_to_md(changes).strip())
+    print(convert_rst_to_md(changes).strip())  # noqa: T201
 
 
 def convert_rst_to_md(text: str) -> str:

@@ -1,5 +1,8 @@
 """Test shared library functionality."""
 
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 import moe
 from moe.config import ExtraPlugin, moe_sessionmaker
 from moe.library import Album, Extra, Track
@@ -218,3 +221,16 @@ class TestCustomFields:
         assert db_track.custom["db"] == "persisted"
         assert db_track.custom["my_list"] == ["wow", "changed"]
         assert db_track.custom["growing_list"] == ["one", "two"]
+
+
+class TestPathType:
+    """Tests the PathType sqlalchemy type class."""
+
+    def test_process_bind_param_none(self, tmp_session):
+        """Raise IntegrityError when setting non-nullable PathType column to None."""
+        track = track_factory()
+        track.path = None
+        tmp_session.add(track)
+
+        with pytest.raises(IntegrityError):
+            tmp_session.flush()

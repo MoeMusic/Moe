@@ -1,7 +1,7 @@
 """Tests the ``edit`` cli plugin."""
 
+from collections.abc import Iterator
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import ANY, patch
 
 import pytest
@@ -78,19 +78,19 @@ class TestCommand:
     def test_multiple_items(self, mock_query, mock_edit):
         """All items returned from a query are edited."""
         cli_args = ["edit", "*", "track_num=3"]
-        track1 = track_factory()
-        track2 = track_factory()
-        mock_query.return_value = [track1, track2]
+        tracks = [track_factory(), track_factory()]
+        mock_query.return_value = tracks
 
         moe.cli.main(cli_args)
 
-        mock_edit.assert_any_call(track1, "track_num", "3", create_field=False)
-        mock_edit.assert_any_call(track2, "track_num", "3", create_field=False)
-        assert mock_edit.call_count == 2
+        mock_edit.assert_any_call(tracks[0], "track_num", "3", create_field=False)
+        mock_edit.assert_any_call(tracks[1], "track_num", "3", create_field=False)
+        assert mock_edit.call_count == len(tracks)
 
     def test_multiple_terms(self, mock_query, mock_edit):
         """We can edit multiple terms at once."""
         track = track_factory()
+        num_terms = 2
         cli_args = ["edit", "*", "track_num=3", "title=yo"]
         mock_query.return_value = [track]
 
@@ -98,7 +98,7 @@ class TestCommand:
 
         mock_edit.assert_any_call(track, "track_num", "3", create_field=False)
         mock_edit.assert_any_call(track, "title", "yo", create_field=False)
-        assert mock_edit.call_count == 2
+        assert mock_edit.call_count == num_terms
 
     def test_invalid_fv_term(self, mock_query):
         """Raise SystemExit if field/value term is in the wrong format."""

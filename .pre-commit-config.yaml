@@ -1,21 +1,11 @@
 default_stages: [pre-commit]
 
 repos:
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.0
     hooks:
-    -   id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
-
-  - repo: local
-    hooks:
-    -   id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types: [python]
+    - id: ruff-check
+    - id: ruff-format
 
   - repo: local
     hooks:
@@ -24,14 +14,6 @@ repos:
         entry: commitizen
         language: system
         stages: [commit-msg]
-
-  - repo: local
-    hooks:
-    -   id: isort
-        name: isort
-        entry: isort
-        language: system
-        types: [python]
 
   - repo: local
     hooks:

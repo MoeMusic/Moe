@@ -22,15 +22,15 @@ See Also:
       and database connection via the session.
 """
 
+from __future__ import annotations
+
 import importlib
-import importlib.util
 import logging
 import os
 import re
 import sys
 from pathlib import Path
-from types import ModuleType
-from typing import Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import alembic.command
 import alembic.config
@@ -44,6 +44,11 @@ import sqlalchemy.event
 import sqlalchemy.orm
 
 import moe
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from sqlalchemy.engine.base import Connection
 
 moe_sessionmaker = sqlalchemy.orm.sessionmaker(autoflush=False)
 
@@ -83,7 +88,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_config_validator(settings: dynaconf.base.LazySettings):
+    def add_config_validator(settings: dynaconf.base.LazySettings) -> None:
         """Add a settings validator for the configuration file.
 
         Args:
@@ -102,7 +107,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_hooks(pm: pluggy._manager.PluginManager):
+    def add_hooks(pm: pluggy._manager.PluginManager) -> None:
         """Add hookspecs to be registered to Moe.
 
         Args:
@@ -117,7 +122,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def plugin_registration():
+    def plugin_registration() -> None:
         """Allows actions after the initial plugin registration.
 
         In order for a module to implement and register plugin hooks, it must be
@@ -155,11 +160,11 @@ class Hooks:
 
         See Also:
             `pluggy.PluginManager documentation <https://pluggy.readthedocs.io/en/latest/api_reference.html>`_
-        """  # noqa: E501
+        """
 
     @staticmethod
     @moe.hookspec
-    def register_sa_event_listeners():
+    def register_sa_event_listeners() -> None:
         """Registers new sqlalchemy event listeners.
 
         These listeners will automatically apply to all sessions globally if the
@@ -188,20 +193,20 @@ class Hooks:
 
         See Also:
             `SQLAlchemy ORM event documentation <https://docs.sqlalchemy.org/en/20/orm/events.html>`_
-        """  # noqa: E501
+        """
 
 
 @moe.hookimpl
-def add_config_validator(settings: dynaconf.base.LazySettings):
+def add_config_validator(settings: dynaconf.base.LazySettings) -> None:
     """Validate move plugin configuration settings."""
-    validators = [
+    moe_validators = [
         dynaconf.Validator("DEFAULT_PLUGINS", default=DEFAULT_PLUGINS),
         dynaconf.Validator("DISABLE_PLUGINS", default=set()),
         dynaconf.Validator("ENABLE_PLUGINS", default=set()),
         dynaconf.Validator("LIBRARY_PATH", default="~/Music"),
         dynaconf.Validator("ORIGINAL_DATE", default=False),
     ]
-    settings.validators.register(*validators)  # type: ignore
+    settings.validators.register(*moe_validators)  # type: ignore[reportCallIssue, reportAttributeAccessIssue]
 
 
 class ExtraPlugin(NamedTuple):
@@ -212,7 +217,7 @@ class ExtraPlugin(NamedTuple):
         name: Name to register the plugin under.
     """
 
-    plugin: Union[type, ModuleType]
+    plugin: type | ModuleType
     name: str
 
 
@@ -230,12 +235,12 @@ class Config:
 
     def __init__(
         self,
-        config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008
+        config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008 breaking change required
         settings_filename: str = "config.toml",
-        extra_plugins: Optional[list[ExtraPlugin]] = None,
-        engine: Optional[sqlalchemy.engine.base.Engine] = None,
-        init_db=True,
-    ):
+        extra_plugins: list[ExtraPlugin] | None = None,
+        engine: sqlalchemy.engine.base.Engine | None = None,
+        init_db: bool = True,  # noqa: FBT001, FBT002
+    ) -> None:
         """Initializes the plugin manager and configuration directory.
 
         Args:
@@ -249,7 +254,7 @@ class Config:
                 in the ``config_dir``.
             init_db: Whether or not to initialize the database.
         """
-        global CONFIG
+        global CONFIG  # noqa: PLW0603 best way I've found to make CONFIG easily accessible
         CONFIG = self
 
         try:
@@ -267,7 +272,7 @@ class Config:
         if init_db:
             self._init_db()
 
-    def _init_db(self, create_tables: bool = True):
+    def _init_db(self, *, create_tables: bool = True) -> None:
         """Initializes the database.
 
         Moe uses sqlite by default.
@@ -300,10 +305,15 @@ class Config:
 
         # create regular expression function for sqlite queries
         @sqlalchemy.event.listens_for(self.engine, "begin")
-        def sqlite_engine_connect(conn):
-            conn.connection.create_function("regexp", 2, _regexp, deterministic=True)
+        def sqlite_engine_connect(conn: Connection) -> None:
+            """Use the python re module for sqlite regex functionality.
 
-        def _regexp(pattern: str, col_value) -> bool:
+            Args:
+                conn: Raw DB-API connection object
+            """
+            conn.connection.create_function("regexp", 2, _regexp, deterministic=True)  # type: ignore[reportAttributeAccessIssue]
+
+        def _regexp(pattern: str, col_value: object) -> bool:
             """Use the python re module for sqlite regular expression functionality.
 
             Args:
@@ -318,7 +328,7 @@ class Config:
 
         log.debug(f"Initialized database. [engine={self.engine!r}]")
 
-    def _read_config(self):
+    def _read_config(self) -> None:
         """Reads the user configuration settings.
 
         Searches for a configuration file at `config_dir / "config.toml"`.
@@ -326,14 +336,16 @@ class Config:
         Raises:
             ConfigValidationError: Unable to parse the configuration file.
         """
-        from moe.library.lib_item import PathType
+        from moe.library.lib_item import (  # noqa: PLC0415 prevent circular import
+            PathType,
+        )
 
         log.debug(f"Reading configuration file. [config_file={self.config_file}]")
 
         self.config_file.touch(exist_ok=True)
 
         self.settings = cast(
-            Any,
+            "Any",
             dynaconf.Dynaconf(
                 envvar_prefix="MOE",  # export envvars with `export MOE_FOO=bar`
                 settings_file=str(self.config_file.resolve()),
@@ -346,7 +358,7 @@ class Config:
 
         PathType.library_path = Path(self.settings.library_path)
 
-    def _validate_settings(self):
+    def _validate_settings(self) -> None:
         """Validates the given user configuration.
 
         Raises:
@@ -359,12 +371,12 @@ class Config:
         except dynaconf.validator.ValidationError as err:
             raise ConfigValidationError(err) from err
 
-    def _setup_plugins(self):
+    def _setup_plugins(self) -> None:
         """Setup pm and hook logic."""
         log.debug("Setting up plugins.")
 
         self.pm = cast(
-            Any, pluggy.PluginManager("moe")
+            "Any", pluggy.PluginManager("moe")
         )  # avoids pluggy hook type errors
 
         # register core modules that cannot be disabled by the config
@@ -383,7 +395,7 @@ class Config:
 
         log.debug(f"Registered plugins. [plugins={self.pm.list_name_plugin()}]")
 
-    def _register_enabled_plugins(self):
+    def _register_enabled_plugins(self) -> None:
         """Registers all enabled plugins in the configuration."""
         self.enabled_plugins = (
             set(self.settings.default_plugins) | set(self.settings.enable_plugins)
@@ -427,7 +439,7 @@ class Config:
 
     def _register_local_plugins(
         self, enabled_plugins: set[str], plugin_dir: Path, pkg_name: str = ""
-    ):
+    ) -> None:
         """Registers all internal plugins in `enabled_plugins`.
 
         Args:

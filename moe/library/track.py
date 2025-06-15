@@ -1,13 +1,14 @@
 """A Track in the database and any related logic."""
 
+from __future__ import annotations
+
 import logging
-from pathlib import Path
-from typing import Any, Optional
+import sys
+from typing import TYPE_CHECKING, Any, Optional
 
 import mediafile
-import pluggy
-from sqlalchemy import JSON, Integer
-from sqlalchemy.ext.mutable import MutableDict, MutableSet
+from sqlalchemy import Integer
+from sqlalchemy.ext.mutable import MutableSet
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 
@@ -15,6 +16,16 @@ import moe
 from moe import config
 from moe.library.album import Album, MetaAlbum
 from moe.library.lib_item import LibItem, LibraryError, MetaLibItem, SABase, SetType
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    import pluggy
 
 __all__ = ["MetaTrack", "Track", "TrackError"]
 
@@ -26,7 +37,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def is_unique_track(track: "Track", other: "Track") -> bool:  # type: ignore
+    def is_unique_track(track: Track, other: Track) -> bool:  # type: ignore[reportReturnType]
         """Add new conditions to determine whether two tracks are unique.
 
         "Uniqueness" is meant in terms of whether the two tracks should be considered
@@ -72,9 +83,9 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `track` hookspecs to Moe."""
-    from moe.library.track import Hooks
+    from moe.library.track import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
@@ -115,7 +126,7 @@ class TrackError(LibraryError):
     """Error performing some operation on a Track."""
 
 
-class MetaTrack(MetaLibItem):
+class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
     """A track containing only metadata.
 
     It does not exist on the filesystem nor in the library. It can be used
@@ -123,31 +134,31 @@ class MetaTrack(MetaLibItem):
     instance.
 
     Attributes:
-        album (Optional[Album]): Corresponding Album object.
-        artist (Optional[str])
-        artists (Optional[set[str]]): Set of all artists.
-        composer (Optional[str]): Track composer.
-        composer_sort (Optional[str]): Composer sort field.
+        album (Album | None): Corresponding Album object.
+        artist (str | None)
+        artists (set[str] | None): Set of all artists.
+        composer (str | None): Track composer.
+        composer_sort (str | None): Composer sort field.
         custom (dict[str, Any]): Dictionary of custom fields.
-        disc (Optional[int]): Disc number the track is on.
-        genres (Optional[set[str]]): Set of all genres.
-        title (Optional[str])
-        track_num (Optional[int])
+        disc (int | None): Disc number the track is on.
+        genres (set[str] | None): Set of all genres.
+        title (str | None)
+        track_num (int | None)
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         album: MetaAlbum,
         track_num: int,
-        artist: Optional[str] = None,
-        artists: Optional[set[str]] = None,
-        composer: Optional[str] = None,
-        composer_sort: Optional[str] = None,
+        artist: str | None = None,
+        artists: set[str] | None = None,
+        composer: str | None = None,
+        composer_sort: str | None = None,
         disc: int = 1,
-        genres: Optional[set[str]] = None,
-        title: Optional[str] = None,
-        **kwargs,
-    ):
+        genres: set[str] | None = None,
+        title: str | None = None,
+        **kwargs: object,
+    ) -> None:
         """Creates a MetaTrack object with any additional custom fields as kwargs."""
         self.custom = kwargs
 
@@ -166,7 +177,7 @@ class MetaTrack(MetaLibItem):
         log.debug(f"MetaTrack created. [track={self!r}]")
 
     @property
-    def genre(self) -> Optional[str]:
+    def genre(self) -> str | None:
         """Returns a string of all genres concatenated with ';'."""
         if self.genres is None:
             return None
@@ -174,7 +185,7 @@ class MetaTrack(MetaLibItem):
         return ";".join(self.genres)
 
     @genre.setter
-    def genre(self, genre_str: Optional[str]):
+    def genre(self, genre_str: str | None) -> None:
         """Sets a track's genre from a string.
 
         Args:
@@ -200,7 +211,7 @@ class MetaTrack(MetaLibItem):
             "track_num",
         }
 
-    def merge(self, other: "MetaTrack", overwrite: bool = False):
+    def merge(self, other: Self, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002 breaking change
         """Merges another track into this one.
 
         Args:
@@ -227,7 +238,7 @@ class MetaTrack(MetaLibItem):
 
         log.debug(f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=}]")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compares Tracks by their fields."""
         if not isinstance(other, MetaTrack):
             return False
@@ -240,7 +251,7 @@ class MetaTrack(MetaLibItem):
 
         return True
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Self) -> bool:
         """Sort based on album, then disc, then track number."""
         if self.album == other.album:
             if self.disc == other.disc:
@@ -250,17 +261,18 @@ class MetaTrack(MetaLibItem):
 
         return self.album < other.album
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Represents a Track using track-specific and relevant album fields."""
-        field_reprs = []
-        omit_fields = {"album"}
-        for field in self.fields - omit_fields:
-            if hasattr(self, field):
-                field_reprs.append(f"{field}={getattr(self, field)!r}")
+        field_reprs = [
+            f"{field}={getattr(self, field)!r}"
+            for field in self.fields - {"album"}  # don't display album repr
+            if hasattr(self, field)
+        ]
+
         repr_str = (
             f"{type(self).__name__}("
             + ", ".join(field_reprs)
-            + f", album='{self.album}'"  # noqa: B907 album repr is too long
+            + f", album='{self.album}'"
         )
 
         custom_field_reprs = []
@@ -272,7 +284,7 @@ class MetaTrack(MetaLibItem):
         repr_str += ")"
         return repr_str
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation of a track."""
         return f"{self.artist} - {self.title}"
 
@@ -283,12 +295,12 @@ class Track(LibItem, SABase, MetaTrack):
     Attributes:
         album (Album): Corresponding Album object.
         artist (str)
-        artists (Optional[set[str]]): Set of all artists.
-        composer (Optional[str]): Track composer.
-        composer_sort (Optional[str]): Composer sort field.
+        artists (set[str] | None): Set of all artists.
+        composer (str | None): Track composer.
+        composer_sort (str | None): Composer sort field.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (int): Disc number the track is on.
-        genres (Optional[set[str]]): Set of all genres.
+        genres (set[str] | None): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
         track_num (int)
@@ -301,40 +313,37 @@ class Track(LibItem, SABase, MetaTrack):
     __tablename__ = "track"
 
     artist: Mapped[str]
-    artists: Mapped[Optional[set[str]]] = mapped_column(
+    artists: Mapped[Optional[set[str]]] = mapped_column(  # noqa: UP045 sqlalchemy does not support
         MutableSet.as_mutable(SetType()), nullable=True
     )
-    composer: Mapped[Optional[str]]
-    composer_sort: Mapped[Optional[str]]
+    composer: Mapped[Optional[str]]  # noqa: UP045 sqlalchemy does not support
+    composer_sort: Mapped[Optional[str]]  # noqa: UP045 sqlalchemy does not support
     disc: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    genres: Mapped[Optional[set[str]]] = mapped_column(
+    genres: Mapped[Optional[set[str]]] = mapped_column(  # noqa: UP045 sqlalchemy does not support
         MutableSet.as_mutable(SetType()), nullable=True
     )
     title: Mapped[str]
     track_num: Mapped[int]
-    custom: Mapped[dict[str, Any]] = mapped_column(
-        MutableDict.as_mutable(JSON(none_as_null=True)), default="{}", nullable=False
-    )
 
     _album_id: Mapped[int] = mapped_column(Integer, ForeignKey("album._id"))
-    album: Mapped["Album"] = relationship(back_populates="tracks")
+    album: Mapped[Album] = relationship(back_populates="tracks")
 
     __table_args__ = (UniqueConstraint("disc", "track_num", "_album_id"),)
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         album: Album,
         path: Path,
         title: str,
         track_num: int,
-        artist: Optional[str] = None,
-        artists: Optional[set[str]] = None,
-        composer: Optional[str] = None,
-        composer_sort: Optional[str] = None,
-        disc: Optional[int] = None,
-        genres: Optional[set[str]] = None,
-        **kwargs,
-    ):
+        artist: str | None = None,
+        artists: set[str] | None = None,
+        composer: str | None = None,
+        composer_sort: str | None = None,
+        disc: int | None = None,
+        genres: set[str] | None = None,
+        **kwargs: object,
+    ) -> None:
         """Creates a Track.
 
         Args:
@@ -399,9 +408,9 @@ class Track(LibItem, SABase, MetaTrack):
     def from_file(
         cls,
         track_path: Path,
-        album: Optional[Album] = None,
-        album_path: Optional[Path] = None,
-    ) -> "Track":
+        album: Album | None = None,
+        album_path: Path | None = None,
+    ) -> Track:
         """Alternate initializer that creates a Track from a track file.
 
         Will read any tags from the given path and save them to the Track.
@@ -427,10 +436,11 @@ class Track(LibItem, SABase, MetaTrack):
         try:
             mediafile.MediaFile(track_path)
         except mediafile.UnreadableFileError as err:
-            raise TrackError(
+            err_msg = (
                 "Unable to create track; given path is not a track file. "
                 f"[path={track_path}]"
-            ) from err
+            )
+            raise TrackError(err_msg) from err
 
         album_fields: dict[str, Any] = {}
         track_fields: dict[str, Any] = {}
@@ -458,9 +468,8 @@ class Track(LibItem, SABase, MetaTrack):
         if not date and not album:
             missing_reqd_fields.append("date")
         if missing_reqd_fields:
-            raise ValueError(
-                f"Track is missing required fields. [{missing_reqd_fields=}]"
-            )
+            err_msg = f"Track is missing required fields. [{missing_reqd_fields=}]"
+            raise ValueError(err_msg)
 
         if not album:
             album = Album(
@@ -516,7 +525,7 @@ class Track(LibItem, SABase, MetaTrack):
         """
         return mediafile.MediaFile(self.path).samplerate
 
-    def is_unique(self, other: "LibItem") -> bool:
+    def is_unique(self, other: LibItem) -> bool:
         """Returns whether a track is unique in the library from ``other``."""
         if not isinstance(other, Track):
             return True
@@ -533,7 +542,5 @@ class Track(LibItem, SABase, MetaTrack):
         custom_uniqueness = config.CONFIG.pm.hook.is_unique_track(
             track=self, other=other
         )
-        if False in custom_uniqueness:
-            return False
 
-        return True
+        return False not in custom_uniqueness
