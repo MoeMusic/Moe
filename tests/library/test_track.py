@@ -202,14 +202,6 @@ class TestFromFile:
         assert new_track.album.title == "custom album title"
         assert new_track.title == "custom track title"
 
-    def test_read_track_fields(self, tmp_config):
-        """Plugins can add additional album fields via the `read_album_fields` hook."""
-        tmp_config(extra_plugins=[ExtraPlugin(MyTrackPlugin, "track_plugin")])
-        track = track_factory(exists=True)
-        new_track = Track.from_file(track.path)
-
-        assert new_track.title == "custom track title"
-
     def test_missing_artist(self, tmp_config):
         """Raise ValueError if track is missing both an artist and albumartist."""
         tmp_config()
