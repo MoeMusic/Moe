@@ -153,3 +153,31 @@ class TestMatchValue:
         assert track1.track_num != track2.track_num
 
         assert get_match_value(track1, track2) < 1
+
+
+class TestDurationMatching:
+    """Test duration matching logic."""
+
+    def test_within_tolerance_duration_match(self):
+        """Tracks within 2.5% tolerance should match without penalty."""
+        track1 = track_factory(duration=180.0)
+        track2 = track_factory(dup_track=track1)
+        track2.duration = 184.0
+
+        assert get_match_value(track1, track2) > 0.9
+
+    def test_outside_tolerance_duration_match(self):
+        """Tracks outside 2.5% tolerance should have reduced match value."""
+        track1 = track_factory(duration=180.0)
+        track2 = track_factory(dup_track=track1)
+        track2.duration = 195.0
+
+        assert get_match_value(track1, track2) < 0.9
+
+    def test_missing_duration_handling(self):
+        """Track with missing duration should still match on other fields."""
+        track1 = track_factory(duration=180.0)
+        track2 = track_factory(dup_track=track1)
+        track2.duration = None
+
+        assert 0.7 < get_match_value(track1, track2) < 0.9

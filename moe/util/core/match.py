@@ -31,6 +31,7 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 
 MATCH_TRACK_FIELD_WEIGHTS = {
     "disc": 0.3,
+    "duration": 0.5,
     "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
@@ -69,6 +70,21 @@ def get_match_value(
         else:
             if isinstance(value_a, str):
                 penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
+            elif (
+                field == "duration"
+                and isinstance(value_a, (int, float))
+                and isinstance(value_b, (int, float))
+            ):
+                max_duration = max(value_a, value_b)
+                tolerance = max_duration * 0.025  # 2.5% of max duration
+
+                diff = abs(value_a - value_b)
+                if diff <= tolerance:
+                    penalty = 0
+                else:
+                    # Gradually increase penalty beyond tolerance
+                    # with max penalty at 3x tolerance.
+                    penalty = min(1.0, diff / (3 * tolerance))
             else:
                 if value_a != value_b:
                     penalty = 1

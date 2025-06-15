@@ -297,6 +297,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
     track_table.add_column("#")
     track_table.add_column("Artist")
     track_table.add_column("Title")
+    track_table.add_column("Duration")
 
     matches = get_matching_tracks(new_album, candidate.album)
     matches.sort(
@@ -316,6 +317,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
                 _fmt_field_changes(old_track, new_track, "track_num"),
                 _fmt_field_changes(old_track, new_track, "artist"),
                 _fmt_field_changes(old_track, new_track, "title"),
+                _fmt_duration_changes(old_track, new_track),
             )
         elif old_track and not new_track:
             unmatched_tracks.append(old_track)
@@ -331,6 +333,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
             str(missing_track.track_num),
             missing_track.artist,
             missing_track.title,
+            _fmt_duration(missing_track),
         )
     for unmatched_track in sorted(unmatched_tracks):
         track_table.add_row(
@@ -339,6 +342,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
             str(unmatched_track.track_num),
             unmatched_track.artist,
             unmatched_track.title,
+            _fmt_duration(unmatched_track),
         )
 
     return track_table
@@ -387,3 +391,40 @@ def _fmt_field_changes(
         return Text(str(old_field))
     else:
         return None
+
+
+def _fmt_duration_changes(old_track: MetaTrack, new_track: MetaTrack) -> Text:
+    """Formats the duration changes between two tracks."""
+    old_duration = _get_track_duration_str(old_track)
+    new_duration = _get_track_duration_str(new_track)
+
+    if old_duration and new_duration:
+        if old_duration == new_duration:
+            return Text(old_duration)
+        else:
+            return (
+                Text(old_duration)
+                .append(Text(" -> ", style="yellow"))
+                .append(Text(new_duration))
+            )
+    elif old_duration:
+        return Text(old_duration, style="red strike")
+    elif new_duration:
+        return Text(new_duration, style="green")
+    else:
+        return Text("N/A")
+
+
+def _fmt_duration(track: MetaTrack) -> Text:
+    """Formats the duration of a track."""
+    duration_str = _get_track_duration_str(track)
+    return Text(duration_str if duration_str else "N/A")
+
+
+def _get_track_duration_str(track: MetaTrack) -> Optional[str]:
+    """Get formatted duration string for a track (MM:SS format)."""
+    if hasattr(track, "duration") and track.duration:
+        minutes = int(track.duration // 60)
+        seconds = int(track.duration % 60)
+        return f"{minutes}:{seconds:02d}"
+    return None
