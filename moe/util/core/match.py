@@ -1,8 +1,10 @@
 """All logic regarding matching albums and tracks against each other."""
 
+from __future__ import annotations
+
 import difflib
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 from moe.library import MetaAlbum, MetaTrack
 
@@ -38,7 +40,7 @@ MATCH_TRACK_FIELD_WEIGHTS = {
 
 
 def get_match_value(
-    item_a: Union[MetaAlbum, MetaTrack], item_b: Union[MetaAlbum, MetaTrack]
+    item_a: MetaAlbum | MetaTrack, item_b: MetaAlbum | MetaTrack
 ) -> float:
     """Returns a similarity value between two albums or tracks on a scale of 0 to 1.
 
@@ -67,14 +69,12 @@ def get_match_value(
             penalty = 0.1
         elif (value_a and not value_b) or (value_b and not value_a):
             penalty = 0.2
+        elif isinstance(value_a, str):
+            penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
+        elif value_a != value_b:
+            penalty = 1
         else:
-            if isinstance(value_a, str):
-                penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
-            else:
-                if value_a != value_b:
-                    penalty = 1
-                else:
-                    penalty = 0
+            penalty = 0
 
         penalties.append(penalty * weight)
 
@@ -141,7 +141,7 @@ def get_matching_tracks(  # noqa: C901 (I don't see benefit from splitting)
         )
 
         # prevent subsequent matches
-        for track_pair2 in track_match_values.keys():
+        for track_pair2 in track_match_values:
             if track_pair[0] == track_pair2[0] or track_pair[1] == track_pair2[1]:
                 track_match_values[track_pair2] = -1
 

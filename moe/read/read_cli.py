@@ -16,7 +16,7 @@ __all__: list[str] = []
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):
+def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
     """Adds the ``read`` command to Moe's CLI."""
     read_parser = cmd_parsers.add_parser(
         "read",
@@ -33,7 +33,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     read_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(session: Session, args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace) -> None:
     """Parses the given commandline arguments.
 
     Tracks can be added as files or albums as directories.
@@ -51,11 +51,11 @@ def _parse_args(session: Session, args: argparse.Namespace):
     for item in items:
         try:
             read.read_item(item)
-        except FileNotFoundError:
+        except FileNotFoundError:  # noqa: PERF203 try-except must be inside loop
             if args.remove:
                 remove.remove_item(session, item)
             else:
-                log.error(f"Could not find item's path. [{item=}]")
+                log.exception(f"Could not find item's path. [{item=}]")
                 error_count += 1
 
     if error_count:

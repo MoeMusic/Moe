@@ -6,6 +6,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import importlib.metadata
+from pathlib import Path
 
 # -- Path setup --------------------------------------------------------------
 
@@ -13,13 +14,13 @@ import importlib.metadata
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# sys.path.insert(0, os.path.abspath('.'))  # noqa: E800
+# sys.path.insert(0, os.path.abspath('.'))  # noqa: ERA001
 
 
 # -- Project information -----------------------------------------------------
 
 project = "Moe"
-copyright = "2021, Jacob Pavlock"
+copyright = "2021, Jacob Pavlock"  # noqa: A001
 author = "Jacob Pavlock"
 release = importlib.metadata.version("moe")
 
@@ -43,10 +44,10 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "global.rst"]
 
 # `rst_prolong` is automatically included in every source file.
-rst_prolog = open("global.rst", "r").read()
+rst_prolog = Path("global.rst").read_text()
 
 # include type hints in function description
-# autodoc_typehints = "description"
+# autodoc_typehints = "description" # noqa: ERA001
 
 # don't include module names in autodoc functions
 add_module_names = False

@@ -15,12 +15,12 @@ from tests.conftest import album_factory, extra_factory, track_factory
 @pytest.fixture
 def _tmp_dup_config(tmp_config):
     """Tempory config enabling the cli and duplicate plugins."""
-    tmp_config('default_plugins = ["cli", "duplicate"]')
+    tmp_config('default_plugins = ["cli", "duplicate"]', tmp_db=True)
 
 
 @pytest.mark.usefixtures("_tmp_dup_config")
-class TestPrompt:
-    """Test the duplicate prompt for tracks used in the `resolve_dup_items()` hook."""
+class TestResolveDupItems:
+    """Test the `resolve_dup_items()` hook implementation."""
 
     def test_choices_called(self):
         """The proper choices get called.."""
@@ -47,7 +47,18 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._keep_a(tmp_session, track_a, track_b)
+        def mock_keep_a(choices_list, question, **kwargs):
+            """Mock choice_prompt to return the 'keep a' choice."""
+            return next(c for c in choices_list if c.shortcut_key == "a")
+
+        with patch(
+            "moe.duplicate.dup_cli.choice_prompt",
+            side_effect=mock_keep_a,
+            autospec=True,
+        ):
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=tmp_session, item_a=track_a, item_b=track_b
+            )
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "a"
@@ -59,7 +70,18 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._keep_b(tmp_session, track_a, track_b)
+        def mock_keep_b(choices_list, question, **kwargs):
+            """Mock choice_prompt to return the 'keep b' choice."""
+            return next(c for c in choices_list if c.shortcut_key == "b")
+
+        with patch(
+            "moe.duplicate.dup_cli.choice_prompt",
+            side_effect=mock_keep_b,
+            autospec=True,
+        ):
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=tmp_session, item_a=track_a, item_b=track_b
+            )
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "b"
@@ -72,7 +94,18 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._merge(tmp_session, track_a, track_b)
+        def mock_merge(choices_list, question, **kwargs):
+            """Mock choice_prompt to return the 'merge' choice."""
+            return next(c for c in choices_list if c.shortcut_key == "m")
+
+        with patch(
+            "moe.duplicate.dup_cli.choice_prompt",
+            side_effect=mock_merge,
+            autospec=True,
+        ):
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=tmp_session, item_a=track_a, item_b=track_b
+            )
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "b"
@@ -86,7 +119,18 @@ class TestPrompt:
         tmp_session.add_all([track_a, track_b])
         tmp_session.flush()
 
-        dup_cli._overwrite(tmp_session, track_a, track_b)
+        def mock_overwrite(choices_list, question, **kwargs):
+            """Mock choice_prompt to return the 'overwrite' choice."""
+            return next(c for c in choices_list if c.shortcut_key == "o")
+
+        with patch(
+            "moe.duplicate.dup_cli.choice_prompt",
+            side_effect=mock_overwrite,
+            autospec=True,
+        ):
+            config.CONFIG.pm.hook.resolve_dup_items(
+                session=tmp_session, item_a=track_a, item_b=track_b
+            )
 
         db_track = tmp_session.query(Track).one()
         assert db_track.title == "a"
@@ -120,21 +164,21 @@ class TestUI:
 
         assert old_album is not new_album
 
-        console.print(dup_cli._fmt_item_vs(old_album, new_album))
+        console.print(dup_cli._fmt_item_vs(old_album, new_album))  # noqa: SLF001
 
     def test_track(self):
         """Duplicate prompt for two tracks."""
         track_a = track_factory()
         track_b = track_factory(path=track_a.path)
 
-        console.print(dup_cli._fmt_item_vs(track_a, track_b))
+        console.print(dup_cli._fmt_item_vs(track_a, track_b))  # noqa: SLF001
 
     def test_extra(self):
         """Duplicate prompt for two extras."""
         extra_a = extra_factory(custom_fields={"custom": "diff A"})
         extra_b = extra_factory(custom_fields={"custom": "diff B"})
 
-        console.print(dup_cli._fmt_item_vs(extra_a, extra_b))
+        console.print(dup_cli._fmt_item_vs(extra_a, extra_b))  # noqa: SLF001
 
     def test_dup_tracks(self):
         """Album with the same tracks."""
@@ -142,11 +186,11 @@ class TestUI:
         album_b = album_factory(dup_album=album_a)
         album_a.title = "diff"
 
-        console.print(dup_cli._fmt_item_vs(album_a, album_b))
+        console.print(dup_cli._fmt_item_vs(album_a, album_b))  # noqa: SLF001
 
     def test_no_extras(self):
         """No extras section if the album doesn't have any extras."""
         album_a = album_factory(num_extras=0)
         album_b = album_factory(num_extras=0)
 
-        console.print(dup_cli._fmt_item_vs(album_a, album_b))
+        console.print(dup_cli._fmt_item_vs(album_a, album_b))  # noqa: SLF001

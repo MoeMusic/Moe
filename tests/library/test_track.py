@@ -53,15 +53,20 @@ class TestInit:
         track1 = album.get_track(1, disc=1)
         track2 = album.get_track(1, disc=2)
         track3 = album.get_track(1, disc=3)
-        assert track1 and track2 and track3  # noqa: PT018
+        track1_disc = 1
+        track2_disc = 2
+        track3_disc = 3
+        assert track1
+        assert track2
+        assert track3
 
         new_track1 = Track(album, track1.path, track1.title, track1.track_num)
         new_track2 = Track(album, track2.path, track2.title, track2.track_num)
         new_track3 = Track(album, track3.path, track3.title, track3.track_num)
 
-        assert new_track1.disc == 1
-        assert new_track2.disc == 2
-        assert new_track3.disc == 3
+        assert new_track1.disc == track1_disc
+        assert new_track2.disc == track2_disc
+        assert new_track3.disc == track3_disc
 
     def test_guess_disc_single_disc(self):
         """Guess the disc if there are no disc sub directories."""
@@ -420,7 +425,7 @@ class TestProperties:
         """Genre should concat genres."""
         track = track_factory(genres={"1", "2"})
 
-        assert track.genre == "1;2" or track.genre == "2;1"
+        assert track.genre in {"1;2", "2;1"}
 
     def test_set_genre(self):
         """Setting genre should split into strings."""
@@ -449,7 +454,7 @@ class TestProperties:
         """We can get the sample rate of a track."""
         track = track_factory(exists=True)
 
-        assert track.sample_rate == 44100
+        assert track.sample_rate == 44100  # noqa: PLR2004
 
     def test_duration_property_access(self):
         """We can get the duration of a track."""

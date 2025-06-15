@@ -96,7 +96,7 @@ class TestProperties:
         """Catalog_Num should concat catalog_nums."""
         album = album_factory(catalog_nums={"1", "2"})
 
-        assert album.catalog_num == "1;2" or album.catalog_num == "2;1"
+        assert album.catalog_num in {"1;2", "2;1"}
 
     def test_set_catalog_num(self):
         """Setting catalog_num should split into strings."""

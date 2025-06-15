@@ -1,12 +1,11 @@
 """Any non-music item attached to an album such as log files are considered extras."""
 
 import logging
+import sys
 from pathlib import Path, PurePath
-from typing import Any
 
 import pluggy
-from sqlalchemy import JSON, Integer
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy import Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import ForeignKey
 
@@ -14,6 +13,11 @@ import moe
 from moe import config
 from moe.library.album import Album
 from moe.library.lib_item import LibItem, SABase
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 __all__ = ["Extra"]
 
@@ -25,7 +29,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def is_unique_extra(extra: "Extra", other: "Extra") -> bool:  # type: ignore
+    def is_unique_extra(extra: "Extra", other: "Extra") -> bool:  # type: ignore[reportReturnType]
         """Add new conditions to determine whether two extras are unique.
 
         "Uniqueness" is meant in terms of whether the two extras should be considered
@@ -35,14 +39,14 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `extra` hookspecs to Moe."""
-    from moe.library.extra import Hooks
+    from moe.library.extra import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
-class Extra(LibItem, SABase):
+class Extra(LibItem, SABase):  # noqa: PLW1641 MetaTracks are unhashable
     """An Album can have any number of extra files such as logs, cues, etc.
 
     Attributes:
@@ -53,14 +57,10 @@ class Extra(LibItem, SABase):
 
     __tablename__ = "extra"
 
-    custom: Mapped[dict[str, Any]] = mapped_column(
-        MutableDict.as_mutable(JSON(none_as_null=True)), default="{}", nullable=False
-    )
-
     _album_id: Mapped[int] = mapped_column(Integer, ForeignKey("album._id"))
     album: Mapped["Album"] = relationship(back_populates="extras")
 
-    def __init__(self, album: Album, path: Path, **kwargs):
+    def __init__(self, album: Album, path: Path, **kwargs: object) -> None:
         """Creates an Extra.
 
         Args:
@@ -96,12 +96,10 @@ class Extra(LibItem, SABase):
         custom_uniqueness = config.CONFIG.pm.hook.is_unique_extra(
             extra=self, other=other
         )
-        if False in custom_uniqueness:
-            return False
 
-        return True
+        return False not in custom_uniqueness
 
-    def merge(self, other: "Extra", overwrite: bool = False):
+    def merge(self, other: Self, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002
         """Merges another extra into this one.
 
         Args:
@@ -128,7 +126,7 @@ class Extra(LibItem, SABase):
 
         log.debug(f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=}]")
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Compares Extras by their fields."""
         if not isinstance(other, Extra):
             return False
@@ -141,25 +139,22 @@ class Extra(LibItem, SABase):
 
         return True
 
-    def __lt__(self, other: "Extra") -> bool:
+    def __lt__(self, other: Self) -> bool:
         """Sort based on album then path."""
         if self.album == other.album:
             return self.path < other.path
 
         return self.album < other.album
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Represents an Extra using its path and album."""
-        field_reprs = []
-        omit_fields = {"album"}
-        for field in self.fields - omit_fields:
-            if hasattr(self, field):
-                field_reprs.append(f"{field}={getattr(self, field)!r}")
-        repr_str = (
-            "Extra("
-            + ", ".join(field_reprs)
-            + f", album='{self.album}'"  # noqa: B907 album repr is too long
-        )
+        field_reprs = [
+            f"{field}={getattr(self, field)!r}"
+            for field in self.fields - {"album"}  # don't display album repr
+            if hasattr(self, field)
+        ]
+
+        repr_str = "Extra(" + ", ".join(field_reprs) + f", album='{self.album}'"
 
         custom_field_reprs = []
         for custom_field, value in self.custom.items():
@@ -170,6 +165,6 @@ class Extra(LibItem, SABase):
         repr_str += ")"
         return repr_str
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation of an Extra."""
         return f"{self.album}: {self.rel_path}"

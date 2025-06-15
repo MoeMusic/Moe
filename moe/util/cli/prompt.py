@@ -28,7 +28,7 @@ class PromptChoice:
     See Also:
         `Questionary Choice docs
         <https://questionary.readthedocs.io/en/stable/pages/api_reference.html#api-reference>`_
-    """
+    """  # noqa: D214 "Important" isn't a separate section
 
     title: str
     shortcut_key: str
@@ -52,15 +52,14 @@ def choice_prompt(
     """
     prompt_choices.sort(key=operator.attrgetter("shortcut_key"))
 
-    questionary_choices: list[questionary.Choice] = []
-    for prompt_choice in prompt_choices:
-        questionary_choices.append(
-            questionary.Choice(
-                title=prompt_choice.title,
-                shortcut_key=prompt_choice.shortcut_key,
-                value=prompt_choice.shortcut_key,
-            )
+    questionary_choices = [
+        questionary.Choice(
+            title=prompt_choice.title,
+            shortcut_key=prompt_choice.shortcut_key,
+            value=prompt_choice.shortcut_key,
         )
+        for prompt_choice in prompt_choices
+    ]
 
     user_input = questionary.select(
         question, choices=questionary_choices, use_shortcuts=True, use_arrow_keys=True

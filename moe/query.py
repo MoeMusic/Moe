@@ -1,18 +1,22 @@
 """Provides functionality to query the library for albums, extras, and tracks."""
 
+from __future__ import annotations
+
 import logging
 import re
 import shlex
 from pathlib import Path
-from typing import Type, Union
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
-import sqlalchemy.orm
-import sqlalchemy.sql.elements
-from sqlalchemy.orm.session import Session
 
 from moe.library import Album, Extra, LibItem, Track
 from moe.library.lib_item import SetType
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import InstrumentedAttribute
+    from sqlalchemy.orm.session import Session
+    from sqlalchemy.sql.elements import KeyedColumnElement
 
 __all__: list[str] = ["QueryError", "query"]
 
@@ -32,7 +36,7 @@ VALUE = "value"
 
 def query(
     session: Session, query_str: str, query_type: str
-) -> Union[list[Album], list[Extra], list[Track]]:
+) -> list[Album] | list[Extra] | list[Track]:
     """Queries the database for items matching the given query string.
 
     Args:
@@ -53,7 +57,8 @@ def query(
 
     terms = shlex.split(query_str)
     if not terms:
-        raise QueryError("No query given.")
+        err_msg = "No query given."
+        raise QueryError(err_msg)
 
     if query_type == "album":
         library_query = session.query(Album)
@@ -69,7 +74,7 @@ def query(
     for term in terms:
         parsed_term = _parse_term(term)
         library_query = library_query.filter(
-            _create_filter_expression(  # type: ignore
+            _create_filter_expression(
                 parsed_term[FIELD_TYPE],
                 parsed_term[FIELD],
                 parsed_term[SEPARATOR],
@@ -124,7 +129,8 @@ def _parse_term(term: str) -> dict[str, str]:
 
     match = re.match(query_re, term)
     if not match:
-        raise QueryError(f"Invalid query term. [{term=}]")
+        err_msg = f"Invalid query term. [{term=}]"
+        raise QueryError(err_msg)
 
     match_dict = match.groupdict()
     match_dict[FIELD] = match_dict[FIELD].lower()
@@ -138,7 +144,9 @@ def _parse_term(term: str) -> dict[str, str]:
     return match_dict
 
 
-def _create_filter_expression(field_type: str, field: str, separator: str, value: str):
+def _create_filter_expression(
+    field_type: str, field: str, separator: str, value: str
+) -> sa.sql.expression.ColumnExpressionArgument[bool]:
     """Maps a user-given query term to a filter expression for the database query.
 
     Args:
@@ -172,20 +180,22 @@ def _create_filter_expression(field_type: str, field: str, separator: str, value
 
         # normal string match query - should be case insensitive
         return attr.ilike(value, escape="/")
-    elif separator == "::":
+    if separator == "::":
         try:
             re.compile(value)
         except re.error as re_err:
-            raise QueryError(
-                f"Invalid regular expression. [regex={value!r}]"
-            ) from re_err
+            err_msg = f"Invalid regular expression. [regex={value!r}]"
+            raise QueryError(err_msg) from re_err
 
         return attr.op("regexp")(sa.sql.expression.literal(value))
 
-    raise QueryError(f"Invalid query type separator. [{separator=}]")
+    err_msg = f"Invalid query type separator. [{separator=}]"
+    raise QueryError(err_msg)
 
 
-def _get_field_attr(field: str, field_type: str):
+def _get_field_attr(
+    field: str, field_type: str
+) -> sa.sql.expression.ColumnClause | InstrumentedAttribute | KeyedColumnElement:
     """Gets the corresponding attribute for the given field to use in a query filter."""
     # convert singular multi-value fields to their plural equivalents
     if field == "catalog_num" and field_type == "album":
@@ -195,13 +205,14 @@ def _get_field_attr(field: str, field_type: str):
 
     if field_type == "album":
         return _getattr(Album, field)
-    elif field_type == "extra":
+    if field_type == "extra":
         return _getattr(Extra, field)
-    else:
-        return _getattr(Track, field)
+    return _getattr(Track, field)
 
 
-def _getattr(item_class: Type[LibItem], field: str):
+def _getattr(
+    item_class: type[LibItem], field: str
+) -> sa.sql.expression.ColumnClause | InstrumentedAttribute | KeyedColumnElement:
     """Get an attribute for the given class type."""
     try:
         attr = getattr(item_class, field)

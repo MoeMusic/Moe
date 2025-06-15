@@ -1,7 +1,7 @@
 """Tests the ``remove`` plugin."""
 
+from collections.abc import Iterator
 from types import FunctionType
-from typing import Iterator
 from unittest.mock import ANY, patch
 
 import pytest
@@ -83,7 +83,7 @@ class TestCommand:
 
         for track in tracks:
             mock_rm.assert_any_call(ANY, track)
-        assert mock_rm.call_count == 2
+        assert mock_rm.call_count == len(tracks)
 
     def test_delete_album(self, mock_query, mock_rm):
         """Delete albums if `-d` passed."""

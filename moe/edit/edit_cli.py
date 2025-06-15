@@ -6,7 +6,6 @@ import logging
 from sqlalchemy.orm.session import Session
 
 import moe
-import moe.cli
 from moe import edit
 from moe.util.cli import cli_query, query_parser
 
@@ -14,7 +13,7 @@ log = logging.getLogger("moe.cli.edit")
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):
+def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
     """Adds the ``edit`` command to Moe's CLI."""
     epilog_help = """
     The FIELD=VALUE argument sets a track's field, an album's field if an album query is
@@ -45,7 +44,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     edit_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(session: Session, args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace) -> None:
     """Parses the given commandline arguments.
 
     Args:
@@ -63,15 +62,16 @@ def _parse_args(session: Session, args: argparse.Namespace):
         try:
             field, value = term.split("=")
         except ValueError:
-            log.error(f"Invalid FIELD=VALUE format. [{term=}]")
+            err_msg = f"Invalid FIELD=VALUE format. [{term=}]"
+            log.exception(err_msg)
             error_count += 1
             continue
 
         for item in items:
             try:
                 edit.edit_item(item, field, value, args.create)
-            except edit.EditError as err:
-                log.error(err)
+            except edit.EditError:  # noqa: PERF203
+                log.exception("Edit error.")
                 error_count += 1
 
     if error_count:

@@ -215,9 +215,7 @@ Linting
 
 Runs the following checks:
 
-* `black <https://github.com/psf/black>`_ - used to keep a consistent code format.
-* `flake8 <https://github.com/PyCQA/flake8>`_ - used to check for various stylistic rules. See ``setup.cfg`` for an overview on the various rules encompassed by this check.
-* `isort <https://github.com/PyCQA/isort>`_ - used for sorting imports in modules.
+* `ruff <https://docs.astral.sh/ruff/>`_ used for linting and formatting
 * `pyright <https://github.com/microsoft/pyright>`_ - used for type checking.
 * `commitizen <https://github.com/commitizen-tools/commitizen>`_ - used to ensure proper `commit conventions <#committing>`_.
 

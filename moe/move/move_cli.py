@@ -16,7 +16,7 @@ log = logging.getLogger("moe.cli.move")
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):
+def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
     """Adds the ``move`` command to Moe's CLI."""
     move_parser = cmd_parsers.add_parser(
         "move",
@@ -33,7 +33,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     move_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(session: Session, args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace) -> None:
     """Parses the given commandline arguments.
 
     Items will be moved according to the given user configuration.
@@ -45,12 +45,12 @@ def _parse_args(session: Session, args: argparse.Namespace):
     Raises:
         SystemExit: Invalid query or no items found to move.
     """
-    albums = cast(list[Album], cli_query(session, "*", query_type="album"))
+    albums = cast("list[Album]", cli_query(session, "*", query_type="album"))
 
     if args.dry_run:
         dry_run_str = _dry_run(albums)
         if dry_run_str:
-            print(dry_run_str.lstrip())
+            print(dry_run_str.lstrip())  # noqa: T201 cli output
     else:
         for album in albums:
             moe_move.move_item(album)

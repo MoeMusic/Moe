@@ -20,14 +20,15 @@ moe = 'moe.cli:main'
 python = ">=3.9, <3.14"
 alembic = "^1.4.2"
 dynaconf = "^3.1.4"
+importlib-metadata = "^7.0.1"
 mediafile = "^0.13.0"
 musicbrainzngs = "^0.7.1"
 pluggy = "^1.3.0"
 rich = "^13.0.0"
 SQLAlchemy = "2.0.*"
 Unidecode = "^1.2.0"
+typing_extensions = { version = "^4.0.0", python = "<3.11" }
 questionary = "^2.0.0"
-importlib-metadata = "^7.0.1"
 
 [tool.poetry.group.test.dependencies]
 debugpy = "^1.4.1"
@@ -36,19 +37,9 @@ pytest-cov = "^6.0.0"
 tox = "^4.0.0"
 
 [tool.poetry.group.lint.dependencies]
-black = "^24.0.0"
+ruff = "==0.12.1"
 commitizen = "^3.0.0"
-darglint = "^1.8.1"
-flake8 = "^7.0.0"
-flake8-alphabetize = "^0.0.19"
-flake8-bugbear = "^24.0.0"
-flake8-comprehensions = "^3.10.0"
-flake8-docstrings = "^1.5.0"
-flake8-pytest-style = "^2.0.0"
-flake8-use-fstring = "^1.1"
 "github3.py" = "^4.0.0"
-isort = "^5.10.1"
-mccabe = "^0.7.0"
 pre-commit = "^4.0.0"
 pyright = "==1.1.402"
 
@@ -70,10 +61,6 @@ bump_pattern = '^(build|deprecate|feat|fix|perf)'
 bump_map = { feat = "MINOR", build = "PATCH", deprecate = "PATCH", fix = "PATCH", perf = "PATCH" }
 schema_pattern = '(build|ci|deprecate|docs|feat|fix|perf|refactor|release|style|test)(\(\w+\))?!?:\s\S.*'
 
-[tool.isort]
-profile = 'black'
-known_third_party = ["alembic"]
-
 [tool.pytest.ini_options]
 log_cli_level = 10
 addopts = "--color=yes"
@@ -88,6 +75,43 @@ exclude = [
     "moe/moe_alembic", "tests"
 ]
 pythonPlatform = "All"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM", # the formatter handles trailing commas
+    "G004", # use f strings in logging for a consistent string format
+    "PYI056", # use extend on __all__
+    "RET501", # don't care about return None semantics
+    "RET502", # don't care about return None semantics
+    "RET503", # don't care about return None semantics
+]
+
+[tool.ruff.lint.per-file-ignores]
+"moe/moe_alembic/*" = [
+    "ANN", # alembic scripts don't need type annotations
+    "D", # alembic scripts don't need docstrings
+    "ERA001", # commented code used for examples
+    "INP001", # alembic scripts don't need __init__
+    "SLF001", # alembic scripts can access private members
+]
+"docs/conf.py" = [
+    "INP001", # docs directory isn't a python package
+]
+"tests/*" = [
+    "ANN", # tests don't need type annotations
+    "ARG", # arguments in pytest are fixtures
+    "C90", # tests are as complex as they need to be
+    "INP001", # tests don't need __init__
+    "RET", # tests don't need returns
+    "S", # asserts used in tests
+]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [build-system]
 requires = ["poetry-core>=1.0"]

@@ -9,7 +9,7 @@ __all__ = ["read_item"]
 log = logging.getLogger("moe.read")
 
 
-def read_item(item: LibItem):
+def read_item(item: LibItem) -> None:
     """Reads an item's file and updates the item with any changes.
 
     Args:
@@ -21,7 +21,8 @@ def read_item(item: LibItem):
     log.debug(f"Reading item's file for changes. [{item=}]")
 
     if not item.path.exists():
-        raise FileNotFoundError(f"Item's path does not exist. [path={item.path!r}]")
+        err_msg = f"Item's path does not exist. [path={item.path!r}]"
+        raise FileNotFoundError(err_msg)
 
     if isinstance(item, Track):
         item.merge(Track.from_file(item.path), overwrite=True)

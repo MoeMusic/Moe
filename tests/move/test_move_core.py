@@ -1,7 +1,8 @@
 """Tests the core api for moving items."""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,11 +11,11 @@ import moe
 from moe import config
 from moe import move as moe_move
 from moe.config import ExtraPlugin
-from moe.library import Album, Extra
+from moe.library import Album, Extra, LibItem
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def _tmp_move_config(tmp_config):
     """Creates a configuration with a temporary library path."""
     tmp_config(settings="default_plugins = ['move', 'write']")
@@ -67,20 +68,22 @@ class TestCustomPathTemplateFuncs:
     def test_e_unique(self):
         """Deconflict any duplicate custom paths."""
         album = album_factory(num_tracks=0, num_extras=0)
-        extra1 = extra_factory(album=album, path=album.path / "cover.jpg")
-        extra2 = extra_factory(album=album, path=album.path / "cover.jpg")
-        extra3 = extra_factory(album=album, path=album.path / "cover.jpg")
-        assert extra1.path == extra2.path
-        assert extra1.path == extra3.path
-        assert len(album.extras) == 3
+        extras = [
+            extra_factory(album=album, path=album.path / "cover.jpg"),
+            extra_factory(album=album, path=album.path / "cover.jpg"),
+            extra_factory(album=album, path=album.path / "cover.jpg"),
+        ]
+        assert extras[0].path == extras[1].path
+        assert extras[0].path == extras[2].path
+        assert len(album.extras) == len(extras)
 
-        extra1.path = moe_move.fmt_item_path(extra1)
-        extra2.path = moe_move.fmt_item_path(extra2)
-        extra3.path = moe_move.fmt_item_path(extra3)
+        extras[0].path = moe_move.fmt_item_path(extras[0])
+        extras[1].path = moe_move.fmt_item_path(extras[1])
+        extras[2].path = moe_move.fmt_item_path(extras[2])
 
-        assert extra1.path != extra2.path
-        assert extra1.path != extra3.path
-        assert extra2.path != extra3.path
+        assert extras[0].path != extras[1].path
+        assert extras[0].path != extras[2].path
+        assert extras[1].path != extras[2].path
 
 
 ########################################################################################
@@ -109,9 +112,7 @@ class TestFmtItemPath:
         tracks.append(track_factory(title="trailing whitespace "))
         replacements.append("trailing whitespace")
 
-        formatted_paths = []
-        for track in tracks:
-            formatted_paths.append(moe_move.fmt_item_path(track))
+        formatted_paths = [moe_move.fmt_item_path(track) for track in tracks]
 
         for path in formatted_paths:
             assert any(replacement == path.name for replacement in replacements)
@@ -163,6 +164,11 @@ class TestFmtItemPath:
         track_path = moe_move.fmt_item_path(track, tmp_path)
 
         assert track_path.is_relative_to(tmp_path)
+
+    def test_not_implemented(self):
+        """Raise a NotImplementedError if the item is not a Track, Album, or Extra."""
+        with pytest.raises(NotImplementedError):
+            moe_move.fmt_item_path(LibItem())
 
 
 ########################################################################################
@@ -454,7 +460,7 @@ class TestConfigOptions:
 
     def test_asciify_paths(self):
         """`asciify_paths` is not required and defaults to 'False'."""
-        assert config.CONFIG.settings.move.asciify_paths == False  # noqa: E712
+        assert not config.CONFIG.settings.move.asciify_paths
 
     def test_album_path(self):
         """`album_path` is not required and has a default."""
@@ -509,7 +515,7 @@ class TestEditNewItems:
         album = album_factory(num_tracks=2, num_extras=2)
         mock_session = MagicMock()
 
-        items = [album] + album.tracks + album.extras
+        items = [album, *album.tracks, *album.extras]
 
         config.CONFIG.pm.hook.edit_new_items(session=mock_session, items=items)
 
@@ -531,7 +537,7 @@ class TestPluginOverrideAlbumPathConfig:
 
     @staticmethod
     @moe.hookimpl
-    def override_album_path_config(album: Album) -> Optional[str]:
+    def override_album_path_config(album: Album) -> str | None:
         """Override the `album_path` for classical music albums."""
         if "Classical" in album.title:
             return "Classical/{album.artist}/{album.title}"
@@ -615,7 +621,7 @@ class TestPluginOverrideExtraPathConfig:
 
     @staticmethod
     @moe.hookimpl
-    def override_extra_path_config(extra: Extra) -> Optional[str]:
+    def override_extra_path_config(extra: Extra) -> str | None:
         """Override the `extra_path` for specific extra file types."""
         if "cover" in extra.path.name.lower():
             return f"{extra.album.title}.jpg"

@@ -21,7 +21,7 @@ log = logging.getLogger("moe.cli.remove")
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):
+def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
     """Adds the ``remove`` command to Moe's CLI."""
     rm_parser = cmd_parsers.add_parser(
         "remove",
@@ -39,7 +39,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     rm_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(session: Session, args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace) -> None:
     """Parses the given commandline arguments.
 
     Args:

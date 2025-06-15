@@ -16,7 +16,7 @@ def test_no_args(tmp_config):
     """Test exit if 0 subcommands given."""
     tmp_config(settings="default_plugins = ['cli']")
     with pytest.raises(SystemExit) as error:
-        moe.cli._parse_args([])
+        moe.cli.main([])
 
     assert error.value.code != 0
 
@@ -51,11 +51,13 @@ def test_default_config(tmp_config):
 def test_config_validation_error():
     """Raise SystemExit if the config fails to pass its validation."""
     config.CONFIG = None
-    with patch.object(
-        moe.cli, "Config", autospec=True, side_effect=config.ConfigValidationError
+    with (
+        patch.object(
+            moe.cli, "Config", autospec=True, side_effect=config.ConfigValidationError
+        ),
+        pytest.raises(SystemExit) as error,
     ):
-        with pytest.raises(SystemExit) as error:
-            moe.cli.main(["-h"])
+        moe.cli.main(["-h"])
 
     assert error.value.code != 0
 
@@ -69,7 +71,7 @@ class CLIPlugin:
         """Add a `cli` command to Moe."""
 
         def say_hello(session, args):
-            print("hello")
+            print("hello")  # noqa: T201
 
         cli_parser = cmd_parsers.add_parser("cli")
         cli_parser.add_argument("cli")

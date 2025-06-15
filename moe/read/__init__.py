@@ -4,14 +4,14 @@ import moe
 from moe import config
 
 from . import read_cli, read_core
-from .read_core import *
+from .read_core import *  # noqa: F403
 
 __all__ = []
 __all__.extend(read_core.__all__)
 
 
 @moe.hookimpl
-def plugin_registration():
+def plugin_registration() -> None:
     """Only register the cli sub-plugin if the cli is enabled."""
     config.CONFIG.pm.register(read_core, "read_core")
     if config.CONFIG.pm.has_plugin("cli"):

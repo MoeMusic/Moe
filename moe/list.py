@@ -7,7 +7,8 @@ Note:
 import argparse
 import logging
 from collections import OrderedDict
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy.orm.session import Session
 
@@ -23,7 +24,7 @@ log = logging.getLogger("moe.cli.list")
 
 
 @moe.hookimpl
-def plugin_registration():
+def plugin_registration() -> None:
     """Depend on the cli plugin."""
     if not config.CONFIG.pm.has_plugin("cli"):
         config.CONFIG.pm.set_blocked("list")
@@ -31,7 +32,7 @@ def plugin_registration():
 
 
 @moe.hookimpl
-def add_command(cmd_parsers: argparse._SubParsersAction):
+def add_command(cmd_parsers: argparse._SubParsersAction) -> None:
     """Adds the ``list`` command to Moe's CLI."""
     ls_parser = cmd_parsers.add_parser(
         "list",
@@ -55,7 +56,7 @@ def add_command(cmd_parsers: argparse._SubParsersAction):
     ls_parser.set_defaults(func=_parse_args)
 
 
-def _parse_args(session: Session, args: argparse.Namespace):
+def _parse_args(session: Session, args: argparse.Namespace) -> None:
     """Parses the given commandline arguments.
 
     Args:
@@ -69,16 +70,16 @@ def _parse_args(session: Session, args: argparse.Namespace):
     items.sort()
 
     if args.info:
-        print(_fmt_infos(items), end="")
+        print(_fmt_infos(items), end="")  # noqa: T201 cli output
     else:
         for item in items:
             if args.paths:
-                print(item.path)
+                print(item.path)  # noqa: T201 cli output
             else:
-                print(item)
+                print(item)  # noqa: T201 cli output
 
 
-def _fmt_infos(items: Sequence[LibItem]):
+def _fmt_infos(items: Sequence[LibItem]) -> str:
     """Formats information for multiple items together."""
     out_str = ""
     for item in items:
@@ -94,9 +95,9 @@ def _fmt_info(item: LibItem) -> str:
     """Formats the attribute/value pairs of an item into a str."""
     if isinstance(item, Track):
         return _fmt_track_info(item)
-    elif isinstance(item, Album):
+    if isinstance(item, Album):
         return _fmt_album_info(item)
-    elif isinstance(item, Extra):
+    if isinstance(item, Extra):
         return _fmt_extra_info(item)
 
     raise NotImplementedError
@@ -161,8 +162,8 @@ def _get_base_dict(item: LibItem) -> dict[str, Any]:
         if value:
             item_dict[attr] = value
 
-    for custom_field, value in item.custom.items():
-        if value:
-            item_dict[custom_field] = value
+    item_dict.update(
+        {custom_field: value for custom_field, value in item.custom.items() if value}
+    )
 
     return item_dict

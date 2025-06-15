@@ -1,12 +1,13 @@
 """Import prompt."""
 
+from __future__ import annotations
+
 import functools
 import logging
-from typing import Optional, Union
+from typing import TYPE_CHECKING
 
 import dynaconf
 import dynaconf.base
-import pluggy
 from rich import box
 from rich.console import Group
 from rich.panel import Panel
@@ -14,20 +15,23 @@ from rich.table import Table
 from rich.text import Text
 
 import moe
-import moe.cli
 from moe import config
 from moe.cli import console
-from moe.library import Album, MetaAlbum, MetaTrack
-from moe.moe_import.import_core import CandidateAlbum
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
+
+if TYPE_CHECKING:
+    import pluggy
+
+    from moe.library import Album, MetaAlbum, MetaTrack
+    from moe.moe_import.import_core import CandidateAlbum
 
 log = logging.getLogger("moe.cli.import")
 
 __all__ = ["candidate_prompt", "import_prompt"]
 
 
-class AbortImport(Exception):
+class AbortImport(Exception):  # noqa: N818 breaking change
     """Used to abort the import process."""
 
 
@@ -36,7 +40,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
+    def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]) -> None:
         """Add a user input choice to the candidate prompt.
 
         ``func`` will be supplied the following keyword arguments:
@@ -60,7 +64,7 @@ class Hooks:
 
     @staticmethod
     @moe.hookspec
-    def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
+    def add_import_prompt_choice(prompt_choices: list[PromptChoice]) -> None:
         """Add a user input choice to the import prompt.
 
         ``func`` will be supplied the following keyword arguments:
@@ -84,15 +88,15 @@ class Hooks:
 
 
 @moe.hookimpl
-def add_hooks(pm: pluggy._manager.PluginManager):
+def add_hooks(pm: pluggy._manager.PluginManager) -> None:
     """Registers `import` cli hookspecs to Moe."""
-    from moe.moe_import.import_cli import Hooks
+    from moe.moe_import.import_cli import Hooks  # noqa: PLC0415
 
     pm.add_hookspecs(Hooks)
 
 
 @moe.hookimpl
-def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
+def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]) -> None:
     """Adds the ``abort`` prompt choice to the user prompt."""
     prompt_choices.append(
         PromptChoice(title="Abort", shortcut_key="x", func=_abort_changes)
@@ -100,7 +104,7 @@ def add_candidate_prompt_choice(prompt_choices: list[PromptChoice]):
 
 
 @moe.hookimpl
-def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
+def add_import_prompt_choice(prompt_choices: list[PromptChoice]) -> None:
     """Adds the ``apply`` and ``abort`` prompt choices to the user prompt."""
     prompt_choices.append(
         PromptChoice(title="Apply changes", shortcut_key="a", func=_apply_changes)
@@ -111,15 +115,15 @@ def add_import_prompt_choice(prompt_choices: list[PromptChoice]):
 
 
 @moe.hookimpl
-def add_config_validator(settings: dynaconf.base.LazySettings):
+def add_config_validator(settings: dynaconf.base.LazySettings) -> None:
     """Validates import plugin configuration settings."""
-    settings.validators.register(  # type: ignore
+    settings.validators.register(  # type: ignore[reportAttributeAccessIssue] dynaconf doesn't have proper type stubs yet
         dynaconf.Validator("import.max_candidates", default=5, gte=1)
     )
 
 
 @moe.hookimpl
-def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
+def process_candidates(new_album: Album, candidates: list[CandidateAlbum]) -> None:
     """Use the import prompt to select and process the imported candidate albums."""
     if candidates:
         max_candidates = config.CONFIG.settings.get("import.max_candidates")
@@ -130,7 +134,7 @@ def process_candidates(new_album: Album, candidates: list[CandidateAlbum]):
             raise SystemExit(0) from err
 
 
-def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]):
+def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]) -> None:
     """Runs the interactive prompt for a user to select a candidate to import.
 
     Args:
@@ -160,10 +164,11 @@ def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]):
 
 def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
     """Formats a candidates info for the candidate prompt."""
-    sub_header_values = []
-    for field in ["media", "country", "label", "catalog_num"]:
-        if value := getattr(candidate.album, field):
-            sub_header_values.append(value)
+    sub_header_values = [
+        value
+        for field in ["media", "country", "label", "catalog_num"]
+        if (value := getattr(candidate.album, field))
+    ]
     sub_header_values.extend(candidate.disambigs)
     sub_header = " | ".join(sub_header_values)
 
@@ -181,7 +186,7 @@ def _fmt_candidate_info(candidate: CandidateAlbum) -> str:
 
 def _select_candidate(
     new_album: Album, candidates: list[CandidateAlbum], candidate_num: int
-):
+) -> None:
     """Runs the import prompt for a selected candidate."""
     import_prompt(new_album, candidates[candidate_num])
 
@@ -189,7 +194,7 @@ def _select_candidate(
 def import_prompt(
     new_album: Album,
     candidate: CandidateAlbum,
-):
+) -> None:
     """Runs the interactive prompt for the given album changes.
 
     Args:
@@ -215,7 +220,7 @@ def import_prompt(
 def _apply_changes(
     new_album: Album,
     candidate: CandidateAlbum,
-):
+) -> None:
     """Applies the album changes."""
     log.debug("Applying changes from import prompt.")
 
@@ -224,8 +229,8 @@ def _apply_changes(
             candidate.album.tracks.remove(new_track)  # missing track
         elif old_track and not new_track:
             unmatched_track = new_album.get_track(old_track.track_num, old_track.disc)
-            assert unmatched_track
-            new_album.tracks.remove(unmatched_track)
+            if unmatched_track:
+                new_album.tracks.remove(unmatched_track)
         elif (
             old_track
             and new_track
@@ -239,11 +244,12 @@ def _apply_changes(
 
 
 def _abort_changes(
-    new_album: Album,
-    candidate: CandidateAlbum,
-):
+    new_album: Album,  # noqa: ARG001
+    candidate: CandidateAlbum,  # noqa: ARG001
+) -> None:
     """Aborts the album changes."""
-    raise AbortImport("Import prompt aborted; no changes made.")
+    err_msg = "Import prompt aborted; no changes made."
+    raise AbortImport(err_msg)
 
 
 def _fmt_import_updates(new_album: Album, candidate: CandidateAlbum) -> Panel:
@@ -272,9 +278,8 @@ def _fmt_album(new_album: Album, candidate: CandidateAlbum) -> Text:
     sub_header_text = Text()
     for sub_header in ("media", "country", "label", "catalog_num"):
         field_changes = _fmt_field_changes(new_album, candidate.album, sub_header)
-        if not field_changes:
-            if getattr(new_album, sub_header):
-                field_changes = Text(getattr(new_album, sub_header))
+        if not field_changes and getattr(new_album, sub_header):
+            field_changes = Text(getattr(new_album, sub_header))
 
         if sub_header_text and field_changes:
             sub_header_text.append(" | ")
@@ -345,10 +350,10 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
 
 
 def _fmt_field_changes(
-    old_item: Union[MetaAlbum, MetaTrack],
-    new_item: Union[MetaAlbum, MetaTrack],
+    old_item: MetaAlbum | MetaTrack,
+    new_item: MetaAlbum | MetaTrack,
     field: str,
-) -> Optional[Text]:
+) -> Text | None:
     """Formats changes of a single field.
 
     Args:
@@ -385,5 +390,4 @@ def _fmt_field_changes(
 
     if old_field:
         return Text(str(old_field))
-    else:
-        return None
+    return None
