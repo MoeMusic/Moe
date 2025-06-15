@@ -6,6 +6,21 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.4.0 (2025-06-15)
+===================
+
+New Features
+------------
+* Import: Add `max_candidates` config option (`7646d2b <https://github.com/MoeMusic/Moe/commit/7646d2b9ae6e2a2cae4b1f92953acea08244b66d>`_)
+* Log a warning if an enabled plugin could not be loaded (`2c38c20 <https://github.com/MoeMusic/Moe/commit/2c38c202bccc10c0f6f4ea90412c29f760ad5deb>`_)
+* Move: Introduce `override_extra_path_config` hook for dynamic extra path customization (`b8e80e7 <https://github.com/MoeMusic/Moe/commit/b8e80e7a4664cd9119cce147d765fd1fc62c85d8>`_)
+
+Bug Fixes
+---------
+* Album: Multi-disc albums not correctly setting the album's path (`dc7e1d3 <https://github.com/MoeMusic/Moe/commit/dc7e1d36a5be3adfb8c6db37ff4468dccf175a8a>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.3.0...v2.4.0>`__
+
 v2.3.0 (2025-06-06)
 ===================
 
