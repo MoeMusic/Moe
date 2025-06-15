@@ -105,6 +105,8 @@ def read_custom_tags(
     track_fields["disc"] = audio_file.disc
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
+    if audio_file.length:
+        track_fields["duration"] = audio_file.length
     track_fields["title"] = audio_file.title
     track_fields["track_num"] = audio_file.track
 
@@ -126,6 +128,7 @@ class MetaTrack(MetaLibItem):
         artists (Optional[set[str]]): Set of all artists.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (Optional[int]): Disc number the track is on.
+        duration (Optional[float]): Track duration in seconds.
         genres (Optional[set[str]]): Set of all genres.
         title (Optional[str])
         track_num (Optional[int])
@@ -138,6 +141,7 @@ class MetaTrack(MetaLibItem):
         artist: Optional[str] = None,
         artists: Optional[set[str]] = None,
         disc: int = 1,
+        duration: Optional[float] = None,
         genres: Optional[set[str]] = None,
         title: Optional[str] = None,
         **kwargs,
@@ -152,6 +156,7 @@ class MetaTrack(MetaLibItem):
         self.artist = artist or self.album.artist
         self.artists = artists
         self.disc = disc
+        self.duration = duration
         self.genres = genres
         self.title = title
 
@@ -185,6 +190,7 @@ class MetaTrack(MetaLibItem):
             "artist",
             "artists",
             "disc",
+            "duration",
             "genres",
             "title",
             "track_num",
@@ -276,6 +282,7 @@ class Track(LibItem, SABase, MetaTrack):
         artists (Optional[set[str]]): Set of all artists.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (int): Disc number the track is on.
+        duration (Optional[float]): Track duration in seconds.
         genres (Optional[set[str]]): Set of all genres.
         path (Path): Filesystem path of the track file.
         title (str)
@@ -293,6 +300,7 @@ class Track(LibItem, SABase, MetaTrack):
         MutableSet.as_mutable(SetType()), nullable=True
     )
     disc: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    duration: Mapped[Optional[float]] = mapped_column(nullable=True)
     genres: Mapped[Optional[set[str]]] = mapped_column(
         MutableSet.as_mutable(SetType()), nullable=True
     )
@@ -316,6 +324,7 @@ class Track(LibItem, SABase, MetaTrack):
         artist: Optional[str] = None,
         artists: Optional[set[str]] = None,
         disc: Optional[int] = None,
+        duration: Optional[float] = None,
         genres: Optional[set[str]] = None,
         **kwargs,
     ):
@@ -330,6 +339,7 @@ class Track(LibItem, SABase, MetaTrack):
             artists: Set of all artists.
             disc: Disc the track belongs to. If not given, will try to guess the disc
                 based on the ``path`` of the track.
+            duration: Duration of the track.
             genres (Optional[set[str]]): Set of all genres.
             **kwargs: Any custom fields to assign to the track.
         """
@@ -341,6 +351,7 @@ class Track(LibItem, SABase, MetaTrack):
         self.artist = artist or self.album.artist
         self.artists = artists
         self.disc = disc or self._guess_disc()
+        self.duration = duration
         self.genres = genres
         self.title = title
         self.track_num = track_num

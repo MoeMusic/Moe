@@ -450,3 +450,29 @@ class TestLessThan:
         track2 = MetaTrack(album=MetaAlbum(title="a"), track_num=1, disc=2)
 
         assert track1 < track2
+
+
+class TestDurationField:
+    """Test duration field functionality."""
+
+    def test_duration_init_and_access(self):
+        """Duration should be settable and accessible on tracks."""
+        track = track_factory(duration=182.5)
+        album = MetaAlbum(artist="Test Artist")
+        meta_track = MetaTrack(album, 1, duration=245.0)
+
+        assert track.duration == 182.5
+        assert meta_track.duration == 245.0
+
+    def test_duration_in_fields(self):
+        """Duration should be included in track fields."""
+        track = track_factory()
+        assert "duration" in track.fields
+
+    def test_duration_merge(self):
+        """Duration should be merged between tracks."""
+        track1 = track_factory(duration=None)
+        track2 = track_factory(duration=180.0, dup_track=track1)
+
+        track1.merge(track2)
+        assert track1.duration == 180.0
