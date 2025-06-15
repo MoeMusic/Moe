@@ -151,7 +151,7 @@ def _create_filter_expression(field_type: str, field: str, separator: str, value
         A filter for the database query.
 
         A "filter" is anything accepted by a sqlalchemy `Query.filter()`.
-        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.filter
+        https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html#sqlalchemy.orm.Query.filter
 
     Raises:
         QueryError: Invalid query given.

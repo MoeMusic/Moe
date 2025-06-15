@@ -187,7 +187,7 @@ class Hooks:
                     print("we made it")
 
         See Also:
-            `SQLAlchemy ORM even documentation <https://docs.sqlalchemy.org/en/14/orm/events.html#orm-events>`_
+            `SQLAlchemy ORM event documentation <https://docs.sqlalchemy.org/en/20/orm/events.html>`_
         """  # noqa: E501
 
 

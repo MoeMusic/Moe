@@ -148,7 +148,7 @@ def _edit_before_flush(
         instances: Objects passed to the `session.flush()` method (deprecated).
 
     See Also:
-        `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/14/orm/session_state_management.html>`_
+        `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/20/orm/session_state_management.html#state-management>`_
     """  # noqa: E501
     changed_items = []
     for dirty_item in session.dirty:
@@ -184,7 +184,7 @@ def _process_after_flush(
         flush_context: sqlalchemy obj which handles the details of the flush.
 
     See Also:
-        `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/14/orm/session_state_management.html>`_
+        `SQLAlchemy docs on state management <https://docs.sqlalchemy.org/en/20/orm/session_state_management.html#state-management>`_
     """  # noqa: E501
     changed_items = []
     for dirty_item in session.dirty:
