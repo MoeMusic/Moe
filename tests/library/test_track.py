@@ -451,6 +451,11 @@ class TestProperties:
 
         assert track.sample_rate == 44100
 
+    def test_duration_property_access(self):
+        """We can get the duration of a track."""
+        track = track_factory(exists=True)
+        assert isinstance(track.duration, float)
+
 
 class TestListDuplicates:
     """List fields should not cause duplicate errors (just merge silently)."""

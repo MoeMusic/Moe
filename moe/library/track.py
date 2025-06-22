@@ -499,6 +499,11 @@ class Track(LibItem, SABase, MetaTrack):
         return mediafile.MediaFile(self.path).bitdepth
 
     @property
+    def duration(self) -> float:
+        """Returns the duration of the track in seconds."""
+        return mediafile.MediaFile(self.path).length
+
+    @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
         return super().fields.union({"path"})
