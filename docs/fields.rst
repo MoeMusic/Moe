@@ -16,6 +16,7 @@ Track Fields
 * ``composer`` - track composer
 * ``composer_sort`` - composer sort field
 * ``disc`` - disc number
+* ``duration`` - duration of the track in seconds [#f3]_ [#f4]_
 * ``genre`` - genre [#f1]_
 * ``path`` - filesystem path of the track [#f3]_
 * ``sample_rate`` - sample rate of the track in Hz [#f3]_ [#f4]_
