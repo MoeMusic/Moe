@@ -6,6 +6,17 @@ Changelog
 
 This project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+v2.5.0 (2025-06-24)
+===================
+
+New Features
+------------
+* Track: Add duration property to `track` (`32ce896 <https://github.com/MoeMusic/Moe/commit/32ce89667af3cf56d672bbd431b966a217c6edf0>`_)
+* Track: Add `composer_sort` field to `track` (`e7f1986 <https://github.com/MoeMusic/Moe/commit/e7f1986358baec4914b43a0024dae16946bef87c>`_)
+* Track: Add composer field to `track` (`f25d547 <https://github.com/MoeMusic/Moe/commit/f25d547c88ba48cd19eb19641fdae2ff59c73544>`_)
+
+`Full diff <https://github.com/MoeMusic/Moe/compare/v2.4.0...v2.5.0>`__
+
 v2.4.0 (2025-06-15)
 ===================
 
