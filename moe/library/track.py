@@ -116,6 +116,7 @@ def read_custom_tags(
     track_fields["composer"] = audio_file.composer
     track_fields["composer_sort"] = audio_file.composer_sort
     track_fields["disc"] = audio_file.disc
+    track_fields["duration"] = audio_file.length
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
     track_fields["title"] = audio_file.title
@@ -141,6 +142,7 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
         composer_sort (str | None): Composer sort field.
         custom (dict[str, Any]): Dictionary of custom fields.
         disc (int | None): Disc number the track is on.
+        duration (float | None): Duration of the track in seconds.
         genres (set[str] | None): Set of all genres.
         title (str | None)
         track_num (int | None)
@@ -155,6 +157,7 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
         composer: str | None = None,
         composer_sort: str | None = None,
         disc: int = 1,
+        duration: float | None = None,
         genres: set[str] | None = None,
         title: str | None = None,
         **kwargs: object,
@@ -171,6 +174,7 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
         self.composer = composer
         self.composer_sort = composer_sort
         self.disc = disc
+        self.duration = duration
         self.genres = genres
         self.title = title
 
@@ -206,6 +210,7 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
             "composer",
             "composer_sort",
             "disc",
+            "duration",
             "genres",
             "title",
             "track_num",
@@ -515,7 +520,7 @@ class Track(LibItem, SABase, MetaTrack):
     @property
     def fields(self) -> set[str]:
         """Returns any editable, track-specific fields."""
-        return super().fields.union({"path"})
+        return super().fields.union({"path"}) - {"duration"}
 
     @property
     def sample_rate(self) -> int:
