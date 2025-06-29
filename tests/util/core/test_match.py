@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from moe.library import MetaAlbum, MetaTrack
 from moe.util.core import get_match_value, get_matching_tracks
 from tests.conftest import album_factory, track_factory
 
@@ -156,3 +157,60 @@ class TestMatchValue:
         assert track1.track_num != track2.track_num
 
         assert get_match_value(track1, track2) < self.LOW_MATCH_THRESHOLD
+
+    def test_duration_tolerance_thresholds(self):
+        """Test duration matching tolerance thresholds."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        track1.duration = 180.0
+        track2.duration = 184.0
+        within_tolerance = get_match_value(track1, track2)
+
+        track1.duration = 180.0
+        track2.duration = 192.0
+        moderate_mismatch = get_match_value(track1, track2)
+
+        track1.duration = 180.0
+        track2.duration = 220.0
+        large_mismatch = get_match_value(track1, track2)
+
+        track1.duration = 180.0
+        track2.duration = 180.0
+        perfect_match = get_match_value(track1, track2)
+
+        assert within_tolerance == perfect_match
+        assert large_mismatch < moderate_mismatch < within_tolerance
+
+    def test_duration_missing_data_penalties(self):
+        """Test penalty differences for missing duration data."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        track1.duration = None
+        track2.duration = None
+        match_with_both_missing = get_match_value(track1, track2)
+
+        track1.duration = 180.0
+        track2.duration = None
+        match_with_one_missing = get_match_value(track1, track2)
+
+        assert match_with_one_missing < match_with_both_missing
+
+    def test_duration_zero_treated_as_missing(self):
+        """Non-positive Duration values should be treated as missing data."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        track1.duration = 0.0
+        track2.duration = 180.0
+        zero_match = get_match_value(track1, track2)
+
+        track1.duration = None
+        track2.duration = 180.0
+        none_match = get_match_value(track1, track2)
+
+        assert zero_match == none_match
