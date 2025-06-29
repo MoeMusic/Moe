@@ -39,10 +39,11 @@ MATCH_TRACK_FIELD_WEIGHTS = {
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
 
+# match penalty when both tracks are missing data for a field
 BOTH_MISSING_DATA_PENALTY = 0.1
+
+# match penalty when only one track is missing data for a field
 ONE_MISSING_DATA_PENALTY = 0.2
-DURATION_TOLERANCE_THRESHOLD = 0.025
-DURATION_MAX_PENALTY_THRESHOLD = 0.10
 
 
 def _duration_penalty(duration_a: float, duration_b: float) -> float:
@@ -59,6 +60,9 @@ def _duration_penalty(duration_a: float, duration_b: float) -> float:
     Returns:
         Penalty value between 0.0 and 1.0.
     """
+    min_penalty_threshold = 0.025
+    max_penalty_threshold = 0.10
+
     if duration_a <= 0.0 and duration_b <= 0.0:
         return BOTH_MISSING_DATA_PENALTY
 
@@ -67,12 +71,12 @@ def _duration_penalty(duration_a: float, duration_b: float) -> float:
 
     avg_duration = (duration_a + duration_b) / 2.0
     mismatch = abs(duration_a - duration_b) / avg_duration
-    if mismatch <= DURATION_TOLERANCE_THRESHOLD:
+    if mismatch <= min_penalty_threshold:
         return 0.0
-    if mismatch >= DURATION_MAX_PENALTY_THRESHOLD:
+    if mismatch >= max_penalty_threshold:
         return 1.0
-    return (mismatch - DURATION_TOLERANCE_THRESHOLD) / (
-        DURATION_MAX_PENALTY_THRESHOLD - DURATION_TOLERANCE_THRESHOLD
+    return (mismatch - min_penalty_threshold) / (
+        max_penalty_threshold - min_penalty_threshold
     )
 
 
@@ -108,11 +112,7 @@ def get_match_value(
             penalty = ONE_MISSING_DATA_PENALTY
         elif isinstance(value_a, str):
             penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
-        elif (
-            field == "duration"
-            and isinstance(value_a, (int, float))
-            and isinstance(value_b, (int, float))
-        ):
+        elif field == "duration":
             penalty = _duration_penalty(value_a, value_b)
         elif value_a != value_b:
             penalty = 1
