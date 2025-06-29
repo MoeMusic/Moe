@@ -96,6 +96,7 @@ ignore = [
     "SLF001", # alembic scripts can access private members
 ]
 "docs/conf.py" = [
+    "ERA001", # conf.py includes commented config options
     "INP001", # docs directory isn't a python package
 ]
 "tests/*" = [
