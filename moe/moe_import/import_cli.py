@@ -302,6 +302,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
     track_table.add_column("#")
     track_table.add_column("Artist")
     track_table.add_column("Title")
+    track_table.add_column("Duration")
 
     matches = get_matching_tracks(new_album, candidate.album)
     matches.sort(
@@ -321,6 +322,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
                 _fmt_field_changes(old_track, new_track, "track_num"),
                 _fmt_field_changes(old_track, new_track, "artist"),
                 _fmt_field_changes(old_track, new_track, "title"),
+                _fmt_field_changes(old_track, new_track, "duration"),
             )
         elif old_track and not new_track:
             unmatched_tracks.append(old_track)
@@ -336,6 +338,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
             str(missing_track.track_num),
             missing_track.artist,
             missing_track.title,
+            _fmt_duration(missing_track.duration),
         )
     for unmatched_track in sorted(unmatched_tracks):
         track_table.add_row(
@@ -344,6 +347,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
             str(unmatched_track.track_num),
             unmatched_track.artist,
             unmatched_track.title,
+            _fmt_duration(unmatched_track.duration),
         )
 
     return track_table
@@ -377,17 +381,41 @@ def _fmt_field_changes(
     old_field = getattr(old_item, field)
     new_field = getattr(new_item, field)
 
-    if not old_field and new_field:
-        return Text(str(new_field), style="green")
-    if old_field and not new_field:
-        return Text(str(old_field), style="red strike")
-    if old_field != new_field:
-        return (
-            Text(str(old_field))
-            .append(Text(" -> ", style="yellow"))
-            .append(Text(str(new_field)))
-        )
+    old_formatted = (
+        _fmt_duration(old_field)
+        if field == "duration"
+        else str(old_field)
+        if old_field
+        else ""
+    )
+    new_formatted = (
+        _fmt_duration(new_field)
+        if field == "duration"
+        else str(new_field)
+        if new_field
+        else ""
+    )
 
-    if old_field:
-        return Text(str(old_field))
+    if not old_formatted and new_formatted:
+        return Text(new_formatted, style="green")
+    if old_formatted and not new_formatted:
+        return Text(old_formatted, style="red strike")
+    if old_formatted != new_formatted and old_formatted and new_formatted:
+        return (
+            Text(old_formatted)
+            .append(Text(" -> ", style="yellow"))
+            .append(Text(new_formatted))
+        )
+    if old_formatted:
+        return Text(old_formatted)
     return None
+
+
+def _fmt_duration(duration: float | None) -> str:
+    """Formats duration from seconds to a 'MM:SS' string."""
+    if duration is None or duration <= 0:
+        return ""
+
+    minutes = int(duration // 60)
+    seconds = int(duration % 60)
+    return f"{minutes}:{seconds:02d}"

@@ -11,7 +11,7 @@ class TestGetMatchingTracks:
 
     def test_full_match(self):
         """All tracks have matches."""
-        album_a = album_factory()
+        album_a = album_factory(exists=True)
         album_b = album_factory(dup_album=album_a)
 
         track_matches = get_matching_tracks(album_a, album_b)
@@ -31,7 +31,7 @@ class TestGetMatchingTracks:
 
         Any non-matched tracks should be paired with ``None``.
         """
-        album_a = album_factory()
+        album_a = album_factory(exists=True)
         album_b = album_factory(dup_album=album_a)
 
         track_matches = get_matching_tracks(album_a, album_b, match_threshold=1.1)
@@ -47,8 +47,8 @@ class TestGetMatchingTracks:
 
     def test_high_threshold(self):
         """A zero threshold should always return a match."""
-        track1 = track_factory(track_num=1)
-        track2 = track_factory(track_num=2)
+        track1 = track_factory(track_num=1, exists=True)
+        track2 = track_factory(track_num=2, exists=True)
         assert track1.track_num != track2.track_num
 
         track_matches = get_matching_tracks(
@@ -62,9 +62,9 @@ class TestGetMatchingTracks:
 
     def test_a_longer_than_b(self):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = album_factory()
-        album_b = album_factory()
-        track = track_factory(album=album_a)
+        album_a = album_factory(exists=True)
+        album_b = album_factory(exists=True)
+        track = track_factory(album=album_a, exists=True)
 
         track_matches = get_matching_tracks(album_a, album_b)
 
@@ -72,9 +72,9 @@ class TestGetMatchingTracks:
 
     def test_b_longer_than_a(self):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = album_factory()
-        album_b = album_factory()
-        track = track_factory(album=album_b)
+        album_a = album_factory(exists=True)
+        album_b = album_factory(exists=True)
+        track = track_factory(album=album_b, exists=True)
 
         track_matches = get_matching_tracks(album_a, album_b)
 
@@ -82,12 +82,12 @@ class TestGetMatchingTracks:
 
     def test_multiple_same_match(self):
         """Any track should not have more than one match."""
-        track1 = track_factory(track_num=1)
-        track2 = track_factory(track_num=2)
+        track1 = track_factory(track_num=1, exists=True)
+        track2 = track_factory(track_num=2, exists=True)
         track1.album = track2.album
 
-        track3 = track_factory(track_num=3)
-        track4 = track_factory(track_num=4)
+        track3 = track_factory(track_num=3, exists=True)
+        track4 = track_factory(track_num=4, exists=True)
         track3.album = track4.album
 
         track3.title = "not a match"
@@ -139,15 +139,15 @@ class TestMatchValue:
 
     def test_same_track(self):
         """Tracks with the same values for all used fields should be a perfect match."""
-        track1 = track_factory()
+        track1 = track_factory(exists=True)
         track2 = track_factory(dup_track=track1)
 
         assert get_match_value(track1, track2) > self.HIGH_MATCH_THRESHOLD
 
     def test_diff_track(self):
         """Tracks with different values for each field should not match."""
-        track1 = track_factory()
-        track2 = track_factory()
+        track1 = track_factory(exists=True)
+        track2 = track_factory(exists=True)
         track1.title = "a"
         track2.title = "b"
         track1.disc = 2

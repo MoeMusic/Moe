@@ -34,9 +34,46 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 MATCH_TRACK_FIELD_WEIGHTS = {
     "composer": 0.8,
     "disc": 0.3,
+    "duration": 0.8,
     "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
+
+BOTH_MISSING_DATA_PENALTY = 0.1
+ONE_MISSING_DATA_PENALTY = 0.2
+DURATION_TOLERANCE_THRESHOLD = 0.025
+DURATION_MAX_PENALTY_THRESHOLD = 0.10
+
+
+def _duration_penalty(duration_a: float, duration_b: float) -> float:
+    """Returns a penalty value for duration matching.
+
+    Uses a tolerance-based penalty system where a duration mismatch of 2.5% or less
+    is not penalized, and the penalty increases linearly from 0 at 2.5% to 1 at 10%
+    mismatch.
+
+    Args:
+        duration_a: First duration value in seconds.
+        duration_b: Second duration value in seconds.
+
+    Returns:
+        Penalty value between 0.0 and 1.0.
+    """
+    if duration_a <= 0.0 and duration_b <= 0.0:
+        return BOTH_MISSING_DATA_PENALTY
+
+    if duration_a <= 0.0 or duration_b <= 0.0:
+        return ONE_MISSING_DATA_PENALTY
+
+    avg_duration = (duration_a + duration_b) / 2.0
+    mismatch = abs(duration_a - duration_b) / avg_duration
+    if mismatch <= DURATION_TOLERANCE_THRESHOLD:
+        return 0.0
+    if mismatch >= DURATION_MAX_PENALTY_THRESHOLD:
+        return 1.0
+    return (mismatch - DURATION_TOLERANCE_THRESHOLD) / (
+        DURATION_MAX_PENALTY_THRESHOLD - DURATION_TOLERANCE_THRESHOLD
+    )
 
 
 def get_match_value(
@@ -66,11 +103,17 @@ def get_match_value(
         value_b = getattr(item_b, field)
 
         if not value_a and not value_b:
-            penalty = 0.1
+            penalty = BOTH_MISSING_DATA_PENALTY
         elif (value_a and not value_b) or (value_b and not value_a):
-            penalty = 0.2
+            penalty = ONE_MISSING_DATA_PENALTY
         elif isinstance(value_a, str):
             penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
+        elif (
+            field == "duration"
+            and isinstance(value_a, (int, float))
+            and isinstance(value_b, (int, float))
+        ):
+            penalty = _duration_penalty(value_a, value_b)
         elif value_a != value_b:
             penalty = 1
         else:
