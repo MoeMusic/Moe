@@ -14,7 +14,7 @@ from pathlib import Path
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# sys.path.insert(0, os.path.abspath('.'))  # noqa: ERA001
+# sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
@@ -47,7 +47,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "global.rst"]
 rst_prolog = Path("global.rst").read_text()
 
 # include type hints in function description
-# autodoc_typehints = "description" # noqa: ERA001
+# autodoc_typehints = "description"
 
 # don't include module names in autodoc functions
 add_module_names = False
