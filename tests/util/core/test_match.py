@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from moe.library import MetaAlbum, MetaTrack
 from moe.util.core import get_match_value, get_matching_tracks
 from tests.conftest import album_factory, track_factory
 
@@ -11,7 +12,7 @@ class TestGetMatchingTracks:
 
     def test_full_match(self):
         """All tracks have matches."""
-        album_a = album_factory()
+        album_a = album_factory(exists=True)
         album_b = album_factory(dup_album=album_a)
 
         track_matches = get_matching_tracks(album_a, album_b)
@@ -31,7 +32,7 @@ class TestGetMatchingTracks:
 
         Any non-matched tracks should be paired with ``None``.
         """
-        album_a = album_factory()
+        album_a = album_factory(exists=True)
         album_b = album_factory(dup_album=album_a)
 
         track_matches = get_matching_tracks(album_a, album_b, match_threshold=1.1)
@@ -47,8 +48,8 @@ class TestGetMatchingTracks:
 
     def test_high_threshold(self):
         """A zero threshold should always return a match."""
-        track1 = track_factory(track_num=1)
-        track2 = track_factory(track_num=2)
+        track1 = track_factory(track_num=1, exists=True)
+        track2 = track_factory(track_num=2, exists=True)
         assert track1.track_num != track2.track_num
 
         track_matches = get_matching_tracks(
@@ -62,9 +63,9 @@ class TestGetMatchingTracks:
 
     def test_a_longer_than_b(self):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = album_factory()
-        album_b = album_factory()
-        track = track_factory(album=album_a)
+        album_a = album_factory(exists=True)
+        album_b = album_factory(exists=True)
+        track = track_factory(album=album_a, exists=True)
 
         track_matches = get_matching_tracks(album_a, album_b)
 
@@ -72,9 +73,9 @@ class TestGetMatchingTracks:
 
     def test_b_longer_than_a(self):
         """Any unmatched tracks should be paired with ``None``."""
-        album_a = album_factory()
-        album_b = album_factory()
-        track = track_factory(album=album_b)
+        album_a = album_factory(exists=True)
+        album_b = album_factory(exists=True)
+        track = track_factory(album=album_b, exists=True)
 
         track_matches = get_matching_tracks(album_a, album_b)
 
@@ -82,12 +83,12 @@ class TestGetMatchingTracks:
 
     def test_multiple_same_match(self):
         """Any track should not have more than one match."""
-        track1 = track_factory(track_num=1)
-        track2 = track_factory(track_num=2)
+        track1 = track_factory(track_num=1, exists=True)
+        track2 = track_factory(track_num=2, exists=True)
         track1.album = track2.album
 
-        track3 = track_factory(track_num=3)
-        track4 = track_factory(track_num=4)
+        track3 = track_factory(track_num=3, exists=True)
+        track4 = track_factory(track_num=4, exists=True)
         track3.album = track4.album
 
         track3.title = "not a match"
@@ -139,15 +140,15 @@ class TestMatchValue:
 
     def test_same_track(self):
         """Tracks with the same values for all used fields should be a perfect match."""
-        track1 = track_factory()
+        track1 = track_factory(exists=True)
         track2 = track_factory(dup_track=track1)
 
         assert get_match_value(track1, track2) > self.HIGH_MATCH_THRESHOLD
 
     def test_diff_track(self):
         """Tracks with different values for each field should not match."""
-        track1 = track_factory()
-        track2 = track_factory()
+        track1 = track_factory(exists=True)
+        track2 = track_factory(exists=True)
         track1.title = "a"
         track2.title = "b"
         track1.disc = 2
@@ -156,3 +157,63 @@ class TestMatchValue:
         assert track1.track_num != track2.track_num
 
         assert get_match_value(track1, track2) < self.LOW_MATCH_THRESHOLD
+
+    def test_duration_tolerance_thresholds(self):
+        """Test duration matching tolerance thresholds."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        base_duration = 180.0
+        track1.duration = base_duration
+
+        # Perfect match: same duration should have no penalty
+        track2.duration = base_duration
+        perfect_match = get_match_value(track1, track2)
+
+        # Within tolerance: <= 2.5% mismatch should have no penalty
+        track2.duration = base_duration * 1.02
+        within_tolerance = get_match_value(track1, track2)
+
+        # Moderate mismatch: 6% difference should receive partial penalty
+        track2.duration = base_duration * 1.06
+        moderate_mismatch = get_match_value(track1, track2)
+
+        # Large mismatch: >= 10% difference should receive full duration penalty
+        track2.duration = base_duration * 1.15
+        large_mismatch = get_match_value(track1, track2)
+
+        assert within_tolerance == perfect_match
+        assert large_mismatch < moderate_mismatch < within_tolerance
+
+    def test_duration_missing_data_penalties(self):
+        """Test penalty differences for missing duration data."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        track1.duration = None
+        track2.duration = None
+        match_with_both_missing = get_match_value(track1, track2)
+
+        track1.duration = 180.0
+        track2.duration = None
+        match_with_one_missing = get_match_value(track1, track2)
+
+        assert match_with_one_missing < match_with_both_missing
+
+    def test_duration_zero_treated_as_missing(self):
+        """Non-positive Duration values should be treated as missing data."""
+        album = MetaAlbum(title="Test Album", artist="Test Artist")
+        track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+        track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
+
+        track1.duration = 0.0
+        track2.duration = 180.0
+        zero_match = get_match_value(track1, track2)
+
+        track1.duration = None
+        track2.duration = 180.0
+        none_match = get_match_value(track1, track2)
+
+        assert zero_match == none_match

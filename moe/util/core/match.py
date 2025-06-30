@@ -34,9 +34,38 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 MATCH_TRACK_FIELD_WEIGHTS = {
     "composer": 0.8,
     "disc": 0.3,
+    "duration": 0.8,
     "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
+
+
+def _duration_penalty(duration_a: float, duration_b: float) -> float:
+    """Returns a penalty value for duration matching.
+
+    Uses a tolerance-based penalty system where a duration mismatch of 2.5% or less
+    is not penalized, and the penalty increases linearly from 0 at 2.5% to 1 at 10%
+    mismatch.
+
+    Args:
+        duration_a: First duration value in seconds.
+        duration_b: Second duration value in seconds.
+
+    Returns:
+        Penalty value between 0.0 and 1.0.
+    """
+    min_penalty_threshold = 0.025
+    max_penalty_threshold = 0.10
+
+    avg_duration = (duration_a + duration_b) / 2.0
+    mismatch = abs(duration_a - duration_b) / avg_duration
+    if mismatch <= min_penalty_threshold:
+        return 0.0
+    if mismatch >= max_penalty_threshold:
+        return 1.0
+    return (mismatch - min_penalty_threshold) / (
+        max_penalty_threshold - min_penalty_threshold
+    )
 
 
 def get_match_value(
@@ -55,6 +84,11 @@ def get_match_value(
     """
     log.debug(f"Determining match value between items. [{item_a=}, {item_b=}]")
 
+    # match penalty when both items are missing data for a field
+    both_missing_data_penalty = 0.1
+    # match penalty when only one item is missing data for a field
+    one_missing_data_penalty = 0.2
+
     if issubclass(type(item_a), MetaAlbum):
         field_weights = MATCH_ALBUM_FIELD_WEIGHTS
     else:
@@ -66,11 +100,13 @@ def get_match_value(
         value_b = getattr(item_b, field)
 
         if not value_a and not value_b:
-            penalty = 0.1
+            penalty = both_missing_data_penalty
         elif (value_a and not value_b) or (value_b and not value_a):
-            penalty = 0.2
+            penalty = one_missing_data_penalty
         elif isinstance(value_a, str):
             penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
+        elif field == "duration":
+            penalty = _duration_penalty(value_a, value_b)
         elif value_a != value_b:
             penalty = 1
         else:
