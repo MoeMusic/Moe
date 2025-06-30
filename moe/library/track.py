@@ -116,7 +116,6 @@ def read_custom_tags(
     track_fields["composer"] = audio_file.composer
     track_fields["composer_sort"] = audio_file.composer_sort
     track_fields["disc"] = audio_file.disc
-    track_fields["duration"] = audio_file.length
     if audio_file.genres is not None:
         track_fields["genres"] = set(audio_file.genres)
     track_fields["title"] = audio_file.title
