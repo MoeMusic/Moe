@@ -164,21 +164,24 @@ class TestMatchValue:
         track1 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
         track2 = MetaTrack(album=album, title="Test Track", track_num=1, disc=1)
 
-        track1.duration = 180.0
-        track2.duration = 184.0
+        base_duration = 180.0
+        track1.duration = base_duration
+
+        # Perfect match: same duration should have no penalty
+        track2.duration = base_duration
+        perfect_match = get_match_value(track1, track2)
+
+        # Within tolerance: <= 2.5% mismatch should have no penalty
+        track2.duration = base_duration * 1.02
         within_tolerance = get_match_value(track1, track2)
 
-        track1.duration = 180.0
-        track2.duration = 192.0
+        # Moderate mismatch: 6% difference should receive partial penalty
+        track2.duration = base_duration * 1.06
         moderate_mismatch = get_match_value(track1, track2)
 
-        track1.duration = 180.0
-        track2.duration = 220.0
+        # Large mismatch: >= 10% difference should receive full duration penalty
+        track2.duration = base_duration * 1.15
         large_mismatch = get_match_value(track1, track2)
-
-        track1.duration = 180.0
-        track2.duration = 180.0
-        perfect_match = get_match_value(track1, track2)
 
         assert within_tolerance == perfect_match
         assert large_mismatch < moderate_mismatch < within_tolerance

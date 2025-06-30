@@ -39,12 +39,6 @@ MATCH_TRACK_FIELD_WEIGHTS = {
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
 
-# match penalty when both tracks are missing data for a field
-BOTH_MISSING_DATA_PENALTY = 0.1
-
-# match penalty when only one track is missing data for a field
-ONE_MISSING_DATA_PENALTY = 0.2
-
 
 def _duration_penalty(duration_a: float, duration_b: float) -> float:
     """Returns a penalty value for duration matching.
@@ -62,12 +56,6 @@ def _duration_penalty(duration_a: float, duration_b: float) -> float:
     """
     min_penalty_threshold = 0.025
     max_penalty_threshold = 0.10
-
-    if duration_a <= 0.0 and duration_b <= 0.0:
-        return BOTH_MISSING_DATA_PENALTY
-
-    if duration_a <= 0.0 or duration_b <= 0.0:
-        return ONE_MISSING_DATA_PENALTY
 
     avg_duration = (duration_a + duration_b) / 2.0
     mismatch = abs(duration_a - duration_b) / avg_duration
@@ -96,6 +84,11 @@ def get_match_value(
     """
     log.debug(f"Determining match value between items. [{item_a=}, {item_b=}]")
 
+    # match penalty when both items are missing data for a field
+    both_missing_data_penalty = 0.1
+    # match penalty when only one item is missing data for a field
+    one_missing_data_penalty = 0.2
+
     if issubclass(type(item_a), MetaAlbum):
         field_weights = MATCH_ALBUM_FIELD_WEIGHTS
     else:
@@ -107,9 +100,9 @@ def get_match_value(
         value_b = getattr(item_b, field)
 
         if not value_a and not value_b:
-            penalty = BOTH_MISSING_DATA_PENALTY
+            penalty = both_missing_data_penalty
         elif (value_a and not value_b) or (value_b and not value_a):
-            penalty = ONE_MISSING_DATA_PENALTY
+            penalty = one_missing_data_penalty
         elif isinstance(value_a, str):
             penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
         elif field == "duration":
