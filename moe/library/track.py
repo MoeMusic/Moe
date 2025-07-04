@@ -211,7 +211,7 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
             "track_num",
         }
 
-    def merge(self, other: Self, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002 breaking change
+    def merge(self, other: MetaTrack | Track, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002 breaking change
         """Merges another track into this one.
 
         Args:

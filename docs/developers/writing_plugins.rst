@@ -29,8 +29,8 @@ You can create a local plugin by adding a module ``<plugin_name>.py`` or package
 
 Once you create a plugin, all you have to do is enable it in your configuration to start using it!
 
-Published Plugins
-=================
+Published Third-Party Plugins
+=============================
 If you'd like to make your plugin available on pip, there are a few required steps:
 
 #. Preface your project name with ``moe_`` e.g. ``moe_my_plugin`` when publishing to PyPI.
@@ -53,7 +53,12 @@ If you'd like to make your plugin available on pip, there are a few required ste
 Once you've accomplished the above, your plugin will be automatically loaded by Moe provided the user has installed your package and enabled the plugin in their configuration.
 
 .. tip::
-   Check out the `plugin_template <https://github.com/MoeMusic/plugin_template>`_ repository to quickly create a plugin to publish to PyPI complete with CI scripts and configuration files consistent with the rest of Moe.
+
+   See `Third-Party Plugins <../third_party_plugins>` for more info.
+
+Official Plugins
+================
+Official plugins are simply those included with moe, such as the transcode and musicbrainz plugins. If you think your plugin is something that should be included with moe and maintained by the core maintainers, please start a discussion on GitHub.
 
 Core vs CLI
 ===========

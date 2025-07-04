@@ -29,6 +29,7 @@ import logging
 import os
 import re
 import sys
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
@@ -67,6 +68,10 @@ DEFAULT_PLUGINS = {
     "read": "moe.read",
     "remove": "moe.remove",
     "write": "moe.write",
+}
+OFFICIAL_PLUGINS = {
+    "musicbrainz": "moe.plugins.musicbrainz",
+    "transcode": "moe.plugins.transcode",
 }
 CORE_PLUGINS = {
     "config": "moe.config",
@@ -404,7 +409,9 @@ class Config:
         log.debug(f"Registering enabled plugins. {self.enabled_plugins=}")
 
         # register default plugins
-        for plugin_name, module in DEFAULT_PLUGINS.items():
+        for plugin_name, module in chain(
+            DEFAULT_PLUGINS.items(), OFFICIAL_PLUGINS.items()
+        ):
             if plugin_name in self.enabled_plugins:
                 self.pm.register(importlib.import_module(module), plugin_name)
 

@@ -32,7 +32,7 @@ As previously mentioned, all of Moe's music management logic and functionality i
     from moe.config import Config, ConfigValidationError
     from moe.library import Album
     from moe.write import write_tags
-    import moe_musicbrainz
+    import moe.plugins.musicbrainz as moe_mb
 
     def main():
         try:
@@ -49,7 +49,7 @@ As previously mentioned, all of Moe's music management logic and functionality i
 
         album = Album.from_dir(Path(args.path))
 
-        album.merge(moe_musicbrainz.get_album_by_id(args.mb_id), overwrite=True)
+        album.merge(moe_mb.get_album_by_id(args.mb_id), overwrite=True)
 
         for track in album.tracks:
             write_tags(track)

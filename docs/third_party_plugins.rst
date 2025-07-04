@@ -14,7 +14,4 @@ To enable any third-party plugin, simply install the plugin per its specific ins
 
 Known Plugins
 =============
-Below is a list of known third-party plugins for Moe. If you'd like to add your plugin to this list, please submit a pull request.
-
-* `musicbrainz <https://moe-musicbrainz.readthedocs.io/en/latest/>`_ - Musicbrainz integration.
-* `transcode <https://moe-transcode.readthedocs.io/en/latest/>`_ - API functions for transcoding music in your library.
+There are currently no known installable, third-party plugins for moe. If you'd like to add your plugin to this list, please submit a pull request.
