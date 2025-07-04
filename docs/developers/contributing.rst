@@ -34,12 +34,12 @@ Creating a dev environment
 
         $ git clone https://github.com/MoeMusic/Moe.git
 
-#. Install the project
+#. Install the project and any extra plugin dependencies
 
    .. code:: bash
 
         $ cd Moe
-        $ poetry install
+        $ poetry install --all-extras
 
 #. Run Moe
 
@@ -180,6 +180,8 @@ Style/Conventions
   * ``@pytest.mark.darwin`` - MacOS
   * ``@pytest.mark.linux`` - Linux
   * ``@pytest.mark.win32`` - Windows
+* Tests that require ffmpeg should use the ``pytest.mark.ffmpeg`` marker.
+* Tests that require internet access should use the ``pytest.mark.network`` marker.
 
 Running Tests
 =============
@@ -188,6 +190,16 @@ When you've finished writing your tests, you'll want to make sure everything wor
 .. code::
 
     $ tox run -e test
+
+.. note::
+
+   This runs pytest within tox. To pass arguments to pytest, use `--` followed by the pytest args. For example::
+
+     $ tox run -e test -- -m "not ffmpeg"
+
+.. important::
+
+   To exclude certain tests, such as those that require `ffmpeg` to be installed, use the `-m` argument as shown above.
 
 Once that passes, the next step is to check against all python versions Moe supports, as well as run the documentation and `lint <#linting>`_ checks.
 

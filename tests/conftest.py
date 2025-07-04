@@ -29,6 +29,7 @@ __all__ = ["album_factory", "extra_factory", "track_factory"]
 
 RESOURCE_DIR = Path(__file__).parent / "resources"
 EMPTY_MP3_FILE = RESOURCE_DIR / "empty.mp3"
+EMPTY_FLAC_FILE = RESOURCE_DIR / "empty.flac"
 SUPPORTED_PLATFORMS = {"darwin", "linux", "win32"}
 
 
@@ -153,6 +154,7 @@ def track_factory(
     album: Album | None = None,
     exists: bool = False,
     dup_track: Track | None = None,
+    audio_format: str = "mp3",
     **kwargs,
 ):
     """Creates a track.
@@ -162,6 +164,7 @@ def track_factory(
         exists: Whether the track should exist on the filesystem. Note, this option
             requires the write plugin.
         dup_track: If given, the new track created will be a duplicate of `dup_track`.
+        audio_format: Audio format of the track.
         **kwargs: Any other fields to assign to the Track.
 
     Returns:
@@ -175,7 +178,7 @@ def track_factory(
 
     disc_dir = f"Disc {disc:02}" if album.disc_total > 1 else ""
     path = kwargs.pop(
-        "path", album.path / disc_dir / f"{disc}.{track_num} - {title}.mp3"
+        "path", album.path / disc_dir / f"{disc}.{track_num} - {title}.{audio_format}"
     )
 
     track = Track(
@@ -196,7 +199,10 @@ def track_factory(
 
     if exists:
         track.path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(EMPTY_MP3_FILE, track.path)
+        if audio_format == "flac":
+            shutil.copyfile(EMPTY_FLAC_FILE, track.path)
+        else:
+            shutil.copyfile(EMPTY_MP3_FILE, track.path)
         moe.write.write_tags(track)
 
     return track
@@ -240,13 +246,14 @@ def extra_factory(
     return extra
 
 
-def album_factory(
+def album_factory(  # noqa: PLR0913
     *,
     num_tracks: int = 2,
     num_extras: int = 2,
     num_discs: int = 1,
     exists: bool = False,
     dup_album: Album | None = None,
+    audio_format: str = "mp3",
     **kwargs,
 ) -> Album:
     """Creates an album.
@@ -258,6 +265,7 @@ def album_factory(
         exists: Whether the album should exist on the filesystem. Note, this option
             requires the write plugin.
         dup_album: If given, the new album created will be a duplicate of `dup_album`.
+        audio_format: Audio format of the tracks in the album.
         **kwargs: Any other fields to assign to the album.
 
     Returns:
@@ -294,6 +302,7 @@ def album_factory(
                     album=None,
                     exists=exists,
                     dup_track=track,
+                    audio_format=audio_format,
                 )
             )
 
@@ -322,6 +331,7 @@ def album_factory(
                 exists=exists,
                 track_num=track_num,
                 disc=disc,
+                audio_format=audio_format,
             )
 
     for _ in range(1, num_extras):
