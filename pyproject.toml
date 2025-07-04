@@ -22,13 +22,13 @@ alembic = "^1.4.2"
 dynaconf = "^3.1.4"
 importlib-metadata = "^7.0.1"
 mediafile = "^0.13.0"
-musicbrainzngs = "^0.7.1"
 pluggy = "^1.3.0"
 rich = "^13.0.0"
 SQLAlchemy = "2.0.*"
 Unidecode = "^1.2.0"
 typing_extensions = { version = "^4.0.0", python = "<3.11" }
 questionary = "^2.0.0"
+musicbrainzngs = { version = "^0.7.1", optional = true}
 
 [tool.poetry.group.test.dependencies]
 debugpy = "^1.4.1"
@@ -47,6 +47,9 @@ pyright = "==1.1.402"
 furo = "*"
 pypandoc = "^1.9"
 Sphinx = "^7.0.0"
+
+[tool.poetry.extras]
+musicbrainz = [ "musicbrainzngs" ]
 
 [tool.commitizen]
 name = "cz_customize"
@@ -67,7 +70,9 @@ addopts = "--color=yes"
 markers = [
     "darwin: tests that should only run on apple",
     "linux: tests that should only run on linux",
-    "win32: tests that should only run on windows"
+    "win32: tests that should only run on windows",
+    "ffmpeg: tests that require ffmpeg to be installed",
+    "network: tests that make network calls",
 ]
 
 [tool.pyright]
@@ -106,6 +111,10 @@ ignore = [
     "INP001", # tests don't need __init__
     "RET", # tests don't need returns
     "S", # asserts used in tests
+]
+"tests/resources/musicbrainz/*" = [
+    "RUF001", # keep musicbrainz string formatting
+    "E501", # keep original dict formatting
 ]
 
 [tool.ruff.lint.isort]
