@@ -415,8 +415,6 @@ class Config:
             if plugin_name in self.enabled_plugins:
                 self.pm.register(importlib.import_module(module), plugin_name)
 
-        # register official plugins
-
         # register local user plugins
         if Path(self.config_dir / "plugins").exists():
             sys.path.append(str(self.config_dir / "plugins"))
