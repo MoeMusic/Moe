@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip poetry
-          poetry install
+          poetry install --all-extras
 
       - name: Lint
         run: |
@@ -42,6 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup ffmpeg
+        uses: AnimMouse/setup-ffmpeg@v1
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -50,11 +53,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip poetry
-          poetry install --without docs,lint
+          poetry install --without docs,lint --all-extras
 
       - name: Run tests
         run: |
-          poetry run pytest
+          poetry run pytest -m "not network"
 
   docs:
     runs-on: ubuntu-latest
@@ -70,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip poetry
-          poetry install --without lint,test
+          poetry install --without lint,test --all-extras
 
       - name: Build docs
         run: |
@@ -82,6 +85,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup ffmpeg
+        uses: AnimMouse/setup-ffmpeg@v1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -90,7 +96,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip poetry
-          poetry install --without docs,lint
+          poetry install --without docs,lint --all-extras
 
       - name: Run all tests and create coverage report
         run: |

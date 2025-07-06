@@ -12,6 +12,7 @@ Contents
    cli
    fields
    query
+   official_plugins
    third_party_plugins
 
 .. toctree::
