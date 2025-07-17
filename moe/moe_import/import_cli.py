@@ -19,6 +19,7 @@ from moe import config
 from moe.cli import console
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
+from moe.util.core.match import _duration_penalty
 
 if TYPE_CHECKING:
     import pluggy
@@ -302,7 +303,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
     track_table.add_column("#")
     track_table.add_column("Artist")
     track_table.add_column("Title")
-    track_table.add_column("Duration")
+    track_table.add_column("Duration (external)")
 
     matches = get_matching_tracks(new_album, candidate.album)
     matches.sort(
@@ -322,7 +323,7 @@ def _fmt_tracks(new_album: Album, candidate: CandidateAlbum) -> Table:
                 _fmt_field_changes(old_track, new_track, "track_num"),
                 _fmt_field_changes(old_track, new_track, "artist"),
                 _fmt_field_changes(old_track, new_track, "title"),
-                _fmt_field_changes(old_track, new_track, "duration"),
+                _fmt_duration_with_external(old_track, new_track),
             )
         elif old_track and not new_track:
             unmatched_tracks.append(old_track)
@@ -381,20 +382,8 @@ def _fmt_field_changes(
     old_field = getattr(old_item, field)
     new_field = getattr(new_item, field)
 
-    old_formatted = (
-        _fmt_duration(old_field)
-        if field == "duration"
-        else str(old_field)
-        if old_field
-        else ""
-    )
-    new_formatted = (
-        _fmt_duration(new_field)
-        if field == "duration"
-        else str(new_field)
-        if new_field
-        else ""
-    )
+    old_formatted = str(old_field) if old_field else ""
+    new_formatted = str(new_field) if new_field else ""
 
     if not old_formatted and new_formatted:
         return Text(new_formatted, style="green")
@@ -409,6 +398,48 @@ def _fmt_field_changes(
     if old_formatted:
         return Text(old_formatted)
     return None
+
+
+def _fmt_duration_with_external(old_track: MetaTrack, new_track: MetaTrack) -> Text:
+    """Formats duration showing file duration with external duration in parentheses.
+
+    Args:
+        old_track: Track from the library (file duration).
+        new_track: Track from external source (external duration).
+
+    Returns:
+        A rich Text object showing "file_duration (external_duration)" with
+        color coding based on match quality, or just file_duration if no external
+        duration.
+    """
+    file_duration = old_track.duration
+    external_duration = new_track.duration
+
+    file_formatted = _fmt_duration(file_duration)
+
+    if not external_duration or external_duration <= 0:
+        return Text(file_formatted) if file_formatted else Text("")
+
+    external_formatted = _fmt_duration(external_duration)
+
+    if not file_duration or file_duration <= 0:
+        return Text(external_formatted) if external_formatted else Text("")
+
+    penalty = _duration_penalty(file_duration, external_duration)
+
+    if penalty == 0.0:
+        external_color = "green"
+    elif penalty < 1.0:
+        external_color = "yellow"
+    else:
+        external_color = "red"
+
+    result = Text(file_formatted)
+    result.append(" (")
+    result.append(external_formatted, style=external_color)
+    result.append(")")
+
+    return result
 
 
 def _fmt_duration(duration: float | None) -> str:
