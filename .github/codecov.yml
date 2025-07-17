@@ -11,4 +11,4 @@ coverage:
     patch: off
 
 ignore:
-  "tests"
+  - "tests"
