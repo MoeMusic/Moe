@@ -2,8 +2,11 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from moe.library import MetaAlbum, MetaTrack
 from moe.util.core import get_match_value, get_matching_tracks
+from moe.util.core.match import FieldType, get_field_match_value
 from tests.conftest import album_factory, track_factory
 
 
@@ -217,3 +220,80 @@ class TestMatchValue:
         none_match = get_match_value(track1, track2)
 
         assert zero_match == none_match
+
+
+class TestGetFieldMatchValue:
+    """Test ``get_field_match_value()``."""
+
+    def test_string_field_perfect_match(self):
+        """Identical strings should have zero penalty."""
+        penalty = get_field_match_value("test", "test", FieldType.STRING)
+        assert penalty == 0.0
+
+    def test_string_field_complete_mismatch(self):
+        """Completely different strings should have a high penalty."""
+        penalty = get_field_match_value("test", "xyz", FieldType.STRING)
+        assert penalty > 0.9
+
+    def test_string_field_partial_match(self):
+        """Partially matching strings should have penalty between 0 and 1."""
+        penalty = get_field_match_value("test string", "test", FieldType.STRING)
+        assert 0.0 < penalty < 1.0
+
+    def test_integer_field_equal(self):
+        """Equal integers should have zero penalty."""
+        penalty = get_field_match_value(7, 7, FieldType.INTEGER)
+        assert penalty == 0.0
+
+    def test_integer_field_different(self):
+        """Different integers should have penalty of 1.0."""
+        penalty = get_field_match_value(7, 11, FieldType.INTEGER)
+        assert penalty == 1.0
+
+    def test_duration_field_identical(self):
+        """Identical durations should have zero penalty."""
+        penalty = get_field_match_value(180.0, 180.0, FieldType.DURATION)
+        assert penalty == 0.0
+
+    def test_duration_field_within_tolerance(self):
+        """Duration within 2.5% tolerance should have zero penalty."""
+        base_duration = 180.0
+        tolerance_duration = base_duration * 1.02
+        penalty = get_field_match_value(
+            base_duration, tolerance_duration, FieldType.DURATION
+        )
+        assert penalty == 0.0
+
+    def test_duration_field_moderate_mismatch(self):
+        """Duration with moderate mismatch should have partial penalty."""
+        base_duration = 180.0
+        moderate_duration = base_duration * 1.06
+        penalty = get_field_match_value(
+            base_duration, moderate_duration, FieldType.DURATION
+        )
+        assert 0.0 < penalty < 1.0
+
+    def test_duration_field_large_mismatch(self):
+        """Duration with large mismatch (>= 10%) should have penalty of 1.0."""
+        base_duration = 180.0
+        large_duration = base_duration * 1.15
+        penalty = get_field_match_value(
+            base_duration, large_duration, FieldType.DURATION
+        )
+        assert penalty == 1.0
+
+    def test_both_missing_data(self):
+        """Both missing values should have consistent penalty for all field types."""
+        string_penalty = get_field_match_value(None, None, FieldType.STRING)
+        integer_penalty = get_field_match_value(None, None, FieldType.INTEGER)
+        duration_penalty = get_field_match_value(None, None, FieldType.DURATION)
+
+        assert string_penalty == integer_penalty == duration_penalty == 0.1
+
+    def test_one_missing_data(self):
+        """One missing value should have consistent penalty for all field types."""
+        string_penalty = get_field_match_value("test", None, FieldType.STRING)
+        integer_penalty = get_field_match_value(42, None, FieldType.INTEGER)
+        duration_penalty = get_field_match_value(180.0, None, FieldType.DURATION)
+
+        assert string_penalty == integer_penalty == duration_penalty == 0.2

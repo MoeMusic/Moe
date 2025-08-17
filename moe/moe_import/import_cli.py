@@ -19,7 +19,7 @@ from moe import config
 from moe.cli import console
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
-from moe.util.core.match import _duration_penalty
+from moe.util.core.match import FieldType, get_field_match_value
 
 if TYPE_CHECKING:
     import pluggy
@@ -425,7 +425,9 @@ def _fmt_duration_with_external(old_track: MetaTrack, new_track: MetaTrack) -> T
     if not file_duration or file_duration <= 0:
         return Text(external_formatted) if external_formatted else Text("")
 
-    penalty = _duration_penalty(file_duration, external_duration)
+    penalty = get_field_match_value(
+        file_duration, external_duration, FieldType.DURATION
+    )
 
     if penalty == 0.0:
         external_color = "green"

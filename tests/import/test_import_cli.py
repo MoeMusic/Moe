@@ -4,6 +4,7 @@ import datetime
 from unittest.mock import ANY, Mock, patch
 
 import pytest
+from rich.text import Text
 
 import moe
 import moe.cli
@@ -457,3 +458,70 @@ class TestImportCLIOutput:
         assert album is not candidate.album
 
         console.print(moe_import.import_cli._fmt_import_updates(album, candidate))  # noqa: SLF001
+
+    def test_duration_matching_cases(self):
+        """Test duration formatting with different matching scenarios.
+
+        This test verifies the color coding for various duration matching cases:
+        - Perfect match: 0% difference (green)
+        - Close match: within 2.5% tolerance (green)
+        - Moderate mismatch: partial penalty (yellow)
+        - Large mismatch: >= 10% difference (red)
+        - Missing durations: no color formatting
+        """
+        # Test perfect match (should be green)
+        file_track = Mock()
+        file_track.duration = 180.0
+        external_track = Mock()
+        external_track.duration = 180.0
+
+        def contains_color(text: Text, color: str) -> bool:
+            return any(color in str(span.style) for span in text.spans if span.style)
+
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert isinstance(result, Text)
+        assert "3:00 (3:00)" in str(result)
+        assert contains_color(result, "green")
+
+        # Test close match within tolerance (should be green)
+        external_track.duration = 183.6  # 2% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:03)" in str(result)
+        assert contains_color(result, "green")
+
+        # Test moderate mismatch (should be yellow)
+        external_track.duration = 190.8  # 6% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:10)" in str(result)
+        assert contains_color(result, "yellow")
+
+        # Test large mismatch (should be red)
+        external_track.duration = 216.0  # 20% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:36)" in str(result)
+        assert contains_color(result, "red")
+
+        # Test missing external duration (no color, no parentheses)
+        external_track.duration = None
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert str(result) == "3:00"
+        assert not contains_color(result, "red")
+
+        # Test missing file duration (show external only)
+        file_track.duration = None
+        external_track.duration = 180.0
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert str(result) == "3:00"
+        assert not contains_color(result, "red")
