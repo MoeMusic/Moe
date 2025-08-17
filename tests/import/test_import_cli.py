@@ -4,6 +4,7 @@ import datetime
 from unittest.mock import ANY, Mock, patch
 
 import pytest
+from rich.text import Text
 
 import moe
 import moe.cli
@@ -18,7 +19,7 @@ from tests.conftest import album_factory, extra_factory, track_factory
 @pytest.fixture
 def _tmp_import_config(tmp_config):
     """A temporary config for the import plugin with the cli."""
-    tmp_config('default_plugins = ["cli", "import"]')
+    tmp_config('default_plugins = ["cli", "import", "write"]')
 
 
 class TestPrompt:
@@ -26,11 +27,11 @@ class TestPrompt:
 
     def test_multi_disc_album(self, tmp_config, tmp_session):
         """Prompt supports multi_disc albums."""
-        tmp_config("default_plugins = ['cli', 'import']", tmp_db=True)
+        tmp_config("default_plugins = ['cli', 'import', 'write']", tmp_db=True)
         num_discs = 2
-        album = album_factory(num_discs=num_discs)
+        album = album_factory(num_discs=num_discs, exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(num_discs=num_discs),
+            album=album_factory(num_discs=num_discs, exists=True),
             match_value=1,
             plugin_source="Tests",
             source_id="1",
@@ -74,16 +75,16 @@ class TestHookSpecs:
 
     def test_add_import_prompt_choice(self, tmp_config):
         """Plugins can add prompt choices to the import prompt."""
-        album = album_factory()
+        album = album_factory(exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(),
+            album=album_factory(exists=True),
             match_value=1,
             plugin_source="Tests",
             source_id="1",
         )
         album.title = "not ImportPlugin"
         tmp_config(
-            "default_plugins = ['cli', 'import']",
+            "default_plugins = ['cli', 'import', 'write']",
             tmp_db=True,
             extra_plugins=[ExtraPlugin(ImportPlugin, "import_plugin")],
         )
@@ -224,18 +225,24 @@ class TestAddImportPromptChoice:
 
         Missing and unmatched tracks should not be present in the final album.
         """
-        album = album_factory()
+        album = album_factory(exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(),
+            album=album_factory(exists=True),
             match_value=1,
             plugin_source="tests",
             source_id="1",
         )
         missing_track = track_factory(
-            album=candidate.album, track_num=len(album.tracks) + 1
+            album=candidate.album,
+            track_num=len(album.tracks) + 1,
+            title="Missing Track",
+            exists=True,
         )
         unmatched_track = track_factory(
-            album=album, track_num=missing_track.track_num + 1
+            album=album,
+            track_num=missing_track.track_num + 1,
+            title="Unmatched Track",
+            exists=True,
         )
         assert not album.get_track(missing_track.track_num)
         assert not candidate.album.get_track(unmatched_track.track_num)
@@ -262,17 +269,21 @@ class TestAddImportPromptChoice:
         two matching tracks don't conflict (i.e. matching track and disc numbers), that
         they can still merge properly.
         """
-        album = album_factory(num_tracks=0)
+        album = album_factory(num_tracks=0, exists=True)
         candidate = CandidateAlbum(
             album=album_factory(num_tracks=0),
             match_value=1,
             plugin_source="tests",
             source_id="1",
         )
-        track_factory(album=album, track_num=1, title="old track 1")
-        track_factory(album=candidate.album, track_num=1, title="new track 1")
-        track_factory(album=album, track_num=2, title="old track 2")
-        track_factory(album=candidate.album, track_num=2, title="new track 2")
+        track_factory(album=album, track_num=1, title="old track 1", exists=True)
+        track_factory(
+            album=candidate.album, track_num=1, title="new track 1", exists=True
+        )
+        track_factory(album=album, track_num=2, title="old track 2", exists=True)
+        track_factory(
+            album=candidate.album, track_num=2, title="new track 2", exists=True
+        )
 
         prompt_choices = []
         config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
@@ -308,9 +319,9 @@ class TestAddImportPromptChoice:
 
     def test_apply_extras(self):
         """`apply` prompt choice should keep any extras."""
-        album = album_factory()
+        album = album_factory(exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(),
+            album=album_factory(exists=True),
             match_value=1,
             plugin_source="tests",
             source_id="1",
@@ -331,9 +342,9 @@ class TestAddImportPromptChoice:
 
     def test_apply_fields(self):
         """Fields get applied onto the old album."""
-        album = album_factory()
+        album = album_factory(exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(title="new title"),
+            album=album_factory(title="new title", exists=True),
             match_value=1,
             plugin_source="tests",
             source_id="1",
@@ -350,10 +361,17 @@ class TestAddImportPromptChoice:
         prompt_choices = []
         config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
         apply_choice = next(c for c in prompt_choices if c.shortcut_key == "a")
-        with patch(
-            "moe.moe_import.import_cli.choice_prompt",
-            return_value=apply_choice,
-            autospec=True,
+        with (
+            patch(
+                "moe.moe_import.import_cli.choice_prompt",
+                return_value=apply_choice,
+                autospec=True,
+            ),
+            patch.object(
+                type(candidate.album.tracks[0]),
+                "duration",
+                new_callable=lambda: property(lambda self: 0.0),
+            ),
         ):
             moe_import.import_cli.import_prompt(album, candidate)
 
@@ -366,9 +384,9 @@ class TestAddImportPromptChoice:
 
     def test_abort(self):
         """The `abort` prompt choice should raise an AbortImport error."""
-        album = album_factory()
+        album = album_factory(exists=True)
         candidate = CandidateAlbum(
-            album=album_factory(),
+            album=album_factory(exists=True),
             match_value=1,
             plugin_source="tests",
             source_id="1",
@@ -419,7 +437,7 @@ class TestImportCLIOutput:
 
     def test_full_diff_album(self):
         """Print prompt for fully different albums."""
-        album = album_factory(num_tracks=6, num_discs=2, artist="outkist")
+        album = album_factory(num_tracks=6, num_discs=2, artist="outkist", exists=True)
         candidate = CandidateAlbum(
             album=album_factory(
                 title=album.title,
@@ -429,6 +447,7 @@ class TestImportCLIOutput:
                 country="US",
                 media="CD",
                 label="me",
+                exists=True,
             ),
             match_value=1,
             plugin_source="tests",
@@ -439,3 +458,70 @@ class TestImportCLIOutput:
         assert album is not candidate.album
 
         console.print(moe_import.import_cli._fmt_import_updates(album, candidate))  # noqa: SLF001
+
+    def test_duration_matching_cases(self):
+        """Test duration formatting with different matching scenarios.
+
+        This test verifies the color coding for various duration matching cases:
+        - Perfect match: 0% difference (green)
+        - Close match: within 2.5% tolerance (green)
+        - Moderate mismatch: partial penalty (yellow)
+        - Large mismatch: >= 10% difference (red)
+        - Missing durations: no color formatting
+        """
+        # Test perfect match (should be green)
+        file_track = Mock()
+        file_track.duration = 180.0
+        external_track = Mock()
+        external_track.duration = 180.0
+
+        def contains_color(text: Text, color: str) -> bool:
+            return any(color in str(span.style) for span in text.spans if span.style)
+
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert isinstance(result, Text)
+        assert "3:00 (3:00)" in str(result)
+        assert contains_color(result, "green")
+
+        # Test close match within tolerance (should be green)
+        external_track.duration = 183.6  # 2% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:03)" in str(result)
+        assert contains_color(result, "green")
+
+        # Test moderate mismatch (should be yellow)
+        external_track.duration = 190.8  # 6% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:10)" in str(result)
+        assert contains_color(result, "yellow")
+
+        # Test large mismatch (should be red)
+        external_track.duration = 216.0  # 20% difference
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert "3:00 (3:36)" in str(result)
+        assert contains_color(result, "red")
+
+        # Test missing external duration (no color, no parentheses)
+        external_track.duration = None
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert str(result) == "3:00"
+        assert not contains_color(result, "red")
+
+        # Test missing file duration (show external only)
+        file_track.duration = None
+        external_track.duration = 180.0
+        result = moe_import.import_cli._fmt_duration_with_external(  # noqa: SLF001
+            file_track, external_track
+        )
+        assert str(result) == "3:00"
+        assert not contains_color(result, "red")

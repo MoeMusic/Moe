@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import difflib
+import enum
 import logging
 from typing import Optional
 
@@ -10,7 +11,12 @@ from moe.library import MetaAlbum, MetaTrack
 
 log = logging.getLogger("moe")
 
-__all__ = ["get_match_value", "get_matching_tracks"]
+__all__ = [
+    "FieldType",
+    "get_field_match_value",
+    "get_match_value",
+    "get_matching_tracks",
+]
 
 # Custom type declarations used for abbreviated annotations.
 TrackMatch = tuple[Optional[MetaTrack], Optional[MetaTrack]]
@@ -34,9 +40,81 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 MATCH_TRACK_FIELD_WEIGHTS = {
     "composer": 0.8,
     "disc": 0.3,
+    "duration": 0.8,
     "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
+
+
+class FieldType(enum.Enum):
+    """Enumeration of field types for matching logic."""
+
+    STRING = "string"
+    DURATION = "duration"
+    INTEGER = "integer"
+
+
+def get_field_match_value(
+    value_a: str | float | None,
+    value_b: str | float | None,
+    field_type: FieldType,
+) -> float:
+    """Returns an unweighted penalty value between two field values.
+
+    Args:
+        value_a: First field value to compare.
+        value_b: Second field value to compare.
+        field_type: The type of field matching logic to use.
+
+    Returns:
+        Penalty value between 0.0 (perfect match) and 1.0 (complete mismatch).
+
+    Note:
+        This function returns penalty values, not match values. A return value of 0.0
+        indicates a perfect match, while 1.0 indicates a complete mismatch.
+    """
+    both_missing_data_penalty = 0.1
+    one_missing_data_penalty = 0.2
+
+    if not value_a and not value_b:
+        return both_missing_data_penalty
+    if (value_a and not value_b) or (value_b and not value_a):
+        return one_missing_data_penalty
+
+    if field_type == FieldType.STRING:
+        return 1 - difflib.SequenceMatcher(None, str(value_a), str(value_b)).ratio()
+    if field_type == FieldType.DURATION:
+        return _duration_penalty(float(value_a), float(value_b))
+    if field_type == FieldType.INTEGER:
+        return 0 if value_a == value_b else 1
+
+
+def _duration_penalty(duration_a: float, duration_b: float) -> float:
+    """Returns a penalty value for duration matching.
+
+    Uses a tolerance-based penalty system where a duration mismatch of 2.5% or less
+    is not penalized, and the penalty increases linearly from 0 at 2.5% to 1 at 10%
+    mismatch.
+
+    Args:
+        duration_a: First duration value in seconds.
+        duration_b: Second duration value in seconds.
+
+    Returns:
+        Penalty value between 0.0 and 1.0.
+    """
+    min_penalty_threshold = 0.025
+    max_penalty_threshold = 0.10
+
+    avg_duration = (duration_a + duration_b) / 2.0
+    mismatch = abs(duration_a - duration_b) / avg_duration
+    if mismatch <= min_penalty_threshold:
+        return 0.0
+    if mismatch >= max_penalty_threshold:
+        return 1.0
+    return (mismatch - min_penalty_threshold) / (
+        max_penalty_threshold - min_penalty_threshold
+    )
 
 
 def get_match_value(
@@ -55,6 +133,26 @@ def get_match_value(
     """
     log.debug(f"Determining match value between items. [{item_a=}, {item_b=}]")
 
+    # Field type mapping for determining appropriate matching logic
+    field_type_mapping = {
+        # Album fields
+        "artist": FieldType.STRING,
+        "barcode": FieldType.STRING,
+        "catalog_nums": FieldType.STRING,
+        "country": FieldType.STRING,
+        "date": FieldType.STRING,
+        "disc_total": FieldType.INTEGER,
+        "label": FieldType.STRING,
+        "media": FieldType.STRING,
+        "title": FieldType.STRING,
+        "track_total": FieldType.INTEGER,
+        # Track fields
+        "composer": FieldType.STRING,
+        "disc": FieldType.INTEGER,
+        "duration": FieldType.DURATION,
+        "track_num": FieldType.INTEGER,
+    }
+
     if issubclass(type(item_a), MetaAlbum):
         field_weights = MATCH_ALBUM_FIELD_WEIGHTS
     else:
@@ -65,17 +163,8 @@ def get_match_value(
         value_a = getattr(item_a, field)
         value_b = getattr(item_b, field)
 
-        if not value_a and not value_b:
-            penalty = 0.1
-        elif (value_a and not value_b) or (value_b and not value_a):
-            penalty = 0.2
-        elif isinstance(value_a, str):
-            penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
-        elif value_a != value_b:
-            penalty = 1
-        else:
-            penalty = 0
-
+        field_type = field_type_mapping.get(field, FieldType.STRING)
+        penalty = get_field_match_value(value_a, value_b, field_type)
         penalties.append(penalty * weight)
 
     match_value = 1 - sum(penalties) / sum(field_weights.values())
