@@ -2,8 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
 from moe.library import MetaAlbum, MetaTrack
 from moe.util.core import get_match_value, get_matching_tracks
 from moe.util.core.match import FieldType, get_field_match_value
@@ -232,8 +230,9 @@ class TestGetFieldMatchValue:
 
     def test_string_field_complete_mismatch(self):
         """Completely different strings should have a high penalty."""
+        high_penalty_threshold = 0.9
         penalty = get_field_match_value("test", "xyz", FieldType.STRING)
-        assert penalty > 0.9
+        assert penalty > high_penalty_threshold
 
     def test_string_field_partial_match(self):
         """Partially matching strings should have penalty between 0 and 1."""
@@ -284,16 +283,18 @@ class TestGetFieldMatchValue:
 
     def test_both_missing_data(self):
         """Both missing values should have consistent penalty for all field types."""
+        expected_penalty = 0.1
         string_penalty = get_field_match_value(None, None, FieldType.STRING)
         integer_penalty = get_field_match_value(None, None, FieldType.INTEGER)
         duration_penalty = get_field_match_value(None, None, FieldType.DURATION)
 
-        assert string_penalty == integer_penalty == duration_penalty == 0.1
+        assert string_penalty == integer_penalty == duration_penalty == expected_penalty
 
     def test_one_missing_data(self):
         """One missing value should have consistent penalty for all field types."""
+        expected_penalty = 0.2
         string_penalty = get_field_match_value("test", None, FieldType.STRING)
         integer_penalty = get_field_match_value(42, None, FieldType.INTEGER)
         duration_penalty = get_field_match_value(180.0, None, FieldType.DURATION)
 
-        assert string_penalty == integer_penalty == duration_penalty == 0.2
+        assert string_penalty == integer_penalty == duration_penalty == expected_penalty
