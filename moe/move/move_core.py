@@ -285,7 +285,7 @@ def _sanitize_path_part(path_part: str) -> str:
     """
     path_replace_chars = {
         r"^\.": "_",  # leading '.' (hidden files on Unix)
-        r'[<>:"\?\*\|\\/]': "_",  # <, >, : , ", ?, *, |, \, / (Windows reserved chars)
+        r'[<>:"\?\*\|\\/∶／⁄]': "_",  # <, >, :, ", ?, *, |, \, / (Windows reserved chars + unicode variants) # noqa: RUF001, E501
         r"\.$": "_",  # trailing '.' (Windows restriction)
         r"\s+$": "",  # trailing whitespace (Windows restriction)
     }
