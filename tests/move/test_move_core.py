@@ -103,8 +103,8 @@ class TestFmtItemPath:
         )
         tracks = []
         replacements = []
-        tracks.append(track_factory(title='/ reserved <, >, :, ", ?, *, |, /'))
-        replacements.append("_ reserved _, _, _, _, _, _, _, _")
+        tracks.append(track_factory(title='/ reserved <, >, :, ", ?, *, |, /, ⁄, ∶'))  # noqa: RUF001
+        replacements.append("_ reserved _, _, _, _, _, _, _, _, _, _")
         tracks.append(track_factory(title=".leading dot"))
         replacements.append("_leading dot")
         tracks.append(track_factory(title="trailing dot."))
