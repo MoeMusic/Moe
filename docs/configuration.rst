@@ -52,13 +52,6 @@ Each plugin option should be specified under that plugin's section in the config
     [move]
     asciify_paths = true
 
-Move
-----
-``asciify_paths = false``
-    Whether or not to convert all filesystem paths to ascii.
-
-    If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
-
 Import
 ------
 ``max_candidates = 5``
@@ -73,6 +66,14 @@ Import
 
     .. note::
         This setting only affects the number of candidates displayed in the interactive prompt. To increase the number of candidates fetched from metadata providers, you may also need to adjust the search limits for individual plugins like ``musicbrainz.search_limit``.
+
+Move
+----
+``asciify_paths = false``
+    Whether or not to convert all filesystem paths to ascii.
+
+    If ``true``, non-ascii characters will be converted to their ascii equivalents, e.g. ``café.mp3`` will become ``cafe.mp3``.
+
 
 Path Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
