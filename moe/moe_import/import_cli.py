@@ -31,7 +31,7 @@ log = logging.getLogger("moe.cli.import")
 __all__ = ["candidate_prompt", "import_prompt"]
 
 
-class AbortImport(Exception):  # noqa: N818 breaking change
+class AbortImportError(Exception):
     """Used to abort the import process."""
 
 
@@ -129,7 +129,7 @@ def process_candidates(new_album: Album, candidates: list[CandidateAlbum]) -> No
         max_candidates = config.CONFIG.settings.get("import.max_candidates")
         try:
             candidate_prompt(new_album, candidates[:max_candidates])
-        except AbortImport as err:
+        except AbortImportError as err:
             log.debug(err)
             raise SystemExit(0) from err
 
@@ -142,7 +142,7 @@ def candidate_prompt(new_album: Album, candidates: list[CandidateAlbum]) -> None
         candidates: List of candidates to choose from.
 
     Raises:
-        AbortImport: Import prompt was aborted by the user.
+        AbortImportError: Import prompt was aborted by the user.
     """
     prompt_choices: list[PromptChoice] = []
 
@@ -204,7 +204,7 @@ def import_prompt(
             against ``old_album``.
 
     Raises:
-        AbortImport: Import prompt was aborted by the user.
+        AbortImportError: Import prompt was aborted by the user.
     """
     log.debug(f"Running import prompt. [{new_album=}, {candidate=}]")
 
@@ -249,7 +249,7 @@ def _abort_changes(
 ) -> None:
     """Aborts the album changes."""
     err_msg = "Import prompt aborted; no changes made."
-    raise AbortImport(err_msg)
+    raise AbortImportError(err_msg)
 
 
 def _fmt_import_updates(new_album: Album, candidate: CandidateAlbum) -> Panel:

@@ -121,7 +121,7 @@ class TestProcessCandidates:
         with (
             patch(
                 "moe.moe_import.import_cli.candidate_prompt",
-                side_effect=moe_import.import_cli.AbortImport,
+                side_effect=moe_import.import_cli.AbortImportError,
                 autospec=True,
             ),
             pytest.raises(SystemExit) as error,
@@ -365,7 +365,7 @@ class TestAddImportPromptChoice:
             assert extra.path
 
     def test_abort(self):
-        """The `abort` prompt choice should raise an AbortImport error."""
+        """The `abort` prompt choice should raise an AbortImportError."""
         album = album_factory()
         candidate = CandidateAlbum(
             album=album_factory(),
@@ -383,7 +383,7 @@ class TestAddImportPromptChoice:
                 return_value=abort_choice,
                 autospec=True,
             ),
-            pytest.raises(moe_import.import_cli.AbortImport),
+            pytest.raises(moe_import.import_cli.AbortImportError),
         ):
             moe_import.import_cli.import_prompt(album, candidate)
 
