@@ -7,6 +7,13 @@ CLI
    :members:
    :show-inheritance:
 
+Import
+======
+``moe.moe_import``
+
+.. automodule:: moe.moe_import.import_cli
+   :members:
+
 Util
 ====
 ``moe.util.cli``

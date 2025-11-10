@@ -38,7 +38,7 @@ Import
 ======
 ``moe.moe_import``
 
-.. automodule:: moe.moe_import
+.. automodule:: moe.moe_import.import_core
    :members:
    :exclude-members: match_value_pct
 
