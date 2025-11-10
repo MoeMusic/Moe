@@ -61,7 +61,7 @@ class TestAddImportPromptChoice:
         config.CONFIG.pm.hook.add_import_prompt_choice(prompt_choices=prompt_choices)
         skip_choice = next(c for c in prompt_choices if c.shortcut_key == "s")
 
-        with pytest.raises(add_cli.SkipAdd):
+        with pytest.raises(add_cli.SkipAddError):
             skip_choice.func(album, candidate)
 
 
