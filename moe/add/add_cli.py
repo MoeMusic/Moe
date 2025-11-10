@@ -23,7 +23,7 @@ log = logging.getLogger("moe.cli.add")
 __all__: list[str] = []
 
 
-class SkipAdd(Exception):  # noqa: N818 breaking change
+class SkipAddError(Exception):
     """Used to skip adding a single item."""
 
 
@@ -60,7 +60,7 @@ def _skip_import(
     new_album: Album,  # noqa: ARG001
 ) -> None:
     """Skip adding/importing the current item."""
-    raise SkipAdd
+    raise SkipAddError
 
 
 def _parse_args(session: Session, args: argparse.Namespace) -> None:
@@ -93,7 +93,7 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
         except (AddError, AlbumError):  # noqa: PERF203
             log.exception("Error adding item.")
             error_count += 1
-        except SkipAdd:
+        except SkipAddError:
             log.debug(f"Skipped adding item. [{path=}]")
 
     if error_count:
@@ -112,7 +112,7 @@ def _add_path(session: Session, path: Path, album: Album | None) -> None:
     Raises:
         AddError: Path not found or other issue adding the item to the library.
         AlbumError: Could not create an album from the given directory.
-        SkipAdd: External program or user elected to skip adding the item.
+        SkipAddError: External program or user elected to skip adding the item.
     """
     if path.is_file():
         try:
