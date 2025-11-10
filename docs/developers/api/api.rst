@@ -45,7 +45,7 @@ API Definitions
 ===============
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    hooks
    cli
