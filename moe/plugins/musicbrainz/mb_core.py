@@ -18,7 +18,7 @@ import musicbrainzngs
 
 import moe
 from moe import config
-from moe.library import Album, LibItem, MetaAlbum, MetaTrack, Track
+from moe.library import Album, LibItem, MergeStrategy, MetaAlbum, MetaTrack, Track
 from moe.moe_import import CandidateAlbum
 from moe.util.core import match
 
@@ -203,14 +203,17 @@ def read_custom_tags(
 def sync_metadata(item: LibItem) -> None:
     """Sync musibrainz metadata for associated items."""
     if isinstance(item, Album) and item.custom.get("mb_album_id"):
-        item.merge(get_album_by_id(item.custom["mb_album_id"]), overwrite=True)
+        item.merge(
+            get_album_by_id(item.custom["mb_album_id"]),
+            merge_strategy=MergeStrategy.OVERWRITE,
+        )
     elif isinstance(item, Track) and item.custom.get("mb_track_id"):
         item = cast("Track", item)
         item.merge(
             get_track_by_id(
                 item.custom["mb_track_id"], item.album.custom["mb_album_id"]
             ),
-            overwrite=True,
+            merge_strategy=MergeStrategy.OVERWRITE,
         )
 
 

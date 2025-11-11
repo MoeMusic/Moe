@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
 
     import pluggy
 
-__all__ = ["LibItem", "LibraryError", "MetaLibItem"]
+__all__ = ["LibItem", "LibraryError", "MergeStrategy", "MetaLibItem"]
 
 log = logging.getLogger("moe.lib_item")
 
@@ -42,6 +43,13 @@ class SABase(DeclarativeBase):
 
 class LibraryError(Exception):
     """General library error."""
+
+
+class MergeStrategy(Enum):
+    """Defines how to resolve conflicts when merging items."""
+
+    KEEP_EXISTING = auto()  # merge only if the current field is empty
+    OVERWRITE = auto()  # overwrite current field value if new value exists
 
 
 class Hooks:
@@ -328,7 +336,11 @@ class MetaLibItem(Generic[T]):
         """Returns the editable fields of an item."""
         raise NotImplementedError
 
-    def merge(self: T, other: T, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002, PYI019
+    def merge(  # noqa: PYI019
+        self: T,
+        other: T,
+        merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING,
+    ) -> None:
         """Merges another item into this one."""
         raise NotImplementedError
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import moe
 from moe.config import ExtraPlugin
-from moe.library import Extra
+from moe.library import Extra, MergeStrategy
 from tests.conftest import extra_factory, track_factory
 
 
@@ -61,27 +61,45 @@ class TestMerge:
         extra = extra_factory(path=Path("keep"))
         other_extra = extra_factory(path=Path("discard"))
 
-        extra.merge(other_extra)
+        extra.merge(other_extra, MergeStrategy.KEEP_EXISTING)
 
         assert extra.path == Path("keep")
 
     def test_merge_non_conflict(self):
         """Apply any non-conflicting fields."""
-        extra = extra_factory(custom="keep")
-        other_extra = extra_factory(custom=None)
+        extra = extra_factory(custom=None)
+        other_extra = extra_factory(custom="keep")
 
-        extra.merge(other_extra)
+        extra.merge(other_extra, MergeStrategy.KEEP_EXISTING)
 
         assert extra.custom["custom"] == "keep"
 
     def test_none_merge(self):
         """Don't merge in any null values."""
-        extra = extra_factory(custom=None)
-        other_extra = extra_factory(custom="keep")
+        extra = extra_factory(custom="keep")
+        other_extra = extra_factory(custom=None)
 
-        extra.merge(other_extra)
+        extra.merge(other_extra, MergeStrategy.OVERWRITE)
 
         assert extra.custom["custom"] == "keep"
+
+    def test_custom_overwrite(self):
+        """Custom fields overwrite merge strategy."""
+        extra = extra_factory(custom="old")
+        other_extra = extra_factory(custom="new")
+
+        extra.merge(other_extra, MergeStrategy.OVERWRITE)
+
+        assert extra.custom["custom"] == "new"
+
+    def test_custom_keep_existing(self):
+        """Custom fields keep existing merge strategy."""
+        extra = extra_factory(custom="old")
+        other_extra = extra_factory(custom="new")
+
+        extra.merge(other_extra, MergeStrategy.KEEP_EXISTING)
+
+        assert extra.custom["custom"] == "old"
 
     def test_db_delete(self, tmp_session):
         """Remove the other extra from the db if it exists."""
