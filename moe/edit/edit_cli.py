@@ -69,7 +69,7 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
 
         for item in items:
             try:
-                edit.edit_item(item, field, value, args.create)
+                edit.edit_item(item, field, value, create_field=args.create)
             except edit.EditError:  # noqa: PERF203
                 log.exception("Edit error.")
                 error_count += 1

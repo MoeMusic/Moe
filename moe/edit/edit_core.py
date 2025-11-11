@@ -21,7 +21,8 @@ def edit_item(
     item: LibItem,
     field: str,
     value: str,
-    create_field: bool = False,  # noqa: FBT001, FBT002
+    *,
+    create_field: bool = False,
 ) -> None:
     """Sets a LibItem's ``field`` to ``value``.
 
