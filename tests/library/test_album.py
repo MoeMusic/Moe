@@ -10,7 +10,15 @@ import moe
 from moe import config
 from moe import write as moe_write
 from moe.config import ExtraPlugin
-from moe.library import Album, AlbumError, Extra, MetaAlbum, MetaTrack, Track
+from moe.library import (
+    Album,
+    AlbumError,
+    Extra,
+    MergeStrategy,
+    MetaAlbum,
+    MetaTrack,
+    Track,
+)
 from tests.conftest import album_factory, track_factory
 
 
@@ -180,7 +188,7 @@ class TestMetaAlbumMerge:
         other_album = MetaAlbum(title="456")
         keep_title = other_album.title
 
-        album.merge(other_album, overwrite=True)
+        album.merge(other_album, merge_strategy=MergeStrategy.OVERWRITE)
 
         assert album.title == keep_title
 
@@ -208,18 +216,27 @@ class TestMetaAlbumMerge:
         MetaTrack(album2, 1, title="conflict")
         overwrite_track = MetaTrack(album1, 1)
 
-        album1.merge(album2, overwrite=True)
+        album1.merge(album2, merge_strategy=MergeStrategy.OVERWRITE)
 
         assert overwrite_track.title == "conflict"
 
-    def test_custom_fields(self):
-        """Merge custom fields too."""
-        album = MetaAlbum(custom=None)
+    def test_custom_fields_overwrite(self):
+        """Custom fields overwrite merge strategy."""
+        album = MetaAlbum(custom="keep")
         other_album = MetaAlbum(custom="new")
 
-        album.merge(other_album)
+        album.merge(other_album, MergeStrategy.OVERWRITE)
 
         assert album.custom["custom"] == "new"
+
+    def test_custom_fields_keep(self):
+        """Custom fields keep existing merge strategy."""
+        album = MetaAlbum(custom="keep")
+        other_album = MetaAlbum(custom="new")
+
+        album.merge(other_album, MergeStrategy.KEEP_EXISTING)
+
+        assert album.custom["custom"] == "keep"
 
 
 class TestAlbumMerge:
@@ -259,7 +276,7 @@ class TestAlbumMerge:
         other_album = album_factory(title="456")
         keep_title = other_album.title
 
-        album.merge(other_album, overwrite=True)
+        album.merge(other_album, merge_strategy=MergeStrategy.OVERWRITE)
 
         assert album.title == keep_title
 
@@ -289,7 +306,7 @@ class TestAlbumMerge:
         overwrite_extra.path.write_text("overwrite")
         assert overwrite_extra.path.exists()
 
-        album1.merge(album2, overwrite=True)
+        album1.merge(album2, merge_strategy=MergeStrategy.OVERWRITE)
 
         for extra in album1.extras:
             if extra.path.exists():
@@ -324,18 +341,27 @@ class TestAlbumMerge:
         conflict_track.title = "conflict"
         assert conflict_track.title != overwrite_track.title
 
-        album1.merge(album2, overwrite=True)
+        album1.merge(album2, merge_strategy=MergeStrategy.OVERWRITE)
 
         assert overwrite_track.title == "conflict"
 
-    def test_custom_fields(self):
-        """Merge custom fields too."""
-        album = album_factory(custom="")
+    def test_custom_fields_overwrite(self):
+        """Custom fields overwrite merge strategy."""
+        album = album_factory(custom="keep")
         other_album = album_factory(custom="new")
 
-        album.merge(other_album)
+        album.merge(other_album, MergeStrategy.OVERWRITE)
 
         assert album.custom["custom"] == "new"
+
+    def test_custom_fields_keep(self):
+        """Custom fields keep merge strategy."""
+        album = album_factory(custom="keep")
+        other_album = album_factory(custom="new")
+
+        album.merge(other_album, MergeStrategy.KEEP_EXISTING)
+
+        assert album.custom["custom"] == "keep"
 
 
 class TestFromDir:

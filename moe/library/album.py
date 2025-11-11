@@ -15,7 +15,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 import moe
 from moe import config
-from moe.library.lib_item import LibItem, LibraryError, MetaLibItem, SABase, SetType
+from moe.library.lib_item import (
+    LibItem,
+    LibraryError,
+    MergeStrategy,
+    MetaLibItem,
+    SABase,
+    SetType,
+)
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -180,12 +187,14 @@ class MetaAlbum(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
             None,
         )
 
-    def merge(self, other: Self, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002
+    def merge(
+        self, other: Self, merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING
+    ) -> None:
         """Merges another album into this one.
 
         Args:
             other: Other album to be merged with the current album.
-            overwrite: Whether or not to overwrite self if a conflict exists.
+            merge_strategy: Which MergeStrategy to use when a conflict exists.
         """
         log.debug(f"Merging MetaAlbums. [album_a={self!r}, album_b={other!r}")
 
@@ -195,7 +204,7 @@ class MetaAlbum(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
             if other_track.track_num and other_track.disc:
                 conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
-                conflict_track.merge(other_track, overwrite)
+                conflict_track.merge(other_track, merge_strategy)
             else:
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
@@ -203,18 +212,26 @@ class MetaAlbum(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
         for field in self.fields:
             other_value = getattr(other, field)
             self_value = getattr(self, field)
-            if other_value and (overwrite or (not overwrite and not self_value)):
+            if other_value and (
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (merge_strategy == MergeStrategy.KEEP_EXISTING and not self_value)
+            ):
                 setattr(self, field, other_value)
 
         for custom_field in self.custom:
             other_value = other.custom.get(custom_field)
             if other_value and (
-                overwrite or (not overwrite and not self.custom[custom_field])
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (
+                    merge_strategy == MergeStrategy.KEEP_EXISTING
+                    and not self.custom[custom_field]
+                )
             ):
                 self.custom[custom_field] = other_value
 
         log.debug(
-            f"MetaAlbums merged. [album_a={self!r}, album_b={other!r}, {overwrite=}]"
+            "MetaAlbums merged. "
+            f"[album_a={self!r}, album_b={other!r}, {merge_strategy=}]"
         )
 
     def __eq__(self, other: object) -> bool:
@@ -450,35 +467,50 @@ class Album(LibItem, SABase, MetaAlbum):
         )
         return False not in custom_uniqueness
 
-    def merge(self, other: Self | MetaAlbum, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002
+    def merge(
+        self,
+        other: Self | MetaAlbum,
+        merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING,
+    ) -> None:
         """Merges another album into this one.
 
         Args:
             other: Other album to be merged with the current album.
-            overwrite: Whether or not to overwrite self if a conflict exists.
+            merge_strategy: Which MergeStrategy to use when a conflict exists.
         """
         log.debug(f"Merging albums. [album_a={self!r}, album_b={other!r}")
 
-        self._merge_tracks(other, overwrite=overwrite)
-        self._merge_extras(other, overwrite)
+        self._merge_tracks(other, merge_strategy)
+        self._merge_extras(other, merge_strategy)
 
         for field in self.fields:
             other_value = getattr(other, field, None)
             self_value = getattr(self, field, None)
-            if other_value and (overwrite or (not overwrite and not self_value)):
+            if other_value and (
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (merge_strategy == MergeStrategy.KEEP_EXISTING and not self_value)
+            ):
                 setattr(self, field, other_value)
 
         for custom_field in self.custom:
             other_value = other.custom.get(custom_field)
             if other_value and (
-                overwrite or (not overwrite and not self.custom[custom_field])
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (
+                    merge_strategy == MergeStrategy.KEEP_EXISTING
+                    and not self.custom[custom_field]
+                )
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(f"Albums merged. [album_a={self!r}, album_b={other!r}, {overwrite=}]")
+        log.debug(
+            f"Albums merged. [album_a={self!r}, album_b={other!r}, {merge_strategy=}]"
+        )
 
     def _merge_tracks(
-        self, other: Album | MetaAlbum, *, overwrite: bool = False
+        self,
+        other: Album | MetaAlbum,
+        merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING,
     ) -> None:
         """Merges the tracks of another album into this one."""
         new_tracks: list[Track] = []
@@ -487,7 +519,7 @@ class Album(LibItem, SABase, MetaAlbum):
             if other_track.track_num and other_track.disc:
                 conflict_track = self.get_track(other_track.track_num, other_track.disc)
             if conflict_track:
-                conflict_track.merge(other_track, overwrite)
+                conflict_track.merge(other_track, merge_strategy)
             else:
                 new_tracks.append(other_track)
         self.tracks.extend(new_tracks)
@@ -495,7 +527,7 @@ class Album(LibItem, SABase, MetaAlbum):
     def _merge_extras(
         self,
         other: Album | MetaAlbum,
-        overwrite: bool = False,  # noqa: FBT001, FBT002
+        merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING,
     ) -> None:
         """Merges the extras of another album into this one."""
         if isinstance(other, Album):
@@ -503,7 +535,7 @@ class Album(LibItem, SABase, MetaAlbum):
             for other_extra in other.extras:
                 conflict_extra = self.get_extra(other_extra.rel_path)
                 if conflict_extra:
-                    conflict_extra.merge(other_extra, overwrite)
+                    conflict_extra.merge(other_extra, merge_strategy)
                 else:
                     new_extras.append(other_extra)
             self.extras.extend(new_extras)

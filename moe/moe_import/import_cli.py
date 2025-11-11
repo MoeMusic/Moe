@@ -17,6 +17,7 @@ from rich.text import Text
 import moe
 from moe import config
 from moe.cli import console
+from moe.library import MergeStrategy
 from moe.util.cli import PromptChoice, choice_prompt
 from moe.util.core import get_matching_tracks
 from moe.util.core.match import MatchType, get_field_match_penalty
@@ -241,7 +242,7 @@ def _apply_changes(
             old_track.track_num = new_track.track_num
             old_track.disc = new_track.disc
 
-    new_album.merge(candidate.album, overwrite=True)
+    new_album.merge(candidate.album, MergeStrategy.OVERWRITE)
 
 
 def _abort_changes(

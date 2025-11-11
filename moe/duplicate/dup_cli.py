@@ -14,7 +14,7 @@ from rich.text import Text
 
 import moe
 from moe.cli import console
-from moe.library import Album, Extra, LibItem, Track
+from moe.library import Album, Extra, LibItem, MergeStrategy, Track
 from moe.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt
 
@@ -81,7 +81,7 @@ def _overwrite(session: Session, item_a: LibItem, item_b: LibItem) -> None:
     """Merges `item_a` into `item_b`, overwriting any conflicts."""
     log.debug("Merging A -> B, overwriting B on conflict.")
 
-    item_b.merge(item_a, overwrite=True)
+    item_b.merge(item_a, merge_strategy=MergeStrategy.OVERWRITE)
     remove_item(session, item_b)
 
 

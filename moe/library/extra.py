@@ -12,7 +12,7 @@ from sqlalchemy.schema import ForeignKey
 import moe
 from moe import config
 from moe.library.album import Album
-from moe.library.lib_item import LibItem, SABase
+from moe.library.lib_item import LibItem, MergeStrategy, SABase
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -99,32 +99,43 @@ class Extra(LibItem, SABase):  # noqa: PLW1641 MetaTracks are unhashable
 
         return False not in custom_uniqueness
 
-    def merge(self, other: Self, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002
+    def merge(
+        self, other: Self, merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING
+    ) -> None:
         """Merges another extra into this one.
 
         Args:
             other: Other extra to be merged with the current extra.
-            overwrite: Whether or not to overwrite self if a conflict exists.
+            merge_strategy: Which MergeStrategy to use when a conflict exists.
         """
         log.debug(
-            f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {overwrite=}]"
+            f"Merging extras. [extra_a={self!r}, extra_b={other!r}, {merge_strategy=}]"
         )
 
         omit_fields = {"album"}
         for field in self.fields - omit_fields:
             other_value = getattr(other, field)
             self_value = getattr(self, field)
-            if other_value and (overwrite or (not overwrite and not self_value)):
+            if other_value and (
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (merge_strategy == MergeStrategy.KEEP_EXISTING and not self_value)
+            ):
                 setattr(self, field, other_value)
 
         for custom_field in self.custom:
             other_value = other.custom.get(custom_field)
             if other_value and (
-                overwrite or (not overwrite and not self.custom[custom_field])
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (
+                    merge_strategy == MergeStrategy.KEEP_EXISTING
+                    and not self.custom[custom_field]
+                )
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {overwrite=}]")
+        log.debug(
+            f"Extras merged. [extra_a={self!r}, extra_b={other!r}, {merge_strategy=}]"
+        )
 
     def __eq__(self, other: object) -> bool:
         """Compares Extras by their fields."""

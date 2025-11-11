@@ -5,7 +5,7 @@ import pytest
 import moe
 import moe.write as moe_write
 from moe.config import ExtraPlugin
-from moe.library import MetaTrack, Track, TrackError
+from moe.library import MergeStrategy, MetaTrack, Track, TrackError
 from moe.library.album import MetaAlbum
 from tests.conftest import album_factory, extra_factory, track_factory
 
@@ -404,18 +404,27 @@ class TestMerge:
         track = track_factory(title="1")
         other_track = track_factory(title="2")
 
-        track.merge(other_track, overwrite=True)
+        track.merge(other_track, merge_strategy=MergeStrategy.OVERWRITE)
 
         assert track.title == "2"
 
-    def test_custom_fields(self):
-        """Merge custom fields too."""
+    def test_custom_fields_overwrite(self):
+        """Custom fields overwrite merge strategy."""
         track = track_factory(custom="")
         other_track = track_factory(custom="new")
 
-        track.merge(other_track)
+        track.merge(other_track, MergeStrategy.OVERWRITE)
 
         assert track.custom["custom"] == "new"
+
+    def test_custom_fields_keep(self):
+        """Custom fields keep merge strategy."""
+        track = track_factory(custom="keep")
+        other_track = track_factory(custom="new")
+
+        track.merge(other_track, MergeStrategy.KEEP_EXISTING)
+
+        assert track.custom["custom"] == "keep"
 
 
 class TestProperties:

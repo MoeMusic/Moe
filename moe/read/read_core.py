@@ -2,7 +2,7 @@
 
 import logging
 
-from moe.library import Album, LibItem, Track
+from moe.library import Album, LibItem, MergeStrategy, Track
 
 __all__ = ["read_item"]
 
@@ -25,8 +25,8 @@ def read_item(item: LibItem) -> None:
         raise FileNotFoundError(err_msg)
 
     if isinstance(item, Track):
-        item.merge(Track.from_file(item.path), overwrite=True)
+        item.merge(Track.from_file(item.path), merge_strategy=MergeStrategy.OVERWRITE)
     elif isinstance(item, Album):
-        item.merge(Album.from_dir(item.path), overwrite=True)
+        item.merge(Album.from_dir(item.path), merge_strategy=MergeStrategy.OVERWRITE)
 
     log.info(f"Updated item from filesystem. [{item=!s}]")

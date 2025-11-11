@@ -15,7 +15,14 @@ from sqlalchemy.schema import ForeignKey, UniqueConstraint
 import moe
 from moe import config
 from moe.library.album import Album, MetaAlbum
-from moe.library.lib_item import LibItem, LibraryError, MetaLibItem, SABase, SetType
+from moe.library.lib_item import (
+    LibItem,
+    LibraryError,
+    MergeStrategy,
+    MetaLibItem,
+    SABase,
+    SetType,
+)
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -215,32 +222,45 @@ class MetaTrack(MetaLibItem):  # noqa: PLW1641 MetaTracks are unhashable
             "track_num",
         }
 
-    def merge(self, other: MetaTrack | Track, overwrite: bool = False) -> None:  # noqa: FBT001, FBT002 breaking change
+    def merge(
+        self,
+        other: MetaTrack | Track,
+        merge_strategy: MergeStrategy = MergeStrategy.KEEP_EXISTING,
+    ) -> None:
         """Merges another track into this one.
 
         Args:
             other: Other track to be merged with the current track.
-            overwrite: Whether or not to overwrite self if a conflict exists.
+            merge_strategy: Which MergeStrategy to use when a conflict exists.
         """
         log.debug(
-            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {overwrite=}]"
+            f"Merging tracks. [track_a={self!r}, track_b={other!r}, {merge_strategy=}]"
         )
 
         omit_fields = {"album"}
         for field in self.fields - omit_fields:
             other_value = getattr(other, field, None)
             self_value = getattr(self, field, None)
-            if other_value and (overwrite or (not overwrite and not self_value)):
+            if other_value and (
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (merge_strategy == MergeStrategy.KEEP_EXISTING and not self_value)
+            ):
                 setattr(self, field, other_value)
 
         for custom_field in self.custom:
             other_value = other.custom.get(custom_field)
             if other_value and (
-                overwrite or (not overwrite and not self.custom[custom_field])
+                merge_strategy == MergeStrategy.OVERWRITE
+                or (
+                    merge_strategy == MergeStrategy.KEEP_EXISTING
+                    and not self.custom[custom_field]
+                )
             ):
                 self.custom[custom_field] = other_value
 
-        log.debug(f"Tracks merged. [track_a={self!r}, track_b={other!r}, {overwrite=}]")
+        log.debug(
+            f"Tracks merged. [track_a={self!r}, track_b={other!r}, {merge_strategy=}]"
+        )
 
     def __eq__(self, other: object) -> bool:
         """Compares Tracks by their fields."""
