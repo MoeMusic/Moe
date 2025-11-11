@@ -47,7 +47,8 @@ def transcode(
     item: I,
     to_format: TranscodeFormat,
     out_path: Path | None = None,
-    overwrite: bool = False,  # noqa: FBT001, FBT002
+    *,
+    overwrite: bool = False,
 ) -> I:
     """Transcodes a track or album to a specific format.
 
@@ -69,15 +70,16 @@ def transcode(
     out_path = out_path or fmt_item_path(item, transcode_path)
 
     if isinstance(item, Album):
-        return _transcode_album(item, to_format, out_path, overwrite)
-    return _transcode_track(item, to_format, out_path, overwrite)
+        return _transcode_album(item, to_format, out_path, overwrite=overwrite)
+    return _transcode_track(item, to_format, out_path, overwrite=overwrite)
 
 
 def _transcode_album(
     album: Album,
     to_format: TranscodeFormat,
     out_path: Path,
-    overwrite: bool = False,  # noqa: FBT001, FBT002
+    *,
+    overwrite: bool = False,
 ) -> Album:
     """Transcodes an album to a specific format.
 
@@ -130,7 +132,8 @@ def _transcode_track(
     track: Track,
     to_format: TranscodeFormat,
     out_path: Path,
-    overwrite: bool = False,  # noqa: FBT001, FBT002
+    *,
+    overwrite: bool = False,
 ) -> Track:
     """Transcodes a track to a specific format.
 
@@ -161,7 +164,7 @@ def _transcode_track(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path = out_path.with_suffix(".mp3")
 
-    _transcode_path(track.path, to_format, out_path, overwrite)
+    _transcode_path(track.path, to_format, out_path, overwrite=overwrite)
 
     transcoded_track = Track.from_file(out_path)
     log.info(f"Transcoded track. [{transcoded_track=!r}]")
@@ -173,7 +176,7 @@ def _transcode_path(
     path: Path,
     to_format: TranscodeFormat,
     out_path: Path,
-    overwrite: bool = False,  # noqa: FBT001, FBT002
+    overwrite: bool = False,  # noqa: FBT001, FBT002 starmap restricts keyword args
 ) -> None:
     """Transcodes a file to `to_format`.
 
