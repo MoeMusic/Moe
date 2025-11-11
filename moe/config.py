@@ -244,7 +244,8 @@ class Config:
         settings_filename: str = "config.toml",
         extra_plugins: list[ExtraPlugin] | None = None,
         engine: sqlalchemy.engine.base.Engine | None = None,
-        init_db: bool = True,  # noqa: FBT001, FBT002
+        *,
+        init_db: bool = True,
     ) -> None:
         """Initializes the plugin manager and configuration directory.
 
