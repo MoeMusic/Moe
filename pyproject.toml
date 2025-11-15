@@ -1,55 +1,62 @@
-[tool.poetry]
+[project]
 name = "Moe"
 version = "2.5.0"
 description = "The ultimate tool for managing your music library."
-authors = ["Jacob Pavlock <jtpavlock@gmail.com>"]
-repository = "https://github.com/MoeMusic/Moe"
-documentation = "https://mrmoe.readthedocs.io/en/latest/index.html"
-classifiers=[
+authors = [
+    { name = "Jacob Pavlock", email = "jtpavlock@gmail.com" },
+]
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
     "Topic :: Multimedia :: Sound/Audio :: Editors",
 ]
 readme = "README.rst"
-license = "MIT"
+license = { text = "MIT" }
+requires-python = ">=3.9, <3.14"
+dependencies = [
+    "alembic (>=1.4.2,<2.0.0)",
+    "dynaconf (>=3.1.4,<4.0.0)",
+    "importlib-metadata (>=7.0.1,<8.0.0)",
+    "mediafile (>=0.13.0,<1.0.0)",
+    "pluggy (>=1.3.0,<2.0.0)",
+    "rich (>=13.0.0,<14.0.0)",
+    "SQLAlchemy (>=2.0,<2.1)",
+    "Unidecode (>=1.2.0,<2.0.0)",
+    "typing_extensions (>=4.0.0,<5.0.0) ; python_version < '3.11'",
+    "questionary (>=2.0.0,<3.0.0)",
+]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+musicbrainz = [
+    "musicbrainzngs>=0.7.1,<0.8.0",
+]
+
+[project.scripts]
 moe = 'moe.cli:main'
 
-[tool.poetry.dependencies]
-python = ">=3.9, <3.14"
-alembic = "^1.4.2"
-dynaconf = "^3.1.4"
-importlib-metadata = "^7.0.1"
-mediafile = "^0.13.0"
-pluggy = "^1.3.0"
-rich = "^13.0.0"
-SQLAlchemy = "2.0.*"
-Unidecode = "^1.2.0"
-typing_extensions = { version = "^4.0.0", python = "<3.11" }
-questionary = "^2.0.0"
-musicbrainzngs = { version = "^0.7.1", optional = true}
+[project.urls]
+repository = "https://github.com/MoeMusic/Moe"
+documentation = "https://mrmoe.readthedocs.io/en/latest/index.html"
 
-[tool.poetry.group.test.dependencies]
-debugpy = "^1.4.1"
-pytest = "^8.0.0"
-pytest-cov = "^6.0.0"
-tox = "^4.0.0"
-
-[tool.poetry.group.lint.dependencies]
-ruff = "==0.12.1"
-commitizen = "^3.0.0"
-"github3.py" = "^4.0.0"
-pre-commit = "^4.0.0"
-pyright = "==1.1.402"
-
-[tool.poetry.group.docs.dependencies]
-furo = "*"
-pypandoc = "^1.9"
-Sphinx = "^7.0.0"
-
-[tool.poetry.extras]
-musicbrainz = [ "musicbrainzngs" ]
+[dependency-groups]
+test = [
+    "debugpy (>=1.4.1,<2.0.0)",
+    "pytest (>=8.0.0,<9.0.0)",
+    "pytest-cov (>=6.0.0,<7.0.0)",
+    "tox (>=4.0.0,<5.0.0)",
+]
+lint = [
+    "commitizen (>=3.0.0,<4.0.0)",
+    "github3.py (>=4.0.0,<5.0.0)",
+    "pre-commit (>=4.0.0,<5.0.0)",
+    "pyright==1.1.402",
+    "ruff==0.12.1",
+]
+docs = [
+    "furo",
+    "pypandoc (>=1.9,<2.0)",
+    "Sphinx (>=7.0.0,<8.0.0)",
+]
 
 [tool.commitizen]
 name = "cz_customize"
