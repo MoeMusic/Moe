@@ -1,6 +1,7 @@
 """Tests configuration."""
 
 import logging
+import os
 import shutil
 from pathlib import Path
 from unittest.mock import patch
@@ -21,6 +22,16 @@ class TestInit:
         config = Config(tmp_path / "doesn't exist", init_db=False)
 
         assert config.config_dir.is_dir()
+
+    def test_default_config_dir(self):
+        """The default config directory should be `~/.config/moe`."""
+        # ensure the "MOE_CONFIG_DIR" envvar is not set as it will override the default
+        environ_copy = os.environ.copy()
+        environ_copy.pop("MOE_CONFIG_DIR", None)
+        with patch.dict("os.environ", environ_copy, clear=True):
+            config = Config(None, init_db=False)
+
+            assert config.config_dir == Path.home() / ".config" / "moe"
 
     def test_config_file_dne(self, tmp_path):
         """Should create an empty config file if it doesn't exist."""
