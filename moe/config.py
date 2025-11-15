@@ -240,7 +240,7 @@ class Config:
 
     def __init__(
         self,
-        config_dir: Path = Path.home() / ".config" / "moe",  # noqa: B008 breaking change required
+        config_dir: Path | None = None,
         settings_filename: str = "config.toml",
         extra_plugins: list[ExtraPlugin] | None = None,
         engine: sqlalchemy.engine.base.Engine | None = None,
@@ -251,7 +251,8 @@ class Config:
         Args:
             config_dir: Filesystem path of the configuration directory where the
                 settings and database files will reside. The environment variable
-                ``MOE_CONFIG_DIR`` has precedence in setting this.
+                ``MOE_CONFIG_DIR`` has precedence in setting this. If ``None`` given,
+                the config directory defaults to ``~/.config/moe``.
             extra_plugins: Any extra plugins that should be enabled in addition to those
                 specified in the configuration.
             settings_filename: Name of the configuration settings file.
@@ -265,7 +266,7 @@ class Config:
         try:
             self.config_dir = Path(os.environ["MOE_CONFIG_DIR"])
         except KeyError:
-            self.config_dir = config_dir
+            self.config_dir = config_dir or Path.home() / ".config" / "moe"
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
