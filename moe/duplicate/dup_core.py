@@ -10,7 +10,7 @@ import sqlalchemy
 import moe
 from moe import config
 from moe.library import Album, Extra, LibItem, Track
-from moe.query import query
+from moe.query import QueryType, query
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
@@ -164,7 +164,7 @@ def get_duplicates(
         :meth:`~moe.library.lib_item.LibItem.is_unique`.
     """
     if not others:
-        others = query(session, "*", type(item).__name__.lower())
+        others = query(session, "*", QueryType(type(item).__name__.lower()))
 
     return [
         other for other in others if item is not other and not item.is_unique(other)

@@ -7,6 +7,7 @@ from unittest.mock import ANY, patch
 import pytest
 
 import moe.cli
+from moe.query import QueryType
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -41,7 +42,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.TRACK)
         assert capsys.readouterr().out.strip("\n") == str(track)
 
     def test_album(self, capsys, mock_query):
@@ -52,7 +53,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.ALBUM)
         assert capsys.readouterr().out.strip("\n") == str(album)
 
     def test_extra(self, capsys, mock_query):
@@ -63,7 +64,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.EXTRA)
         assert capsys.readouterr().out.strip("\n") == str(extra)
 
     def test_multiple_items(self, capsys, mock_query):
@@ -85,7 +86,7 @@ class TestParseArgs:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.TRACK)
         assert capsys.readouterr().out.strip("\n") == str(track.path)
 
     def test_info_album(self, mock_query):

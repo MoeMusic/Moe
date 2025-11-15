@@ -6,7 +6,7 @@ import argparse
 import logging
 from typing import TYPE_CHECKING
 
-from moe.query import QueryError, query
+from moe.query import QueryError, QueryType, query
 
 if TYPE_CHECKING:
     from sqlalchemy.orm.session import Session
@@ -50,7 +50,7 @@ query_type_group.add_argument(
     "-a",
     "--album",
     action="store_const",
-    const="album",
+    const=QueryType.ALBUM,
     dest="query_type",
     help="query for matching albums",
 )
@@ -58,22 +58,22 @@ query_type_group.add_argument(
     "-e",
     "--extra",
     action="store_const",
-    const="extra",
+    const=QueryType.EXTRA,
     dest="query_type",
     help="query for matching extras",
 )
-query_parser.set_defaults(query_type="track")
+query_parser.set_defaults(query_type=QueryType.TRACK)
 
 
 def cli_query(
-    session: Session, query_str: str, query_type: str
+    session: Session, query_str: str, query_type: QueryType
 ) -> list[Album] | list[Extra] | list[Track]:
     """Wrapper around the core query call, with some added cli error handling.
 
     Args:
         session: Library db session.
         query_str: Query string to parse. See the query docs for more info.
-        query_type: Type of library item to return: either 'album', 'extra', or 'track'.
+        query_type: Type of library item to return.
 
     Returns:
         All items matching the given query found in ``args``.

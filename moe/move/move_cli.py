@@ -10,6 +10,7 @@ from sqlalchemy.orm.session import Session
 import moe
 from moe import move as moe_move
 from moe.library import Album
+from moe.query import QueryType
 from moe.util.cli import cli_query
 
 log = logging.getLogger("moe.cli.move")
@@ -45,7 +46,7 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
     Raises:
         SystemExit: Invalid query or no items found to move.
     """
-    albums = cast("list[Album]", cli_query(session, "*", query_type="album"))
+    albums = cast("list[Album]", cli_query(session, "*", QueryType.ALBUM))
 
     if args.dry_run:
         dry_run_str = _dry_run(albums)

@@ -9,6 +9,7 @@ import pytest
 import moe.cli
 from moe import config
 from moe.edit import EditError
+from moe.query import QueryType
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -50,7 +51,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.TRACK)
         mock_edit.assert_called_once_with(track, "track_num", "3", create_field=False)
 
     def test_album(self, mock_query, mock_edit):
@@ -61,7 +62,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.ALBUM)
         mock_edit.assert_called_once_with(album, "title", "edit", create_field=False)
 
     def test_extra(self, mock_query, mock_edit):
@@ -72,7 +73,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.EXTRA)
         mock_edit.assert_called_once_with(extra, "title", "edit", create_field=False)
 
     def test_multiple_items(self, mock_query, mock_edit):

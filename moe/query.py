@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import shlex
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -18,13 +19,21 @@ if TYPE_CHECKING:
     from sqlalchemy.orm.session import Session
     from sqlalchemy.sql.elements import KeyedColumnElement
 
-__all__: list[str] = ["QueryError", "query"]
+__all__: list[str] = ["QueryError", "QueryType", "query"]
 
 log = logging.getLogger("moe.query")
 
 
 class QueryError(Exception):
     """Error querying an item from the library."""
+
+
+class QueryType(str, Enum):
+    """The type of library item to query for."""
+
+    ALBUM = "album"
+    EXTRA = "extra"
+    TRACK = "track"
 
 
 # each query will be split into these groups
@@ -35,14 +44,14 @@ VALUE = "value"
 
 
 def query(
-    session: Session, query_str: str, query_type: str
+    session: Session, query_str: str, query_type: QueryType
 ) -> list[Album] | list[Extra] | list[Track]:
     """Queries the database for items matching the given query string.
 
     Args:
         session: Library db session.
         query_str: Query string to parse. See the query docs for more info.
-        query_type: Type of library item to return: either 'album', 'extra', or 'track'.
+        query_type: Type of library item to return.
 
     Returns:
         All items matching the query of type ``query_type``.
@@ -60,15 +69,15 @@ def query(
         err_msg = "No query given."
         raise QueryError(err_msg)
 
-    if query_type == "album":
+    if query_type == QueryType.ALBUM:
         library_query = session.query(Album)
         if session.query(Track).first():
             library_query = library_query.join(Track)
-    elif query_type == "extra":
+    elif query_type == QueryType.EXTRA:
         library_query = session.query(Extra).join(Album).join(Track)
     else:
         library_query = session.query(Track).join(Album)
-    if query_type != "extra" and session.query(Extra).first():
+    if query_type != QueryType.EXTRA and session.query(Extra).first():
         library_query = library_query.join(Extra)
 
     for term in terms:
