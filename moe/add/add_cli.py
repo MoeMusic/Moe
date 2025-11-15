@@ -10,6 +10,7 @@ import moe
 import moe.add
 from moe.add.add_core import AddError
 from moe.library import Album, AlbumError, Extra, Track, TrackError
+from moe.query import QueryType
 from moe.util.cli import PromptChoice
 from moe.util.cli.query import cli_query
 
@@ -79,7 +80,9 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
 
     album: Album | None = None
     if args.album_query:
-        albums = cast("list[Album]", cli_query(session, args.album_query, "album"))
+        albums = cast(
+            "list[Album]", cli_query(session, args.album_query, QueryType.ALBUM)
+        )
 
         if len(albums) > 1:
             log.error("Query returned more than one album.")

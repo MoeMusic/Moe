@@ -66,7 +66,7 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
     Raises:
         SystemExit: Invalid query or no items found.
     """
-    items = cli_query(session, args.query, query_type=args.query_type)
+    items = cli_query(session, args.query, args.query_type)
     items.sort()
 
     if args.info:

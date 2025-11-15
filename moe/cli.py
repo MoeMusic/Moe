@@ -70,7 +70,7 @@ class Hooks:
                     parents=[moe.cli.query_parser],
                 )
 
-            Then, you can call ``query.query(args.query, query_type=args.query_type)``
+            Then, you can call ``query.query(args.query, args.query_type)``
             to get a list of items matching the query from the library.
 
         See Also:

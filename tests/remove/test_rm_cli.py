@@ -7,6 +7,7 @@ from unittest.mock import ANY, patch
 import pytest
 
 import moe.cli
+from moe.query import QueryType
 from tests.conftest import album_factory, extra_factory, track_factory
 
 
@@ -48,7 +49,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="track")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.TRACK)
         mock_rm.assert_called_once_with(ANY, track)
 
     def test_album(self, mock_query, mock_rm):
@@ -59,7 +60,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="album")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.ALBUM)
         mock_rm.assert_called_once_with(ANY, album)
 
     def test_extra(self, mock_query, mock_rm):
@@ -70,7 +71,7 @@ class TestCommand:
 
         moe.cli.main(cli_args)
 
-        mock_query.assert_called_once_with(ANY, "*", query_type="extra")
+        mock_query.assert_called_once_with(ANY, "*", QueryType.EXTRA)
         mock_rm.assert_called_once_with(ANY, extra)
 
     def test_multiple_items(self, mock_query, mock_rm):

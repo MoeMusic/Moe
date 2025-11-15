@@ -49,7 +49,7 @@ def _parse_args(session: Session, args: argparse.Namespace) -> None:
     Raises:
         SystemExit: Invalid query given, or no items to remove.
     """
-    items = cli_query(session, args.query, query_type=args.query_type)
+    items = cli_query(session, args.query, args.query_type)
 
     for item in items:
         moe_rm.remove_item(session, item)
