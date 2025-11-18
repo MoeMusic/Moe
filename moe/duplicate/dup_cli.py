@@ -1,9 +1,7 @@
 """Adds a duplicate resolution prompt to the CLI."""
 
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from rich.columns import Columns
 from rich.console import Group, RenderableType
@@ -11,15 +9,13 @@ from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe.cli import console
 from moe.library import Album, Extra, LibItem, MergeStrategy, Track
 from moe.remove import remove_item
 from moe.util.cli import PromptChoice, choice_prompt
-
-if TYPE_CHECKING:
-    from sqlalchemy.orm.session import Session
 
 log = logging.getLogger("moe.cli.dup")
 

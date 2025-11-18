@@ -1,17 +1,12 @@
 """CLI-specific query help functionality."""
 
-from __future__ import annotations
-
 import argparse
 import logging
-from typing import TYPE_CHECKING
 
+from sqlalchemy.orm.session import Session
+
+from moe.library import Album, Extra, Track
 from moe.query import QueryError, QueryType, query
-
-if TYPE_CHECKING:
-    from sqlalchemy.orm.session import Session
-
-    from moe.library import Album, Extra, Track
 
 __all__ = ["cli_query", "query_parser"]
 

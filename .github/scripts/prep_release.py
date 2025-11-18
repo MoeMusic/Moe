@@ -9,8 +9,6 @@ See Also:
     (pytest's script I stole a lot from)
 """
 
-from __future__ import annotations
-
 import argparse
 import datetime as dt
 import pathlib
@@ -18,12 +16,9 @@ import re
 import shutil
 import subprocess
 from textwrap import indent
-from typing import TYPE_CHECKING
 
 import github3
-
-if TYPE_CHECKING:
-    from github3.repos import Repository
+from github3.repos import Repository
 
 SLUG = "MoeMusic/Moe"
 PR_BODY = """

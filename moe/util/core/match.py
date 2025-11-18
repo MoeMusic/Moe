@@ -5,7 +5,7 @@ from __future__ import annotations
 import difflib
 import logging
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from moe.library import MetaAlbum, MetaTrack
 
@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 # Custom type declarations used for abbreviated annotations.
-TrackMatch = tuple[Optional[MetaTrack], Optional[MetaTrack]]
+TrackMatch = tuple[MetaTrack | None, MetaTrack | None]
 TrackCoord = tuple[
     tuple[int, int], tuple[int, int]
 ]  # ((a.disc, a.track_num), (b.disc, b.track_num))
