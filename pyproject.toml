@@ -54,7 +54,7 @@ lint = [
 docs = [
     "furo",
     "pypandoc (>=1.9,<2.0)",
-    "Sphinx (>=7.0.0,<8.0.0)",
+    "Sphinx (>=8.0.0,<9.0.0)",
 ]
 
 [tool.commitizen]
