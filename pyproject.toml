@@ -40,8 +40,8 @@ documentation = "https://mrmoe.readthedocs.io/en/latest/index.html"
 [dependency-groups]
 test = [
     "debugpy (>=1.4.1,<2.0.0)",
-    "pytest (>=8.0.0,<9.0.0)",
-    "pytest-cov (>=6.0.0,<7.0.0)",
+    "pytest (>=9.0.0,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
     "tox (>=4.0.0,<5.0.0)",
 ]
 lint = [
@@ -70,9 +70,9 @@ bump_pattern = '^(build|deprecate|feat|fix|perf)'
 bump_map = { feat = "MINOR", build = "PATCH", deprecate = "PATCH", fix = "PATCH", perf = "PATCH" }
 schema_pattern = '(build|ci|deprecate|docs|feat|fix|perf|refactor|release|style|test)(\(\w+\))?!?:\s\S.*'
 
-[tool.pytest.ini_options]
-log_cli_level = 10
-addopts = "--color=yes"
+[tool.pytest]
+log_cli_level = "10"
+addopts = ["--color=yes"]
 markers = [
     "darwin: tests that should only run on apple",
     "linux: tests that should only run on linux",
