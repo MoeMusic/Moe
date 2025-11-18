@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import difflib
 import logging
-from typing import Optional
+from enum import Enum
+from typing import Any, Optional
 
 from moe.library import MetaAlbum, MetaTrack
 
 log = logging.getLogger("moe")
 
-__all__ = ["get_match_value", "get_matching_tracks"]
+__all__ = [
+    "MatchType",
+    "get_field_match_penalty",
+    "get_match_value",
+    "get_matching_tracks",
+]
 
 # Custom type declarations used for abbreviated annotations.
 TrackMatch = tuple[Optional[MetaTrack], Optional[MetaTrack]]
@@ -34,9 +40,87 @@ MATCH_ALBUM_FIELD_WEIGHTS = {
 MATCH_TRACK_FIELD_WEIGHTS = {
     "composer": 0.8,
     "disc": 0.3,
+    "duration": 0.8,
     "title": 0.7,
     "track_num": 0.9,
 }  # how much to weigh matches of various fields
+
+
+class MatchType(str, Enum):
+    """Which matching logic to apply when comparing values.
+
+    Attributes:
+        BOOL: Only checks if the values are equal or not.
+        DURATION: Uses a tolerance-based penalty system where a duration mismatch of
+            2.5% or less is not penalized, and the penalty increases linearly from 0
+            at 2.5% to 1.0 at 10% mismatch. This MatchType expects both values to be
+            floats.
+        STRING: Compares the similarity between two strings.
+    """
+
+    BOOL = "bool"
+    DURATION = "duration"
+    STRING = "string"
+
+
+def get_field_match_penalty(
+    value_a: Any,  # noqa: ANN401 could be any custom value
+    value_b: Any,  # noqa: ANN401 could be any custom value
+    match_type: MatchType = MatchType.BOOL,
+) -> float:
+    """Returns an unweighted penalty value between two field values.
+
+    Args:
+        value_a: First field value to compare.
+        value_b: Second field value to compare.
+        match_type: The type of matching logic to use.
+
+    Returns:
+        Penalty value between 0.0 (perfect match) and 1.0 (complete mismatch). If both
+        values are empty, a small penalty of 0.1 is returned. If one value is empty, a
+        slightly larger 0.2 penalty is returned.
+    """
+    both_missing_data_penalty = 0.2
+    one_missing_data_penalty = 0.1
+
+    if not value_a and not value_b:
+        return both_missing_data_penalty
+    if (value_a and not value_b) or (value_b and not value_a):
+        return one_missing_data_penalty
+
+    if match_type == MatchType.STRING:
+        return 1 - difflib.SequenceMatcher(None, str(value_a), str(value_b)).ratio()
+    if match_type == MatchType.DURATION:
+        return _duration_penalty(float(value_a), float(value_b))
+    return 0 if value_a == value_b else 1
+
+
+def _duration_penalty(duration_a: float, duration_b: float) -> float:
+    """Returns a penalty value for duration matching.
+
+    Uses a tolerance-based penalty system where a duration mismatch of 2.5% or less
+    is not penalized, and the penalty increases linearly from 0 at 2.5% to 1 at 10%
+    mismatch.
+
+    Args:
+        duration_a: First duration value in seconds.
+        duration_b: Second duration value in seconds.
+
+    Returns:
+        Penalty value between 0.0 and 1.0.
+    """
+    min_penalty_threshold = 0.025
+    max_penalty_threshold = 0.10
+
+    avg_duration = (duration_a + duration_b) / 2.0
+    mismatch = abs(duration_a - duration_b) / avg_duration
+    if mismatch <= min_penalty_threshold:
+        return 0.0
+    if mismatch >= max_penalty_threshold:
+        return 1.0
+    return (mismatch - min_penalty_threshold) / (
+        max_penalty_threshold - min_penalty_threshold
+    )
 
 
 def get_match_value(
@@ -65,17 +149,14 @@ def get_match_value(
         value_a = getattr(item_a, field)
         value_b = getattr(item_b, field)
 
-        if not value_a and not value_b:
-            penalty = 0.1
-        elif (value_a and not value_b) or (value_b and not value_a):
-            penalty = 0.2
-        elif isinstance(value_a, str):
-            penalty = 1 - difflib.SequenceMatcher(None, value_a, value_b).ratio()
-        elif value_a != value_b:
-            penalty = 1
+        if isinstance(value_a, str) and isinstance(value_b, str):
+            match_type = MatchType.STRING
+        elif field == "duration":
+            match_type = MatchType.DURATION
         else:
-            penalty = 0
+            match_type = MatchType.BOOL
 
+        penalty = get_field_match_penalty(value_a, value_b, match_type)
         penalties.append(penalty * weight)
 
     match_value = 1 - sum(penalties) / sum(field_weights.values())
