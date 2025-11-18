@@ -45,11 +45,11 @@ test = [
     "tox (>=4.0.0,<5.0.0)",
 ]
 lint = [
-    "commitizen (>=3.0.0,<4.0.0)",
+    "commitizen (>=4.0.0,<5.0.0)",
     "github3.py (>=4.0.0,<5.0.0)",
     "pre-commit (>=4.0.0,<5.0.0)",
-    "pyright==1.1.402",
-    "ruff==0.12.1",
+    "pyright==1.1.407",
+    "ruff==0.14.5",
 ]
 docs = [
     "furo",
