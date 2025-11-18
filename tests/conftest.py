@@ -1,15 +1,13 @@
 """Shared pytest configuration."""
 
-from __future__ import annotations
-
 import datetime
 import random
 import shutil
 import sys
 import textwrap
+from collections.abc import Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,9 +19,6 @@ import moe.write
 from moe import config
 from moe.config import Config, ExtraPlugin, moe_sessionmaker
 from moe.library import Album, Extra, Track
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 __all__ = ["album_factory", "extra_factory", "track_factory"]
 

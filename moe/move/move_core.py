@@ -7,7 +7,7 @@ import re
 import shutil
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import dynaconf
 import dynaconf.base
@@ -18,6 +18,8 @@ from moe import config
 from moe.library import Album, Extra, LibItem, Track
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import pluggy
 
 __all__ = ["copy_item", "fmt_item_path", "move_item"]
@@ -61,7 +63,7 @@ class Hooks:
             .. code:: python
 
                 @moe.hookimpl
-                def override_album_path_config(album: Album) -> Optional[str]:
+                def override_album_path_config(album: Album) -> str | None:
                     if "Classical" in album.title:
                         return "Classical/{album.artist}/{album.title} ({album.year})"
                     elif "Soundtrack" in album.title:
@@ -88,7 +90,7 @@ class Hooks:
             .. code:: python
 
                 @moe.hookimpl
-                def override_extra_path_config(extra: Extra) -> Optional[str]:
+                def override_extra_path_config(extra: Extra) -> str | None:
                     if extra.path.name.lower().endswith(('.jpg', '.png')):
                         if 'cover' in extra.path.name.lower():
                             return f"{extra.album.title}.jpg"

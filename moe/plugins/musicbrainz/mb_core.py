@@ -5,27 +5,23 @@ See Also:
     * https://python-musicbrainzngs.readthedocs.io/en/latest/api/
 """
 
-from __future__ import annotations
-
 import datetime
 import importlib.metadata
 import logging
-from typing import TYPE_CHECKING, Any, Callable, cast
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any, cast
 
 import dynaconf.base
 import mediafile
 import musicbrainzngs
+from sqlalchemy.orm.session import Session
 
 import moe
 from moe import config
 from moe.library import Album, LibItem, MergeStrategy, MetaAlbum, MetaTrack, Track
 from moe.moe_import import CandidateAlbum
 from moe.util.core import match
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from sqlalchemy.orm.session import Session
 
 __all__ = [
     "MBAuthError",

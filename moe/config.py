@@ -22,34 +22,28 @@ See Also:
       and database connection via the session.
 """
 
-from __future__ import annotations
-
-import importlib
+import importlib.metadata
 import logging
 import os
 import re
 import sys
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from types import ModuleType
+from typing import Any, NamedTuple, cast
 
 import alembic.command
 import alembic.config
 import dynaconf
 import dynaconf.base
 import dynaconf.validator
-import importlib_metadata
 import pluggy
 import sqlalchemy
 import sqlalchemy.event
 import sqlalchemy.orm
+from sqlalchemy.engine.base import Connection
 
 import moe
-
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    from sqlalchemy.engine.base import Connection
 
 moe_sessionmaker = sqlalchemy.orm.sessionmaker(autoflush=False)
 
@@ -192,7 +186,7 @@ class Hooks:
                 def _my_func(
                     session: sqlalchemy.orm.Session,
                     flush_context: sqlalchemy.orm.UOWTransaction,
-                    instances: Optional[Any],
+                    instances: Any | None,
                 ):
                     print("we made it")
 
@@ -425,7 +419,7 @@ class Config:
             )
 
         # register third-party installed plugins
-        plugins = importlib_metadata.entry_points().select(group="moe.plugins")
+        plugins = importlib.metadata.entry_points().select(group="moe.plugins")
         if plugins:
             for plugin in plugins:
                 if plugin.name in self.enabled_plugins:
